@@ -1,0 +1,18 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="none" x="0px" y="0px" width="50px" height="50px" viewBox="0 0 50 50">
+<defs>
+<g id="Layer5_0_FILL">
+<path fill="#BABABA" stroke="none" d="
+M 14 27
+L 14 37 40 37 40 27 14 27
+M 12 7
+L 10 7 10 43 12 43 12 7
+M 30 23
+L 30 11 14 11 14 23 30 23 Z"/>
+</g>
+</defs>
+
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#Layer5_0_FILL"/>
+</g>
+</svg>

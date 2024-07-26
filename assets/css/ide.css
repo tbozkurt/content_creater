@@ -1,0 +1,557 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #252525;
+}
+
+#scope_Canvas{
+    margin-left: 150px;
+    background-color: #252525;
+}
+
+#mesc{
+    top: 690px;
+    left: 1100px;
+    position: absolute;
+}
+
+#previewContent{
+    left: 195px;
+    top: 45px;
+    width: 1280px;
+    height: 720px;
+    background-color: beige;
+    position: absolute;
+    border: 5px solid #006600;
+}
+
+.previewMain{
+    left: 0;
+    top: 0;
+    width: 1680px;
+    height: 870px;
+    background-color: rgba(0, 0, 0, 0.6);
+    position: absolute;
+    display: none;
+}
+
+#previewClose{
+    left: -5px;
+    top: -30px;
+    width: 110px;
+    height: 30px;
+    background-color: #006600;
+    position: absolute;
+    font-size: 15px;
+    font-family: sans-serif;
+    color:white;
+    text-align: center;
+    line-height: 30px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.Navigation{
+    top: 664px;
+    left: 978px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+}
+
+.SceneBtn{
+    width: 46px;
+    height: 46px;
+    line-height: 50px;
+    text-align: center;
+    user-select: none;
+    cursor: pointer;
+}
+
+#NextScene{
+    background-image: url("http://localhost/ide/assets/img/next.png");
+    background-size: cover;
+}
+
+#BackScene{
+    background-image: url("http://localhost/ide/assets/img/back.png");
+    background-size: cover;
+}
+
+#SceneInfo{
+    margin: 0 10px;
+    font-family: sans-serif;
+    color: white;
+}
+
+.PlayerScene{
+    left: 0;
+    top: 0;
+    position: absolute;
+}
+
+/*
+.checkbox{
+    width: 100%;
+    height: 100%;
+    border-radius: 100%;
+    background-color: lightblue;
+    border: 2px solid #4FAEE1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: sans-serif;
+    cursor: pointer;
+    user-select: none;
+}
+*/
+
+.select{
+    width: 80%;
+    height: 80%;
+    border-radius: 100%;
+    background-color: rgba(0,0,0,.6);
+    position: absolute;
+    display: none;
+}
+
+#LayerMain{
+    width:150px;
+    height: 796px;
+    background-color: #323232;
+    padding-bottom: 2px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.layer{
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #bababa;
+/*    width: 98%;
+    height: 30px;*/
+    width: 150px;
+    height: 30px;
+    background-color:  #323232;
+    user-select: none;
+    cursor: pointer;
+    border-top: 1px solid black;
+    box-sizing: border-box;
+    /*margin: 1% 0 0 1%;*/
+}
+
+.layerIcon{
+    position: relative;
+    width: 12%;
+    height: 100%;
+}
+
+.layerName{
+    width: 62%;
+    height: 100%;
+    line-height: 30px;
+}
+
+.layerZButon{
+    width: 12%;
+    height: 100%;
+    opacity: 0.2;
+    position: relative;
+}
+
+.layer img{
+    width: 80%;
+    position: absolute;
+    left: 10%;
+    top: 30%;
+}
+
+.layer span{
+    padding-left: 10px;
+}
+
+#textEditBox{
+    display: none;
+}
+
+.AlignMain{
+    display: flex;
+    background-color: #323232;
+}
+
+.AlignBox{
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    text-align: center;
+    background-color: #323232;
+    position: relative;
+    cursor:pointer;
+}
+
+.AlignBox img{
+    left: 15%;
+    top: 15%;
+    width: 70%;
+    height: 70%;
+    text-align: center;
+    position: absolute;
+}
+
+.WorkSpaces{
+    left: 1530px;
+    top: 0;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    position: absolute;
+}
+
+.WorkView{
+    visibility: hidden;
+}
+
+.WorkSpaces_Header{
+    color: #bababa;
+    background-color: #323232;
+
+    height: 20px;
+    line-height: 20px;
+    border-bottom: solid 1px black;
+}
+
+.image-upload > input {
+    display: none;
+    cursor: pointer;
+}
+
+.image-upload > label {
+    cursor: pointer;
+}
+
+select{
+    width: 150px;
+    color: #bababa;
+    background-color: #323232;
+}
+
+
+/* Properties */
+
+.Properties{
+    color: #bababa;
+    background-color: #323232;
+}
+
+    .Properties_column{
+        display: flex;
+    }
+
+        .Properties_box{
+            display: flex;
+        }
+
+            .Properties_name{
+                width: 23px;
+                text-align: center;
+                line-height: 21px;
+            }
+
+            .Properties_input{
+                width: 50px;
+                height: 19px;
+                box-sizing: border-box;
+                background-color: #323232;
+                border:none;
+                border-bottom: 1px solid #666666;
+                color: #bababa;
+            }
+
+
+/* Start Window */
+#welcome_main{
+    top: 0;
+    left: 150px;
+    width: 1380px;
+    height: 820px;
+    font-family: sans-serif;
+    position: absolute;
+    background-color: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+    .welcome_window{
+        width: 500px;
+        position: absolute;
+        border-radius: 10px;
+        background-color: #262626;
+    }
+
+    .welcome_window hr{
+        border: 1px solid green;
+        border-radius: 5px;
+        color: beige;
+        width: 80%;
+    }
+
+        .welcome_windowTitle{
+            width: 100%;
+            padding: 15px 0 12px 10px;
+            font-size: 28px;
+            text-align: center;
+            color: #999999;
+        }
+
+        .welcome_file{
+            left: 2%;
+            max-height: 150px;
+            width: 96%;
+            border: 1px solid #3f3f3f;
+            font-size: 24px;
+            color: #999999;
+            position: relative;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+
+            #welcome_savedFileList{
+                width: 80%;
+                margin-left: 10%;
+                position: relative;
+                font-size: 24px;
+                color: #999999;
+                border-radius: 10px;
+                overflow-y: auto;
+            }
+
+        .welcome_fileBtn{
+            padding: 5px 0 5px 0;
+            height: 40px;
+            font-size: 18px;
+            color: #999999;
+            border-radius: 10px;
+            background-color: #373737;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            line-height: 40px;
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .welcome_fileIcon{
+            margin-left: 5px;
+        }
+
+        .welcome_fileBtn_Part{
+            display: flex;
+        }
+
+        .welcome_fileBtn_smallBtn{
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: black;
+            background-color: #252525;
+            text-align: center;
+            margin-right: 5px;
+        }
+
+            .welcome_fileBtn_smallBtn:hover{
+                background-color: #00796b;
+            }
+
+        .welcome_fileBtn_icon{
+            margin-top: 10%;
+            width: 80%;
+            height: 80%;
+        }
+
+        .fileList_Zip{
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: black;
+            background-color: #999999;
+        }
+
+        .welcome_fileBtn:hover{
+            background: #555;
+        }
+
+
+        .welcome_newFileContainer{
+            margin-left: 11%;
+            margin-bottom: 10%;
+            left: 10%;
+            width: 77%;
+            padding: 5px;
+            height: 54px;
+            font-size: 20px;
+            color: #999999;
+            border-radius: 10px;
+            background-color: #373737;
+            margin-top: 10px;
+            line-height: 40px;
+            box-sizing: border-box;
+            display: flex;
+            cursor: pointer;
+        }
+
+        .welcome_newFileContainer input{
+            width: 322px;
+            height: 40px;
+            border-radius: 4px;
+            border: 1px solid white;
+        }
+
+        .welcome_newFileContainer:hover{
+            background-color: #555;
+        }
+
+        #welcome_newFileBtn{
+            width: 44px;
+            height: 44px;
+            margin-left: 6px;
+            border-radius: 4px;
+            background-color: #252525;
+        }
+
+        #welcome_newFileBtn img{
+            width: 100%;
+            height: 100%;
+        }
+
+        #welcome_newFileBtn:hover{
+            background-color: #00796b;
+        }
+
+        #addFileInput{
+            font-size: 18px;
+        }
+
+        #addFileInput::placeholder {
+            color: silver;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+
+
+
+
+
+
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #bbb;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+
+.SR_container2{
+    top: 0;
+    left: 0;
+    width: 100%;
+    position: relative;
+}
+
+
+
+.X1_Box{
+    width: 150px;
+    height: 30px;
+    background-color: orange;
+    /*position: absolute;*/
+}
+
+
+.X2_Box{
+    width: 150px;
+    height: 30px;
+    background-color: silver;
+    /*position: absolute;*/
+}
+
+
+#scope_Scene{
+    left: 0;
+    top: 720px;
+    width: 1680px;
+    height: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #323232;
+    /*    position: absolute;*/
+    font-family: sans-serif;
+    color: #bababa;
+}
+
+.Scene_addContainer{
+    display: flex;
+}
+
+#Scene_addButon{
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    cursor:pointer;
+}
+
+#Slide_fileName{
+    margin: 0 5px 0 5px;
+}
+
+#SR_Scene_Main{
+    display: flex;
+}
+
+.SR_Scene_Container{
+    top: 0;
+    left: 0;
+    position: relative;
+    display: inline-flex;
+}
+
+.SR_Scene_Drag{
+    width: 30px;
+    height: 30px;
+    margin-left: 2px;
+    margin-top: 2px;
+    background-color: #666666;
+    border-radius: 5px;
+    text-align: center;
+    line-height: 30px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.SR_Scene_Drop{
+    width: 34px;
+    height: 34px;
+}
+
+
+

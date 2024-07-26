@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Etkinlik Arayüz</title>
+    <script src="/libs/jquery/dist/jquery.js"></script>
+    <script src="/libs/konva/konva.js"></script>
+
+    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/create.js"></script>
+    <script src="/assets/js/export.js"></script>
+    <script src="/assets/js/align.js"></script>
+    <script src="/assets/js/player.js"></script>
+    <script src="/assets/js/gsap.min.js"></script>
+    <script src="/assets/js/Draggable.min.js"></script>
+    <link rel="stylesheet" href="/assets/css/ide.css">
+</head>
+<body>
+
+<div id="scope_Canvas"></div>
+
+<div class="WorkSpaces WorkView" id="scope_LeftWorkSpace" style="left:0">
+    <div class="WorkSpaces_Header"> Layer </div>
+    <div id="LayerMain">
+        <div class="SR_container2"></div>
+    </div>
+</div>
+
+<div class="WorkSpaces WorkView" id="scope_RightWorkSpace">
+    <div class="WorkSpaces_Header"> Position And Size </div>
+
+    <div class="Properties">
+        <div class="Properties_column">
+            <div class="Properties_box">
+                <div class="Properties_name">W</div>
+                <input type="number" class="Properties_input" tabindex="3" id="Properties_Width">
+            </div>
+
+            <div class="Properties_box">
+                <div class="Properties_name">X</div>
+                <input type="number" class="Properties_input" tabindex="1" id="Properties_Left">
+            </div>
+        </div>
+
+        <div class="Properties_column">
+            <div class="Properties_box">
+                <div class="Properties_name">H</div>
+                <input type="number" class="Properties_input" tabindex="4" id="Properties_Height">
+            </div>
+
+            <div class="Properties_box">
+                <div class="Properties_name">Y</div>
+                <input type="number" class="Properties_input" tabindex="2" id="Properties_Top">
+            </div>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Header"> Add Object</div>
+    <div class="AlignMain">
+        <div class="AlignBox" id="CreateSelect"><img src="assets/img/CreateSelect.svg"></div>
+        <div class="AlignBox image-upload">
+            <form id="uploadImageForm" enctype="multipart/form-data">
+                <label for="file_input" style="cursor: pointer">
+                    <img src="assets/img/CreateImage.svg"/>
+                </label>
+
+                <input style="display: none" id="file_input" name="uploadImage" type="file" multiple/>
+            </form>
+        </div>
+
+        <div class="AlignBox"  id="CreateText"><img src="assets/img/CreateText.svg"></div>
+    </div>
+    <div class="WorkSpaces_Header"> Align Object</div>
+    <div class="AlignMain">
+        <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
+        <div class="AlignBox" id="align_HorizontalCenter"><img src="assets/img/centerY.svg"></div>
+        <div class="AlignBox" id="align_Right"><img src="assets/img/rightY.svg"></div>
+    </div>
+    <div class="AlignMain">
+        <div class="AlignBox" id="align_Top"><img src="assets/img/upX.svg"></div>
+        <div class="AlignBox" id="align_VerticalCenter"><img src="assets/img/centerX.svg"></div>
+        <div class="AlignBox" id="align_Bottom"><img src="assets/img/downX.svg"></div>
+    </div>
+    <div class="AlignMain">
+        <div class="AlignBox" id="align_SpaceHorizontal"><img src="assets/img/spaceX.svg"></div>
+        <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
+        <div class="AlignBox" id="align_CenterStage"><img src="assets/img/stageCenter.svg"></div>
+    </div>
+
+    <div class="WorkSpaces_Header"> Preview </div>
+    <div class="AlignMain" style="width: 150px">
+        <div class="AlignBox" id="export"><img src="assets/img/ExportActivity.svg"></div>
+        <div class="AlignBox" id="save"><img src="assets/img/save.png"></div>
+    </div>
+    <div class="WorkSpaces_Header"> Right Answer </div>
+
+    <select id="rightAnswer" tabindex="5"></select>
+
+    <div class="AlignMain" style="width: 150px; height: 403px"></div>
+</div>
+
+<div id="welcome_main">
+    <div class="welcome_window">
+        <div class="welcome_windowTitle">Okulistik Content Creater</div>
+        <div class="welcome_file">
+            <div id="welcome_savedFileList">
+
+            </div>
+        </div>
+        <hr>
+        <div class="welcome_newFileContainer">
+            <input placeholder="Content Name" autocomplete="off" type="text" id="addFileInput">
+            <div class="addFileBtn" id="welcome_newFileBtn">
+                <img src="/assets/img/newFile.png" alt="">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="WorkView" id="scope_Scene">
+    <div class="Scene_addContainer">
+        <img id="Scene_addButon" src="assets/img/plus.png" alt="">
+        <div id="SR_Scene_Main">
+            <div class="SR_Scene_Container"></div>
+        </div>
+    </div>
+    <div id="Slide_fileName"></div>
+</div>
+
+<div class="previewMain">
+    <div id="previewContent">
+        <div id="previewClose">Preview Close</div>
+    </div>
+</div>
+
+
+<script>
+    var IDE = {
+        stage:{width: 1380, height: 820, container: "scope_Canvas"},
+        layer:{x:50, y:50, width:1280, height: 720},
+        text:{write: false, leftSpace: 150, topSpace: 0},
+        selectedLayers:[],
+        selected: false,
+        scope: "",
+        tranforming: false,
+        konvaEditLayer: null,
+        workSpace:{
+            scope_Canvas: document.querySelector("#scope_Canvas"),
+            scope_LeftWorkSpace: document.querySelector("#scope_LeftWorkSpace"),
+            scope_RightWorkSpace: document.querySelector("#scope_RightWorkSpace"),
+            scope_Scene: document.querySelector("#scope_Scene"),
+
+            previewMain: document.querySelector(".previewMain"),
+            previewClose: document.querySelector("#previewClose"),
+
+            leftInput: document.querySelector("#Properties_Left"),
+            topInput: document.querySelector("#Properties_Top"),
+            widthInput: document.querySelector("#Properties_Width"),
+            heightInput: document.querySelector("#Properties_Height"),
+
+            align_Left: document.querySelector("#align_Left"),
+            align_HorizontalCenter: document.querySelector("#align_HorizontalCenter"),
+            align_Right: document.querySelector("#align_Right"),
+
+            align_Top: document.querySelector("#align_Top"),
+            align_VerticalCenter: document.querySelector("#align_VerticalCenter"),
+            align_Bottom: document.querySelector("#align_Bottom"),
+
+            align_SpaceHorizontal: document.querySelector("#align_SpaceHorizontal"),
+            align_SpaceVertical: document.querySelector("#align_SpaceVertical"),
+            align_CenterStage: document.querySelector("#align_CenterStage"),
+
+            rightAnswer: document.querySelector("#rightAnswer"),
+            uploadImageForm: document.querySelector("#uploadImageForm")
+        },
+        welcome:{
+            main: document.querySelector("#welcome_main"),
+            savedFileList: document.querySelector("#welcome_savedFileList"),
+            newFileBtn: document.querySelector("#welcome_newFileBtn"),
+            addFileInput: document.querySelector("#addFileInput")
+        },
+        player: null
+    }
+
+    var stage = new Konva.Stage(IDE.stage);
+    var KonvaLayer = new Konva.Layer(IDE.layer);
+    stage.add(KonvaLayer);
+
+    var CREATE = new CREATE();
+    var EXPORT = new EXPORT();
+    var utils = new utils();
+    var ALIGN = new ALIGN();
+    var Player;
+    var Layers = [];
+    var sceneIndex=-1;
+
+    var jsonV2 = {
+        fileName: "",
+        createTime: "",
+        slides: []
+    };
+
+    function sceneTemplate(){
+        return {
+            type: "MC_Single",
+            rightAnswer: null,
+            scene: {},
+            all: [],
+            stage: {},
+            img: [],
+            check: [],
+            text: []
+        }
+    }
+
+    var SELECT = new Konva.Transformer({
+        flipEnabled: false,
+        rotateEnabled: false,
+        keepRatio: true,
+        enabledAnchors: ['bottom-right']
+    });
+
+
+    var changeSelect = {
+        objectText: function(tr){
+            tr.enabledAnchors(["middle-right"]);
+            tr.boundBoxFunc(function (oldBox, newBox) {
+                newBox.width = Math.max(30, newBox.width);
+                return newBox;
+            });
+        },
+
+        objectMovieClip: function (tr){
+            tr.enabledAnchors(["bottom-right"]);
+            tr.boundBoxFunc(null);
+        },
+
+        objectImg: function (tr){
+            tr.enabledAnchors(["bottom-right"]);
+            tr.boundBoxFunc(null);
+        },
+
+        multi: function (tr){
+            tr.enabledAnchors([]);
+            tr.boundBoxFunc(null);
+        }
+    }
+
+    SELECT.on("transformstart transform", function(){
+        IDE.tranforming = true;
+    })
+
+    SELECT.on("transformend", function(){
+        IDE.tranforming = false;
+    })
+
+    KonvaLayer.add(SELECT);
+
+    function selectItem(temp){
+        IDE.selected = true;
+
+        if(temp.shiftKey){
+            IDE.selectedLayers.push(temp.layer);
+            changeSelect["multi"](SELECT);
+        }else{
+            if(!IDE.selectedLayers.length){
+                IDE.selectedLayers = [temp.layer];
+                changeSelect[ temp.layer.Layer.type ](SELECT);
+            }
+        }
+
+        SELECT.nodes(IDE.selectedLayers).moveToTop();
+
+        getProp();
+        layerBackgroundColor();
+    }
+
+    var layerBackgroundColor = function(){
+        Layers.forEach(function(tempLayer, i){
+            tempLayer.Layer.main.style.backgroundColor = "#323232";
+        });
+
+        IDE.selectedLayers.map(function(tempLayer){
+            tempLayer.Layer.main.style.backgroundColor = "#35618f";
+        });
+    }
+
+    function deSelect(){
+        IDE.selectedLayers = [];
+        layerBackgroundColor();
+        SELECT.nodes(IDE.selectedLayers);
+        getProp();
+    }
+
+    /* Layer Tüm Objeleri Silme */
+    function layerDeleteAll(){
+        LayerSR.resetSystem();
+        Layers.map(function(i){
+            i.destroy();
+        });
+
+        Layers = [];
+        deSelect();
+        console.log("DELETE: All Layers");
+    }
+
+    function addObjects(kids, container, addLayer){
+        kids.map(function(e){
+            var layer = { ...e.Layer };
+            delete e.Layer;
+
+            if(layer.type === "objectRect"){
+                CREATE.rectFNC({
+                    properties: e,
+                    container: container,
+                    layer: layer
+                });
+            }else if(layer.type === "objectCircle"){
+                CREATE.circlesFNC({
+                    properties: e,
+                    container: container,
+                    layer: layer
+                });
+            }else if(layer.type === "objectImg"){
+                CREATE.imgFNC({
+                    properties: e,
+                    container: container,
+                    layer: layer,
+                    uploadImg: null
+                });
+            }else if(layer.type === "objectText"){
+                CREATE.textFNC({
+                    properties: e,
+                    container: container,
+                    layer: layer,
+                    addLayer: addLayer
+                });
+            }else if(layer.type === "objectMovieClip"){
+                var movieClip = CREATE.movieClipFNC({
+                    properties: e,
+                    container: container,
+                    layer: layer
+                });
+
+                addObjects(e.Kids, movieClip, false);
+                Arayuz_addLayer(movieClip);
+            }
+        });
+    }
+
+    document.querySelector("#Slide_fileName").addEventListener("click", function(){
+        CREATE.rectFNC({
+            properties:{
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 720,
+                fill: "green",
+            },
+            layer: {type:"objectRect", name:"stage"},
+            container: KonvaLayer
+        });
+    });
+
+    /* Sahne Seçme */
+    function sceneSelect(request, saveData){
+        console.log("sceneSelect:", request, saveData);
+        try{
+            if(saveData){
+                EXPORT.convertJson();
+                console.log("SELECT SCENE: Current", sceneIndex, "Request:", request, "Save:","[OK]");
+            }
+        }catch (err){
+            console.log("SELECT SCENE: Current", sceneIndex, "Request:", request, "Save:","[FAIL]");
+        }
+
+        sceneIndex = request;
+        layerDeleteAll();
+        addObjects(jsonV2.slides[sceneIndex].all, KonvaLayer, true);
+
+        document.querySelectorAll(".SR_Scene_Drag").forEach(function(btn){
+            btn.style.backgroundColor = "#666666";
+        });
+
+        document.querySelector("#"+jsonV2.slides[request].name).style.backgroundColor = "darkgreen";
+
+        IDE.welcome.main.style.display = "none";
+        document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
+        WorkspaceShow();
+    }
+
+    /* Yeni Sahne Ekleme */
+    function sceneAddNewScene(saveData){
+        jsonV2.slides.push(sceneTemplate());
+        var lastIndex = (jsonV2.slides.length-1);
+        sceneAddNavigationBtn(lastIndex);
+        sceneSelect(lastIndex, saveData);
+    }
+
+    /* Sahne Silme */
+    function sceneDelete(List){
+        jsonV2.slides.splice(sceneIndex, 1);
+
+        List.map(function(order, index){
+            jsonV2.slides[index].sceneID = order;
+            jsonV2.slides[index].id = index;
+        });
+
+        console.log("DELETE: Scene", sceneIndex);
+        if(jsonV2.slides.length){
+            sceneSelect(0, false);
+        }else{
+            sceneAddNewScene(false);
+        }
+    }
+
+    /* Sahne Sıralama Değiştirme */
+    function sceneChangeSort(list){
+        var slidesClone = jsonV2.slides.slice();
+
+        function getSceneData(sceneID){
+            for(var i=0; i<slidesClone.length; i++){
+                if(sceneID === slidesClone[i].sceneID){
+                    return slidesClone[i];
+                }
+            }
+        }
+
+        list.map(function(sceneID, i){
+            jsonV2.slides[i] = getSceneData(sceneID);
+        });
+
+        for(var i=0; i<jsonV2.slides.length; i++){
+            if(jsonV2.slides[i].id === sceneIndex){
+                console.log(sceneIndex, "bulundu index değiştirilecek", i);
+                sceneIndex = i;
+                break;
+            }
+        }
+
+        jsonV2.slides.map(function(scene, i){
+            scene.id = i;
+        });
+    }
+
+    /* Sahne Navigasyon Buton Ekleme */
+    function sceneAddNavigationBtn(id, name){
+        console.log(id,name);
+        if(!name){name="s"+id}
+        jsonV2.slides[id].id = id;
+        jsonV2.slides[id].sceneID = id;
+        jsonV2.slides[id].name = name;
+
+        SceneSR.clicked(`<div class="SR_Scene_Drag" id="${name}">${name}</div>`);
+
+        document.querySelector("#"+name).addEventListener("click", function(e){
+            jsonV2.slides.map(function(scene){
+                if(scene.name === e.currentTarget.id){
+                    sceneSelect(scene.id, true);
+                }
+            })
+        });
+    }
+
+    /* File System */
+    function addSavedFileBtn(filename, data){
+        let html = `<div class="welcome_fileBtn_Part">
+                        <img class="welcome_fileIcon" src="/assets/img/editFile.png" alt="file">
+                        <div>${filename}</div>
+                    </div>
+                    <div class="welcome_fileBtn_Part">
+                        <div id="z_${filename}" class="welcome_fileBtn_smallBtn">
+                            <img class="welcome_fileBtn_icon" src="/assets/img/zip.png" alt="file">
+                        </div>
+                        <div id="d_${filename}" class="welcome_fileBtn_smallBtn">
+                            <img class="welcome_fileBtn_icon" src="/assets/img/delete.png" alt="file">
+                        </div>
+                    </div>`;
+        let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
+        IDE.welcome.savedFileList.appendChild(div);
+
+        document.querySelector("#f_"+ filename).addEventListener("click", function(e){
+            selectFileAjax(filename);
+        });
+
+        document.querySelector("#z_"+ filename).addEventListener("click", function(e){
+            zipContentAjax(filename);
+            e.stopPropagation();
+        });
+
+        document.querySelector("#d_"+ filename).addEventListener("click", function(e){
+            deleteContentAjax(filename);
+            e.stopPropagation();
+        });
+    }
+
+
+
+    /* Ajax */
+    function newFileAjax(json){
+        var data = {data: JSON.stringify(json)};
+        $.ajax({url: "/createNewFile", data, success: newFileParse, type: "POST", error: ajaxError});
+    }
+
+    function newFileParse(data){
+        console.log(data);
+        sceneAddNewScene(true);
+    }
+
+    function selectFileAjax(file){
+        var data = {file};
+        $.ajax({url: "/selectFile", data, success: selectFileParse, type: "POST", error: ajaxError});
+    }
+
+    function selectFileParse(data){
+        console.log("Select", data);
+        jsonV2 = data.files.data;
+
+        if(jsonV2.slides.length){
+            jsonV2.slides.map(function(o, i){
+                sceneAddNavigationBtn(i, o.name);
+            });
+
+            sceneSelect(0, true);
+        }else{
+            sceneAddNewScene(true);
+        }
+    }
+
+    function saveDataAjax(json){
+        var data = {data: JSON.stringify(json)};
+        $.ajax({url: "/saveData", data, success: saveDataParse, type: "POST", error: ajaxError});
+    }
+
+    function saveDataParse(data){
+        console.log("saveDataParse", data);
+    }
+
+    function deleteContentAjax(file){
+        var data = {file};
+        console.log(data);
+        $.ajax({url: "/deleteFile", data, success: deleteContentParse, type: "POST", error: ajaxError});
+    }
+
+    function deleteContentParse(data){
+        console.log("deleted Content Parse:", data);
+        getFileListParse(data);
+    }
+
+    function zipContentAjax(file){
+        var data = {file};
+        $.ajax({url: "/getZip", data, success: zipContentParse, type: "POST", error: ajaxError});
+    }
+
+    function zipContentParse(data){
+        var path = "/files/"+ data.files.activeFile +".zip";
+        fetch(path)
+            .then(function (resp) {
+                if(resp.ok){
+                    return resp.blob()
+                }
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = data.files.activeFile+".zip";
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                console.log("your file has downloaded!");
+            })
+            .catch(() => alert("zip dosyası oluşturulurken hata oluştu!"));
+    }
+
+    function uploadImageAjax(data){
+        $.ajax({url: "/uploadImage", data, success: uploadImageParse, type:"POST", contentType: false, cache:false, processData: false, error: ajaxError});
+    }
+
+    function uploadImageParse(data){
+        data.map(function(e, i){
+            CREATE.imgFNC({
+                properties:{
+                    x: i*75,
+                    y: i*75,
+                    scale: {x: 1, y: 1},
+                    src: e.path.substring(e.path.indexOf("/files"), e.path.length),
+                    draggable: true
+                },
+                container: KonvaLayer,
+                layer:{
+                    name: e.filename,
+                    type:"objectImg"
+                }
+            });
+
+        });
+    }
+
+    function ajaxError(e){console.log(e)}
+
+
+    function getFileListParse(data){
+        var saveList = [];
+
+        for(var p in data.fileList.data){
+            saveList.push({fileName: p, createTime: data.fileList.data[p].create});
+        }
+
+        saveList.sort(function(a,b){
+            return new Date(b.createTime) - new Date(a.createTime);
+        });
+
+        IDE.welcome.savedFileList.innerHTML="";
+
+        saveList.map(function(data){
+            addSavedFileBtn(data.fileName);
+        });
+
+        document.querySelector("#Scene_addButon").addEventListener("click", function(){
+            sceneAddNewScene(true);
+        });
+    }
+
+    $.ajax({url: "/getFileList", success: getFileListParse, type: "POST", error: ajaxError});
+</script>
+<!--<div id="textEditBox" contenteditable="true">gg</div>-->
+
+<script src="/assets/js/sr.js"></script>
+<script src="/assets/js/ide.js"></script>
+</body>
+</html>
