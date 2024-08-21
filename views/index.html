@@ -14,12 +14,13 @@
     <script src="/assets/js/gsap.min.js"></script>
     <script src="/assets/js/Draggable.min.js"></script>
     <link rel="stylesheet" href="/assets/css/ide.css">
+    <link rel="stylesheet" href="/assets/css/player.css">
 </head>
 <body>
-
+<div></div>
 <div id="scope_Canvas"></div>
 
-<div class="WorkSpaces WorkView" id="scope_LeftWorkSpace" style="left:0">
+<div class="WorkSpaces WorkView WorkSpace_Layer" id="scope_LeftWorkSpace" style="left:0; border-right:2px solid">
     <div class="WorkSpaces_Header"> Layer </div>
     <div id="LayerMain">
         <div class="SR_container2"></div>
@@ -27,76 +28,113 @@
 </div>
 
 <div class="WorkSpaces WorkView" id="scope_RightWorkSpace">
-    <div class="WorkSpaces_Header"> Position And Size </div>
 
-    <div class="Properties">
-        <div class="Properties_column">
-            <div class="Properties_box">
-                <div class="Properties_name">W</div>
-                <input type="number" class="Properties_input" tabindex="3" id="Properties_Width">
+    <div class="WorkSpaces_Group">
+        <div class="WorkSpaces_Header">&#8627; Position And Size </div>
+        <div class="Properties">
+            <div class="Properties_column">
+                <div class="Properties_box">
+                    <div class="Properties_name">W</div>
+                    <input type="number" class="Properties_input" tabindex="3" id="Properties_Width">
+                </div>
+
+                <div class="Properties_box">
+                    <div class="Properties_name">X</div>
+                    <input type="number" class="Properties_input" tabindex="1" id="Properties_Left">
+                </div>
             </div>
 
-            <div class="Properties_box">
-                <div class="Properties_name">X</div>
-                <input type="number" class="Properties_input" tabindex="1" id="Properties_Left">
+            <div class="Properties_column">
+                <div class="Properties_box">
+                    <div class="Properties_name">H</div>
+                    <input type="number" class="Properties_input" tabindex="4" id="Properties_Height">
+                </div>
+
+                <div class="Properties_box addSpace">
+                    <div class="Properties_name">Y</div>
+                    <input type="number" class="Properties_input" tabindex="2" id="Properties_Top">
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="Properties_column">
+    <div class="WorkSpaces_Group">
+        <div class="WorkSpaces_Topic">&#8627; Scale</div>
+        <div class="Properties_column addSpace">
             <div class="Properties_box">
-                <div class="Properties_name">H</div>
-                <input type="number" class="Properties_input" tabindex="4" id="Properties_Height">
-            </div>
-
-            <div class="Properties_box">
-                <div class="Properties_name">Y</div>
-                <input type="number" class="Properties_input" tabindex="2" id="Properties_Top">
+                <div class="Properties_name">%</div>
+                <input style="width: 123px" type="number" class="Properties_input" id="Properties_ScaleW" tabindex="5">
             </div>
         </div>
     </div>
 
-    <div class="WorkSpaces_Header"> Add Object</div>
-    <div class="AlignMain">
-        <div class="AlignBox" id="CreateSelect"><img src="assets/img/CreateSelect.svg"></div>
-        <div class="AlignBox image-upload">
-            <form id="uploadImageForm" enctype="multipart/form-data">
-                <label for="file_input" style="cursor: pointer">
-                    <img src="assets/img/CreateImage.svg"/>
-                </label>
+    <div class="WorkSpaces_Group">
+        <div class="WorkSpaces_Header">&#8627; Add Object</div>
+        <div class="AlignMain">
+            <div class="AlignBox" id="createRect"><img src="assets/img/createSquare.png"></div>
+            <div class="AlignBox image-upload">
+                <form id="uploadImageForm" enctype="multipart/form-data">
+                    <label for="file_input" style="cursor: pointer">
+                        <img src="assets/img/createImage.png"/>
+                    </label>
 
-                <input style="display: none" id="file_input" name="uploadImage" type="file" multiple/>
-            </form>
+                    <input style="display: none" id="file_input" name="uploadImage" type="file" multiple/>
+                </form>
+            </div>
+
+            <div class="AlignBox" id="createText"><img src="assets/img/createText.png"></div>
         </div>
-
-        <div class="AlignBox"  id="CreateText"><img src="assets/img/CreateText.svg"></div>
-    </div>
-    <div class="WorkSpaces_Header"> Align Object</div>
-    <div class="AlignMain">
-        <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
-        <div class="AlignBox" id="align_HorizontalCenter"><img src="assets/img/centerY.svg"></div>
-        <div class="AlignBox" id="align_Right"><img src="assets/img/rightY.svg"></div>
-    </div>
-    <div class="AlignMain">
-        <div class="AlignBox" id="align_Top"><img src="assets/img/upX.svg"></div>
-        <div class="AlignBox" id="align_VerticalCenter"><img src="assets/img/centerX.svg"></div>
-        <div class="AlignBox" id="align_Bottom"><img src="assets/img/downX.svg"></div>
-    </div>
-    <div class="AlignMain">
-        <div class="AlignBox" id="align_SpaceHorizontal"><img src="assets/img/spaceX.svg"></div>
-        <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
-        <div class="AlignBox" id="align_CenterStage"><img src="assets/img/stageCenter.svg"></div>
     </div>
 
-    <div class="WorkSpaces_Header"> Preview </div>
-    <div class="AlignMain" style="width: 150px">
-        <div class="AlignBox" id="export"><img src="assets/img/ExportActivity.svg"></div>
-        <div class="AlignBox" id="save"><img src="assets/img/save.png"></div>
+    <div class="WorkSpaces_Group">
+        <div class="WorkSpaces_Header">&#8627; Align Object</div>
+        <div class="AlignMain">
+            <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
+            <div class="AlignBox" id="align_HorizontalCenter"><img src="assets/img/centerY.svg"></div>
+            <div class="AlignBox" id="align_Right"><img src="assets/img/rightY.svg"></div>
+        </div>
+        <div class="AlignMain">
+            <div class="AlignBox" id="align_Top"><img src="assets/img/upX.svg"></div>
+            <div class="AlignBox" id="align_VerticalCenter"><img src="assets/img/centerX.svg"></div>
+            <div class="AlignBox" id="align_Bottom"><img src="assets/img/downX.svg"></div>
+        </div>
+        <div class="AlignMain">
+            <div class="AlignBox" id="align_SpaceHorizontal"><img src="assets/img/spaceX.svg"></div>
+            <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
+            <div class="AlignBox" id="align_CenterStage"><img src="assets/img/stageCenter.svg"></div>
+        </div>
     </div>
-    <div class="WorkSpaces_Header"> Right Answer </div>
 
-    <select id="rightAnswer" tabindex="5"></select>
+    <div class="WorkSpaces_Group WorkSpace_Preview">
+        <div class="WorkSpaces_Header">&#8627; Preview</div>
+        <div class="AlignMain" style="width: 150px">
+            <div class="AlignBox" id="save"><img src="assets/img/save.png"></div>
+            <div class="AlignBox" id="export"><img src="assets/img/preview.png"></div>
+        </div>
+    </div>
 
-    <div class="AlignMain" style="width: 150px; height: 403px"></div>
+    <div class="WorkSpaces_Group addSpace WorkSpace_SpecialObjects">
+        <div class="WorkSpaces_Header">&#8627; Content Objects </div>
+        <div class="AlignMain">
+            <div class="AlignBox" id="createSelect"><img src="assets/img/createSelect.png"></div>
+            <div class="AlignBox" id="createPopup"><img src="assets/img/createPopup.png"></div>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Group addSpace WorkSpace_RightAnswer">
+        <div class="WorkSpaces_Header">&#8627; Right Answer </div>
+        <div class="WorkSpaces_SelectContainer">
+            <select id="rightAnswer" tabindex="5"></select>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Group addSpace">
+        <div class="WorkSpaces_Header">&#8627; Color Picker</div>
+        <input type="color" id="colorPicker" name="head" value="#ff0000" />
+    </div>
+
+    <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
+    <div id="omg2" style="width:50px; height:50px;background-color: darkred"></div>
 </div>
 
 <div id="welcome_main">
@@ -117,7 +155,7 @@
     </div>
 </div>
 
-<div class="WorkView" id="scope_Scene">
+<div class="WorkView WorkSpace_Scene" id="scope_Scene">
     <div class="Scene_addContainer">
         <img id="Scene_addButon" src="assets/img/plus.png" alt="">
         <div id="SR_Scene_Main">
@@ -130,20 +168,27 @@
 <div class="previewMain">
     <div id="previewContent">
         <div id="previewClose">Preview Close</div>
+        <div id="Player_Container"></div>
     </div>
 </div>
 
 
 <script>
     var IDE = {
-        stage:{width: 1380, height: 820, container: "scope_Canvas"},
+        stage:{width: 1380, height: 820, container: "scope_Canvas", bg:"#404040"},
         layer:{x:50, y:50, width:1280, height: 720},
         text:{write: false, leftSpace: 150, topSpace: 0},
+        activeLayer: null,
         selectedLayers:[],
         selected: false,
         scope: "",
+        propValues:{},
         tranforming: false,
-        konvaEditLayer: null,
+        sceneLayer: null,
+        editLayer: null,
+        sceneSelect: null,
+        editSelect: null,
+        copy: null,
         workSpace:{
             scope_Canvas: document.querySelector("#scope_Canvas"),
             scope_LeftWorkSpace: document.querySelector("#scope_LeftWorkSpace"),
@@ -152,11 +197,21 @@
 
             previewMain: document.querySelector(".previewMain"),
             previewClose: document.querySelector("#previewClose"),
+            playerContainer: document.querySelector("#Player_Container"),
 
             leftInput: document.querySelector("#Properties_Left"),
             topInput: document.querySelector("#Properties_Top"),
             widthInput: document.querySelector("#Properties_Width"),
             heightInput: document.querySelector("#Properties_Height"),
+            scaleWInput: document.querySelector("#Properties_ScaleW"),
+            scaleHInput: document.querySelector("#Properties_ScaleH"),
+
+            createText: document.querySelector("#createText"),
+            createRect: document.querySelector("#createRect"),
+            createSelect: document.querySelector("#createSelect"),
+            createPopup: document.querySelector("#createPopup"),
+            uploadImageForm: document.querySelector("#uploadImageForm"),
+            colorPicker: document.querySelector("#colorPicker"),
 
             align_Left: document.querySelector("#align_Left"),
             align_HorizontalCenter: document.querySelector("#align_HorizontalCenter"),
@@ -171,7 +226,11 @@
             align_CenterStage: document.querySelector("#align_CenterStage"),
 
             rightAnswer: document.querySelector("#rightAnswer"),
-            uploadImageForm: document.querySelector("#uploadImageForm")
+            WorkSpace_Layer: document.querySelector(".WorkSpace_Layer"),
+            WorkSpace_SpecialObjects: document.querySelector(".WorkSpace_SpecialObjects"),
+            WorkSpace_RightAnswer: document.querySelector(".WorkSpace_RightAnswer"),
+            WorkSpace_Scene: document.querySelector(".WorkSpace_Scene"),
+            WorkSpace_Preview: document.querySelector(".WorkSpace_Preview")
         },
         welcome:{
             main: document.querySelector("#welcome_main"),
@@ -183,8 +242,47 @@
     }
 
     var stage = new Konva.Stage(IDE.stage);
-    var KonvaLayer = new Konva.Layer(IDE.layer);
-    stage.add(KonvaLayer);
+    IDE.sceneLayer = new Konva.Layer(IDE.layer);
+    IDE.editLayer = new Konva.Layer(IDE.layer);
+    var Ruler = new Konva.Layer({width: 1380, height: 820});
+    var KonvaBG = new Konva.Layer(IDE.layer);
+    IDE.sceneLayer.attrs.layer = "main";
+    stage.add(Ruler);
+    stage.add(KonvaBG);
+    stage.add(IDE.sceneLayer);
+    stage.add(IDE.editLayer);
+
+    IDE.editSelect = getSELECT();
+    IDE.sceneSelect = getSELECT();
+    IDE.editLayer.add(IDE.editSelect);
+    IDE.sceneLayer.add(IDE.sceneSelect);
+    var SELECT = IDE.sceneSelect;
+    IDE.activeLayer = IDE.sceneLayer;
+
+    IDE.editBG = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: 1280,
+        height: 720,
+        fill: "rgba(0, 120, 0, 0.5)",
+        draggable: false
+    });
+    IDE.editLayer.add(IDE.editBG).x(1280);
+
+    var imageObj = new Image();
+    imageObj.onload = function () {
+        var yoda = new Konva.Image({
+            x: 0,
+            y: 0,
+            image: imageObj,
+            width: 1380,
+            height: 820,
+        });
+
+        Ruler.add(yoda);
+    };
+    imageObj.src = '/assets/img/rulers.png';
+
 
     var CREATE = new CREATE();
     var EXPORT = new EXPORT();
@@ -202,7 +300,7 @@
 
     function sceneTemplate(){
         return {
-            type: "MC_Single",
+            type: "KT_MC_Single",
             rightAnswer: null,
             scene: {},
             all: [],
@@ -213,13 +311,24 @@
         }
     }
 
-    var SELECT = new Konva.Transformer({
-        flipEnabled: false,
-        rotateEnabled: false,
-        keepRatio: true,
-        enabledAnchors: ['bottom-right']
-    });
+    function getSELECT(){
+        var tempSelect = new Konva.Transformer({
+            flipEnabled: false,
+            rotateEnabled: false,
+            keepRatio: true,
+            enabledAnchors: ['bottom-right']
+        });
 
+        tempSelect.on("transformstart transform", function(){
+            IDE.tranforming = true;
+        });
+
+        tempSelect.on("transformend", function(){
+            IDE.tranforming = false;
+        });
+
+       return tempSelect;
+    }
 
     var changeSelect = {
         objectText: function(tr){
@@ -240,21 +349,16 @@
             tr.boundBoxFunc(null);
         },
 
+        objectRect: function (tr){
+            tr.enabledAnchors(["bottom-right"]);
+            tr.boundBoxFunc(null);
+        },
+
         multi: function (tr){
             tr.enabledAnchors([]);
             tr.boundBoxFunc(null);
         }
     }
-
-    SELECT.on("transformstart transform", function(){
-        IDE.tranforming = true;
-    })
-
-    SELECT.on("transformend", function(){
-        IDE.tranforming = false;
-    })
-
-    KonvaLayer.add(SELECT);
 
     function selectItem(temp){
         IDE.selected = true;
@@ -266,13 +370,28 @@
             if(!IDE.selectedLayers.length){
                 IDE.selectedLayers = [temp.layer];
                 changeSelect[ temp.layer.Layer.type ](SELECT);
+                //colorPicker(false);
             }
         }
 
         SELECT.nodes(IDE.selectedLayers).moveToTop();
+        //Aktif et
+        // layerBackgroundColor();
+    }
 
-        getProp();
-        layerBackgroundColor();
+    function colorPicker(set){
+        if(IDE.selectedLayers.length){
+            var currentType = IDE.selectedLayers[0].Layer.type;
+            if(set){
+                if(currentType==="objectText" || currentType==="objectRect"){
+                    IDE.selectedLayers[0].fill(IDE.workSpace.colorPicker.value);
+                }
+            }else{
+                if(currentType==="objectText" || currentType==="objectRect"){
+                    IDE.workSpace.colorPicker.value = IDE.selectedLayers[0].fill();
+                }
+            }
+        }
     }
 
     var layerBackgroundColor = function(){
@@ -289,7 +408,7 @@
         IDE.selectedLayers = [];
         layerBackgroundColor();
         SELECT.nodes(IDE.selectedLayers);
-        getProp();
+        getProp(false);
     }
 
     /* Layer Tüm Objeleri Silme */
@@ -308,18 +427,19 @@
         kids.map(function(e){
             var layer = { ...e.Layer };
             delete e.Layer;
-
             if(layer.type === "objectRect"){
                 CREATE.rectFNC({
                     properties: e,
                     container: container,
-                    layer: layer
+                    layer: layer,
+                    addLayer: addLayer
                 });
             }else if(layer.type === "objectCircle"){
                 CREATE.circlesFNC({
                     properties: e,
                     container: container,
-                    layer: layer
+                    layer: layer,
+                    addLayer: addLayer
                 });
             }else if(layer.type === "objectImg"){
                 CREATE.imgFNC({
@@ -342,25 +462,13 @@
                     layer: layer
                 });
 
+                console.log(movieClip);
                 addObjects(e.Kids, movieClip, false);
-                Arayuz_addLayer(movieClip);
+                Arayuz_addLayer(movieClip, container);
             }
         });
     }
 
-    document.querySelector("#Slide_fileName").addEventListener("click", function(){
-        CREATE.rectFNC({
-            properties:{
-                x: 0,
-                y: 0,
-                width: 1280,
-                height: 720,
-                fill: "green",
-            },
-            layer: {type:"objectRect", name:"stage"},
-            container: KonvaLayer
-        });
-    });
 
     /* Sahne Seçme */
     function sceneSelect(request, saveData){
@@ -376,7 +484,9 @@
 
         sceneIndex = request;
         layerDeleteAll();
-        addObjects(jsonV2.slides[sceneIndex].all, KonvaLayer, true);
+        addObjects(jsonV2.slides[sceneIndex].all, IDE.sceneLayer, true);
+        addHistory();
+        importTypeSettings()
 
         document.querySelectorAll(".SR_Scene_Drag").forEach(function(btn){
             btn.style.backgroundColor = "#666666";
@@ -389,11 +499,19 @@
         WorkspaceShow();
     }
 
+    function importTypeSettings(){
+        if(jsonV2.slides[sceneIndex].type === "KT_MC_Single"){
+            IDE.workSpace.rightAnswer.value = jsonV2.slides[sceneIndex].rightAnswer;
+        }
+    }
+
+
     /* Yeni Sahne Ekleme */
-    function sceneAddNewScene(saveData){
-        jsonV2.slides.push(sceneTemplate());
+    function sceneAddNewScene(saveData, template){
+        jsonV2.slides.push(template);
         var lastIndex = (jsonV2.slides.length-1);
         sceneAddNavigationBtn(lastIndex);
+        console.log(jsonV2.slides);
         sceneSelect(lastIndex, saveData);
     }
 
@@ -410,7 +528,7 @@
         if(jsonV2.slides.length){
             sceneSelect(0, false);
         }else{
-            sceneAddNewScene(false);
+            sceneAddNewScene(false, sceneTemplate());
         }
     }
 
@@ -445,7 +563,6 @@
 
     /* Sahne Navigasyon Buton Ekleme */
     function sceneAddNavigationBtn(id, name){
-        console.log(id,name);
         if(!name){name="s"+id}
         jsonV2.slides[id].id = id;
         jsonV2.slides[id].sceneID = id;
@@ -475,11 +592,15 @@
                         <div id="d_${filename}" class="welcome_fileBtn_smallBtn">
                             <img class="welcome_fileBtn_icon" src="/assets/img/delete.png" alt="file">
                         </div>
+                        <div id="p_${filename}" class="welcome_fileBtn_smallBtn">
+                            <img class="welcome_fileBtn_icon" src="/assets/img/preview.png" alt="file">
+                        </div>
                     </div>`;
         let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
         IDE.welcome.savedFileList.appendChild(div);
 
         document.querySelector("#f_"+ filename).addEventListener("click", function(e){
+            addStageBG();
             selectFileAjax(filename);
         });
 
@@ -489,12 +610,15 @@
         });
 
         document.querySelector("#d_"+ filename).addEventListener("click", function(e){
-            deleteContentAjax(filename);
+            deleteFolderAjax(filename);
+            e.stopPropagation();
+        });
+
+        document.querySelector("#p_"+ filename).addEventListener("click", function(e){
+            window.open("/player/?file="+ filename);
             e.stopPropagation();
         });
     }
-
-
 
     /* Ajax */
     function newFileAjax(json){
@@ -504,7 +628,7 @@
 
     function newFileParse(data){
         console.log(data);
-        sceneAddNewScene(true);
+        sceneAddNewScene(true, sceneTemplate());
     }
 
     function selectFileAjax(file){
@@ -523,7 +647,7 @@
 
             sceneSelect(0, true);
         }else{
-            sceneAddNewScene(true);
+            sceneAddNewScene(true, sceneTemplate());
         }
     }
 
@@ -536,15 +660,24 @@
         console.log("saveDataParse", data);
     }
 
-    function deleteContentAjax(file){
+    function deleteFolderAjax(file){
         var data = {file};
         console.log(data);
-        $.ajax({url: "/deleteFile", data, success: deleteContentParse, type: "POST", error: ajaxError});
+        $.ajax({url: "/deleteFolder", data, success: deleteFolderParse, type: "POST", error: ajaxError});
     }
 
-    function deleteContentParse(data){
+    function deleteFolderParse(data){
         console.log("deleted Content Parse:", data);
         getFileListParse(data);
+    }
+
+    function deleteFileAjax(file){
+        var data = {file};
+        $.ajax({url: "/deleteFile", data, success: deleteFileParse, type: "POST", error: ajaxError});
+    }
+
+    function deleteFileParse(data){
+        console.log("deleted File Parse:", data);
     }
 
     function zipContentAjax(file){
@@ -579,6 +712,8 @@
     }
 
     function uploadImageParse(data){
+
+        console.log( data );
         data.map(function(e, i){
             CREATE.imgFNC({
                 properties:{
@@ -586,9 +721,9 @@
                     y: i*75,
                     scale: {x: 1, y: 1},
                     src: e.path.substring(e.path.indexOf("/files"), e.path.length),
-                    draggable: true
+                    //draggable: true
                 },
-                container: KonvaLayer,
+                container: IDE.activeLayer,
                 layer:{
                     name: e.filename,
                     type:"objectImg"
@@ -602,6 +737,7 @@
 
 
     function getFileListParse(data){
+        console.log(data);
         var saveList = [];
 
         for(var p in data.fileList.data){
@@ -619,11 +755,19 @@
         });
 
         document.querySelector("#Scene_addButon").addEventListener("click", function(){
-            sceneAddNewScene(true);
+            sceneAddNewScene(true, sceneTemplate());
+        });
+    }
+
+    function addStageBG(){
+        CREATE.rectFNC({
+            properties:{x: 0, y: 0, width: 1280, height: 720, fill: IDE.stage.bg},
+            container: KonvaBG
         });
     }
 
     $.ajax({url: "/getFileList", success: getFileListParse, type: "POST", error: ajaxError});
+
 </script>
 <!--<div id="textEditBox" contenteditable="true">gg</div>-->
 

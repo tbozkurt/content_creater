@@ -12,6 +12,10 @@ function CREATE(){
         var rect = new Konva.Rect(O.properties);
         rect.Layer = O.layer;
         O.container.add(rect);
+
+        if(O.addLayer){
+            Arayuz_addLayer(rect, O.container);
+        }
     }
 
     //Create Img
@@ -22,9 +26,10 @@ function CREATE(){
 
         imageObj.onload = function(){
             theImg.image(imageObj);
-            Arayuz_addLayer(theImg);
+            //selectItem({layer: theImg});
         };
 
+        Arayuz_addLayer(theImg, O.container);
         O.container.add(theImg);
 
         if(O.uploadImg){
@@ -40,69 +45,8 @@ function CREATE(){
         text.Layer = O.layer;
         O.container.add( text );
 
-        function focusText() {
-            var range = document.createRange();
-            var select = window.getSelection();
-            var lastNodes = IDE.text.editBox.childNodes[IDE.text.editBox.childNodes.length-1];
-            range.setStart(lastNodes, lastNodes.length);
-            range.collapse(true);
-            select.removeAllRanges();
-            select.addRange(range);
-        }
-
-
-        text.on('dblclick dbltap', function(){
-            if(this.getParent().nodeType !== "Group"){
-                var textPosition = text.getAbsolutePosition();
-                IDE.text.write = true;
-                IDE.scope = "EditText";
-
-                var currentCSS = {
-                    left: textPosition.x + IDE.text.leftSpace +"px",
-                    top: textPosition.y + IDE.text.topSpace +"px",
-                    width: text.width(),
-                    height: text.height(),
-                    fontSize: 20+"px",
-                    fontFamily: "Arial",
-                    color: text.fill(),
-                    lineHeight: text.lineHeight(),
-                    position: "absolute",
-                    border: "none",
-                    resize: "none",
-                    overflow: "hidden",
-                    padding: 0,
-                    outline: "none",
-                    backgroundColor: "white",
-                    display: "inline-block"
-                }
-
-                let div = document.createElement('div');
-                div.contentEditable = "true";
-                div.id = "textEditBox";
-                document.body.appendChild(div);
-                IDE.text.editBox = document.querySelector("#textEditBox");
-                IDE.text.currentCanvas = text;
-
-                IDE.text.editBox.innerText = text.text();
-                Object.assign(IDE.text.editBox.style, currentCSS);
-
-                focusText();
-                text.hide();
-                deSelect();
-            }
-        });
-
-
-        text.on('transform', function (){
-            text.setAttrs({
-                width: text.width() * text.scaleX(),
-                scaleX: 1
-            });
-        });
-
-
         if(O.addLayer){
-            Arayuz_addLayer(text);
+            Arayuz_addLayer(text, O.container);
         }
     }
 
@@ -111,41 +55,11 @@ function CREATE(){
         mc.Layer = O.layer;
         O.container.add(mc);
 
-        mc.on('dblclick', function(){
-            OpenMovieClip(mc);
-        });
-
         return mc;
     }
 
-
-
     //Create Select
     this.CheckFNC = function(O){
-        var selectNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-        var count = 0;
-        var temp = [];
-
-        Layers.forEach(function(obj){
-            if(obj.Layer.name.includes("btn")){
-                var id = parseInt(obj.Layer.name.split("_")[1]);
-                temp[id] = id;
-            }
-        });
-
-        for(var i=0; i<temp.length; i++){
-            if(isNaN(temp[i])){
-                count=i;
-                break;
-            }else{
-                count++;
-            }
-        }
-
-        O.properties.x = (count * O.properties.width);
-        O.properties.y = (count * O.properties.height);
-        O.layer.name = "btn_"+count;
-        O.layer.elementID = "btn_"+count;
         var container = this.movieClipFNC(O);
 
         var kids = [{
@@ -158,7 +72,7 @@ function CREATE(){
             offsetY: -25,
             Layer:{type:"objectCircle", name: "bg"}
         },{
-            text: selectNames[count],
+            text: "btn",
             x: 0,
             y: 0,
             width: 50,
@@ -189,8 +103,73 @@ function CREATE(){
         }];
 
         addObjects(kids, container, false);
-        Arayuz_addLayer(container);
+        Arayuz_addLayer(container, O.container);
     }
 
-//12311710608462
+    this.checkKontrol = function(){
+        var selectNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+        IDE.workSpace.rightAnswer.innerHTML = "";
+        var count = -1;
+        IDE.activeLayer.getChildren().map(function(e){
+            if(e.Layer){
+                if(e.Layer.name.includes("selectButon")){
+                    count++;
+                    e.Layer.name = "selectButon_"+count;
+                    e.Layer.elementID = "selectButon_"+count;
+                    e.Layer.textInput.innerHTML = "selectButon_"+count;
+                    e.children.map(function(e){
+                        if(e.attrs.text){
+                            e.text(selectNames[count]);
+                        }
+                    });
+
+                    IDE.workSpace.rightAnswer.innerHTML += `<option value="${count}">${selectNames[count]}</option>`;
+                }
+            }
+        });
+    }
+
+
+    this.addSolutionPopup = function(O){
+        console.log(O.layer);
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 600,
+            height: 600,
+            cornerRadius: [10, 10, 10, 10],
+            fill: "white",
+            Layer:{type:"objectRect", name: "bg"}
+        },
+        {
+            x: 0,
+            y: 0,
+            width: 600,
+            height: 50,
+            fill: "silver",
+            cornerRadius: [10, 10, 0, 0],
+            Layer:{type:"objectRect", name: "bar"}
+        },
+        {
+            text: "Çözüm",
+            x: 10,
+            y: 10,
+            width: 100,
+            height: 30,
+            fontSize: 20,
+            fontFamily: "Nunito",
+            fill: "black",
+            verticalAlign: "middle",
+            padding: 0,
+            Layer:{type:"objectText", name: "text"}
+        }
+        ];
+
+        addObjects(kids, container, false);
+
+        console.log(kids);
+        console.log(container);
+        Arayuz_addLayer(container, O.container);
+    }
 }

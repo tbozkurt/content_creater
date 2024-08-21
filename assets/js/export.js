@@ -42,6 +42,8 @@ function EXPORT(){
     }
 
     this.convertImg = function(e){
+        console.log("B");
+        console.log(e.Layer);
         return Object.assign({
             src: e.attrs.src,
             Layer: e.Layer
@@ -56,6 +58,7 @@ function EXPORT(){
     }
 
     this.addKids = function(container){
+        console.log(container);
         var This=this;
         var tempFinal=[];
         var final=[];
@@ -86,9 +89,18 @@ function EXPORT(){
         return final;
     }
 
+    this.exportTypeSettings = function(json){
+        if(json.type === "KT_MC_Single"){
+            json.rightAnswer = parseInt(IDE.workSpace.rightAnswer.value);
+        }
+    }
+
 
     this.convertJson = function(){
-        jsonV2.slides[sceneIndex].all = this.addKids(KonvaLayer);
+        this.exportTypeSettings(jsonV2.slides[sceneIndex]);
+        var allObject = this.addKids(IDE.sceneLayer);
+        jsonV2.slides[sceneIndex].all = allObject;
+        console.log(allObject);
         console.log("UYARI: Sahne", sceneIndex,"JSON Güncellendi.", jsonV2);
         return jsonV2;
     }

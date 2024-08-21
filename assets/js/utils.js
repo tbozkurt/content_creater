@@ -36,4 +36,33 @@ function utils(){
         return div;
     }
 
+    this.getRandomNumber = function(max){
+        return Math.floor(Math.random() * max);
+    }
+
+    this.getRandomPosition = function(left, top, dia){
+        var status = [1, -1];
+        var xPos = left + (this.getRandomNumber(dia) * status[this.getRandomNumber(2)]);
+        var yPos = top + (this.getRandomNumber(dia) * status[this.getRandomNumber(2)]);
+
+        return {x:xPos, y: yPos}
+    }
+
+    this.getRandomName = function(){
+        var str = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","p","r","s","t","u","v","y","z","w","x","q","0","1","2","3","4","5","6","7","8","9"];
+        var random="";
+
+        for(var i=0; i<15; i++){
+            random += str[this.getRandomNumber(str.length)];
+        }
+
+        return random;
+    }
+
+    this.editLayerControl = function(layer){
+        var add = (layer.attrs.layer === "main");
+        console.log("Add Main MC?:", add);
+        return add;
+    }
+
 }

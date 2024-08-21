@@ -22,9 +22,7 @@
     "nodemon": "^3.1.4"
   },
   "nodemonConfig": {
-    "ignore": [
-      "**/files/**",
-      "**/docs/**"
-    ]
+    "ignore": ["**/assets/**", "**/views/**", "**/files/**"],
+    "delay": 2500
   }
 }

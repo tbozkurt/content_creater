@@ -1,103 +1,174 @@
-function Arayuz_addLayer(obj){
-    var id = Layers.length;
-    var hide = false;
-    var lock = false;
-    //obj.Layer = Object.assign(Layer, {id, hide, lock});
-    obj.Layer.id = id;
-    obj.Layer.hide = hide;
-    obj.Layer.lock = lock;
-    Layers.push(obj);
+function Arayuz_addLayer(obj, container){
+    console.log("OMG:", obj.Layer);
+    console.log(obj);
+    console.log(container);
 
-    var layerHtml = `<div class="layer">
-        <div class="layerIcon"><img src="assets/img/${obj.Layer.type}_icon.png"></div>
-        <div class="layerName">${obj.Layer.name}</div>
-        <div class="layerZButon layerView"><img src="assets/img/hide.png"></div>
-        <div class="layerZButon layerLock"><img src="assets/img/lock.png"></div>
-    </div>`;
+    //if(utils.editLayerControl(IDE.activeLayer)){
+    if(utils.editLayerControl(container)){
+        console.log("GIRDI");
+        var id = Layers.length;
+        var hide = false;
+        var lock = false;
+        obj.Layer.id = id;
+        obj.Layer.hide = hide;
+        obj.Layer.lock = lock;
+        Layers.push(obj);
 
-    var TempHTML = LayerSR.clicked(layerHtml);
+        var layerHtml = `<div class="layer">
+            <div class="layerIcon"><img src="assets/img/${obj.Layer.type}_icon.png"></div>
+            <div class="layerName">${obj.Layer.name}</div>
+            <div class="layerZButon layerView"><img src="assets/img/hide.png"></div>
+            <div class="layerZButon layerLock"><img src="assets/img/lock.png"></div>
+        </div>`;
 
-    function Permission(shiftKey, object){
-        var selectFound = false;
+        var TempHTML = LayerSR.clicked(layerHtml);
 
-        for(var i=0; i<IDE.selectedLayers.length; i++){
-            if(object.Layer.id === IDE.selectedLayers[i].Layer.id){
-                selectFound = true;
-                break;
+        var main = TempHTML.querySelector(".layer");
+        var hideBtn = main.querySelector(".layerView");
+        var textInput = main.querySelector(".layerName");
+        var lockBtn = main.querySelector(".layerLock");
+
+        Object.assign(obj.Layer, {main, hideBtn, lockBtn, textInput});
+
+        main.addEventListener("mousedown", function(e){
+            Permission(e.shiftKey, obj);
+        })
+
+        hideBtn.addEventListener("click", function(){
+            console.log("view");
+            if(obj.Layer.hide){
+                obj.Layer.hide = false;
+                obj.Layer.hideBtn.style.opacity = 0.2;
+                obj.show();
+            }else{
+                obj.Layer.hide = true;
+                obj.Layer.hideBtn.style.opacity = 1;
+                obj.hide();
+                deSelect();
             }
-        }
+        });
 
-        if(!selectFound && !shiftKey){
-            IDE.selectedLayers = [];
-        }else if(selectFound){
-            IDE.selected = true;
-        }
+        lockBtn.addEventListener("click", function(e){
+            console.log("lock");
+            if(obj.Layer.lock){
+                obj.Layer.lock = false;
+                obj.Layer.lockBtn.style.opacity = 0.2;
+                obj.draggable(true);
+            }else{
+                obj.Layer.lock = true;
+                obj.Layer.lockBtn.style.opacity = 1;
+                obj.draggable(false);
+                deSelect();
+            }
+        });
 
-        if(!object.Layer.lock && !selectFound){
-            selectItem({shiftKey: shiftKey, layer: object});
-        }
+        CREATE.checkKontrol();
+        bune(obj, null);
+    }else{
+        bune(obj, true);
     }
 
-    Layers[id].on("mousedown", function(e){
-        Permission(e.evt.shiftKey, obj)
+
+
+/*    obj.on("mousedown", function(e){
+        Permission(e.evt.shiftKey, obj);
+        getProp(true);
     }).on("mouseup", function(){
-        getProp();
+        getProp(false);
+        currentHistoryStep = 0;
+        addHistory();
     }).on("dragmove", function(){
-        getProp();
+        getProp(false);
+    }).on("transform", function(){
+        getProp(false);
+    }).on("transformend", function(){
+        console.log("transformend");
+        addHistory();
     });
 
-    var main = TempHTML.querySelector(".layer");
-    var hideBtn = main.querySelector(".layerView");
-    var lockBtn = main.querySelector(".layerLock");
-
-    Object.assign(Layers[id].Layer, {main, hideBtn, lockBtn})
-
-    main.addEventListener("mousedown", function(e){
-        Permission(e.shiftKey, obj);
-    })
-
-    hideBtn.addEventListener("click", function(){
-        console.log("view");
-        if(obj.Layer.hide){
-            obj.Layer.hide = false;
-            obj.Layer.hideBtn.style.opacity = 0.2;
-            obj.show();
-        }else{
-            obj.Layer.hide = true;
-            obj.Layer.hideBtn.style.opacity = 1;
-            obj.hide();
-            deSelect();
-        }
-    });
-
-
-    lockBtn.addEventListener("click", function(e){
-        console.log("lock");
-        if(obj.Layer.lock){
-            obj.Layer.lock = false;
-            obj.Layer.lockBtn.style.opacity = 0.2;
-            obj.draggable(true);
-        }else{
-            obj.Layer.lock = true;
-            obj.Layer.lockBtn.style.opacity = 1;
-            obj.draggable(false);
-            deSelect();
-        }
-    });
-
-
-    selectItem({layer: obj});
-    CheckOrganizer();
-}
-
-function CheckOrganizer(){
-    if(IDE.selectedLayers[0].Layer.type === "check"){
-        IDE.workSpace.rightAnswer.innerHTML = "";
-        Layers.map(function(e){
-            IDE.workSpace.rightAnswer.innerHTML += `<option value="${e.Layer.name}">${e.Layer.name}</option>`;
+    if(obj.Layer.type === "objectText"){
+        obj.off("transform");
+        obj.on("dblclick", function(){
+            openTextEditor(this);
+        }).on("transform", function(){
+            getProp(false);
+            textResize(this);
         });
     }
+
+    if(obj.Layer.type === "objectMovieClip"){
+        obj.on('dblclick', function(){
+            OpenMovieClip(obj);
+        });
+    }
+
+    deSelect();*/
+    console.log("BITTI");
 }
+
+
+function bune(obj, konvaEditLayer){
+    if(konvaEditLayer){
+        obj.Layer.id = utils.getRandomNumber(5000);
+    }
+
+    obj.on("mousedown", function(e){
+        Permission(e.evt.shiftKey, obj);
+        getProp(true);
+    }).on("mouseup", function(){
+        getProp(false);
+        currentHistoryStep = 0;
+        addHistory();
+    }).on("dragmove", function(){
+        getProp(false);
+    }).on("transform", function(){
+        getProp(false);
+    }).on("transformend", function(){
+        console.log("transformend");
+        addHistory();
+    });
+
+    if(obj.Layer.type === "objectText"){
+        obj.off("transform");
+        obj.on("dblclick", function(){
+            openTextEditor(this);
+        }).on("transform", function(){
+            getProp(false);
+            textResize(this);
+        });
+    }
+
+    if(obj.Layer.type === "objectMovieClip"){
+        obj.on('dblclick', function(){
+            OpenMovieClip(obj);
+            CloseMovieClip(obj);
+            OpenMovieClip(obj);
+        });
+    }
+
+    deSelect();
+}
+
+function Permission(shiftKey, object){
+    var selectFound = false;
+    for(var i=0; i<IDE.selectedLayers.length; i++){
+        if(object.Layer.id === IDE.selectedLayers[i].Layer.id){
+            selectFound = true;
+            break;
+        }
+    }
+
+    if(!selectFound && !shiftKey){
+        IDE.selectedLayers = [];
+    }else if(selectFound){
+        IDE.selected = true;
+    }
+
+    if(!object.Layer.lock && !selectFound){
+        selectItem({shiftKey: shiftKey, layer: object});
+    }
+}
+
 
 function addOrganizedLayer(List, id){
     for(var x=List.length-1; x>-1; x--){
@@ -106,6 +177,67 @@ function addOrganizedLayer(List, id){
 
     selectItem({layer: Layers[id]})
 }
+
+
+function focusTextEditor() {
+    var range = document.createRange();
+    var select = window.getSelection();
+    var lastNodes = IDE.text.editBox.childNodes[IDE.text.editBox.childNodes.length-1];
+    range.setStart(lastNodes, lastNodes.length);
+    range.collapse(true);
+    select.removeAllRanges();
+    select.addRange(range);
+}
+
+function textResize(text){
+    text.setAttrs({
+        width: text.width() * text.scaleX(),
+        scaleX: 1
+    });
+}
+
+function openTextEditor(text){
+    if(text.getParent().nodeType !== "Group"){
+        var textPosition = text.getAbsolutePosition();
+        IDE.text.write = true;
+        IDE.scope = "EditText";
+
+        var currentCSS = {
+            left: textPosition.x + IDE.text.leftSpace +"px",
+            top: textPosition.y + IDE.text.topSpace +"px",
+            width: text.width(),
+            height: text.height(),
+            fontSize: 20+"px",
+            fontFamily: "Arial",
+            color: text.fill(),
+            lineHeight: text.lineHeight(),
+            position: "absolute",
+            border: "none",
+            resize: "none",
+            overflow: "hidden",
+            padding: 0,
+            outline: "none",
+            backgroundColor: "white",
+            display: "inline-block"
+        }
+
+        let div = document.createElement('div');
+        div.contentEditable = "true";
+        div.id = "textEditBox";
+        document.body.appendChild(div);
+        IDE.text.editBox = document.querySelector("#textEditBox");
+        IDE.text.currentCanvas = text;
+
+        IDE.text.editBox.innerText = text.text();
+        Object.assign(IDE.text.editBox.style, currentCSS);
+
+        focusTextEditor();
+        text.hide();
+        deSelect();
+    }
+}
+
+
 
 function delOrganizedLayer(){
     Layers.map(function(o,i){
@@ -131,36 +263,76 @@ var SceneSR = addSR({
     DelFNC: sceneDelete
 });
 
-function getProp(){
-    if(IDE.selectedLayers.length){
+function getProp(sameValueSearch){
+    if(sameValueSearch){
+        IDE.propValues={};
+        IDE.selectedLayers.map(function(e){
+            var props = {width: e.width(), height: e.height(), scale:e.scaleX()}
+            for(var p in props){
+                if(IDE.propValues[p] === undefined){
+                    IDE.propValues[p] = props[p];
+                }else{
+                    if(IDE.propValues[p] !== props[p]){
+                        IDE.propValues[p] = "";
+                    }
+                }
+            }
+        });
+    }
+
+    if(IDE.selectedLayers.length === 1){
+        IDE.workSpace.leftInput.value = IDE.selectedLayers[0].x();
+        IDE.workSpace.topInput.value = IDE.selectedLayers[0].y();
+        IDE.workSpace.widthInput.value = IDE.selectedLayers[0].width();
+        IDE.workSpace.heightInput.value = IDE.selectedLayers[0].height();
+        IDE.workSpace.scaleWInput.value = IDE.selectedLayers[0].scaleX()*100;
+    }else if(IDE.selectedLayers.length){
         IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
         IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
-        IDE.workSpace.widthInput.value = SELECT.width();
-        IDE.workSpace.heightInput.value = SELECT.height();
-    }else{
+        IDE.workSpace.widthInput.value = IDE.propValues.width;
+        IDE.workSpace.heightInput.value = IDE.propValues.height;
+        if(IDE.propValues.scale===""){
+            IDE.workSpace.scaleWInput.value = "";
+        }else{
+            IDE.workSpace.scaleWInput.value = IDE.propValues.scale*100;
+        }
+    } else{
         IDE.workSpace.leftInput.value = "";
         IDE.workSpace.topInput.value = "";
         IDE.workSpace.widthInput.value = "";
         IDE.workSpace.heightInput.value = "";
+        IDE.workSpace.scaleWInput.value = "";
     }
 }
 
 /* Object Delete */
 document.addEventListener("keyup", function(e){
     if((e.keyCode === 8 || e.keyCode === 46)){
-        if(IDE.scope === "Stage" && Layers.length){
+        //if(IDE.scope === "Stage" && Layers.length){
+        if(IDE.scope === "Stage"){
+            var allObj = IDE.activeLayer.getChildren();
             IDE.selectedLayers.forEach(function(SL){
-                for(var i=0; i<Layers.length; i++){
-                    if(SL.Layer.id === Layers[i].Layer.id){
-                        Layers[i].destroy();
-                        Layers.splice(i, 1);
-                        LayerSR.deleted(i);
-                        break;
+                if(utils.editLayerControl(IDE.activeLayer)){
+                    for(var i=0; i<Layers.length; i++){
+                        if(SL.Layer.id === Layers[i].Layer.id){
+                            Layers[i].destroy();
+                            Layers.splice(i, 1);
+                            LayerSR.deleted(i);
+                            break;
+                        }
                     }
+                }else{
+                    allObj.map(function(e){
+                        if(e.Layer){
+                            if(SL.Layer.id === e.Layer.id){
+                                e.destroy();
+                            }
+                        }
+                    })
                 }
             });
 
-            CheckOrganizer();
+            CREATE.checkKontrol();
             deSelect();
         }else if(IDE.scope === "Scene"){
             SceneSR.deleted(jsonV2.slides[sceneIndex].sceneID);
@@ -188,11 +360,11 @@ document.addEventListener("keydown", function(e){
                 Layer.y( LayerY+1 );
             }
         });
-        getProp();
+        getProp(false);
     }
 });
 
-function changeAllXPosition(newX){
+function changeLeft(newX){
     if(IDE.selectedLayers.length){
         var oldX = SELECT.x() - IDE.layer.x;
         if(oldX > newX){
@@ -206,10 +378,11 @@ function changeAllXPosition(newX){
                 Layer.x(result);
             });
         }
+        getProp(true);
     }
 }
 
-function changeAllYPosition(newY){
+function changeTop(newY){
     if(IDE.selectedLayers.length){
         var oldY = SELECT.y() - IDE.layer.y;
         if(oldY > newY){
@@ -223,101 +396,178 @@ function changeAllYPosition(newY){
                 Layer.y(result);
             });
         }
+
+        getProp(true);
     }
 }
 
+function changeWidth(newWidth){
+    IDE.selectedLayers.map(function(obj){
+        if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg"){
+            obj.width(newWidth);
+        }
+    });
+
+    getProp(true);
+}
+
+function changeHeight(newHeight){
+    IDE.selectedLayers.map(function(obj){
+        if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg"){
+            obj.height(newHeight);
+        }
+    });
+
+    getProp(true);
+}
+
+function changeScale(e){
+    var current = Number(e.target.value);
+    var newScale = current/100;
+
+    IDE.selectedLayers.map(function(obj){
+        obj.scale({x:newScale, y:newScale});
+    });
+
+    getProp(true);
+}
+
 /* add Create Events */
-$("#CreateSelect").on("click", function(){
+IDE.workSpace.createSelect.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
     CREATE.CheckFNC({
         properties:{
-            x: Layers.length*50,
-            y: Layers.length*50,
+            x: position.x,
+            y: position.y,
             width: 50,
             height: 50,
             draggable: true,
         },
-        container: KonvaLayer,
+        container: IDE.activeLayer,
         layer: {
-            name: "select",
+            name: "selectButon",
             type: "objectMovieClip"
         }
     });
 });
 
-$("#CreateText").on("click", function(){
+IDE.workSpace.createText.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
     CREATE.textFNC({
         properties:{
             text: "text",
-            x: Layers.length*50,
-            y: Layers.length*50,
+            x: position.x,
+            y: position.y,
             width: 33,
             fontSize: 20,
             fontFamily: "Arial",
-            fill: "black",
+            fill: "#000000",
             draggable: true
         },
-        container: KonvaLayer,
+        container: IDE.activeLayer,
         layer:{
             name: "text",
             type: "objectText"
         },
         addLayer: true
     });
-
-
 });
 
+IDE.workSpace.createRect.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    CREATE.rectFNC({
+        properties:{
+            text: "text",
+            x: position.x,
+            y: position.y,
+            width: 100,
+            height: 100,
+            fill: "#bdbdbd",
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer:{
+            name: "rect",
+            type: "objectRect"
+        },
+        addLayer: true
+    });
+});
+
+IDE.workSpace.createPopup.addEventListener("click", function(){
+    var position = utils.getRandomPosition(100, 100, 100);
+    CREATE.addSolutionPopup({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 600,
+            height: 600,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "popup",
+            type: "objectMovieClip"
+        }
+    });
+});
 
 IDE.workSpace.uploadImageForm.addEventListener("change", function(e){
     uploadImageAjax( new FormData(this) );
 });
 
 
+IDE.workSpace.colorPicker.addEventListener("change",function(){
+    colorPicker(true);
+});
+
+function showWorkSpaces(){
+    IDE.workSpace.WorkSpace_Layer.style.display = "block";
+    IDE.workSpace.WorkSpace_SpecialObjects.style.display = "block";
+    IDE.workSpace.WorkSpace_Preview.style.display = "block";
+    IDE.workSpace.WorkSpace_RightAnswer.style.display = "block";
+    IDE.workSpace.WorkSpace_Scene.style.display = "flex";
+}
+
+function hideWorkSpaces(){
+    IDE.workSpace.WorkSpace_Layer.style.display = "none";
+    IDE.workSpace.WorkSpace_SpecialObjects.style.display = "none";
+    IDE.workSpace.WorkSpace_Preview.style.display = "none";
+    IDE.workSpace.WorkSpace_RightAnswer.style.display = "none";
+    IDE.workSpace.WorkSpace_Scene.style.display = "none";
+}
+
 function OpenMovieClip(mc){
-    console.log(mc);
-    //EXPORT.convertMovieClip(mc);
     deSelect();
-    IDE.konvaEditLayer = new Konva.Layer(IDE.layer);
-    stage.add(IDE.konvaEditLayer);
-
+    hideWorkSpaces();
+    SELECT = IDE.editSelect;
+    IDE.activeLayer = IDE.editLayer;
+    IDE.editLayer.x(50);
     var deleteObject = [];
+    var movieClipScale = mc.scale();
 
-    var currentScale = mc.scale();
-    var addBG = new Konva.Rect({
-        x: 0,
-        y: 0,
-        width: 1280,
-        height: 720,
-        fill: "rgba(255, 255, 255, 0.2)",
-        draggable: false
+    IDE.editBG.off("dblclick");
+    IDE.editBG.on("dblclick", function(){
+        CloseMovieClip(mc, movieClipScale);
     });
-
-    var tr;
-    addBG.on("dblclick", function () {
-        addBG.destroy();
-        tr.destroy();
-        CloseMovieClip(mc, currentScale);
-    });
-
-    IDE.konvaEditLayer.add(addBG);
 
     mc.getChildren().map(function(Object){
-        var copyObject = Object.clone();
-        copyObject.Layer = Object.Layer;
-        copyObject.x( Object.getAbsolutePosition().x-50 ).y( Object.getAbsolutePosition().y-50 ).scale(currentScale);
-        IDE.konvaEditLayer.add(copyObject);
-        console.log(copyObject.Layer);
-        if(copyObject.Layer.type === "objectRect"){
+        if(Object.Layer){
+            var copyObject = Object.clone();
+            copyObject.Layer = Object.Layer;
+            var scaleX = (Object.scale().x * movieClipScale.x);
+            var scaleY = (Object.scale().y * movieClipScale.y);
+            console.log(scaleX, scaleY);
+
+            copyObject.x( Object.getAbsolutePosition().x-50 );
+            copyObject.y( Object.getAbsolutePosition().y-50 );
+
+            copyObject.scale({x:scaleX, y:scaleY});
+            IDE.editLayer.add(copyObject);
+            bune(copyObject, true);
             copyObject.draggable(true);
-            tr = new Konva.Transformer({
-                flipEnabled: false,
-                rotateEnabled: false,
-                nodes: [copyObject]
-            })
-            IDE.konvaEditLayer.add(tr);
-            tr.moveToTop();
+            deleteObject.push(Object);
         }
-        deleteObject.push(Object);
     });
 
     for(var x=0; x<deleteObject.length; x++){
@@ -325,19 +575,38 @@ function OpenMovieClip(mc){
     }
 }
 
-function CloseMovieClip(mc, currentScale){
-    IDE.konvaEditLayer.getChildren().map(function(Object){
-        var convertX = (Object.x()-mc.x()) /currentScale.x;
-        var convertY = (Object.y()-mc.y()) /currentScale.y;
-        var convertWidth = ((Object.scale().x/currentScale.x)*Object.width());
-        var convertHeight = ((Object.scale().y/currentScale.y)*Object.height());
-        Object.x(convertX).y(convertY).width(convertWidth).height(convertHeight).draggable(false).scale({x:1, y:1});
-        var clone = Object.clone();
-        clone.Layer = Object.Layer;
-        console.log("Object.Layer", clone, clone.Layer);
-        mc.add(clone);
+
+
+
+function CloseMovieClip(mc){
+    var deleteObject = [];
+    var movieClipScale = mc.scale();
+
+    IDE.editLayer.getChildren().map(function(Object){
+        if(Object.Layer){
+            var convertX = (Object.x()-mc.x()) /movieClipScale.x;
+            var convertY = (Object.y()-mc.y()) /movieClipScale.y;
+            var scaleX = (Object.scale().x / movieClipScale.x);
+            var scaleY = (Object.scale().y / movieClipScale.y);
+            Object.x(convertX).y(convertY);
+            Object.scale({x:scaleX, y:scaleY});
+            Object.draggable(false);
+            Object.off("click mousedown mouseup dragmove transform transformstart transformend dblclick dbltap");
+            var clone = Object.clone();
+            clone.Layer = Object.Layer;
+            mc.add(clone);
+            deleteObject.push(Object);
+        }
     });
-    IDE.konvaEditLayer.destroy();
+
+    for(var x=0; x<deleteObject.length; x++){
+        deleteObject[x].destroy();
+    }
+
+    SELECT = IDE.sceneSelect;
+    IDE.activeLayer = IDE.sceneLayer;
+    IDE.editLayer.x(1280);
+    showWorkSpaces();
 }
 
 /* IDE Scopes */
@@ -376,10 +645,12 @@ IDE.workSpace.scope_RightWorkSpace.addEventListener("mousedown", function(){
 
 
 document.querySelector("#export").addEventListener("click", function(){
+    console.log("Hoops<---");
     var json = EXPORT.convertJson();
+    console.log("Hoops--->");
     Player = new PLAYER();
-    Player.CreateScene(json, sceneIndex);
     IDE.workSpace.previewMain.style.display = "block";
+    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, false);
 });
 
 document.querySelector("#save").addEventListener("click", function(){
@@ -392,37 +663,72 @@ document.querySelector("#save").addEventListener("click", function(){
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
     console.log("close preview");
-    document.querySelector("#PlayerScene").remove();
+    document.querySelector("#PlayerMain").remove();
     Player = null;
     IDE.workSpace.previewMain.style.display = "none";
 });
 
 /* Workspace-Properties */
+function focusWorkSpaces(){
+    IDE.scope = "WorkSpace";
+}
+
+//Left Input
+IDE.workSpace.leftInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.leftInput.addEventListener("change", function(e) {
+    changeLeft(Number(e.target.value));
+});
 IDE.workSpace.leftInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
-        changeAllXPosition(Number(e.target.value));
+        changeLeft(Number(e.target.value));
     }
 });
-IDE.workSpace.leftInput.addEventListener("focus", function(e) {
-    IDE.scope = "WorkSpace";
-});
 
-IDE.workSpace.leftInput.addEventListener("change", function(e) {
-    changeAllXPosition(Number(e.target.value));
+//Top Input
+IDE.workSpace.topInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.topInput.addEventListener("change", function(e) {
+    changeTop(Number(e.target.value));
 });
-
 IDE.workSpace.topInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
-        changeAllYPosition(Number(e.target.value));
+        changeTop(Number(e.target.value));
     }
 });
 
-IDE.workSpace.topInput.addEventListener("focus", function(e) {
-    IDE.scope = "WorkSpace";
+
+//Width Input
+IDE.workSpace.widthInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.widthInput.addEventListener("change", function(e) {
+    changeWidth(Number(e.target.value));
+});
+IDE.workSpace.widthInput.addEventListener("keypress", function(e) {
+    if (event.key === "Enter") {
+        changeWidth(Number(e.target.value));
+    }
 });
 
-IDE.workSpace.topInput.addEventListener("change", function(e) {
-    changeAllYPosition(Number(e.target.value));
+//Height Input
+IDE.workSpace.heightInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.heightInput.addEventListener("change", function(e) {
+    changeHeight(Number(e.target.value));
+});
+IDE.workSpace.heightInput.addEventListener("keypress", function(e) {
+    if (event.key === "Enter") {
+        changeHeight(Number(e.target.value));
+    }
+});
+
+
+//Scale Input
+IDE.workSpace.scaleWInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.scaleWInput.addEventListener("change", function(e) {
+    changeScale(e);
+});
+
+IDE.workSpace.scaleWInput.addEventListener("keypress", function(e) {
+    if (event.key === "Enter") {
+        changeScale(e);
+    }
 });
 
 /*
@@ -493,5 +799,266 @@ function WorkspaceShow(){
         WorkView.style.visibility = "visible";
     });
 }
+
+
+var ctrlDown=false, ctrlKey=17, cmdKey=91, vKey=86, cKey=67;
+document.addEventListener("keydown", function(e){
+    if (e.keyCode === ctrlKey || e.keyCode === cmdKey){
+        ctrlDown = true;
+    }
+});
+
+document.addEventListener("keyup", function(e){
+    if (e.keyCode === ctrlKey || e.keyCode === cmdKey){
+        ctrlDown = false;
+    }
+});
+
+document.addEventListener("keydown", function(e){
+    if (ctrlDown && (e.keyCode === cKey)) {
+        console.log("Document catch Ctrl+C");
+        if(IDE.selectedLayers.length){
+            IDE.copy = IDE.selectedLayers[0];
+        }
+    }
+
+    if(ctrlDown && (e.keyCode === vKey)){
+        console.log(IDE.scope);
+
+        if(IDE.scope === "Scene"){
+            var json = EXPORT.convertJson();
+            var stringData = JSON.stringify(json.slides[sceneIndex].all);
+            var jsonData = JSON.parse(stringData);
+            var template = sceneTemplate();
+            template.all = jsonData;
+            sceneAddNewScene(true, template);
+        }else{
+            if(IDE.copy){
+                console.log("Document catch Ctrl+V");
+                if(IDE.copy.children){
+                    IDE.copy.children.map(function(e){
+                        e.attrs.Layer = e.Layer;
+                    });
+                }
+
+                var orjLayer = IDE.copy.Layer;
+                var clone = IDE.copy.clone( utils.getRandomPosition(IDE.copy.x(), IDE.copy.y(), 60) );
+
+                clone.off("click mousedown mouseup dragmove transform transformstart transformend dblclick dbltap");
+                clone.Layer = {name: orjLayer.name, type: orjLayer.type};
+                IDE.sceneLayer.add(clone);
+
+                if(clone.children){
+                    clone.children.map(function(e){
+                        e.Layer = e.attrs.Layer;
+                        delete e.attrs.Layer;
+                    });
+                }
+
+                Arayuz_addLayer(clone, IDE.sceneLayer);
+            }
+        }
+    }else if(ctrlDown && (e.key === "z")){
+        backHistory();
+    }else if(ctrlDown && (e.key === "b")){
+        nextHistory();
+    }
+});
+
+
+var temp = [];
+var historyStep=0;
+
+function addHistory(){
+    var temp2 = [];
+    temp.splice(historyStep);
+
+    Layers.map(function(e){
+        var randomName = utils.getRandomName();
+        if(!e.attrs.unique){
+            e.attrs.unique = randomName;
+        }
+
+        var klon = {
+            x: e.x(),
+            y: e.y(),
+            width: e.width(),
+            height: e.height(),
+            scaleX: e.scaleX(),
+            scaleY: e.scaleY(),
+            offsetX: e.offsetX(),
+            offsetY: e.offsetY(),
+            unique: e.attrs.unique
+        }
+
+        if(e.Layer.type === "objectRect" || e.Layer.type === "objectText"){
+            klon.fill = e.fill();
+        }
+
+        temp2.push(klon);
+    });
+
+    temp.push(temp2);
+    if(temp.length>10){
+        temp.shift();
+    }
+
+    historyStep = temp.length;
+}
+
+
+function nextHistory(){
+    console.log("backHistory",historyStep);
+    historyStep++;
+    if(historyStep > temp.length){
+        historyStep = temp.length;
+    }
+    historyProgress();
+}
+
+function backHistory(){
+    console.log("nextHistory");
+    historyStep--;
+    if(historyStep < 1){
+        historyStep=1;
+    }
+    historyProgress();
+}
+
+function historyProgress(){
+    var history = temp[historyStep-1];
+    console.log(history, historyStep);
+
+    //History silinmiş öğenin geri getirilmesi kalsın. geri almanın değişkenlerini optimize yap.
+
+    if(history){
+        history.map(function(e){
+            var found = false;
+            for(var i=0; i<Layers.length; i++){
+                if(Layers[i].attrs.unique){
+                    if(e.unique === Layers[i].attrs.unique){
+                        Layers[i].x(e.x).y(e.y).width(e.width).height(e.height).scaleX(e.scaleX).scaleY(e.scaleY);
+                        Layers[i].offsetX(e.offsetX).offsetY(e.offsetY);
+                        if(e.fill){
+                            Layers[i].fill(e.fill);
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+}
+
+document.querySelector("#omg").addEventListener("click", function(e){
+    console.log("anonim click");
+    //deleteFileAjax("aa");
+});
+
+document.querySelector("#omg2").addEventListener("click", function(e){
+    var activeMC;
+    IDE.sceneLayer.getChildren().map(function(e){
+        if(e.Layer){
+            activeMC = e;
+        }
+    });
+
+    IDE.activeLayer = activeMC;
+    console.log("değiştirildi",activeMC);
+});
+
+
+
+
+
+/*
+function OpenMovieClip(mc){
+    console.log(mc);
+    //EXPORT.convertMovieClip(mc);
+    deSelect();
+    IDE.konvaEditLayer = new Konva.Layer(IDE.layer);
+    stage.add(IDE.konvaEditLayer);
+
+    var deleteObject = [];
+
+    var currentScale = mc.scale();
+    var addBG = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: 1280,
+        height: 720,
+        fill: "rgba(255, 255, 255, 0.2)",
+        draggable: false
+    });
+
+    var tr;
+    addBG.on("dblclick", function () {
+        addBG.destroy();
+        tr.destroy();
+        CloseMovieClip(mc, currentScale);
+    });
+
+    IDE.konvaEditLayer.add(addBG);
+
+    mc.getChildren().map(function(Object){
+        var copyObject = Object.clone();
+        copyObject.Layer = Object.Layer;
+        copyObject.x( Object.getAbsolutePosition().x-50 ).y( Object.getAbsolutePosition().y-50 ).scale(currentScale);
+        IDE.konvaEditLayer.add(copyObject);
+        console.log(copyObject.Layer);
+        if(copyObject.Layer.type === "objectRect"){
+            copyObject.draggable(true);
+            tr = new Konva.Transformer({
+                flipEnabled: false,
+                rotateEnabled: false,
+                nodes: [copyObject]
+            })
+            IDE.konvaEditLayer.add(tr);
+            tr.moveToTop();
+        }
+        deleteObject.push(Object);
+    });
+
+    for(var x=0; x<deleteObject.length; x++){
+        deleteObject[x].destroy();
+    }
+}
+*/
+
+
+/*
+function CloseMovieClip(mc, currentScale){
+    IDE.konvaEditLayer.getChildren().map(function(Object){
+        if(Object.Layer){
+            var convertX = (Object.x()-mc.x()) /currentScale.x;
+            var convertY = (Object.y()-mc.y()) /currentScale.y;
+            var convertWidth = ((Object.scale().x/currentScale.x)*Object.width());
+            var convertHeight = ((Object.scale().y/currentScale.y)*Object.height());
+            var convertWidth = Object.width();
+            var convertHeight = Object.height();
+            console.log("currentScale:",currentScale, convertWidth, convertHeight);
+
+            Object.x(convertX);
+            Object.y(convertY);
+            Object.width(convertWidth);
+            Object.height(convertHeight);
+            Object.draggable(false);
+            Object.scale({x:1, y:1});
+
+            Object.off("click mousedown mouseup dragmove transform transformstart transformend dblclick dbltap");
+            Object.draggable(false);
+            var clone = Object.clone();
+            clone.Layer = Object.Layer;
+            console.log("Object.Layer", clone, clone.Layer);
+            mc.add(clone);
+        }
+    });
+    IDE.konvaEditLayer.destroy();
+    SELECT = getSELECT();
+    KonvaLayer.add(SELECT);
+    IDE.activeLayer = KonvaLayer;
+}
+*/
 
 

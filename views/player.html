@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/libs/jquery/dist/jquery.js"></script>
+    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/player.js"></script>
+    <link rel="stylesheet" href="/assets/css/player.css">
+</head>
+<body>
+
+<div id="newKT">
+<!--
+    <div id="Player_Container"></div>
+    <div id="Optic_Main"></div>
+    <div id="Nav_Main">
+        <div class="Nav_CubuqB">
+            <div class="Nav_Container">
+                <div class="Nav_Btn" id="Nav_BackBtn"></div>
+                <div class="Nav_Btn" id="Nav_Text">1 of 10</div>
+                <div class="Nav_Btn" id="Nav_NextBtn"></div>
+            </div>
+        </div>
+        <div class="Nav_CubuqA"></div>
+    </div>
+    <div id="Optic_Btn">Optik Form</div>
+    -->
+</div>
+
+
+
+<script>
+    var Player = new PLAYER();
+    var utils = new utils();
+    var newKT = document.querySelector("#newKT");
+
+
+    function ajaxError(e){
+        console.log(e);
+    }
+
+    function selectFileParse(data){
+        jsonV2 = data.files.data;
+        console.log(jsonV2.slides);
+
+        Player.startBuild(jsonV2, 0, "#000000", newKT, true);
+/*        createOptikForm();
+        KTMode();
+        openOpticWindow();*/
+    }
+
+
+    function selectFileAjax(file){
+        var data = {file};
+        $.ajax({url: "/selectFile", data, success: selectFileParse, type: "POST", error: ajaxError});
+    }
+
+
+
+
+    function getUrlParameterFNC(sParam) {
+        var sPageURL = window.location.search.substring(1);
+        var sURLVariables = sPageURL.split('&');
+        for (var i = 0; i < sURLVariables.length; i++) {
+            var sParameterName = sURLVariables[i].split('=');
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1];
+            }
+        }
+    }
+
+    var file = getUrlParameterFNC("file");
+    selectFileAjax(file);
+
+    /*
+
+
+    var Player_Container = document.querySelector("#Player_Container");
+    var Optic_Main = document.querySelector("#Optic_Main");
+    var Nav_Main = document.querySelector("#Nav_Main");
+    var Optic_Btn = document.querySelector("#Optic_Btn");
+
+    var opened = false;
+
+
+    function KTMode(){
+        Player_Container.style.height = "calc(100% - 5em)";
+        document.querySelector("#Nav_BackBtn").addEventListener("click", function (){
+            Player.changeScene(Player.sceneIndex-1);
+        });
+
+        document.querySelector("#Nav_NextBtn").addEventListener("click", function (){
+            Player.changeScene(Player.sceneIndex+1);
+        });
+    }
+
+    Optic_Btn.addEventListener("click", function(){
+        openOpticWindow();
+    });
+
+
+    function openOpticWindow(){
+        var OpticWidth = Optic_Main.offsetWidth;
+
+        if(opened){
+            Player_Container.style.width = "100%";
+            Nav_Main.style.width = "100%";
+            Optic_Main.style.visibility = "hidden";
+            opened = false;
+        }else{
+            Player_Container.style.width = `calc(100% - ${OpticWidth}px)`;
+            Nav_Main.style.width = `calc(100% - ${OpticWidth}px)`;
+            Optic_Main.style.visibility = "visible";
+            opened = true;
+        }
+        Player.screenRatio();
+    }
+
+
+    function createOptikForm(){
+        var html = "";
+        var opticRow = [];
+        for(var i=0; i<jsonV2.slides.length; i++){
+             html +=
+            `<div class="Optic_Row" id="opticRow${i}">
+                <div class="Optic_Row_No">${i+1}</div>
+                <div class="Optic_Row_Select" >A</div>
+                <div class="Optic_Row_Select">B</div>
+                <div class="Optic_Row_Select">C</div>
+                <div class="Optic_Row_Select">D</div>
+            </div>`;
+        }
+
+        Optic_Main.innerHTML = html;
+
+        jsonV2.slides.map(function(i, index){
+            opticRow[index] = document.querySelector("#opticRow"+ index);
+            opticRow[index].addEventListener("click", function(){
+                Player.changeScene(index);
+            });
+        });
+
+
+    }
+
+
+
+    */
+
+</script>
+</body>
+</html>
