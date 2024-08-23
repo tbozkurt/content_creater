@@ -16,6 +16,9 @@ function EXPORT(){
     this.convertRect = function(e){
         return Object.assign({
             fill: e.fill(),
+            strokeWidth: e.strokeWidth(),
+            stroke: e.stroke(),
+            cornerRadius: e.cornerRadius(),
             Layer: e.Layer,
         }, this.getStandart(e));
     }
@@ -23,6 +26,8 @@ function EXPORT(){
     this.convertCircle = function(e){
         return Object.assign({
             fill: e.fill(),
+            strokeWidth: e.strokeWidth(),
+            stroke: e.stroke(),
             borderRadius: e.radius(),
             Layer: e.Layer,
         }, this.getStandart(e));
@@ -34,7 +39,7 @@ function EXPORT(){
             fontSize: e.fontSize(),
             fontFamily: e.fontFamily(),
             lineHeight: e.lineHeight(),
-            color: e.fill(),
+            fill: e.fill(),
             align: e.align(),
             verticalAlign: e.verticalAlign(),
             Layer: e.Layer
@@ -42,8 +47,6 @@ function EXPORT(){
     }
 
     this.convertImg = function(e){
-        console.log("B");
-        console.log(e.Layer);
         return Object.assign({
             src: e.attrs.src,
             Layer: e.Layer
@@ -58,7 +61,6 @@ function EXPORT(){
     }
 
     this.addKids = function(container){
-        console.log(container);
         var This=this;
         var tempFinal=[];
         var final=[];

@@ -21,7 +21,7 @@
 <div id="scope_Canvas"></div>
 
 <div class="WorkSpaces WorkView WorkSpace_Layer" id="scope_LeftWorkSpace" style="left:0; border-right:2px solid">
-    <div class="WorkSpaces_Header"> Layer </div>
+    <div class="WorkSpaces_Header">&#8627; Layer</div>
     <div id="LayerMain">
         <div class="SR_container2"></div>
     </div>
@@ -60,12 +60,34 @@
 
     <div class="WorkSpaces_Group">
         <div class="WorkSpaces_Topic">&#8627; Scale</div>
+<!--
+
         <div class="Properties_column addSpace">
             <div class="Properties_box">
                 <div class="Properties_name">%</div>
                 <input style="width: 123px" type="number" class="Properties_input" id="Properties_ScaleW" tabindex="5">
             </div>
         </div>
+
+-->
+
+        <div class="Properties_column">
+            <div class="Properties_box">
+                <div class="Properties_name">W</div>
+                <input type="number" class="Properties_input" id="Properties_ScaleW">
+            </div>
+
+            <div class="Properties_box">
+                <div class="Properties_name">H</div>
+                <input type="number" class="Properties_input" id="Properties_ScaleH">
+            </div>
+        </div>
+
+        <div class="addSpace">
+            <input type="checkbox" id="ratioCheck" checked>
+            <label for="ratioCheck">Constrain ratio</label><br>
+        </div>
+
     </div>
 
     <div class="WorkSpaces_Group">
@@ -101,6 +123,10 @@
         <div class="AlignMain">
             <div class="AlignBox" id="align_SpaceHorizontal"><img src="assets/img/spaceX.svg"></div>
             <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
+            <div class="AlignBox" id="align_ScaleAuto"><img src="assets/img/stagescale.svg"></div>
+
+        </div>
+        <div class="AlignMain">
             <div class="AlignBox" id="align_CenterStage"><img src="assets/img/stageCenter.svg"></div>
         </div>
     </div>
@@ -128,13 +154,15 @@
         </div>
     </div>
 
-    <div class="WorkSpaces_Group addSpace">
+    <div class="WorkSpaces_Group addSpace WorkSpace_ColorPicker">
         <div class="WorkSpaces_Header">&#8627; Color Picker</div>
         <input type="color" id="colorPicker" name="head" value="#ff0000" />
     </div>
 
+<!--
     <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
     <div id="omg2" style="width:50px; height:50px;background-color: darkred"></div>
+-->
 </div>
 
 <div id="welcome_main">
@@ -216,21 +244,22 @@
             align_Left: document.querySelector("#align_Left"),
             align_HorizontalCenter: document.querySelector("#align_HorizontalCenter"),
             align_Right: document.querySelector("#align_Right"),
-
             align_Top: document.querySelector("#align_Top"),
             align_VerticalCenter: document.querySelector("#align_VerticalCenter"),
             align_Bottom: document.querySelector("#align_Bottom"),
-
             align_SpaceHorizontal: document.querySelector("#align_SpaceHorizontal"),
             align_SpaceVertical: document.querySelector("#align_SpaceVertical"),
+            align_ScaleAuto: document.querySelector("#align_ScaleAuto"),
             align_CenterStage: document.querySelector("#align_CenterStage"),
 
             rightAnswer: document.querySelector("#rightAnswer"),
+            ratioCheck: document.querySelector("#ratioCheck"),
             WorkSpace_Layer: document.querySelector(".WorkSpace_Layer"),
             WorkSpace_SpecialObjects: document.querySelector(".WorkSpace_SpecialObjects"),
             WorkSpace_RightAnswer: document.querySelector(".WorkSpace_RightAnswer"),
             WorkSpace_Scene: document.querySelector(".WorkSpace_Scene"),
-            WorkSpace_Preview: document.querySelector(".WorkSpace_Preview")
+            WorkSpace_Preview: document.querySelector(".WorkSpace_Preview"),
+            WorkSpace_ColorPicker: document.querySelector(".WorkSpace_ColorPicker")
         },
         welcome:{
             main: document.querySelector("#welcome_main"),
@@ -267,7 +296,7 @@
         fill: "rgba(0, 120, 0, 0.5)",
         draggable: false
     });
-    IDE.editLayer.add(IDE.editBG).x(1280);
+    IDE.editLayer.add(IDE.editBG).x(1400);
 
     var imageObj = new Image();
     imageObj.onload = function () {
@@ -282,7 +311,6 @@
         Ruler.add(yoda);
     };
     imageObj.src = '/assets/img/rulers.png';
-
 
     var CREATE = new CREATE();
     var EXPORT = new EXPORT();
@@ -321,6 +349,7 @@
 
         tempSelect.on("transformstart transform", function(){
             IDE.tranforming = true;
+            console.log();
         });
 
         tempSelect.on("transformend", function(){
@@ -350,7 +379,7 @@
         },
 
         objectRect: function (tr){
-            tr.enabledAnchors(["bottom-right"]);
+            tr.enabledAnchors(['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']);
             tr.boundBoxFunc(null);
         },
 
@@ -370,13 +399,12 @@
             if(!IDE.selectedLayers.length){
                 IDE.selectedLayers = [temp.layer];
                 changeSelect[ temp.layer.Layer.type ](SELECT);
-                //colorPicker(false);
+                colorPicker(false);
             }
         }
 
         SELECT.nodes(IDE.selectedLayers).moveToTop();
-        //Aktif et
-        // layerBackgroundColor();
+        layerBackgroundColor();
     }
 
     function colorPicker(set){
@@ -389,19 +417,24 @@
             }else{
                 if(currentType==="objectText" || currentType==="objectRect"){
                     IDE.workSpace.colorPicker.value = IDE.selectedLayers[0].fill();
+                    IDE.workSpace.WorkSpace_ColorPicker.style.display = "block";
+                }else{
+                    IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
                 }
             }
         }
     }
 
     var layerBackgroundColor = function(){
-        Layers.forEach(function(tempLayer, i){
-            tempLayer.Layer.main.style.backgroundColor = "#323232";
-        });
+        if(utils.editLayerControl(IDE.activeLayer)){
+            Layers.forEach(function(tempLayer){
+                tempLayer.Layer.main.style.backgroundColor = "#323232";
+            });
 
-        IDE.selectedLayers.map(function(tempLayer){
-            tempLayer.Layer.main.style.backgroundColor = "#35618f";
-        });
+            IDE.selectedLayers.map(function(tempLayer){
+                tempLayer.Layer.main.style.backgroundColor = "#35618f";
+            });
+        }
     }
 
     function deSelect(){
@@ -462,7 +495,6 @@
                     layer: layer
                 });
 
-                console.log(movieClip);
                 addObjects(e.Kids, movieClip, false);
                 Arayuz_addLayer(movieClip, container);
             }
@@ -600,7 +632,6 @@
         IDE.welcome.savedFileList.appendChild(div);
 
         document.querySelector("#f_"+ filename).addEventListener("click", function(e){
-            addStageBG();
             selectFileAjax(filename);
         });
 
@@ -628,7 +659,9 @@
 
     function newFileParse(data){
         console.log(data);
+        IDE.files = data.files;
         sceneAddNewScene(true, sceneTemplate());
+        addStageBG();
     }
 
     function selectFileAjax(file){
@@ -638,6 +671,7 @@
 
     function selectFileParse(data){
         console.log("Select", data);
+        IDE.files = data.files;
         jsonV2 = data.files.data;
 
         if(jsonV2.slides.length){
@@ -649,6 +683,7 @@
         }else{
             sceneAddNewScene(true, sceneTemplate());
         }
+        addStageBG();
     }
 
     function saveDataAjax(json){
@@ -708,12 +743,11 @@
     }
 
     function uploadImageAjax(data){
+        console.log(data);
         $.ajax({url: "/uploadImage", data, success: uploadImageParse, type:"POST", contentType: false, cache:false, processData: false, error: ajaxError});
     }
 
     function uploadImageParse(data){
-
-        console.log( data );
         data.map(function(e, i){
             CREATE.imgFNC({
                 properties:{
@@ -721,7 +755,7 @@
                     y: i*75,
                     scale: {x: 1, y: 1},
                     src: e.path.substring(e.path.indexOf("/files"), e.path.length),
-                    //draggable: true
+                    draggable: true
                 },
                 container: IDE.activeLayer,
                 layer:{

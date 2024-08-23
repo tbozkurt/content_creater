@@ -7,18 +7,28 @@ function PLAYER(){
         var KT={}
 
         this.getStandart = function(e){
+            var className = e.Layer.type
+            if(e.Layer.class){
+                className += (" "+e.Layer.class);
+            }
+
             return {
                 left: e.x +"px",
                 top: e.y +"px",
                 width: e.width +"px",
                 height: e.height +"px",
-                transform: "scale("+ e.scale.x +')',
+                transform: `scale(${e.scale.x}, ${e.scale.y})`,
                 transformOrigin: "0% 0%",
                 position: "absolute",
                 type: e.Layer.type,
+                className: className,
                 name: e.Layer.name,
                 id: e.Layer.elementID
             }
+        }
+
+        this.getRadius = function(data){
+            return `${data[0]}px ${data[1]}px ${data[2]}px ${data[3]}px`;
         }
 
         this.convertObject = function(container){
@@ -30,6 +40,9 @@ function PLAYER(){
                     if(e.Layer.type === "objectRect"){
                         obj = Object.assign({
                             backgroundColor: e.fill,
+                            border: `${e.strokeWidth}px solid ${e.stroke}`,
+                            borderRadius: This.getRadius(e.cornerRadius),
+                            boxSizing:"border-box"
                         }, This.getStandart(e));
                     }else if(e.Layer.type === "objectCircle"){
                         obj = Object.assign({
@@ -39,6 +52,7 @@ function PLAYER(){
                     }else if (e.Layer.type === "objectImg") {
                         obj = Object.assign({
                             backgroundImage: `url(${e.src})`,
+                            backgroundSize: `${e.width}px ${e.height}px`
                         }, This.getStandart(e));
                     }else if(e.Layer.type === "objectText"){
                         obj = Object.assign({
@@ -47,7 +61,7 @@ function PLAYER(){
                             fontFamily: e.fontFamily,
                             lineHeight: e.lineHeight,
                             textAlign: e.align,
-                            color: e.color,
+                            color: e.fill,
                         }, This.getStandart(e));
 
                         if(e.verticalAlign === "middle"){
@@ -70,23 +84,23 @@ function PLAYER(){
             var This = this;
             kids.map(function(e){
                 if(e.type === "objectRect"){
-                    var rect = utils.addDOM({className:e.type, id:e.id, layername: e.name});
+                    var rect = utils.addDOM({className:e.className, id:e.id, layername: e.name});
                     Object.assign(rect.style, e);
                     container.appendChild(rect);
                 }if(e.type === "objectCircle"){
-                    var circle = utils.addDOM({className:e.type, id:e.id, layername: e.name});
+                    var circle = utils.addDOM({className:e.className, id:e.id, layername: e.name});
                     Object.assign(circle.style, e);
                     container.appendChild(circle);
                 }else if(e.type === "objectImg"){
-                    var img = utils.addDOM({className:e.type, id:e.id, layername: e.name});
+                    var img = utils.addDOM({className:e.className, id:e.id, layername: e.name});
                     Object.assign(img.style, e);
                     container.appendChild(img);
                 }else if(e.type === "objectText"){
-                    var text = utils.addDOM({className:e.type, id:e.id, layername: e.name, innerText: e.text});
+                    var text = utils.addDOM({className:e.className, id:e.id, layername: e.name, innerText: e.text});
                     Object.assign(text.style, e);
                     container.appendChild(text);
                 }else if(e.type === "objectMovieClip"){
-                    var mc = utils.addDOM({className:e.type, id:e.id, layername: e.name});
+                    var mc = utils.addDOM({className:e.className, id:e.id, layername: e.name});
                     container.appendChild(mc);
                     This.addMovieClip(e.Kids, mc);
                     Object.assign(mc.style, e);
@@ -118,6 +132,7 @@ function PLAYER(){
 
                 player.mainDOM.appendChild(sceneDiv);
                 This.AddCS(sceneDiv);
+                This.Popup(sceneDiv);
                 This.allScene.push(sceneDiv);
             })
 
@@ -135,7 +150,7 @@ function PLAYER(){
             Scene.childNodes.forEach(function(btn){
                 if(btn.id.includes("selectButon")){
                     var id = parseInt(btn.id.split("_")[1]);
-                    var clicked = btn.querySelector('[layername="clicked"]');
+                    var clicked = btn.querySelector(".clicked");
                     btn.addEventListener("click", function(){
                         selected(id);
                     });
@@ -155,6 +170,32 @@ function PLAYER(){
                     KT.singleSelectFNC(This.sceneIndex, id);
                 }
             }
+        }
+
+        this.Popup = function(Scene){
+            console.log("this.Popup");
+            var popupWindow;
+            Scene.childNodes.forEach(function(obj) {
+                if(obj.id.includes("popup_buton")){
+                    obj.addEventListener("click", function(){
+                        console.log("Deneme",popupWindow.style.visibility);
+                        if(popupWindow.style.visibility === "hidden"){
+                            popupWindow.style.visibility = "visible";
+                        }else{
+                            popupWindow.style.visibility = "hidden";
+                        }
+                    });
+
+                    obj.style.cursor = "pointer";
+                }else if(obj.id.includes("popup_window")){
+                    popupWindow = obj;
+                    popupWindow.style.visibility = "hidden";
+                    popupWindow.querySelector('.popup_close').addEventListener("click",function(){
+                        popupWindow.style.visibility = "hidden";
+                    });
+                    obj.style.cursor = "pointer";
+                }
+            });
         }
 
         this.changeScene = function(index, navText){
@@ -257,8 +298,8 @@ function PLAYER(){
                             var id = parseInt(btn.id.split("_")[1]);
                             KT.Scene[rid].sceneSelect[id] = {
                                 main: btn,
-                                clicked: btn.querySelector('[layername="clicked"]'),
-                                bg: btn.querySelector('[layername="bg"]')
+                                clicked: btn.querySelector('.clicked'),
+                                bg: btn.querySelector('.bg')
                             };
                         }
                     });

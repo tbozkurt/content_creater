@@ -173,4 +173,12 @@ function ALIGN(){
             Selected[0].y(calc2);
         }
     }
+
+    this.ScaleAuto = function(Selected){
+        Selected.map(function(obj){
+            var sonuc = (1280/1920);
+            obj.x(0).y(0).scale({x:sonuc, y:sonuc});
+        });
+    }
+
 }

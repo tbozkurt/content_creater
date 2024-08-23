@@ -61,45 +61,44 @@ function CREATE(){
     //Create Select
     this.CheckFNC = function(O){
         var container = this.movieClipFNC(O);
-
         var kids = [{
             x: 0,
             y: 0,
             width: 50,
             height: 50,
-            fill: "lightblue",
-            offsetX: -25,
-            offsetY: -25,
-            Layer:{type:"objectCircle", name: "bg"}
+            src: "/files/"+ IDE.files.imgFolder.split("/files/")[1] +"/butonback.png",
+            Layer: {name:"popup_close.jpg", type:"objectImg", class:"popup_close"}
         },{
             text: "btn",
             x: 0,
             y: 0,
             width: 50,
             height: 50,
-            fontSize: 16,
-            fontFamily: "Arial",
-            fill: "black",
+            fontSize: 18,
+            fontFamily: "Nunito",
+            fontStyle: "bold",
+            fill: "white",
             verticalAlign: "middle",
             padding: 0,
             align: "center",
             Layer:{type:"objectText", name: "text"}
         },{
-            x: 4,
-            y: 4,
-            width: 42,
-            height: 42,
-            fill: "rgba(0,0,0,0.5)",
-            offsetX: -21,
-            offsetY: -21,
-            Layer:{type:"objectCircle", name: "clicked"}
+            x: -4,
+            y: -4,
+            width: 58,
+            height: 58,
+            fill: "rgba(240, 130, 180, 0.4)",
+            strokeWidth: 2,
+            stroke:"rgba(240, 40, 130, 0.4)",
+            cornerRadius:[58, 58, 58, 58],
+            Layer:{type:"objectRect", name: "clicked", class: "clicked"}
         },{
             x: 0,
             y: 0,
             width: 50,
             height: 50,
             fill: "rgba(0,0,0,0)",
-            Layer:{type:"objectRect", name: "mask"}
+            Layer:{type:"objectRect", name: "mask", class: "mask"}
         }];
 
         addObjects(kids, container, false);
@@ -130,8 +129,7 @@ function CREATE(){
     }
 
 
-    this.addSolutionPopup = function(O){
-        console.log(O.layer);
+    this.addSolutionWindow = function(O){
         var container = this.movieClipFNC(O);
         var kids = [{
             x: 0,
@@ -139,37 +137,128 @@ function CREATE(){
             width: 600,
             height: 600,
             cornerRadius: [10, 10, 10, 10],
-            fill: "white",
+            fill: "#ffffff",
             Layer:{type:"objectRect", name: "bg"}
         },
         {
             x: 0,
             y: 0,
             width: 600,
-            height: 50,
-            fill: "silver",
+            height: 60,
+            fill: "#C0C0C0",
             cornerRadius: [10, 10, 0, 0],
             Layer:{type:"objectRect", name: "bar"}
         },
         {
             text: "Çözüm",
             x: 10,
-            y: 10,
+            y: 15,
             width: 100,
             height: 30,
             fontSize: 20,
             fontFamily: "Nunito",
-            fill: "black",
+            fill: "#000000",
             verticalAlign: "middle",
             padding: 0,
             Layer:{type:"objectText", name: "text"}
-        }
-        ];
+        },
+        {
+            x: 545,
+            y: 5,
+            width: 50,
+            height: 50,
+            src: "/files/"+ IDE.files.imgFolder.split("/files/")[1] +"/closebtn.png",
+            scale:{x:1, y:1},
+            Layer: {name:"popup_close.jpg", type:"objectImg", class:"popup_close"}
+        }];
 
         addObjects(kids, container, false);
+        Arayuz_addLayer(container, O.container);
 
-        console.log(kids);
-        console.log(container);
+        console.log("/files/"+IDE.files.imgFolder.split("/files/")[1]+"/closebtn.png");
+    }
+
+
+    this.addSolutionButon = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+                x: 0,
+                y: 0,
+                width: 200,
+                height: 50,
+                cornerRadius: [10, 10, 10, 10],
+                fill: "#ffffff",
+                Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                text: "Çözüm Göster",
+                x: 0,
+                y: 0,
+                width: 200,
+                height: 50,
+                fontSize: 20,
+                fontFamily: "Nunito",
+                align: "center",
+                fill: "#000000",
+                verticalAlign: "middle",
+                padding: 0,
+                Layer:{type:"objectText", name: "text"}
+        }];
+
+        console.log(O);
+
+        addObjects(kids, container, false);
         Arayuz_addLayer(container, O.container);
     }
+
+
 }
+
+
+
+//Create Select
+/*    this.CheckFNC = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 50,
+            fill: "lightblue",
+            offsetX: -25,
+            offsetY: -25,
+            Layer:{type:"objectCircle", name: "bg"}
+        },{
+            text: "btn",
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 50,
+            fontSize: 16,
+            fontFamily: "Arial",
+            fill: "black",
+            verticalAlign: "middle",
+            padding: 0,
+            align: "center",
+            Layer:{type:"objectText", name: "text"}
+        },{
+            x: 4,
+            y: 4,
+            width: 42,
+            height: 42,
+            fill: "rgba(0,0,0,0.5)",
+            offsetX: -21,
+            offsetY: -21,
+            Layer:{type:"objectCircle", name: "clicked", class: "clicked"}
+        },{
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 50,
+            fill: "rgba(0,0,0,0)",
+            Layer:{type:"objectRect", name: "mask", class: "mask"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container, O.container);
+    }*/

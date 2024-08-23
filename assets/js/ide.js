@@ -1,11 +1,5 @@
 function Arayuz_addLayer(obj, container){
-    console.log("OMG:", obj.Layer);
-    console.log(obj);
-    console.log(container);
-
-    //if(utils.editLayerControl(IDE.activeLayer)){
     if(utils.editLayerControl(container)){
-        console.log("GIRDI");
         var id = Layers.length;
         var hide = false;
         var lock = false;
@@ -35,7 +29,6 @@ function Arayuz_addLayer(obj, container){
         })
 
         hideBtn.addEventListener("click", function(){
-            console.log("view");
             if(obj.Layer.hide){
                 obj.Layer.hide = false;
                 obj.Layer.hideBtn.style.opacity = 0.2;
@@ -49,7 +42,6 @@ function Arayuz_addLayer(obj, container){
         });
 
         lockBtn.addEventListener("click", function(e){
-            console.log("lock");
             if(obj.Layer.lock){
                 obj.Layer.lock = false;
                 obj.Layer.lockBtn.style.opacity = 0.2;
@@ -70,7 +62,8 @@ function Arayuz_addLayer(obj, container){
 
 
 
-/*    obj.on("mousedown", function(e){
+    /*
+    obj.on("mousedown", function(e){
         Permission(e.evt.shiftKey, obj);
         getProp(true);
     }).on("mouseup", function(){
@@ -102,8 +95,8 @@ function Arayuz_addLayer(obj, container){
         });
     }
 
-    deSelect();*/
-    console.log("BITTI");
+    deSelect();
+    */
 }
 
 
@@ -124,7 +117,6 @@ function bune(obj, konvaEditLayer){
     }).on("transform", function(){
         getProp(false);
     }).on("transformend", function(){
-        console.log("transformend");
         addHistory();
     });
 
@@ -267,7 +259,7 @@ function getProp(sameValueSearch){
     if(sameValueSearch){
         IDE.propValues={};
         IDE.selectedLayers.map(function(e){
-            var props = {width: e.width(), height: e.height(), scale:e.scaleX()}
+            var props = {width: e.width(), height: e.height(), scaleW: e.scaleX(), scaleH: e.scaleY()}
             for(var p in props){
                 if(IDE.propValues[p] === undefined){
                     IDE.propValues[p] = props[p];
@@ -286,15 +278,22 @@ function getProp(sameValueSearch){
         IDE.workSpace.widthInput.value = IDE.selectedLayers[0].width();
         IDE.workSpace.heightInput.value = IDE.selectedLayers[0].height();
         IDE.workSpace.scaleWInput.value = IDE.selectedLayers[0].scaleX()*100;
+        IDE.workSpace.scaleHInput.value = IDE.selectedLayers[0].scaleY()*100;
     }else if(IDE.selectedLayers.length){
         IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
         IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
         IDE.workSpace.widthInput.value = IDE.propValues.width;
         IDE.workSpace.heightInput.value = IDE.propValues.height;
-        if(IDE.propValues.scale===""){
+        if(IDE.propValues.scaleW===""){
             IDE.workSpace.scaleWInput.value = "";
         }else{
-            IDE.workSpace.scaleWInput.value = IDE.propValues.scale*100;
+            IDE.workSpace.scaleWInput.value = IDE.propValues.scaleW*100;
+        }
+
+        if(IDE.propValues.scaleH===""){
+            IDE.workSpace.scaleHInput.value = "";
+        }else{
+            IDE.workSpace.scaleHInput.value = IDE.propValues.scaleH*100;
         }
     } else{
         IDE.workSpace.leftInput.value = "";
@@ -302,6 +301,7 @@ function getProp(sameValueSearch){
         IDE.workSpace.widthInput.value = "";
         IDE.workSpace.heightInput.value = "";
         IDE.workSpace.scaleWInput.value = "";
+        IDE.workSpace.scaleHInput.value = "";
     }
 }
 
@@ -310,37 +310,64 @@ document.addEventListener("keyup", function(e){
     if((e.keyCode === 8 || e.keyCode === 46)){
         //if(IDE.scope === "Stage" && Layers.length){
         if(IDE.scope === "Stage"){
-            var allObj = IDE.activeLayer.getChildren();
-            IDE.selectedLayers.forEach(function(SL){
-                if(utils.editLayerControl(IDE.activeLayer)){
-                    for(var i=0; i<Layers.length; i++){
-                        if(SL.Layer.id === Layers[i].Layer.id){
-                            Layers[i].destroy();
-                            Layers.splice(i, 1);
-                            LayerSR.deleted(i);
-                            break;
-                        }
-                    }
-                }else{
-                    allObj.map(function(e){
-                        if(e.Layer){
-                            if(SL.Layer.id === e.Layer.id){
-                                e.destroy();
-                            }
-                        }
-                    })
-                }
-            });
-
-            CREATE.checkKontrol();
-            deSelect();
+            deleteObject();
         }else if(IDE.scope === "Scene"){
             SceneSR.deleted(jsonV2.slides[sceneIndex].sceneID);
         }
     }
-
 });
 
+function deleteObject(){
+    console.log("deleteObject");
+    var allObj = IDE.activeLayer.getChildren();
+    var relatedObject = false;
+    IDE.selectedLayers.forEach(function(SL){
+        if(utils.editLayerControl(IDE.activeLayer)){
+            for(var i=0; i<Layers.length; i++){
+                if(SL.Layer.id === Layers[i].Layer.id){
+                    Layers[i].destroy();
+                    Layers.splice(i, 1);
+                    LayerSR.deleted(i);
+
+                    if(SL.Layer.name.includes("popup_")){
+                        IDE.workSpace.createPopup.style.pointerEvents = "auto";
+                        IDE.workSpace.createPopup.style.opacity=1;
+                        relatedObject = true;
+                    }
+
+                    break;
+                }
+            }
+        }else{
+            allObj.map(function(e){
+                if(e.Layer){
+                    if(SL.Layer.id === e.Layer.id){
+                        e.destroy();
+                    }
+                }
+            })
+        }
+    });
+
+    CREATE.checkKontrol();
+    deSelect();
+    searchRelatedObject(relatedObject);
+}
+
+function searchRelatedObject(relatedObject){
+    if(relatedObject){
+        var allObj = IDE.activeLayer.getChildren();
+        allObj.forEach(function(e){
+            if(e.Layer){
+                if(e.Layer.name.includes("popup_")){
+                    IDE.selectedLayers.push(e);
+                }
+            }
+        });
+
+        deleteObject();
+    }
+}
 
 /* Objects Position Change */
 document.addEventListener("keydown", function(e){
@@ -421,12 +448,21 @@ function changeHeight(newHeight){
     getProp(true);
 }
 
-function changeScale(e){
+function changeScale(e, mode){
     var current = Number(e.target.value);
     var newScale = current/100;
+    var checked = IDE.workSpace.ratioCheck.checked;
 
     IDE.selectedLayers.map(function(obj){
-        obj.scale({x:newScale, y:newScale});
+        if(checked){
+            obj.scale({x:newScale, y:newScale});
+        }else{
+            if(mode==="width"){
+                obj.scaleX(newScale);
+            }else{
+                obj.scaleY(newScale);
+            }
+        }
     });
 
     getProp(true);
@@ -480,8 +516,8 @@ IDE.workSpace.createRect.addEventListener("click", function(){
             text: "text",
             x: position.x,
             y: position.y,
-            width: 100,
-            height: 100,
+            width: 150,
+            height: 150,
             fill: "#bdbdbd",
             draggable: true
         },
@@ -495,21 +531,40 @@ IDE.workSpace.createRect.addEventListener("click", function(){
 });
 
 IDE.workSpace.createPopup.addEventListener("click", function(){
-    var position = utils.getRandomPosition(100, 100, 100);
-    CREATE.addSolutionPopup({
+    CREATE.addSolutionWindow({
         properties:{
-            x: position.x,
-            y: position.y,
+            x: 400,
+            y: 50,
             width: 600,
             height: 600,
             draggable: true,
         },
         container: IDE.activeLayer,
         layer: {
-            name: "popup",
+            name: "popup_window0",
+            elementID: "popup_window0",
             type: "objectMovieClip"
         }
     });
+
+    CREATE.addSolutionButon({
+        properties:{
+            x: 50,
+            y: 50,
+            width: 200,
+            height: 50,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "popup_buton0",
+            elementID: "popup_buton0",
+            type: "objectMovieClip"
+        }
+    });
+
+    this.style.pointerEvents = "none";
+    this.style.opacity = 0.5;
 });
 
 IDE.workSpace.uploadImageForm.addEventListener("change", function(e){
@@ -545,11 +600,18 @@ function OpenMovieClip(mc){
     IDE.editLayer.x(50);
     var deleteObject = [];
     var movieClipScale = mc.scale();
+    var selectMode = false;
 
     IDE.editBG.off("dblclick");
     IDE.editBG.on("dblclick", function(){
         CloseMovieClip(mc, movieClipScale);
     });
+
+    if(mc.Layer.elementID){
+        if(mc.Layer.elementID.indexOf("selectButon") > -1){
+            selectMode = true;
+        }
+    }
 
     mc.getChildren().map(function(Object){
         if(Object.Layer){
@@ -557,15 +619,21 @@ function OpenMovieClip(mc){
             copyObject.Layer = Object.Layer;
             var scaleX = (Object.scale().x * movieClipScale.x);
             var scaleY = (Object.scale().y * movieClipScale.y);
-            console.log(scaleX, scaleY);
 
             copyObject.x( Object.getAbsolutePosition().x-50 );
             copyObject.y( Object.getAbsolutePosition().y-50 );
 
             copyObject.scale({x:scaleX, y:scaleY});
             IDE.editLayer.add(copyObject);
-            bune(copyObject, true);
-            copyObject.draggable(true);
+            if(!selectMode){
+                bune(copyObject, true);
+                copyObject.draggable(true);
+            }else{
+                if(copyObject.Layer.class === "mask"){
+                    bune(copyObject, true);
+                    copyObject.draggable(true);
+                }
+            }
             deleteObject.push(Object);
         }
     });
@@ -574,8 +642,6 @@ function OpenMovieClip(mc){
         deleteObject[x].destroy();
     }
 }
-
-
 
 
 function CloseMovieClip(mc){
@@ -605,7 +671,7 @@ function CloseMovieClip(mc){
 
     SELECT = IDE.sceneSelect;
     IDE.activeLayer = IDE.sceneLayer;
-    IDE.editLayer.x(1280);
+    IDE.editLayer.x(1400);
     showWorkSpaces();
 }
 
@@ -645,12 +711,11 @@ IDE.workSpace.scope_RightWorkSpace.addEventListener("mousedown", function(){
 
 
 document.querySelector("#export").addEventListener("click", function(){
-    console.log("Hoops<---");
     var json = EXPORT.convertJson();
-    console.log("Hoops--->");
     Player = new PLAYER();
     IDE.workSpace.previewMain.style.display = "block";
     Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, false);
+    hideWorkSpaces();
 });
 
 document.querySelector("#save").addEventListener("click", function(){
@@ -658,7 +723,7 @@ document.querySelector("#save").addEventListener("click", function(){
     //StorageSave(json);
     saveDataAjax(json);
     console.log( json );
-    console.log("bitti");
+    console.log("kaydedildi");
 });
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
@@ -666,6 +731,7 @@ IDE.workSpace.previewClose.addEventListener("click", function(){
     document.querySelector("#PlayerMain").remove();
     Player = null;
     IDE.workSpace.previewMain.style.display = "none";
+    showWorkSpaces();
 });
 
 /* Workspace-Properties */
@@ -722,12 +788,24 @@ IDE.workSpace.heightInput.addEventListener("keypress", function(e) {
 //Scale Input
 IDE.workSpace.scaleWInput.addEventListener("focus",focusWorkSpaces);
 IDE.workSpace.scaleWInput.addEventListener("change", function(e) {
-    changeScale(e);
+    changeScale(e, "width");
 });
 
 IDE.workSpace.scaleWInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
-        changeScale(e);
+        changeScale(e, "width");
+    }
+});
+
+//Scale Input
+IDE.workSpace.scaleHInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.scaleHInput.addEventListener("change", function(e) {
+    changeScale(e, "height");
+});
+
+IDE.workSpace.scaleHInput.addEventListener("keypress", function(e) {
+    if (event.key === "Enter") {
+        changeScale(e, "height");
     }
 });
 
@@ -776,10 +854,16 @@ IDE.workSpace.align_CenterStage.addEventListener("click", function(){
     ALIGN.CenterStage(IDE.selectedLayers);
 });
 
+IDE.workSpace.align_ScaleAuto.addEventListener("click", function(){
+    ALIGN.ScaleAuto(IDE.selectedLayers);
+    getProp(true);
+});
+
 /* Welcome Menü */
 IDE.welcome.newFileBtn.addEventListener("click", function(){
     if(IDE.welcome.addFileInput.value.length){
-        jsonV2.fileName = IDE.welcome.addFileInput.value; console.log(IDE.welcome.addFileInput.value, "yazılmış");
+        jsonV2.fileName = IDE.welcome.addFileInput.value;
+        console.log(IDE.welcome.addFileInput.value, "yazılmış");
     }else{
         jsonV2.fileName = "untitled_"+ utils.addTimeStamp("standart");
     }
@@ -898,6 +982,8 @@ function addHistory(){
         temp2.push(klon);
     });
 
+    console.log(temp2);
+
     temp.push(temp2);
     if(temp.length>10){
         temp.shift();
@@ -951,6 +1037,7 @@ function historyProgress(){
     }
 }
 
+/*
 document.querySelector("#omg").addEventListener("click", function(e){
     console.log("anonim click");
     //deleteFileAjax("aa");
@@ -968,8 +1055,7 @@ document.querySelector("#omg2").addEventListener("click", function(e){
     console.log("değiştirildi",activeMC);
 });
 
-
-
+*/
 
 
 /*

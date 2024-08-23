@@ -112,6 +112,8 @@ async function createNewFileFNC(req, res){
     FILE.files.mainJson = await createJson( path.join(FILE.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
     FILE.fileList = await createJson( FILE.fileList.path, addList, {encoding:"utf8", flag:"w"});
     res.send(FILE);
+    var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
+    var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
     console.log("-- CREATE NEW FILE FINISH--");
 }
 
@@ -137,6 +139,9 @@ async function selectFileFNC(req, res){
     console.log(FILE.fileList );
     FILE.files = FILE.fileList.data[file].files;
     FILE.files.data = await readFileList(FILE.files.mainJson.path);
+    var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
+    var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
+    console.log("Copy ImageA:", copyImageA, "ImageB:", copyImageB);
     res.send(FILE);
 }
 
@@ -211,6 +216,24 @@ async function initApp(){
 
     FILE.systemReady = true;
 }
+
+
+function copyFile(source, target){
+    console.log(source);
+    console.log(target);
+    return new Promise(function(resolve, reject){
+        fs.copyFile(source, target, (err) => {
+            if (err){
+                resolve(false);
+            }else{
+                resolve(true);
+            }
+        });
+    })
+}
+
+
+
 
 app.listen(3630, function() {
     console.log("listening on port 3630");

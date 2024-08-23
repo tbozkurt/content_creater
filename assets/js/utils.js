@@ -28,7 +28,7 @@ function utils(){
             if(prop[p]){
                 if(p === "layername"){
                     div.setAttribute(p, prop[p]);
-                }else{
+                } else{
                     div[p] = prop[p];
                 }
             }
@@ -61,7 +61,6 @@ function utils(){
 
     this.editLayerControl = function(layer){
         var add = (layer.attrs.layer === "main");
-        console.log("Add Main MC?:", add);
         return add;
     }
 
