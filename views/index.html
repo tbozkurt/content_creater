@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Etkinlik Arayüz</title>
     <script src="/libs/jquery/dist/jquery.js"></script>
+    <script src="/libs/howler/dist/howler.core.min.js"></script>
     <script src="/libs/konva/konva.js"></script>
 
     <script src="/assets/js/utils.js"></script>
@@ -479,7 +480,8 @@
                     properties: e,
                     container: container,
                     layer: layer,
-                    uploadImg: null
+                    uploadImg: null,
+                    addLayer: addLayer
                 });
             }else if(layer.type === "objectText"){
                 CREATE.textFNC({
@@ -518,7 +520,8 @@
         layerDeleteAll();
         addObjects(jsonV2.slides[sceneIndex].all, IDE.sceneLayer, true);
         addHistory();
-        importTypeSettings()
+        importTypeSettings();
+        searchSingleUseObject();
 
         document.querySelectorAll(".SR_Scene_Drag").forEach(function(btn){
             btn.style.backgroundColor = "#666666";
@@ -627,6 +630,9 @@
                         <div id="p_${filename}" class="welcome_fileBtn_smallBtn">
                             <img class="welcome_fileBtn_icon" src="/assets/img/preview.png" alt="file">
                         </div>
+                        <div id="o_${filename}" class="welcome_fileBtn_smallBtn">
+                            <img class="welcome_fileBtn_icon" src="/assets/img/optic.png" alt="file">
+                        </div>
                     </div>`;
         let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
         IDE.welcome.savedFileList.appendChild(div);
@@ -646,7 +652,12 @@
         });
 
         document.querySelector("#p_"+ filename).addEventListener("click", function(e){
-            window.open("/player/?file="+ filename);
+            window.open("/player/?file="+ filename +"&mode=normal");
+            e.stopPropagation();
+        });
+
+        document.querySelector("#o_"+ filename).addEventListener("click", function(e){
+            window.open("/player/?file="+ filename +"&mode=optic");
             e.stopPropagation();
         });
     }
@@ -761,7 +772,8 @@
                 layer:{
                     name: e.filename,
                     type:"objectImg"
-                }
+                },
+                addLayer: true
             });
 
         });

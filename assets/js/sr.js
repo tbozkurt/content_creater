@@ -45,7 +45,6 @@ function addSR(Data){
             SR.drop[i] = {Box:dropHTML, Id:i, xPos: tempDrag.xPos, yPos: tempDrag.yPos};
         });
 
-        //console.log(SR.drag);
 
         if(Mode  === "Add"){
             if(Data.Before) {
@@ -56,7 +55,6 @@ function addSR(Data){
         }
 
 
-        //console.log(Old);
         Old.map(function(order, index){
             var tempDrag = SR.drag[order];
             tempDrag.Box.style.position = "absolute";
@@ -78,8 +76,6 @@ function addSR(Data){
 
             SR.list[index] = order;
         });
-
-       // console.log("SR:", SR.list);
 
         function dragControlFNC(mc, id, dragEnd){
             var dropID = -1;

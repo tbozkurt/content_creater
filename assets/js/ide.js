@@ -171,6 +171,16 @@ function addOrganizedLayer(List, id){
 }
 
 
+function closeTextEditor(){
+    if(IDE.scope === "EditText"){
+        IDE.text.currentCanvas.text(IDE.text.editBox.innerText).width(IDE.text.editBox.offsetWidth+2);
+        IDE.text.editBox.style.display = "none";
+        IDE.text.currentCanvas.show();
+        selectItem({layer: IDE.text.currentCanvas});
+        IDE.text.editBox.remove();
+    }
+}
+
 function focusTextEditor() {
     var range = document.createRange();
     var select = window.getSelection();
@@ -318,7 +328,6 @@ document.addEventListener("keyup", function(e){
 });
 
 function deleteObject(){
-    console.log("deleteObject");
     var allObj = IDE.activeLayer.getChildren();
     var relatedObject = false;
     IDE.selectedLayers.forEach(function(SL){
@@ -330,8 +339,6 @@ function deleteObject(){
                     LayerSR.deleted(i);
 
                     if(SL.Layer.name.includes("popup_")){
-                        IDE.workSpace.createPopup.style.pointerEvents = "auto";
-                        IDE.workSpace.createPopup.style.opacity=1;
                         relatedObject = true;
                     }
 
@@ -366,6 +373,28 @@ function searchRelatedObject(relatedObject){
         });
 
         deleteObject();
+        IDE.workSpace.createPopup.style.pointerEvents = "auto";
+        IDE.workSpace.createPopup.style.opacity=1;
+    }
+}
+
+function searchSingleUseObject(){
+    var found = false;
+    var allObj = IDE.activeLayer.getChildren();
+    allObj.map(function(e){
+        if(e.Layer){
+            if(e.Layer.name.includes("popup_")){
+                found = true;
+            }
+        }
+    });
+
+    if(found){
+        IDE.workSpace.createPopup.style.pointerEvents = "none";
+        IDE.workSpace.createPopup.style.opacity=0.5;
+    }else{
+        IDE.workSpace.createPopup.style.pointerEvents = "auto";
+        IDE.workSpace.createPopup.style.opacity=1;
     }
 }
 
@@ -543,7 +572,8 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
         layer: {
             name: "popup_window0",
             elementID: "popup_window0",
-            type: "objectMovieClip"
+            type: "objectMovieClip",
+            class: "hide"
         }
     });
 
@@ -559,7 +589,8 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
         layer: {
             name: "popup_buton0",
             elementID: "popup_buton0",
-            type: "objectMovieClip"
+            type: "objectMovieClip",
+            class: "hide"
         }
     });
 
@@ -629,7 +660,7 @@ function OpenMovieClip(mc){
                 bune(copyObject, true);
                 copyObject.draggable(true);
             }else{
-                if(copyObject.Layer.class === "mask"){
+                if(copyObject.Layer.class === "csMask"){
                     bune(copyObject, true);
                     copyObject.draggable(true);
                 }
@@ -677,13 +708,7 @@ function CloseMovieClip(mc){
 
 /* IDE Scopes */
 IDE.workSpace.scope_Canvas.addEventListener("mousedown", function(e) {
-    if(IDE.scope === "EditText"){
-        IDE.text.currentCanvas.text(IDE.text.editBox.innerText).width(IDE.text.editBox.offsetWidth+2);
-        IDE.text.editBox.style.display = "none";
-        IDE.text.currentCanvas.show();
-        selectItem({layer: IDE.text.currentCanvas});
-        IDE.text.editBox.remove();
-    }
+    closeTextEditor();
 
     IDE.scope = "Stage";
     if(!e.shiftKey && !IDE.selectedLayers.length){
@@ -701,10 +726,12 @@ IDE.workSpace.scope_Canvas.addEventListener("mousedown", function(e) {
 
 
 IDE.workSpace.scope_Scene.addEventListener("mousedown", function(){
+    closeTextEditor();
     IDE.scope = "Scene";
 });
 
 IDE.workSpace.scope_RightWorkSpace.addEventListener("mousedown", function(){
+    closeTextEditor();
     IDE.scope = "WorkSpace";
 });
 
@@ -714,7 +741,7 @@ document.querySelector("#export").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     Player = new PLAYER();
     IDE.workSpace.previewMain.style.display = "block";
-    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, false);
+    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview");
     hideWorkSpaces();
 });
 
@@ -727,7 +754,6 @@ document.querySelector("#save").addEventListener("click", function(){
 });
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
-    console.log("close preview");
     document.querySelector("#PlayerMain").remove();
     Player = null;
     IDE.workSpace.previewMain.style.display = "none";
@@ -863,7 +889,6 @@ IDE.workSpace.align_ScaleAuto.addEventListener("click", function(){
 IDE.welcome.newFileBtn.addEventListener("click", function(){
     if(IDE.welcome.addFileInput.value.length){
         jsonV2.fileName = IDE.welcome.addFileInput.value;
-        console.log(IDE.welcome.addFileInput.value, "yazılmış");
     }else{
         jsonV2.fileName = "untitled_"+ utils.addTimeStamp("standart");
     }
@@ -907,7 +932,6 @@ document.addEventListener("keydown", function(e){
     }
 
     if(ctrlDown && (e.keyCode === vKey)){
-        console.log(IDE.scope);
 
         if(IDE.scope === "Scene"){
             var json = EXPORT.convertJson();
@@ -981,8 +1005,6 @@ function addHistory(){
 
         temp2.push(klon);
     });
-
-    console.log(temp2);
 
     temp.push(temp2);
     if(temp.length>10){

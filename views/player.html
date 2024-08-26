@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script src="/libs/jquery/dist/jquery.js"></script>
+    <script src="/libs/howler/dist/howler.core.min.js"></script>
     <script src="/assets/js/utils.js"></script>
     <script src="/assets/js/player.js"></script>
     <link rel="stylesheet" href="/assets/css/player.css">
@@ -44,7 +45,7 @@
         jsonV2 = data.files.data;
         console.log(jsonV2.slides);
 
-        Player.startBuild(jsonV2, 0, "#000000", newKT, true);
+        Player.startBuild(jsonV2, 0, "#000000", newKT, mode);
 /*        createOptikForm();
         KTMode();
         openOpticWindow();*/
@@ -71,6 +72,7 @@
     }
 
     var file = getUrlParameterFNC("file");
+    var mode = getUrlParameterFNC("mode");
     selectFileAjax(file);
 
     /*

@@ -2,12 +2,31 @@ function PLAYER(){
 
         this.allScene = [];
         this.sceneIndex = 0;
-        var player = {}
         var This = this;
         var KT={}
+        var player={
+            sound: new Howl({
+                src: ['https://cdn.okulistik.com/mobileplayer/edge_includes/yesno.mp3'],
+                sprite: {
+                    right: [1000, 1000],
+                    wrong: [2000, 1000]
+                }
+            })
+        };
+
+
+/*    var sound = new Howl({
+        src: ['sound.mp3']
+    });
+
+    //sound.play();*/
+
+        var scene = [];
+
 
         this.getStandart = function(e){
             var className = e.Layer.type
+
             if(e.Layer.class){
                 className += (" "+e.Layer.class);
             }
@@ -108,8 +127,10 @@ function PLAYER(){
             });
         }
 
-        this.startBuild = function(json, currentSceneID, stageBG, container, KTMode){
-            if(KTMode){
+        this.startBuild = function(json, currentSceneID, stageBG, container, Mode){
+            console.log("Start", jsonV2);
+            jsonV2 = json;
+            if(Mode === "optic"){
                 KT.Mode = true;
                 container = addKT_HTML(container);
             }
@@ -120,9 +141,20 @@ function PLAYER(){
             container.appendChild(player.mainDOM);
 
             var sceneCSS = [];
-            json.slides.map(function(slide) {
+            json.slides.map(function(slide, index){
                 var convertObjectsCSS = This.convertObject(slide.all);
                 sceneCSS.push(convertObjectsCSS);
+                scene[index] = {
+                    id: index,
+                    type:"",
+                    duration:0,
+                    wrong:0,
+                    right:0,
+                    empty:1,
+                    complete: false,
+                    attempt:0,
+                    popupWindow: {}
+                }
             });
 
             sceneCSS.map(function(allObject, i){
@@ -132,66 +164,137 @@ function PLAYER(){
 
                 player.mainDOM.appendChild(sceneDiv);
                 This.AddCS(sceneDiv);
-                This.Popup(sceneDiv);
+                This.Popup(sceneDiv, i);
                 This.allScene.push(sceneDiv);
             })
 
             this.addEvents();
+            this.addScreenClose();
 
-            if(KTMode){
+            if(Mode === "optic"){
                 This.build_KT(json);
-            }else{
+            }else if(Mode === "preview"){
                 Preview_HTML(container);
+            }else  if(Mode === "normal"){
+                this.addNormal_HTML();
             }
         }
 
         this.AddCS = function(Scene){
-            var allButons = [];
-            Scene.childNodes.forEach(function(btn){
-                if(btn.id.includes("selectButon")){
-                    var id = parseInt(btn.id.split("_")[1]);
-                    var clicked = btn.querySelector(".clicked");
-                    btn.addEventListener("click", function(){
+            var CS = {
+                rightAnswer: jsonV2.slides[this.sceneIndex].rightAnswer,
+                wrongCount: 0,
+                Buton:[]
+            }
+
+            Scene.childNodes.forEach(function(main){
+                if(main.id.includes("selectButon")){
+                    var id = parseInt(main.id.split("_")[1]);
+                    var clicked = main.querySelector(".csClick");
+                    main.addEventListener("click", function(){
                         selected(id);
                     });
-                    allButons[id] = {btn, clicked};
-                    clicked.style.display = "none";
-                    btn.style.cursor = "pointer";
+
+                    CS.Buton[id] = {
+                        main:main,
+                        csClick: main.querySelector(".csClick"),
+                        csWrong: main.querySelector(".csWrong"),
+                        csRight: main.querySelector(".csRight"),
+                    };
+
+                    main.style.cursor = "pointer";
                 }
             });
 
             function selected(id){
-                allButons.map(function(o){
-                    o.clicked.style.display = "none";
-                });
+                reset();
 
-                allButons[id].clicked.style.display = "block";
+                CS.Buton[id].csClick.style.display = "block";
+
                 if(KT.Mode){
                     KT.singleSelectFNC(This.sceneIndex, id);
+                }else{
+                    controlFNC(id);
                 }
+            }
+
+            function reset(){
+                CS.Buton.map(function(Buton){
+                    Buton.csClick.style.visibility = "hidden";
+                    Buton.csWrong.style.visibility = "hidden";
+                });
+            }
+
+            function controlFNC(id){
+                console.log(This.sceneIndex);
+                var rightAnswer = jsonV2.slides[This.sceneIndex].rightAnswer;
+
+                if(rightAnswer === id){
+                    This.playRightAudio();
+                    scene[This.sceneIndex].right++;
+                    CS.Buton[id].csRight.style.visibility = "visible";
+                    disableButon();
+                    scene[This.sceneIndex].complete = true;
+                }else{
+                    This.playWrongAudio();
+                    scene[This.sceneIndex].wrong++;
+                    CS.Buton[id].csWrong.style.visibility = "visible";
+                    player.screenCloseDOM.style.display = "block";
+
+
+                    if(scene[This.sceneIndex].wrong === 3){
+                        if(scene[This.sceneIndex].popupWindow.btn){
+                            scene[This.sceneIndex].popupWindow.clicked = true;
+                            scene[This.sceneIndex].popupWindow.btn.style.visibility = "hidden";
+                            scene[This.sceneIndex].popupWindow.window.style.visibility = "visible";
+                        }
+                        scene[This.sceneIndex].complete = true;
+                    }else{
+                        if(scene[This.sceneIndex].popupWindow.btn){
+                            scene[This.sceneIndex].popupWindow.btn.style.visibility = "visible";
+                        }
+
+                        player.screenCloseTimer = setTimeout(function (){
+                            player.screenCloseDOM.style.display="none";
+                            reset();
+                        },1000);
+                    }
+
+
+                }
+            }
+
+            function disableButon(){
+                console.log("disableButon");
+                CS.Buton.map(function(btn){
+                    btn.main.style.pointerEvents = "none";
+                });
             }
         }
 
-        this.Popup = function(Scene){
-            console.log("this.Popup");
+        this.Popup = function(Scene, index){
             var popupWindow;
             Scene.childNodes.forEach(function(obj) {
                 if(obj.id.includes("popup_buton")){
+                    scene[index].popupWindow.btn = obj;
+                    scene[index].popupWindow.clicked = false;
                     obj.addEventListener("click", function(){
-                        console.log("Deneme",popupWindow.style.visibility);
-                        if(popupWindow.style.visibility === "hidden"){
-                            popupWindow.style.visibility = "visible";
-                        }else{
+                        if(scene[index].popupWindow.clicked){
                             popupWindow.style.visibility = "hidden";
+                            scene[index].popupWindow.clicked = false;
+                        }else{
+                            popupWindow.style.visibility = "visible";
+                            scene[index].popupWindow.clicked = true;
                         }
                     });
 
                     obj.style.cursor = "pointer";
-                }else if(obj.id.includes("popup_window")){
+                } else if(obj.id.includes("popup_window")){
+                    scene[index].popupWindow.window = obj;
                     popupWindow = obj;
-                    popupWindow.style.visibility = "hidden";
                     popupWindow.querySelector('.popup_close').addEventListener("click",function(){
                         popupWindow.style.visibility = "hidden";
+                        scene[index].popupWindow.clicked = false;
                     });
                     obj.style.cursor = "pointer";
                 }
@@ -210,6 +313,8 @@ function PLAYER(){
                 if(navText){
                     navText.innerHTML = (index+1) +" / "+ this.allScene.length;
                 }
+
+                this.sceneCompleteControl();
             }
         }
 
@@ -222,6 +327,19 @@ function PLAYER(){
             This.screenRatio();
         }
 
+        this.addScreenClose = function(){
+            player.screenCloseDOM = utils.addDOM({className: "screenClose"});
+            player.mainDOM.appendChild(player.screenCloseDOM);
+        }
+
+        this.sceneCompleteControl = function(){
+            clearInterval(player.screenCloseTimer);
+            if(scene[This.sceneIndex].complete){
+                player.screenCloseDOM.style.display = "block";
+            }else{
+                player.screenCloseDOM.style.display = "none";
+            }
+        }
 
         this.screenRatio = function(){
             var mainWidth = player.containerDOM.clientWidth;
@@ -299,7 +417,9 @@ function PLAYER(){
                             KT.Scene[rid].sceneSelect[id] = {
                                 main: btn,
                                 clicked: btn.querySelector('.clicked'),
-                                bg: btn.querySelector('.bg')
+                                csClick: btn.querySelector(".csClick"),
+                                csWrong: btn.querySelector(".csWrong"),
+                                csRight: btn.querySelector(".csRight")
                             };
                         }
                     });
@@ -325,12 +445,12 @@ function PLAYER(){
                 });
 
                 KT.Scene[rid].sceneSelect.map(function(e){
-                    e.clicked.style.display = "none";
+                    e.csClick.style.visibility = "hidden";
                 })
 
                 if(KT.Scene[rid].click === null || KT.Scene[rid].click !== sid){
                     KT.Scene[rid].opticSelect[sid].style.backgroundColor = "#8b8b8b";
-                    KT.Scene[rid].sceneSelect[sid].clicked.style.display = "block";
+                    KT.Scene[rid].sceneSelect[sid].csClick.style.visibility = "visible";
                     KT.Scene[rid].click = sid;
 
                     var next = This.sceneIndex+1;
@@ -342,7 +462,7 @@ function PLAYER(){
                     KT.time = setTimeout(rowSelectFNC, 1000, next);
                 }else{
                     KT.Scene[rid].opticSelect[sid].style.backgroundColor = "white";
-                    KT.Scene[rid].sceneSelect[sid].clicked.style.display = "none";
+                    KT.Scene[rid].sceneSelect[sid].csClick.style.visibility = "hidden";
                     KT.Scene[rid].click = null;
                 }
             }
@@ -407,13 +527,13 @@ function PLAYER(){
                         score.empty++;
                     }else if(e.rightAnswer === e.click){
                         e.opticSelect[e.click].style.backgroundColor = "green";
-                        e.sceneSelect[e.click].bg.style.backgroundColor = "green";
-                        e.sceneSelect[e.click].clicked.style.display = "none";
+                        e.sceneSelect[e.click].csRight.style.visibility = "visible";
+                        e.sceneSelect[e.click].csClick.style.visibility = "hidden";
                         score.right++;
                     }else{
                         e.opticSelect[e.click].style.backgroundColor = "red";
-                        e.sceneSelect[e.click].bg.style.backgroundColor = "red";
-                        e.sceneSelect[e.click].clicked.style.display = "none";
+                        e.sceneSelect[e.click].csWrong.style.visibility = "visible";
+                        e.sceneSelect[e.click].csClick.style.visibility = "hidden";
                         score.wrong++;
                     }
 
@@ -440,8 +560,9 @@ function PLAYER(){
 
                     e.sceneSelect.map(function(e){
                         e.main.style.pointerEvents = "auto";
-                        e.bg.style.backgroundColor = "lightblue";
-                        e.clicked.style.display = "none";
+                        e.csClick.style.visibility = "hidden";
+                        e.csWrong.style.visibility = "hidden";
+                        e.csRight.style.visibility = "hidden";
                     });
                 });
 
@@ -460,25 +581,46 @@ function PLAYER(){
             return player.containerDOM;
         }
 
-        function addKT_HTML(container){
-            var html =
-            `<div id="Player_Container"></div>
-            <div id="Optic_MainDiv"></div>
-            <div id="Nav_MainDiv">
-                    <div class="Nav_Container">
-                        <div class="Nav_Btn" id="Nav_BackBtn">&#9664;</div>
-                        <div class="Nav_Btn" id="Nav_Text">0 / 0</div>
-                        <div class="Nav_Btn" id="Nav_NextBtn">&#9654;</div>
-                    </div>
-            </div>
-            <div id="Top_MainDiv">
-                <div id="Optic_Btn">Optik Form</div>
-            </div>`;
+    function addKT_HTML(container){
+        var html =
+        `<div id="Player_Container"></div>
+        <div id="Optic_MainDiv"></div>
+        <div id="Nav_MainDiv">
+                <div class="Nav_Container">
+                    <div class="Nav_Btn" id="Nav_BackBtn">&#9664;</div>
+                    <div class="Nav_Btn" id="Nav_Text">0 / 0</div>
+                    <div class="Nav_Btn" id="Nav_NextBtn">&#9654;</div>
+                </div>
+        </div>
+        <div id="Top_MainDiv">
+            <div id="Optic_Btn">Optik Form</div>
+        </div>`;
 
 
-            container.innerHTML = html;
-            return document.querySelector("#Player_Container");
-        }
+        container.innerHTML = html;
+        return document.querySelector("#Player_Container");
+    }
+
+    this.addNormal_HTML = function(){
+        var NavMain = utils.addDOM({className:"Normal_NavMain"});
+        player.mainDOM.appendChild(NavMain);
+        var backBtn = utils.addDOM({className:"Normal_NavBtn", id:"Normal_BackBtn", innerHTML:"&#9664;"});
+        var infoDiv = utils.addDOM({className:"Normal_NavInfo", textContent: "0 / 0"});
+        var nextBtn = utils.addDOM({className:"Normal_NavBtn", id:"Normal_NextBtn", innerHTML:"&#9654;"});
+        NavMain.appendChild(backBtn);
+        NavMain.appendChild(infoDiv);
+        NavMain.appendChild(nextBtn);
+
+        backBtn.addEventListener("click", function(){
+            This.changeScene(This.sceneIndex-1, infoDiv);
+        });
+
+        nextBtn.addEventListener("click", function(){
+            This.changeScene(This.sceneIndex+1, infoDiv);
+        });
+
+        This.changeScene(0, infoDiv);
+    }
 
     function Preview_HTML(container){
         var backBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_BackBtn", innerHTML:"&#9664;"});
@@ -497,6 +639,14 @@ function PLAYER(){
         });
 
         This.changeScene(0, infoDiv);
+    }
+
+    this.playWrongAudio = function(){
+        player.sound.play("wrong");
+    }
+
+    this.playRightAudio = function(){
+        player.sound.play("right");
     }
 }
 

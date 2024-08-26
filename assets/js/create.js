@@ -16,6 +16,15 @@ function CREATE(){
         if(O.addLayer){
             Arayuz_addLayer(rect, O.container);
         }
+
+        if(O.layer){
+            if(O.layer.hide !== undefined){
+                if(O.layer.hide){
+                    rect.hide();
+                }
+            }
+        }
+
     }
 
     //Create Img
@@ -29,7 +38,9 @@ function CREATE(){
             //selectItem({layer: theImg});
         };
 
-        Arayuz_addLayer(theImg, O.container);
+        if(O.addLayer) {
+            Arayuz_addLayer(theImg, O.container);
+        }
         O.container.add(theImg);
 
         if(O.uploadImg){
@@ -62,19 +73,19 @@ function CREATE(){
     this.CheckFNC = function(O){
         var container = this.movieClipFNC(O);
         var kids = [{
-            x: 0,
-            y: 0,
+            x: 4,
+            y: 4,
             width: 50,
             height: 50,
             src: "/files/"+ IDE.files.imgFolder.split("/files/")[1] +"/butonback.png",
             Layer: {name:"popup_close.jpg", type:"objectImg", class:"popup_close"}
         },{
             text: "btn",
-            x: 0,
-            y: 0,
+            x: 4,
+            y: 4,
             width: 50,
             height: 50,
-            fontSize: 18,
+            fontSize: 20,
             fontFamily: "Nunito",
             fontStyle: "bold",
             fill: "white",
@@ -82,23 +93,47 @@ function CREATE(){
             padding: 0,
             align: "center",
             Layer:{type:"objectText", name: "text"}
-        },{
-            x: -4,
-            y: -4,
+        },
+        {
+            x: 0,
+            y: 0,
             width: 58,
             height: 58,
             fill: "rgba(240, 130, 180, 0.4)",
             strokeWidth: 2,
             stroke:"rgba(240, 40, 130, 0.4)",
             cornerRadius:[58, 58, 58, 58],
-            Layer:{type:"objectRect", name: "clicked", class: "clicked"}
-        },{
+            Layer:{type:"objectRect", name: "csClick", class: "csClick hide"}
+        },
+        {
             x: 0,
             y: 0,
-            width: 50,
-            height: 50,
+            width: 58,
+            height: 58,
+            fill: "rgba(210, 50, 50, 0.4)",
+            strokeWidth: 2,
+            stroke:"rgba(150, 30, 30, 0.6)",
+            cornerRadius:[58, 58, 58, 58],
+            Layer:{type:"objectRect", name: "csWrong", class: "csWrong hide", hide: true}
+        },
+        {
+            x: 0,
+            y: 0,
+            width: 58,
+            height: 58,
+            fill: "rgba(155, 205, 100, 0.4)",
+            strokeWidth: 2,
+            stroke:"rgba(50, 105, 30, 0.6)",
+            cornerRadius:[58, 58, 58, 58],
+            Layer:{type:"objectRect", name: "csRight", class: "csRight hide", hide: true}
+        },
+        {
+            x: 0,
+            y: 0,
+            width: 60,
+            height: 60,
             fill: "rgba(0,0,0,0)",
-            Layer:{type:"objectRect", name: "mask", class: "mask"}
+            Layer:{type:"objectRect", name: "csMask", class: "csMask"}
         }];
 
         addObjects(kids, container, false);
@@ -204,8 +239,6 @@ function CREATE(){
                 padding: 0,
                 Layer:{type:"objectText", name: "text"}
         }];
-
-        console.log(O);
 
         addObjects(kids, container, false);
         Arayuz_addLayer(container, O.container);
