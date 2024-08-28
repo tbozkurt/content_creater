@@ -143,7 +143,7 @@
     <div class="WorkSpaces_Group addSpace WorkSpace_SpecialObjects">
         <div class="WorkSpaces_Header">&#8627; Content Objects </div>
         <div class="AlignMain">
-            <div class="AlignBox" id="createSelect"><img src="assets/img/createSelect.png"></div>
+            <div class="AlignBox" id="createSelect"><img src="assets/img/cselect.png"></div>
             <div class="AlignBox" id="createPopup"><img src="assets/img/createPopup.png"></div>
         </div>
     </div>
@@ -159,6 +159,7 @@
         <div class="WorkSpaces_Header">&#8627; Color Picker</div>
         <input type="color" id="colorPicker" name="head" value="#ff0000" />
     </div>
+    <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
 
 <!--
     <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
@@ -203,6 +204,26 @@
 
 
 <script>
+    var deneme = "";
+
+    var product = deneme.substring(5, 8);
+    var grade = deneme.substring(3, 4);
+    var lesson = deneme.substring(0, 3);
+
+    if(!product.length){
+        product = "EKT";
+    }
+
+    if(!grade.length){
+        grade = "5";
+    }
+
+    if(!lesson.length){
+        lesson = "TRK";
+    }
+
+    console.log(product, grade, lesson);
+
     var IDE = {
         stage:{width: 1380, height: 820, container: "scope_Canvas", bg:"#404040"},
         layer:{x:50, y:50, width:1280, height: 720},
@@ -732,25 +753,31 @@
     }
 
     function zipContentParse(data){
-        var path = "/files/"+ data.files.activeFile +".zip";
-        fetch(path)
-            .then(function (resp) {
-                if(resp.ok){
-                    return resp.blob()
-                }
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = data.files.activeFile+".zip";
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                console.log("your file has downloaded!");
-            })
-            .catch(() => alert("zip dosyası oluşturulurken hata oluştu!"));
+        console.log("zipContentParse", data);
+        console.log("success", data.success);
+        if(data.success){
+            var path = "/files/"+ data.content.files.activeFile +".zip";
+            fetch(path)
+                .then(function (resp) {
+                    if(resp.ok){
+                        return resp.blob()
+                    }
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = data.content.files.activeFile+".zip";
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    console.log("your file has downloaded!");
+                })
+                .catch(() => alert("zip dosyası oluşturulurken hata oluştu!"));
+        }else{
+            alert("zip dosyası hatası!");
+        }
     }
 
     function uploadImageAjax(data){

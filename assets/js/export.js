@@ -34,11 +34,13 @@ function EXPORT(){
     }
 
     this.convertText = function(e){
+        console.log(e.fontStyle());
         return Object.assign({
             text: e.text(),
             fontSize: e.fontSize(),
             fontFamily: e.fontFamily(),
             lineHeight: e.lineHeight(),
+            fontStyle: e.fontStyle(),
             fill: e.fill(),
             align: e.align(),
             verticalAlign: e.verticalAlign(),

@@ -75,16 +75,16 @@ function CREATE(){
         var kids = [{
             x: 4,
             y: 4,
-            width: 50,
-            height: 50,
+            width: 44,
+            height: 44,
             src: "/files/"+ IDE.files.imgFolder.split("/files/")[1] +"/butonback.png",
             Layer: {name:"popup_close.jpg", type:"objectImg", class:"popup_close"}
         },{
             text: "btn",
             x: 4,
             y: 4,
-            width: 50,
-            height: 50,
+            width: 44,
+            height: 44,
             fontSize: 20,
             fontFamily: "Nunito",
             fontStyle: "bold",
@@ -97,8 +97,8 @@ function CREATE(){
         {
             x: 0,
             y: 0,
-            width: 58,
-            height: 58,
+            width: 52,
+            height: 52,
             fill: "rgba(240, 130, 180, 0.4)",
             strokeWidth: 2,
             stroke:"rgba(240, 40, 130, 0.4)",
@@ -108,8 +108,8 @@ function CREATE(){
         {
             x: 0,
             y: 0,
-            width: 58,
-            height: 58,
+            width: 52,
+            height: 52,
             fill: "rgba(210, 50, 50, 0.4)",
             strokeWidth: 2,
             stroke:"rgba(150, 30, 30, 0.6)",
@@ -119,8 +119,8 @@ function CREATE(){
         {
             x: 0,
             y: 0,
-            width: 58,
-            height: 58,
+            width: 52,
+            height: 52,
             fill: "rgba(155, 205, 100, 0.4)",
             strokeWidth: 2,
             stroke:"rgba(50, 105, 30, 0.6)",
@@ -130,8 +130,8 @@ function CREATE(){
         {
             x: 0,
             y: 0,
-            width: 60,
-            height: 60,
+            width: 52,
+            height: 52,
             fill: "rgba(0,0,0,0)",
             Layer:{type:"objectRect", name: "csMask", class: "csMask"}
         }];
@@ -172,6 +172,7 @@ function CREATE(){
             width: 600,
             height: 600,
             cornerRadius: [10, 10, 10, 10],
+            stroke:"#6c4d94",
             fill: "#ffffff",
             Layer:{type:"objectRect", name: "bg"}
         },
@@ -180,7 +181,7 @@ function CREATE(){
             y: 0,
             width: 600,
             height: 60,
-            fill: "#C0C0C0",
+            fill: "#6c4d94",
             cornerRadius: [10, 10, 0, 0],
             Layer:{type:"objectRect", name: "bar"}
         },
@@ -192,7 +193,8 @@ function CREATE(){
             height: 30,
             fontSize: 20,
             fontFamily: "Nunito",
-            fill: "#000000",
+            fontStyle: "bold",
+            fill: "#ffffff",
             verticalAlign: "middle",
             padding: 0,
             Layer:{type:"objectText", name: "text"}
@@ -219,17 +221,28 @@ function CREATE(){
         var kids = [{
                 x: 0,
                 y: 0,
-                width: 200,
+                width: 194,
                 height: 50,
-                cornerRadius: [10, 10, 10, 10],
+                cornerRadius: [50, 50, 50, 50],
+                fill: "#bcb2cf",
+                stroke:"#9683b8",
+                strokeWidth: 2,
+                Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                x: 2,
+                y: 2,
+                width: 190,
+                height: 43,
+                cornerRadius: [50, 50, 50, 50],
                 fill: "#ffffff",
                 Layer:{type:"objectRect", name: "bg"}
             },
             {
-                text: "Çözüm Göster",
+                text: "Çözümü Göster",
                 x: 0,
                 y: 0,
-                width: 200,
+                width: 194,
                 height: 50,
                 fontSize: 20,
                 fontFamily: "Nunito",
@@ -244,6 +257,48 @@ function CREATE(){
         Arayuz_addLayer(container, O.container);
     }
 
+
+    this.addControlButon = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 194,
+                height: 50,
+                cornerRadius: [50, 50, 50, 50],
+                fill: "#ffab91",
+                stroke: "#ff7043",
+                strokeWidth: 2,
+                Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                x: 2,
+                y: 2,
+                width: 190,
+                height: 43,
+                cornerRadius: [50, 50, 50, 50],
+                fill: "#ffffff",
+                Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                text: "Kontrol",
+                x: 0,
+                y: 0,
+                width: 194,
+                height: 50,
+                fontSize: 20,
+                fontFamily: "Nunito",
+                align: "center",
+                fill: "#000000",
+                verticalAlign: "middle",
+                padding: 0,
+                Layer:{type:"objectText", name: "text"}
+            }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container, O.container);
+    }
 
 }
 

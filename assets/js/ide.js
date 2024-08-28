@@ -1059,6 +1059,30 @@ function historyProgress(){
     }
 }
 
+
+document.querySelector("#omg").addEventListener("click", function(e){
+    console.log("anonim click");
+
+    CREATE.addControlButon({
+        properties:{
+            x: 50,
+            y: 50,
+            width: 200,
+            height: 50,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "control",
+            elementID: "control",
+            type: "objectMovieClip",
+            class: "hide"
+        }
+    });
+
+});
+
+
 /*
 document.querySelector("#omg").addEventListener("click", function(e){
     console.log("anonim click");

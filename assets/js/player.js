@@ -78,6 +78,7 @@ function PLAYER(){
                             text: e.text,
                             fontSize: e.fontSize+"px",
                             fontFamily: e.fontFamily,
+                            fontWeight: e.fontStyle,
                             lineHeight: e.lineHeight,
                             textAlign: e.align,
                             color: e.fill,
@@ -163,8 +164,8 @@ function PLAYER(){
                 This.addMovieClip(allObject, sceneDiv);
 
                 player.mainDOM.appendChild(sceneDiv);
-                This.AddCS(sceneDiv);
                 This.Popup(sceneDiv, i);
+                This.AddCS(sceneDiv, i);
                 This.allScene.push(sceneDiv);
             })
 
@@ -180,17 +181,17 @@ function PLAYER(){
             }
         }
 
-        this.AddCS = function(Scene){
+        this.AddCS = function(Scene, index){
             var CS = {
                 rightAnswer: jsonV2.slides[this.sceneIndex].rightAnswer,
                 wrongCount: 0,
+                selectedID: null,
                 Buton:[]
             }
 
             Scene.childNodes.forEach(function(main){
                 if(main.id.includes("selectButon")){
                     var id = parseInt(main.id.split("_")[1]);
-                    var clicked = main.querySelector(".csClick");
                     main.addEventListener("click", function(){
                         selected(id);
                     });
@@ -206,15 +207,35 @@ function PLAYER(){
                 }
             });
 
+            if(scene[index].controlBtn){
+                scene[index].controlBtn.addEventListener("click", function(){
+                    controlFNC(CS.selectedID);
+                });
+
+                scene[index].controlBtn.style.cursor = "pointer";
+            }
+
+            if(scene[index].popupWindow.btn){
+                scene[index].popupWindow.btn.addEventListener("click", function(){
+                    disableButon();
+                    reset();
+                });
+            }
+
+
             function selected(id){
                 reset();
+                CS.Buton[id].csClick.style.visibility = "visible";
+                CS.selectedID = id;
 
-                CS.Buton[id].csClick.style.display = "block";
-
-                if(KT.Mode){
-                    KT.singleSelectFNC(This.sceneIndex, id);
+                if(scene[index].controlBtn){
+                    scene[index].controlBtn.style.visibility = "visible";
                 }else{
-                    controlFNC(id);
+                    if(KT.Mode){
+                        KT.singleSelectFNC(This.sceneIndex, id);
+                    }else{
+                        controlFNC(id);
+                    }
                 }
             }
 
@@ -222,12 +243,13 @@ function PLAYER(){
                 CS.Buton.map(function(Buton){
                     Buton.csClick.style.visibility = "hidden";
                     Buton.csWrong.style.visibility = "hidden";
+                    Buton.csRight.style.visibility = "hidden";
                 });
             }
 
             function controlFNC(id){
-                console.log(This.sceneIndex);
                 var rightAnswer = jsonV2.slides[This.sceneIndex].rightAnswer;
+                CS.Buton[id].csClick.style.visibility = "hidden";
 
                 if(rightAnswer === id){
                     This.playRightAudio();
@@ -235,31 +257,40 @@ function PLAYER(){
                     CS.Buton[id].csRight.style.visibility = "visible";
                     disableButon();
                     scene[This.sceneIndex].complete = true;
+                    if(scene[index].controlBtn){
+                        scene[index].controlBtn.style.visibility = "hidden";
+                    }
                 }else{
                     This.playWrongAudio();
                     scene[This.sceneIndex].wrong++;
                     CS.Buton[id].csWrong.style.visibility = "visible";
                     player.screenCloseDOM.style.display = "block";
 
-
-                    if(scene[This.sceneIndex].wrong === 3){
+                    if(scene[This.sceneIndex].wrong >= 3){
                         if(scene[This.sceneIndex].popupWindow.btn){
                             scene[This.sceneIndex].popupWindow.clicked = true;
-                            scene[This.sceneIndex].popupWindow.btn.style.visibility = "hidden";
+                            //scene[This.sceneIndex].popupWindow.btn.style.visibility = "hidden";
                             scene[This.sceneIndex].popupWindow.window.style.visibility = "visible";
+                            scene[This.sceneIndex].complete = true;
+                            disableButon();
+                            if(scene[index].controlBtn){
+                                scene[index].controlBtn.style.visibility = "hidden";
+                            }
                         }
-                        scene[This.sceneIndex].complete = true;
                     }else{
                         if(scene[This.sceneIndex].popupWindow.btn){
                             scene[This.sceneIndex].popupWindow.btn.style.visibility = "visible";
                         }
 
-                        player.screenCloseTimer = setTimeout(function (){
-                            player.screenCloseDOM.style.display="none";
-                            reset();
-                        },1000);
+                        if(scene[index].controlBtn){
+                            scene[index].controlBtn.style.visibility = "visible";
+                        }
                     }
 
+                    player.screenCloseTimer = setTimeout(function (){
+                        player.screenCloseDOM.style.display="none";
+                        reset();
+                    }, 1000);
 
                 }
             }
@@ -285,6 +316,9 @@ function PLAYER(){
                         }else{
                             popupWindow.style.visibility = "visible";
                             scene[index].popupWindow.clicked = true;
+                            if(scene[index].controlBtn){
+                                scene[index].controlBtn.style.visibility = "hidden";
+                            }
                         }
                     });
 
@@ -297,8 +331,14 @@ function PLAYER(){
                         scene[index].popupWindow.clicked = false;
                     });
                     obj.style.cursor = "pointer";
+                }else if(obj.id.includes("control")){
+                    scene[index].controlBtn = obj;
+                }else if(obj.id.includes("answer")){
+                    scene[index].answerBtn = obj;
                 }
             });
+
+            console.log( scene[index] );
         }
 
         this.changeScene = function(index, navText){

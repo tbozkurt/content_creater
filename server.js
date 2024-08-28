@@ -62,6 +62,18 @@ function addFolder(target){
     })
 }
 
+function copyFolder(source, target){
+    return new Promise(function(resolve, reject){
+        fs.cp(source, target, {recursive: true}, (err) => {
+            if (err) {
+                resolve(false);
+            }else{
+                resolve(true);
+            }
+        });
+    })
+}
+
 function deleteFolder(target){
     return new Promise(function(resolve, reject) {
         fs.rm(target, { recursive: true, force: true }, err => {
@@ -141,7 +153,6 @@ async function selectFileFNC(req, res){
     FILE.files.data = await readFileList(FILE.files.mainJson.path);
     var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
     var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
-    console.log("Copy ImageA:", copyImageA, "ImageB:", copyImageB);
     res.send(FILE);
 }
 
@@ -168,11 +179,54 @@ async function deleteFileFNC(){
 }
 
 
+//create hierarchy
+async function addFolders(file){
+
+
+
+    await copyFolder(FILE.files.mainFolder, step6);
+}
+
 //Read File List
 app.post("/getZip", downloadFNC);
 async function downloadFNC(req, res){
-    FILE.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, FILE.fileList.data[req.body.file].files.mainFolder);
-   res.send(FILE.fileList.data[req.body.file]);
+    var file = req.body.file;
+    var product = file.substring(5, 8);
+    var grade = file.substring(3, 4);
+    var lesson = file.substring(0, 3);
+
+    if(!product.length){
+        product = "EKT";
+    }
+
+    if(!grade.length){
+        grade = "5";
+    }
+
+    if(!lesson.length){
+        lesson = "TRK";
+    }
+
+    try{
+        var entrance = await addFolder( path.join(FILE.root, "zip") );
+        var step0 = await addFolder( path.join(entrance, "ONLINE") );
+        var step1 = await addFolder( path.join(step0, "2024-2025") );
+        var step2 = await addFolder( path.join(step1, product) );
+        var step3 = await addFolder( path.join(step2, grade) );
+        var step4 = await addFolder( path.join(step3, "0") );
+        var step5 = await addFolder( path.join(step4, lesson) );
+        var step6 = await addFolder( path.join(step5, file) );
+        var step7 = await addFolder( path.join(step6, "coverimg") );
+
+
+        var mainFolder = FILE.fileList.data[file].files.mainFolder;
+        var successCopy = await copyFolder(mainFolder, step6);
+        FILE.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance);
+        await deleteFolder(entrance);
+        res.send({success: true, content: FILE.fileList.data[req.body.file]});
+    }catch (e){
+        res.send({success: false, content: FILE.fileList.data[req.body.file]});
+    }
 }
 
 //Upload Image
