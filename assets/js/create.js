@@ -41,13 +41,9 @@ function CREATE(){
         if(O.addLayer) {
             Arayuz_addLayer(theImg, O.container);
         }
-        O.container.add(theImg);
 
-        if(O.uploadImg){
-            imageObj.src = O.uploadImg;
-        }else{
-            imageObj.src = O.properties.src;
-        }
+        O.container.add(theImg);
+        imageObj.src = "files/"+ IDE.files.activeFile +"/"+ O.properties.src;
     }
 
     //Create Text
@@ -77,8 +73,8 @@ function CREATE(){
             y: 4,
             width: 44,
             height: 44,
-            src: "/files/"+ IDE.files.imgFolder.split("/files/")[1] +"/butonback.png",
-            Layer: {name:"popup_close.jpg", type:"objectImg", class:"popup_close"}
+            src: "img/butonback.png",
+            Layer: {name:"butonback.png", type:"objectImg"}
         },{
             text: "btn",
             x: 4,
@@ -169,9 +165,9 @@ function CREATE(){
         var kids = [{
             x: 0,
             y: 0,
-            width: 600,
-            height: 600,
-            cornerRadius: [10, 10, 10, 10],
+            width: 803,
+            height: 461,
+            cornerRadius: [10, 10, 0, 0],
             stroke:"#6c4d94",
             fill: "#ffffff",
             Layer:{type:"objectRect", name: "bg"}
@@ -179,7 +175,7 @@ function CREATE(){
         {
             x: 0,
             y: 0,
-            width: 600,
+            width: 803,
             height: 60,
             fill: "#6c4d94",
             cornerRadius: [10, 10, 0, 0],
@@ -200,19 +196,17 @@ function CREATE(){
             Layer:{type:"objectText", name: "text"}
         },
         {
-            x: 545,
+            x: 746,
             y: 5,
             width: 50,
             height: 50,
-            src: "/files/"+ IDE.files.imgFolder.split("/files/")[1] +"/closebtn.png",
+            src: "img/closebtn.png",
             scale:{x:1, y:1},
-            Layer: {name:"popup_close.jpg", type:"objectImg", class:"popup_close"}
+            Layer: {name:"popupWindowClose.jpg", type:"objectImg", class:"popupWindowClose"}
         }];
 
         addObjects(kids, container, false);
         Arayuz_addLayer(container, O.container);
-
-        console.log("/files/"+IDE.files.imgFolder.split("/files/")[1]+"/closebtn.png");
     }
 
 

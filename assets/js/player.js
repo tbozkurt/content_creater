@@ -21,8 +21,8 @@ function PLAYER(){
 
     //sound.play();*/
 
-        var scene = [];
-
+        var SP = [];
+        var SD = [];
 
         this.getStandart = function(e){
             var className = e.Layer.type
@@ -70,7 +70,7 @@ function PLAYER(){
                         }, This.getStandart(e));
                     }else if (e.Layer.type === "objectImg") {
                         obj = Object.assign({
-                            backgroundImage: `url(${e.src})`,
+                            backgroundImage: `url(${player.root+e.src})`,
                             backgroundSize: `${e.width}px ${e.height}px`
                         }, This.getStandart(e));
                     }else if(e.Layer.type === "objectText"){
@@ -128,8 +128,10 @@ function PLAYER(){
             });
         }
 
-        this.startBuild = function(json, currentSceneID, stageBG, container, Mode){
-            console.log("Start", jsonV2);
+        this.startBuild = function(json, currentSceneID, stageBG, container, Mode, root, scoreUpdate){
+            console.log("Start", json);
+            player.root = root;
+            player.scoreUpdate = scoreUpdate;
             jsonV2 = json;
             if(Mode === "optic"){
                 KT.Mode = true;
@@ -145,15 +147,19 @@ function PLAYER(){
             json.slides.map(function(slide, index){
                 var convertObjectsCSS = This.convertObject(slide.all);
                 sceneCSS.push(convertObjectsCSS);
-                scene[index] = {
+                SD[index] = {
                     id: index,
-                    type:"",
+                    type:"CS",
                     duration:0,
                     wrong:0,
                     right:0,
                     empty:1,
                     complete: false,
                     attempt:0,
+                }
+
+                SP[index] = {
+                    id: index,
                     popupWindow: {}
                 }
             });
@@ -164,7 +170,7 @@ function PLAYER(){
                 This.addMovieClip(allObject, sceneDiv);
 
                 player.mainDOM.appendChild(sceneDiv);
-                This.Popup(sceneDiv, i);
+                This.searchTool(sceneDiv, i);
                 This.AddCS(sceneDiv, i);
                 This.allScene.push(sceneDiv);
             })
@@ -178,12 +184,42 @@ function PLAYER(){
                 Preview_HTML(container);
             }else  if(Mode === "normal"){
                 this.addNormal_HTML();
+                This.scoreCalc();
             }
         }
 
+        this.scoreCalc = function(){
+            var score = {right:0, wrong:0, empty:0};
+
+            var complete = true;
+            SD.map(function(e){
+                score.right += e.right;
+                score.wrong += e.wrong;
+                score.empty += e.empty;
+
+                if(!e.complete){
+                    complete = false;
+                }
+            });
+
+            if(player.scoreUpdate){
+                player.scoreUpdate({
+                    Access:10,
+                    Success:10,
+                    Right:score.right,
+                    Wrong:score.wrong,
+                    Empty:score.empty,
+                    TotalRight: SD.length,
+                    CurrentSceneType: "E",
+                    Complete: complete
+                });
+            }
+        }
+
+        /** Add CS **/
         this.AddCS = function(Scene, index){
             var CS = {
-                rightAnswer: jsonV2.slides[this.sceneIndex].rightAnswer,
+                rightAnswer: jsonV2.slides[index].rightAnswer,
                 wrongCount: 0,
                 selectedID: null,
                 Buton:[]
@@ -207,35 +243,50 @@ function PLAYER(){
                 }
             });
 
-            if(scene[index].controlBtn){
-                scene[index].controlBtn.addEventListener("click", function(){
+            if(SP[index].controlBtn){
+                SP[index].controlBtn.addEventListener("click", function(){
                     controlFNC(CS.selectedID);
                 });
-
-                scene[index].controlBtn.style.cursor = "pointer";
             }
 
-            if(scene[index].popupWindow.btn){
-                scene[index].popupWindow.btn.addEventListener("click", function(){
-                    disableButon();
-                    reset();
+            if(SP[index].popupWindow.btn){
+                SP[index].popupWindow.btn.addEventListener("click", function(){
+                    if(!SD[index].right === 0){
+                        reset();
+                    }
+
+                    disableAllSelectBtn();
                 });
+
+                SP[index].popupWindow.btn.style.pointerEvents = "none";
             }
 
+            function disableControlBtn(){
+                if(SP[index].controlBtn){
+                    SP[index].controlBtn.style.opacity = 0.5;
+                    SP[index].controlBtn.style.pointerEvents = "none";
+                }
+            }
+
+            function enablePopupBtnStatus(){
+                if(SP[index].popupWindow.btn){
+                    SP[index].popupWindow.btn.style.opacity = 1;
+                    SP[index].popupWindow.btn.style.pointerEvents = "auto";
+                }
+            }
 
             function selected(id){
                 reset();
                 CS.Buton[id].csClick.style.visibility = "visible";
                 CS.selectedID = id;
 
-                if(scene[index].controlBtn){
-                    scene[index].controlBtn.style.visibility = "visible";
+                if(KT.Mode){
+                    KT.singleSelectFNC(index, id);
+                }else if(SP[index].controlBtn){
+                    SP[index].controlBtn.style.opacity = 1;
+                    SP[index].controlBtn.style.pointerEvents = "auto";
                 }else{
-                    if(KT.Mode){
-                        KT.singleSelectFNC(This.sceneIndex, id);
-                    }else{
-                        controlFNC(id);
-                    }
+                    controlFNC(id);
                 }
             }
 
@@ -248,97 +299,97 @@ function PLAYER(){
             }
 
             function controlFNC(id){
-                var rightAnswer = jsonV2.slides[This.sceneIndex].rightAnswer;
-                CS.Buton[id].csClick.style.visibility = "hidden";
+                if(id === null){
+                    return false;
+                }
 
-                if(rightAnswer === id){
+                CS.Buton[id].csClick.style.visibility = "hidden";
+                disableControlBtn();
+
+                if(CS.rightAnswer === id){
                     This.playRightAudio();
-                    scene[This.sceneIndex].right++;
+                    SD[index].right++;
+                    SD[index].empty=0;
                     CS.Buton[id].csRight.style.visibility = "visible";
-                    disableButon();
-                    scene[This.sceneIndex].complete = true;
-                    if(scene[index].controlBtn){
-                        scene[index].controlBtn.style.visibility = "hidden";
-                    }
+                    enablePopupBtnStatus();
+                    disableAllSelectBtn();
+                    SD[index].complete = true;
                 }else{
                     This.playWrongAudio();
-                    scene[This.sceneIndex].wrong++;
+                    SD[index].wrong++;
                     CS.Buton[id].csWrong.style.visibility = "visible";
                     player.screenCloseDOM.style.display = "block";
 
-                    if(scene[This.sceneIndex].wrong >= 3){
-                        if(scene[This.sceneIndex].popupWindow.btn){
-                            scene[This.sceneIndex].popupWindow.clicked = true;
-                            //scene[This.sceneIndex].popupWindow.btn.style.visibility = "hidden";
-                            scene[This.sceneIndex].popupWindow.window.style.visibility = "visible";
-                            scene[This.sceneIndex].complete = true;
-                            disableButon();
-                            if(scene[index].controlBtn){
-                                scene[index].controlBtn.style.visibility = "hidden";
-                            }
+                    if(SD[index].wrong >= 3){
+                        if(SP[index].popupWindow.btn){
+                            SP[index].popupWindow.clicked = true;
+                            SP[index].popupWindow.window.style.visibility = "visible";
+                            SD[index].complete = true;
+                            SP[index].controlBtn.style.visibility = "hidden";
+                            disableAllSelectBtn();
                         }
                     }else{
-                        if(scene[This.sceneIndex].popupWindow.btn){
-                            scene[This.sceneIndex].popupWindow.btn.style.visibility = "visible";
-                        }
-
-                        if(scene[index].controlBtn){
-                            scene[index].controlBtn.style.visibility = "visible";
-                        }
+                        enablePopupBtnStatus();
                     }
 
                     player.screenCloseTimer = setTimeout(function (){
                         player.screenCloseDOM.style.display="none";
+                        CS.selectedID=null;
                         reset();
                     }, 1000);
 
                 }
+
+                console.log(SD);
+                This.scoreCalc();
             }
 
-            function disableButon(){
-                console.log("disableButon");
+            function disableAllSelectBtn(){
                 CS.Buton.map(function(btn){
                     btn.main.style.pointerEvents = "none";
                 });
             }
         }
 
-        this.Popup = function(Scene, index){
+        This.searchTool = function(Scene, index){
             var popupWindow;
             Scene.childNodes.forEach(function(obj) {
-                if(obj.id.includes("popup_buton")){
-                    scene[index].popupWindow.btn = obj;
-                    scene[index].popupWindow.clicked = false;
-                    obj.addEventListener("click", function(){
-                        if(scene[index].popupWindow.clicked){
+                if(obj.id.includes("popupButon")){
+                    SP[index].popupWindow.clicked = false;
+                    SP[index].popupWindow.btn = obj;
+                    SP[index].popupWindow.btn.addEventListener("click", function(){
+                        if(SP[index].popupWindow.clicked){
                             popupWindow.style.visibility = "hidden";
-                            scene[index].popupWindow.clicked = false;
+                            SP[index].popupWindow.clicked = false;
                         }else{
                             popupWindow.style.visibility = "visible";
-                            scene[index].popupWindow.clicked = true;
-                            if(scene[index].controlBtn){
-                                scene[index].controlBtn.style.visibility = "hidden";
+                            SP[index].popupWindow.clicked = true;
+                            if(SP[index].controlBtn){
+                                SP[index].controlBtn.style.opacity = 0.5;
+                                SP[index].controlBtn.style.pointerEvents = "none";
                             }
                         }
                     });
 
-                    obj.style.cursor = "pointer";
-                } else if(obj.id.includes("popup_window")){
-                    scene[index].popupWindow.window = obj;
+                    SP[index].popupWindow.btn.style.cursor = "pointer";
+                } else if(obj.id.includes("popupWindow")){
+                    SP[index].popupWindow.window = obj;
                     popupWindow = obj;
-                    popupWindow.querySelector('.popup_close').addEventListener("click",function(){
+                    popupWindow.querySelector(".popupWindowClose").addEventListener("click",function(){
                         popupWindow.style.visibility = "hidden";
-                        scene[index].popupWindow.clicked = false;
+                        SP[index].popupWindow.clicked = false;
                     });
-                    obj.style.cursor = "pointer";
+                    popupWindow.querySelector(".popupWindowClose").style.cursor = "pointer";
                 }else if(obj.id.includes("control")){
-                    scene[index].controlBtn = obj;
+                    SP[index].controlBtn = obj;
+                    SP[index].controlBtn.style.cursor = "pointer";
+                    SP[index].controlBtn.style.pointerEvents = "none";
                 }else if(obj.id.includes("answer")){
-                    scene[index].answerBtn = obj;
+                    SP[index].answerBtn = obj;
+                    SP[index].answerBtn.style.cursor = "pointer";
+                    SP[index].answerBtn.style.pointerEvents = "none";
                 }
             });
-
-            console.log( scene[index] );
         }
 
         this.changeScene = function(index, navText){
@@ -374,7 +425,7 @@ function PLAYER(){
 
         this.sceneCompleteControl = function(){
             clearInterval(player.screenCloseTimer);
-            if(scene[This.sceneIndex].complete){
+            if(SD[This.sceneIndex].complete){
                 player.screenCloseDOM.style.display = "block";
             }else{
                 player.screenCloseDOM.style.display = "none";
@@ -395,251 +446,7 @@ function PLAYER(){
             player.mainDOM.style.scale = ratio;
         }
 
-        this.build_KT = function(jsonV2){
-            KT.Optic_MainDiv = document.querySelector("#Optic_MainDiv");
-            KT.Nav_MainDiv = document.querySelector("#Nav_MainDiv");
-            KT.Top_MainDiv = document.querySelector("#Top_MainDiv");
-            KT.Optic_ShowBtn = document.querySelector("#Optic_Btn");
-            KT.Nav_BackBtn = document.querySelector("#Nav_BackBtn");
-            KT.Nav_NextBtn = document.querySelector("#Nav_NextBtn");
-            KT.Nav_Text = document.querySelector("#Nav_Text");
-            KT.FormShow = false;
-            KT.Scene=[];
-            KT.currentSlide=[];
-            KT.allSelect=[]
 
-            //Create And Description
-            function createOptikForm(){
-                var html = "";
-                for(var i=0; i<jsonV2.slides.length; i++){
-                    html +=
-                        `<div class="Optic_Row" id="opticRow${i}">
-                            <div class="Optic_Row_No">${i+1}</div>
-                            <div class="Optic_Row_Select select0">A</div>
-                            <div class="Optic_Row_Select select1">B</div>
-                            <div class="Optic_Row_Select select2">C</div>
-                            <div class="Optic_Row_Select select3">D</div>
-                            <div class="Optic_Row_Close"></div>
-                        </div>`;
-                }
-
-                KT.Optic_MainDiv.innerHTML = html;
-
-                jsonV2.slides.map(function(i, rid){
-                    var main = document.querySelector("#opticRow"+ rid);
-                    KT.Scene[rid] = {
-                        main: main,
-                        rightAnswer: i.rightAnswer,
-                        close: main.querySelector(".Optic_Row_Close"),
-                        opticSelect:[
-                            main.querySelector(".select0"),
-                            main.querySelector(".select1"),
-                            main.querySelector(".select2"),
-                            main.querySelector(".select3"),
-                        ],
-                        sceneSelect: [],
-                        click: null
-                    };
-
-                    KT.Scene[rid].main.addEventListener("click", function(){
-                        rowSelectFNC(rid);
-                    });
-
-                    KT.Scene[rid].opticSelect.map(function(e, sid){
-                        e.addEventListener("click", function(){
-                            KT.singleSelectFNC(rid, sid);
-                        });
-                    });
-
-                    This.allScene[rid].childNodes.forEach(function(btn) {
-                        if (btn.id.includes("selectButon")) {
-                            var id = parseInt(btn.id.split("_")[1]);
-                            KT.Scene[rid].sceneSelect[id] = {
-                                main: btn,
-                                clicked: btn.querySelector('.clicked'),
-                                csClick: btn.querySelector(".csClick"),
-                                csWrong: btn.querySelector(".csWrong"),
-                                csRight: btn.querySelector(".csRight")
-                            };
-                        }
-                    });
-                });
-            }
-
-            //Scene Select
-            function rowSelectFNC(rid){
-                KT.Scene.map(function(e){
-                    e.main.style.backgroundColor = "#e9f8fa";
-                    e.close.style.display = "block";
-                });
-
-                KT.Scene[rid].main.style.backgroundColor = "#4eaee1";
-                KT.Scene[rid].close.style.display = "none";
-                This.changeScene(rid);
-            }
-
-            //Select Option
-            KT.singleSelectFNC = function(rid, sid){
-                KT.Scene[rid].opticSelect.map(function(e, index){
-                    e.style.backgroundColor = "white";
-                });
-
-                KT.Scene[rid].sceneSelect.map(function(e){
-                    e.csClick.style.visibility = "hidden";
-                })
-
-                if(KT.Scene[rid].click === null || KT.Scene[rid].click !== sid){
-                    KT.Scene[rid].opticSelect[sid].style.backgroundColor = "#8b8b8b";
-                    KT.Scene[rid].sceneSelect[sid].csClick.style.visibility = "visible";
-                    KT.Scene[rid].click = sid;
-
-                    var next = This.sceneIndex+1;
-                    if(next >= jsonV2.slides.length){
-                        next = 0;
-                    }
-
-                    clearInterval(KT.time);
-                    KT.time = setTimeout(rowSelectFNC, 1000, next);
-                }else{
-                    KT.Scene[rid].opticSelect[sid].style.backgroundColor = "white";
-                    KT.Scene[rid].sceneSelect[sid].csClick.style.visibility = "hidden";
-                    KT.Scene[rid].click = null;
-                }
-            }
-
-
-            createOptikForm();
-
-
-            function openOpticWindow(){
-                var OpticWidth = KT.Optic_MainDiv.offsetWidth;
-
-                if(KT.FormShow){
-                    player.containerDOM.style.width = "100%";
-                    KT.Top_MainDiv.style.width= "100%";
-                    KT.Nav_MainDiv.style.width = "100%";
-                    KT.Optic_MainDiv.style.visibility = "hidden";
-                    KT.FormShow = false;
-                }else{
-                    player.containerDOM.style.width = `calc(100% - ${OpticWidth}px)`;
-                    KT.Top_MainDiv.style.width = `calc(100% - ${OpticWidth}px)`;
-                    KT.Nav_MainDiv.style.width = `calc(100% - ${OpticWidth}px)`;
-                    KT.Optic_MainDiv.style.visibility = "visible";
-                    KT.FormShow = true;
-                }
-
-                This.screenRatio();
-            }
-
-
-            KT.Nav_BackBtn.addEventListener("click", function (){
-                This.changeScene(This.sceneIndex-1, KT.Nav_Text);
-            });
-
-            KT.Nav_NextBtn .addEventListener("click", function (){
-                This.changeScene(This.sceneIndex+1, KT.Nav_Text);
-            });
-
-            KT.Optic_ShowBtn.addEventListener("click", function(){
-                openOpticWindow();
-            });
-
-            player.containerDOM.style.top = "5em";
-            player.containerDOM.style.height = "calc(100% - 10em)";
-            KT.finishBtn = utils.addDOM({id:"OpticRow_FinishBtn", className:"Optic_Row_Btn ", textContent:"SINAVI BİTİR"});
-            KT.restartBtn = utils.addDOM({id:"OpticRow_RestartBtn", className:"Optic_Row_Btn", textContent:"YENİDEN BAŞLAT"});
-            KT.Optic_MainDiv.appendChild(KT.finishBtn);
-            KT.Optic_MainDiv.appendChild(KT.restartBtn);
-
-            KT.finishBtn.addEventListener("click", function(){
-                evalute();
-            });
-
-            KT.restartBtn.addEventListener("click", function(){
-                restart();
-            });
-
-            function evalute(){
-                clearInterval(KT.time);
-                var score = {right:0, wrong:0, empty:0};
-                KT.Scene.map(function(e){
-                    if(e.click === null){
-                        score.empty++;
-                    }else if(e.rightAnswer === e.click){
-                        e.opticSelect[e.click].style.backgroundColor = "green";
-                        e.sceneSelect[e.click].csRight.style.visibility = "visible";
-                        e.sceneSelect[e.click].csClick.style.visibility = "hidden";
-                        score.right++;
-                    }else{
-                        e.opticSelect[e.click].style.backgroundColor = "red";
-                        e.sceneSelect[e.click].csWrong.style.visibility = "visible";
-                        e.sceneSelect[e.click].csClick.style.visibility = "hidden";
-                        score.wrong++;
-                    }
-
-                    e.opticSelect.map(function(e){
-                        e.style.pointerEvents = "none";
-                    });
-
-                    e.sceneSelect.map(function(e){
-                        e.main.style.pointerEvents = "none";
-                    });
-                });
-
-                KT.finishBtn.style.display = "none";
-                KT.restartBtn.style.display = "block";
-            }
-
-            function restart(){
-                KT.Scene.map(function(e){
-                    e.click = null;
-                    e.opticSelect.map(function(e){
-                        e.style.pointerEvents = "auto";
-                        e.style.backgroundColor = "white";
-                    });
-
-                    e.sceneSelect.map(function(e){
-                        e.main.style.pointerEvents = "auto";
-                        e.csClick.style.visibility = "hidden";
-                        e.csWrong.style.visibility = "hidden";
-                        e.csRight.style.visibility = "hidden";
-                    });
-                });
-
-
-
-                KT.finishBtn.style.display = "block";
-                KT.restartBtn.style.display = "none";
-                rowSelectFNC(0);
-            }
-
-
-
-            openOpticWindow();
-            rowSelectFNC(0);
-            this.changeScene(0,KT.Nav_Text);
-            return player.containerDOM;
-        }
-
-    function addKT_HTML(container){
-        var html =
-        `<div id="Player_Container"></div>
-        <div id="Optic_MainDiv"></div>
-        <div id="Nav_MainDiv">
-                <div class="Nav_Container">
-                    <div class="Nav_Btn" id="Nav_BackBtn">&#9664;</div>
-                    <div class="Nav_Btn" id="Nav_Text">0 / 0</div>
-                    <div class="Nav_Btn" id="Nav_NextBtn">&#9654;</div>
-                </div>
-        </div>
-        <div id="Top_MainDiv">
-            <div id="Optic_Btn">Optik Form</div>
-        </div>`;
-
-
-        container.innerHTML = html;
-        return document.querySelector("#Player_Container");
-    }
 
     this.addNormal_HTML = function(){
         var NavMain = utils.addDOM({className:"Normal_NavMain"});
@@ -687,6 +494,252 @@ function PLAYER(){
 
     this.playRightAudio = function(){
         player.sound.play("right");
+    }
+
+    this.build_KT = function(jsonV2){
+        KT.Optic_MainDiv = document.querySelector("#Optic_MainDiv");
+        KT.Nav_MainDiv = document.querySelector("#Nav_MainDiv");
+        KT.Top_MainDiv = document.querySelector("#Top_MainDiv");
+        KT.Optic_ShowBtn = document.querySelector("#Optic_Btn");
+        KT.Nav_BackBtn = document.querySelector("#Nav_BackBtn");
+        KT.Nav_NextBtn = document.querySelector("#Nav_NextBtn");
+        KT.Nav_Text = document.querySelector("#Nav_Text");
+        KT.FormShow = false;
+        KT.Scene=[];
+        KT.currentSlide=[];
+        KT.allSelect=[]
+
+        //Create And Description
+        function createOptikForm(){
+            var html = "";
+            for(var i=0; i<jsonV2.slides.length; i++){
+                html +=
+                    `<div class="Optic_Row" id="opticRow${i}">
+                            <div class="Optic_Row_No">${i+1}</div>
+                            <div class="Optic_Row_Select select0">A</div>
+                            <div class="Optic_Row_Select select1">B</div>
+                            <div class="Optic_Row_Select select2">C</div>
+                            <div class="Optic_Row_Select select3">D</div>
+                            <div class="Optic_Row_Close"></div>
+                        </div>`;
+            }
+
+            KT.Optic_MainDiv.innerHTML = html;
+
+            jsonV2.slides.map(function(i, rid){
+                var main = document.querySelector("#opticRow"+ rid);
+                KT.Scene[rid] = {
+                    main: main,
+                    rightAnswer: i.rightAnswer,
+                    close: main.querySelector(".Optic_Row_Close"),
+                    opticSelect:[
+                        main.querySelector(".select0"),
+                        main.querySelector(".select1"),
+                        main.querySelector(".select2"),
+                        main.querySelector(".select3"),
+                    ],
+                    sceneSelect: [],
+                    click: null
+                };
+
+                KT.Scene[rid].main.addEventListener("click", function(){
+                    rowSelectFNC(rid);
+                });
+
+                KT.Scene[rid].opticSelect.map(function(e, sid){
+                    e.addEventListener("click", function(){
+                        KT.singleSelectFNC(rid, sid);
+                    });
+                });
+
+                This.allScene[rid].childNodes.forEach(function(btn) {
+                    if (btn.id.includes("selectButon")) {
+                        var id = parseInt(btn.id.split("_")[1]);
+                        KT.Scene[rid].sceneSelect[id] = {
+                            main: btn,
+                            clicked: btn.querySelector('.clicked'),
+                            csClick: btn.querySelector(".csClick"),
+                            csWrong: btn.querySelector(".csWrong"),
+                            csRight: btn.querySelector(".csRight")
+                        };
+                    }
+                });
+            });
+        }
+
+        //Scene Select
+        function rowSelectFNC(rid){
+            KT.Scene.map(function(e){
+                e.main.style.backgroundColor = "#e9f8fa";
+                e.close.style.display = "block";
+            });
+
+            KT.Scene[rid].main.style.backgroundColor = "#4eaee1";
+            KT.Scene[rid].close.style.display = "none";
+            This.changeScene(rid);
+        }
+
+        //Select Option
+        KT.singleSelectFNC = function(rid, sid){
+            KT.Scene[rid].opticSelect.map(function(e, index){
+                e.style.backgroundColor = "white";
+            });
+
+            KT.Scene[rid].sceneSelect.map(function(e){
+                e.csClick.style.visibility = "hidden";
+            })
+
+            if(KT.Scene[rid].click === null || KT.Scene[rid].click !== sid){
+                KT.Scene[rid].opticSelect[sid].style.backgroundColor = "#8b8b8b";
+                KT.Scene[rid].sceneSelect[sid].csClick.style.visibility = "visible";
+                KT.Scene[rid].click = sid;
+
+                var next = This.sceneIndex+1;
+                if(next >= jsonV2.slides.length){
+                    next = 0;
+                }
+
+                clearInterval(KT.time);
+                KT.time = setTimeout(rowSelectFNC, 1000, next);
+            }else{
+                KT.Scene[rid].opticSelect[sid].style.backgroundColor = "white";
+                KT.Scene[rid].sceneSelect[sid].csClick.style.visibility = "hidden";
+                KT.Scene[rid].click = null;
+            }
+        }
+
+
+        createOptikForm();
+
+
+        function openOpticWindow(){
+            var OpticWidth = KT.Optic_MainDiv.offsetWidth;
+
+            if(KT.FormShow){
+                player.containerDOM.style.width = "100%";
+                KT.Top_MainDiv.style.width= "100%";
+                KT.Nav_MainDiv.style.width = "100%";
+                KT.Optic_MainDiv.style.visibility = "hidden";
+                KT.FormShow = false;
+            }else{
+                player.containerDOM.style.width = `calc(100% - ${OpticWidth}px)`;
+                KT.Top_MainDiv.style.width = `calc(100% - ${OpticWidth}px)`;
+                KT.Nav_MainDiv.style.width = `calc(100% - ${OpticWidth}px)`;
+                KT.Optic_MainDiv.style.visibility = "visible";
+                KT.FormShow = true;
+            }
+
+            This.screenRatio();
+        }
+
+
+        KT.Nav_BackBtn.addEventListener("click", function (){
+            This.changeScene(This.sceneIndex-1, KT.Nav_Text);
+        });
+
+        KT.Nav_NextBtn .addEventListener("click", function (){
+            This.changeScene(This.sceneIndex+1, KT.Nav_Text);
+        });
+
+        KT.Optic_ShowBtn.addEventListener("click", function(){
+            openOpticWindow();
+        });
+
+        player.containerDOM.style.top = "5em";
+        player.containerDOM.style.height = "calc(100% - 10em)";
+        KT.finishBtn = utils.addDOM({id:"OpticRow_FinishBtn", className:"Optic_Row_Btn ", textContent:"SINAVI BİTİR"});
+        KT.restartBtn = utils.addDOM({id:"OpticRow_RestartBtn", className:"Optic_Row_Btn", textContent:"YENİDEN BAŞLAT"});
+        KT.Optic_MainDiv.appendChild(KT.finishBtn);
+        KT.Optic_MainDiv.appendChild(KT.restartBtn);
+
+        KT.finishBtn.addEventListener("click", function(){
+            evalute();
+        });
+
+        KT.restartBtn.addEventListener("click", function(){
+            restart();
+        });
+
+        function evalute(){
+            clearInterval(KT.time);
+            var score = {right:0, wrong:0, empty:0};
+            KT.Scene.map(function(e){
+                if(e.click === null){
+                    score.empty++;
+                }else if(e.rightAnswer === e.click){
+                    e.opticSelect[e.click].style.backgroundColor = "green";
+                    e.sceneSelect[e.click].csRight.style.visibility = "visible";
+                    e.sceneSelect[e.click].csClick.style.visibility = "hidden";
+                    score.right++;
+                }else{
+                    e.opticSelect[e.click].style.backgroundColor = "red";
+                    e.sceneSelect[e.click].csWrong.style.visibility = "visible";
+                    e.sceneSelect[e.click].csClick.style.visibility = "hidden";
+                    score.wrong++;
+                }
+
+                e.opticSelect.map(function(e){
+                    e.style.pointerEvents = "none";
+                });
+
+                e.sceneSelect.map(function(e){
+                    e.main.style.pointerEvents = "none";
+                });
+            });
+
+            KT.finishBtn.style.display = "none";
+            KT.restartBtn.style.display = "block";
+        }
+
+        function restart(){
+            KT.Scene.map(function(e){
+                e.click = null;
+                e.opticSelect.map(function(e){
+                    e.style.pointerEvents = "auto";
+                    e.style.backgroundColor = "white";
+                });
+
+                e.sceneSelect.map(function(e){
+                    e.main.style.pointerEvents = "auto";
+                    e.csClick.style.visibility = "hidden";
+                    e.csWrong.style.visibility = "hidden";
+                    e.csRight.style.visibility = "hidden";
+                });
+            });
+
+
+
+            KT.finishBtn.style.display = "block";
+            KT.restartBtn.style.display = "none";
+            rowSelectFNC(0);
+        }
+
+
+
+        openOpticWindow();
+        rowSelectFNC(0);
+        this.changeScene(0,KT.Nav_Text);
+        return player.containerDOM;
+    }
+
+    function addKT_HTML(container){
+        var html =
+            `<div id="Player_Container"></div>
+        <div id="Optic_MainDiv"></div>
+        <div id="Nav_MainDiv">
+                <div class="Nav_Container">
+                    <div class="Nav_Btn" id="Nav_BackBtn">&#9664;</div>
+                    <div class="Nav_Btn" id="Nav_Text">0 / 0</div>
+                    <div class="Nav_Btn" id="Nav_NextBtn">&#9654;</div>
+                </div>
+        </div>
+        <div id="Top_MainDiv">
+            <div id="Optic_Btn">Optik Form</div>
+        </div>`;
+
+
+        container.innerHTML = html;
+        return document.querySelector("#Player_Container");
     }
 }
 

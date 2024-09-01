@@ -1,4 +1,4 @@
-@import url("/assets/font/nunito/nunito.css");
+@import url("https://cdn.okulistik.com/mobileplayer/contentplayer/assets/font/nunito/nunito.css");
 
 
 body{
@@ -277,4 +277,8 @@ body{
     position: absolute;
     display: none;
     background-color: rgba(0,0,0,0);
+}
+
+.semiopacity{
+    opacity:0.5
 }

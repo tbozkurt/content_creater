@@ -12,8 +12,11 @@ app.use("/libs", express.static(__dirname + "/node_modules"));
 app.use('/files', express.static('files'));
 app.use('/assets', express.static('assets'));
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -149,11 +152,17 @@ async function selectFileFNC(req, res){
     console.log("selectFile", file);
     console.log(FILE);
     console.log(FILE.fileList );
-    FILE.files = FILE.fileList.data[file].files;
-    FILE.files.data = await readFileList(FILE.files.mainJson.path);
-    var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
-    var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
-    res.send(FILE);
+    console.log( FILE.fileList.data[file] );
+
+    if(FILE.fileList.data[file]){
+        FILE.files = FILE.fileList.data[file].files;
+        FILE.files.data = await readFileList(FILE.files.mainJson.path);
+        var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
+        var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
+        res.send({success: true, FILE});
+    }else{
+        res.send({success: false});
+    }
 }
 
 //Delete File
@@ -176,15 +185,6 @@ async function deleteFileFNC(){
         if (err) throw err;
         console.log("Tuncay.zip txt was deleted");
     });
-}
-
-
-//create hierarchy
-async function addFolders(file){
-
-
-
-    await copyFolder(FILE.files.mainFolder, step6);
 }
 
 //Read File List
@@ -216,11 +216,16 @@ async function downloadFNC(req, res){
         var step4 = await addFolder( path.join(step3, "0") );
         var step5 = await addFolder( path.join(step4, lesson) );
         var step6 = await addFolder( path.join(step5, file) );
-        var step7 = await addFolder( path.join(step6, "coverimg") );
+        var step7 = await addFolder( path.join(step6, "2") );
+        var step8 = await addFolder( path.join(step7, "publish") );
+        var step9 = await addFolder( path.join(step7, "src") );
+        var step10 = await addFolder( path.join(step9, "content") );
+        var step11 = await addFolder( path.join(step9, "coverimg") );
 
 
         var mainFolder = FILE.fileList.data[file].files.mainFolder;
-        var successCopy = await copyFolder(mainFolder, step6);
+        var successCopy = await copyFolder(mainFolder, step10);
+        var PublisherCopy = await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step9+"/Publisher.py");
         FILE.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance);
         await deleteFolder(entrance);
         res.send({success: true, content: FILE.fileList.data[req.body.file]});
@@ -247,7 +252,6 @@ app.use("/player", function(req, res) {
 
 //Index Page
 app.use("/ide", function(req, res) {
-    console.log("Girdi");
     initApp();
     res.sendFile(path.join(__dirname, "views/","index.html"));
 });

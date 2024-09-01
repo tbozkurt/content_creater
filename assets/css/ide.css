@@ -143,6 +143,8 @@ body {
     width: 62%;
     height: 100%;
     line-height: 30px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .layerZButon{

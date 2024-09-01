@@ -34,7 +34,6 @@ function EXPORT(){
     }
 
     this.convertText = function(e){
-        console.log(e.fontStyle());
         return Object.assign({
             text: e.text(),
             fontSize: e.fontSize(),

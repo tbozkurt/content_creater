@@ -145,6 +145,7 @@
         <div class="AlignMain">
             <div class="AlignBox" id="createSelect"><img src="assets/img/cselect.png"></div>
             <div class="AlignBox" id="createPopup"><img src="assets/img/createPopup.png"></div>
+            <div class="AlignBox" id="createControl"><img src="assets/img/createbtn.png"></div>
         </div>
     </div>
 
@@ -159,7 +160,6 @@
         <div class="WorkSpaces_Header">&#8627; Color Picker</div>
         <input type="color" id="colorPicker" name="head" value="#ff0000" />
     </div>
-    <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
 
 <!--
     <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
@@ -204,26 +204,6 @@
 
 
 <script>
-    var deneme = "";
-
-    var product = deneme.substring(5, 8);
-    var grade = deneme.substring(3, 4);
-    var lesson = deneme.substring(0, 3);
-
-    if(!product.length){
-        product = "EKT";
-    }
-
-    if(!grade.length){
-        grade = "5";
-    }
-
-    if(!lesson.length){
-        lesson = "TRK";
-    }
-
-    console.log(product, grade, lesson);
-
     var IDE = {
         stage:{width: 1380, height: 820, container: "scope_Canvas", bg:"#404040"},
         layer:{x:50, y:50, width:1280, height: 720},
@@ -260,6 +240,7 @@
             createRect: document.querySelector("#createRect"),
             createSelect: document.querySelector("#createSelect"),
             createPopup: document.querySelector("#createPopup"),
+            createControl: document.querySelector("#createControl"),
             uploadImageForm: document.querySelector("#uploadImageForm"),
             colorPicker: document.querySelector("#colorPicker"),
 
@@ -371,7 +352,6 @@
 
         tempSelect.on("transformstart transform", function(){
             IDE.tranforming = true;
-            console.log();
         });
 
         tempSelect.on("transformend", function(){
@@ -693,6 +673,11 @@
         console.log(data);
         IDE.files = data.files;
         sceneAddNewScene(true, sceneTemplate());
+
+        document.querySelector("#Scene_addButon").addEventListener("click", function(){
+            sceneAddNewScene(true, sceneTemplate());
+        });
+
         addStageBG();
     }
 
@@ -702,20 +687,29 @@
     }
 
     function selectFileParse(data){
-        console.log("Select", data);
-        IDE.files = data.files;
-        jsonV2 = data.files.data;
+        if(data.success){
+            console.log("Select", data);
+            IDE.files = data.FILE.files;
+            jsonV2 = data.FILE.files.data;
 
-        if(jsonV2.slides.length){
-            jsonV2.slides.map(function(o, i){
-                sceneAddNavigationBtn(i, o.name);
+            if(jsonV2.slides.length){
+                jsonV2.slides.map(function(o, i){
+                    sceneAddNavigationBtn(i, o.name);
+                });
+
+                sceneSelect(0, true);
+            }else{
+                sceneAddNewScene(true, sceneTemplate());
+            }
+
+            document.querySelector("#Scene_addButon").addEventListener("click", function(){
+                sceneAddNewScene(true, sceneTemplate());
             });
 
-            sceneSelect(0, true);
+            addStageBG();
         }else{
-            sceneAddNewScene(true, sceneTemplate());
+            alert("dosya bulunamadı");
         }
-        addStageBG();
     }
 
     function saveDataAjax(json){
@@ -754,7 +748,6 @@
 
     function zipContentParse(data){
         console.log("zipContentParse", data);
-        console.log("success", data.success);
         if(data.success){
             var path = "/files/"+ data.content.files.activeFile +".zip";
             fetch(path)
@@ -781,7 +774,6 @@
     }
 
     function uploadImageAjax(data){
-        console.log(data);
         $.ajax({url: "/uploadImage", data, success: uploadImageParse, type:"POST", contentType: false, cache:false, processData: false, error: ajaxError});
     }
 
@@ -792,7 +784,7 @@
                     x: i*75,
                     y: i*75,
                     scale: {x: 1, y: 1},
-                    src: e.path.substring(e.path.indexOf("/files"), e.path.length),
+                    src: e.path.split("/"+ IDE.files.activeFile +"/")[1],
                     draggable: true
                 },
                 container: IDE.activeLayer,
@@ -825,10 +817,6 @@
 
         saveList.map(function(data){
             addSavedFileBtn(data.fileName);
-        });
-
-        document.querySelector("#Scene_addButon").addEventListener("click", function(){
-            sceneAddNewScene(true, sceneTemplate());
         });
     }
 

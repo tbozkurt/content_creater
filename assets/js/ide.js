@@ -283,10 +283,14 @@ function getProp(sameValueSearch){
     }
 
     if(IDE.selectedLayers.length === 1){
-        IDE.workSpace.leftInput.value = IDE.selectedLayers[0].x();
-        IDE.workSpace.topInput.value = IDE.selectedLayers[0].y();
-        IDE.workSpace.widthInput.value = IDE.selectedLayers[0].width();
-        IDE.workSpace.heightInput.value = IDE.selectedLayers[0].height();
+        //IDE.workSpace.leftInput.value = IDE.selectedLayers[0].x();
+        //IDE.workSpace.leftInput.value = IDE.selectedLayers[0].y();
+        //IDE.workSpace.widthInput.value = IDE.selectedLayers[0].width();
+        //IDE.workSpace.heightInput.value = IDE.selectedLayers[0].height();
+        IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
+        IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
+        IDE.workSpace.widthInput.value = SELECT.width();
+        IDE.workSpace.heightInput.value = SELECT.height();
         IDE.workSpace.scaleWInput.value = IDE.selectedLayers[0].scaleX()*100;
         IDE.workSpace.scaleHInput.value = IDE.selectedLayers[0].scaleY()*100;
     }else if(IDE.selectedLayers.length){
@@ -338,7 +342,7 @@ function deleteObject(){
                     Layers.splice(i, 1);
                     LayerSR.deleted(i);
 
-                    if(SL.Layer.name.includes("popup_")){
+                    if(SL.Layer.name.includes("popup")){
                         relatedObject = true;
                     }
 
@@ -366,7 +370,7 @@ function searchRelatedObject(relatedObject){
         var allObj = IDE.activeLayer.getChildren();
         allObj.forEach(function(e){
             if(e.Layer){
-                if(e.Layer.name.includes("popup_")){
+                if(e.Layer.name.includes("popup")){
                     IDE.selectedLayers.push(e);
                 }
             }
@@ -383,7 +387,7 @@ function searchSingleUseObject(){
     var allObj = IDE.activeLayer.getChildren();
     allObj.map(function(e){
         if(e.Layer){
-            if(e.Layer.name.includes("popup_")){
+            if(e.Layer.name.includes("popup")){
                 found = true;
             }
         }
@@ -422,25 +426,34 @@ document.addEventListener("keydown", function(e){
 
 function changeLeft(newX){
     if(IDE.selectedLayers.length){
-        var oldX = SELECT.x() - IDE.layer.x;
-        if(oldX > newX){
-            IDE.selectedLayers.forEach(function (Layer){
-                var result = Layer.x() - (oldX-newX)
-                Layer.x(result);
-            });
-        }else if(oldX < newX){
-            IDE.selectedLayers.forEach(function (Layer){
-                var result = Layer.x() + (newX-oldX);
-                Layer.x(result);
-            });
-        }
+        var current = SELECT.x() - IDE.layer.x;
+        var fark = newX - current;
+
+        IDE.selectedLayers.forEach(function (Layer){
+            var current = Layer.x()+fark;
+            Layer.x(current);
+        });
+
         getProp(true);
     }
 }
 
 function changeTop(newY){
     if(IDE.selectedLayers.length){
-        var oldY = SELECT.y() - IDE.layer.y;
+        if(IDE.selectedLayers.length){
+            var current = SELECT.y() - IDE.layer.y;
+            var fark = newY - current;
+
+            IDE.selectedLayers.forEach(function (Layer){
+                var current = Layer.y()+fark;
+                Layer.y(current);
+            });
+
+            getProp(true);
+        }
+
+
+/*        var oldY = SELECT.y() - IDE.layer.y;
         if(oldY > newY){
             IDE.selectedLayers.forEach(function (Layer){
                 var result = Layer.y() - (oldY-newY)
@@ -453,7 +466,7 @@ function changeTop(newY){
             });
         }
 
-        getProp(true);
+        getProp(true);*/
     }
 }
 
@@ -570,8 +583,8 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
         },
         container: IDE.activeLayer,
         layer: {
-            name: "popup_window0",
-            elementID: "popup_window0",
+            name: "popupWindow_0",
+            elementID: "popupWindow_0",
             type: "objectMovieClip",
             class: "hide"
         }
@@ -579,18 +592,18 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
 
     CREATE.addSolutionButon({
         properties:{
-            x: 50,
-            y: 50,
+            x: 690,
+            y: 650,
             width: 200,
             height: 50,
             draggable: true,
         },
         container: IDE.activeLayer,
         layer: {
-            name: "popup_buton0",
-            elementID: "popup_buton0",
+            name: "popupButon_0",
+            elementID: "popupButon_0",
             type: "objectMovieClip",
-            class: "hide"
+            class: "semiopacity"
         }
     });
 
@@ -741,7 +754,7 @@ document.querySelector("#export").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     Player = new PLAYER();
     IDE.workSpace.previewMain.style.display = "block";
-    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview");
+    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview", ("files/"+ IDE.files.activeFile +"/"));
     hideWorkSpaces();
 });
 
@@ -766,49 +779,64 @@ function focusWorkSpaces(){
 }
 
 //Left Input
-IDE.workSpace.leftInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.leftInput.addEventListener("focus", focusWorkSpaces);
 IDE.workSpace.leftInput.addEventListener("change", function(e) {
     changeLeft(Number(e.target.value));
 });
+
+/*
 IDE.workSpace.leftInput.addEventListener("keypress", function(e) {
+    console.log("BB");
     if (event.key === "Enter") {
+        IDE.workSpace.leftInput.pointerEvents = "none";
         changeLeft(Number(e.target.value));
+        IDE.workSpace.leftInput.pointerEvents = "auto";
+
     }
 });
+*/
 
 //Top Input
-IDE.workSpace.topInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.topInput.addEventListener("focus", focusWorkSpaces);
 IDE.workSpace.topInput.addEventListener("change", function(e) {
     changeTop(Number(e.target.value));
 });
+/*
 IDE.workSpace.topInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
         changeTop(Number(e.target.value));
     }
 });
+*/
 
 
 //Width Input
-IDE.workSpace.widthInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.widthInput.addEventListener("focus", focusWorkSpaces);
 IDE.workSpace.widthInput.addEventListener("change", function(e) {
     changeWidth(Number(e.target.value));
 });
+
+/*
 IDE.workSpace.widthInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
         changeWidth(Number(e.target.value));
     }
 });
+*/
 
 //Height Input
-IDE.workSpace.heightInput.addEventListener("focus",focusWorkSpaces);
+IDE.workSpace.heightInput.addEventListener("focus", focusWorkSpaces);
 IDE.workSpace.heightInput.addEventListener("change", function(e) {
     changeHeight(Number(e.target.value));
 });
+
+/*
 IDE.workSpace.heightInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
         changeHeight(Number(e.target.value));
     }
 });
+*/
 
 
 //Scale Input
@@ -817,11 +845,13 @@ IDE.workSpace.scaleWInput.addEventListener("change", function(e) {
     changeScale(e, "width");
 });
 
+/*
 IDE.workSpace.scaleWInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
         changeScale(e, "width");
     }
 });
+*/
 
 //Scale Input
 IDE.workSpace.scaleHInput.addEventListener("focus",focusWorkSpaces);
@@ -829,11 +859,13 @@ IDE.workSpace.scaleHInput.addEventListener("change", function(e) {
     changeScale(e, "height");
 });
 
+/*
 IDE.workSpace.scaleHInput.addEventListener("keypress", function(e) {
     if (event.key === "Enter") {
         changeScale(e, "height");
     }
 });
+*/
 
 /*
 IDE.workSpace.topInput.addEventListener("blur", function(e) {
@@ -1060,9 +1092,7 @@ function historyProgress(){
 }
 
 
-document.querySelector("#omg").addEventListener("click", function(e){
-    console.log("anonim click");
-
+IDE.workSpace.createControl.addEventListener("click", function(e){
     CREATE.addControlButon({
         properties:{
             x: 50,
@@ -1076,7 +1106,7 @@ document.querySelector("#omg").addEventListener("click", function(e){
             name: "control",
             elementID: "control",
             type: "objectMovieClip",
-            class: "hide"
+            class: "semiopacity"
         }
     });
 

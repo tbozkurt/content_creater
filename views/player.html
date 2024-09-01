@@ -42,13 +42,16 @@
     }
 
     function selectFileParse(data){
-        jsonV2 = data.files.data;
-        console.log(jsonV2.slides);
+        console.log(data.FILE.files.activeFile);
 
-        Player.startBuild(jsonV2, 0, "#000000", newKT, mode);
-/*        createOptikForm();
+        jsonV2 = data.FILE.files.data;
+
+        Player.startBuild(jsonV2, 0, "#000000", newKT, mode, "/files/"+ data.FILE.files.activeFile +"/");
+        /*
+        createOptikForm();
         KTMode();
-        openOpticWindow();*/
+        openOpticWindow();
+        */
     }
 
 
