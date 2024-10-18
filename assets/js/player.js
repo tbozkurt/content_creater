@@ -1,134 +1,132 @@
 function PLAYER(){
 
-        this.allScene = [];
-        this.sceneIndex = 0;
+    this.allScene = [];
+    this.sceneIndex = 0;
+    var PLX = {};
+    var This = this;
+    var KT={};
+    var SP = [];
+    var SD = [];
+    var player = {
+        sound: new Howl({
+            src: ['https://cdn.okulistik.com/mobileplayer/edge_includes/yesno.mp3'],
+            sprite: {
+                right: [1000, 1000],
+                wrong: [2000, 1000]
+            }
+        }),
+        autoNext:null,
+        screenCloseTimer: null,
+        screenDuration: null,
+        backBtn: null,
+        nextBtn: null
+    };
+
+    this.getStandart = function(e){
+        var className = e.Layer.type
+
+        if(e.Layer.class){
+            className += (" "+e.Layer.class);
+        }
+
+        return {
+            left: e.x +"px",
+            top: e.y +"px",
+            width: e.width +"px",
+            height: e.height +"px",
+            transform: `scale(${e.scale.x}, ${e.scale.y})`,
+            transformOrigin: "0% 0%",
+            position: "absolute",
+            type: e.Layer.type,
+            className: className,
+            name: e.Layer.name,
+            id: e.Layer.elementID
+        }
+    }
+
+    this.getRadius = function(data){
+        return `${data[0]}px ${data[1]}px ${data[2]}px ${data[3]}px`;
+    }
+
+    this.convertObject = function(container){
         var This = this;
-        var KT={}
-        var player={
-            sound: new Howl({
-                src: ['https://cdn.okulistik.com/mobileplayer/edge_includes/yesno.mp3'],
-                sprite: {
-                    right: [1000, 1000],
-                    wrong: [2000, 1000]
-                }
-            })
-        };
+        var Kids = [];
+        container.map(function(e){
+            if(e.Layer){
+                var obj;
+                if(e.Layer.type === "objectRect"){
+                    obj = Object.assign({
+                        backgroundColor: e.fill,
+                        border: `${e.strokeWidth}px solid ${e.stroke}`,
+                        borderRadius: This.getRadius(e.cornerRadius),
+                        boxSizing:"border-box"
+                    }, This.getStandart(e));
+                }else if(e.Layer.type === "objectCircle"){
+                    obj = Object.assign({
+                        backgroundColor: e.fill,
+                        borderRadius: e.borderRadius+"px",
+                    }, This.getStandart(e));
+                }else if (e.Layer.type === "objectImg") {
+                    obj = Object.assign({
+                        backgroundImage: `url(${player.root+e.src})`,
+                        backgroundSize: `${e.width}px ${e.height}px`
+                    }, This.getStandart(e));
+                }else if(e.Layer.type === "objectText"){
+                    obj = Object.assign({
+                        text: e.text,
+                        fontSize: e.fontSize+"px",
+                        fontFamily: e.fontFamily,
+                        fontWeight: e.fontStyle,
+                        lineHeight: e.lineHeight,
+                        textAlign: e.align,
+                        color: e.fill,
+                    }, This.getStandart(e));
 
-
-/*    var sound = new Howl({
-        src: ['sound.mp3']
-    });
-
-    //sound.play();*/
-
-        var SP = [];
-        var SD = [];
-
-        this.getStandart = function(e){
-            var className = e.Layer.type
-
-            if(e.Layer.class){
-                className += (" "+e.Layer.class);
-            }
-
-            return {
-                left: e.x +"px",
-                top: e.y +"px",
-                width: e.width +"px",
-                height: e.height +"px",
-                transform: `scale(${e.scale.x}, ${e.scale.y})`,
-                transformOrigin: "0% 0%",
-                position: "absolute",
-                type: e.Layer.type,
-                className: className,
-                name: e.Layer.name,
-                id: e.Layer.elementID
-            }
-        }
-
-        this.getRadius = function(data){
-            return `${data[0]}px ${data[1]}px ${data[2]}px ${data[3]}px`;
-        }
-
-        this.convertObject = function(container){
-            var This = this;
-            var Kids = [];
-            container.map(function(e){
-                if(e.Layer){
-                    var obj;
-                    if(e.Layer.type === "objectRect"){
-                        obj = Object.assign({
-                            backgroundColor: e.fill,
-                            border: `${e.strokeWidth}px solid ${e.stroke}`,
-                            borderRadius: This.getRadius(e.cornerRadius),
-                            boxSizing:"border-box"
-                        }, This.getStandart(e));
-                    }else if(e.Layer.type === "objectCircle"){
-                        obj = Object.assign({
-                            backgroundColor: e.fill,
-                            borderRadius: e.borderRadius+"px",
-                        }, This.getStandart(e));
-                    }else if (e.Layer.type === "objectImg") {
-                        obj = Object.assign({
-                            backgroundImage: `url(${player.root+e.src})`,
-                            backgroundSize: `${e.width}px ${e.height}px`
-                        }, This.getStandart(e));
-                    }else if(e.Layer.type === "objectText"){
-                        obj = Object.assign({
-                            text: e.text,
-                            fontSize: e.fontSize+"px",
-                            fontFamily: e.fontFamily,
-                            fontWeight: e.fontStyle,
-                            lineHeight: e.lineHeight,
-                            textAlign: e.align,
-                            color: e.fill,
-                        }, This.getStandart(e));
-
-                        if(e.verticalAlign === "middle"){
-                            obj.lineHeight = obj.height;
-                        }
-                    }else if (e.Layer.type === "objectMovieClip") {
-                        obj = Object.assign({
-                            Kids: This.convertObject(e.Kids)
-                        }, This.getStandart(e));
+                    if(e.verticalAlign === "middle"){
+                        obj.lineHeight = obj.height;
                     }
-
-                    Kids.push(obj);
+                }else if (e.Layer.type === "objectMovieClip") {
+                    obj = Object.assign({
+                        Kids: This.convertObject(e.Kids)
+                    }, This.getStandart(e));
                 }
-            });
 
-            return Kids;
-        }
+                Kids.push(obj);
+            }
+        });
 
-        this.addMovieClip = function(kids, container){
-            var This = this;
-            kids.map(function(e){
-                if(e.type === "objectRect"){
-                    var rect = utils.addDOM({className:e.className, id:e.id, layername: e.name});
-                    Object.assign(rect.style, e);
-                    container.appendChild(rect);
-                }if(e.type === "objectCircle"){
-                    var circle = utils.addDOM({className:e.className, id:e.id, layername: e.name});
-                    Object.assign(circle.style, e);
-                    container.appendChild(circle);
-                }else if(e.type === "objectImg"){
-                    var img = utils.addDOM({className:e.className, id:e.id, layername: e.name});
-                    Object.assign(img.style, e);
-                    container.appendChild(img);
-                }else if(e.type === "objectText"){
-                    var text = utils.addDOM({className:e.className, id:e.id, layername: e.name, innerText: e.text});
-                    Object.assign(text.style, e);
-                    container.appendChild(text);
-                }else if(e.type === "objectMovieClip"){
-                    var mc = utils.addDOM({className:e.className, id:e.id, layername: e.name});
-                    container.appendChild(mc);
-                    This.addMovieClip(e.Kids, mc);
-                    Object.assign(mc.style, e);
-                }
-            });
-        }
+        return Kids;
+    }
 
-        this.startBuild = function(json, currentSceneID, stageBG, container, Mode, root, scoreUpdate){
+    this.addMovieClip = function(kids, container){
+        var This = this;
+        kids.map(function(e){
+            if(e.type === "objectRect"){
+                var rect = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                Object.assign(rect.style, e);
+                container.appendChild(rect);
+            }if(e.type === "objectCircle"){
+                var circle = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                Object.assign(circle.style, e);
+                container.appendChild(circle);
+            }else if(e.type === "objectImg"){
+                var img = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                Object.assign(img.style, e);
+                container.appendChild(img);
+            }else if(e.type === "objectText"){
+                var text = utils.addDOM({className:e.className, id:e.id, layername: e.name, innerText: e.text});
+                Object.assign(text.style, e);
+                container.appendChild(text);
+            }else if(e.type === "objectMovieClip"){
+                var mc = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                container.appendChild(mc);
+                This.addMovieClip(e.Kids, mc);
+                Object.assign(mc.style, e);
+            }
+        });
+    }
+
+    this.startBuild = function(json, currentSceneID, stageBG, container, Mode, root, scoreUpdate){
             console.log("Start", json);
             player.root = root;
             player.scoreUpdate = scoreUpdate;
@@ -160,7 +158,8 @@ function PLAYER(){
 
                 SP[index] = {
                     id: index,
-                    popupWindow: {}
+                    popupWindow: {},
+                    screenCloseDOM:null
                 }
             });
 
@@ -173,319 +172,399 @@ function PLAYER(){
                 This.searchTool(sceneDiv, i);
                 This.AddCS(sceneDiv, i);
                 This.allScene.push(sceneDiv);
+                This.addScreenClose(sceneDiv, i);
             })
 
             this.addEvents();
-            this.addScreenClose();
+
 
             if(Mode === "optic"){
                 This.build_KT(json);
             }else if(Mode === "preview"){
                 Preview_HTML(container);
-            }else  if(Mode === "normal"){
-                this.addNormal_HTML();
-                This.scoreCalc();
+                initKACountDown();
             }
         }
 
-        this.scoreCalc = function(){
-            var score = {right:0, wrong:0, empty:0};
+    this.scoreCalc = function(){
+        var score = {right:0, wrong:0, empty:0, access:0, success:0, duration:0};
 
-            var complete = true;
-            SD.map(function(e){
-                score.right += e.right;
-                score.wrong += e.wrong;
-                score.empty += e.empty;
+        var averageScore = 100/SD.length;
 
-                if(!e.complete){
-                    complete = false;
-                }
+        function accessControl(e){
+            if(e.right || e.wrong){
+                return 1;
+            }
+
+            return 0;
+        }
+
+        var complete = true;
+        SD.map(function(e){
+            score.right += e.right;
+            score.wrong += e.wrong;
+            score.empty += e.empty;
+            score.duration += e.duration;
+            score.access += accessControl(e);
+            score.success += (e.right / (e.right + e.wrong + e.empty)) * averageScore;
+
+            if(!e.complete){
+                complete = false;
+            }
+        });
+
+
+        if(score.access){
+            score.access = (score.access  / SD.length)*100;
+        }else{
+            score.access = 0;
+        }
+
+        if(player.scoreUpdate){
+            player.scoreUpdate({
+                Access: score.access,
+                Success: parseInt(score.success),
+                Duration: score.duration,
+                Right:score.right,
+                Wrong:score.wrong,
+                Empty:score.empty,
+                TotalRight: SD.length,
+                CurrentSceneType: "E",
+                Complete: complete
             });
+        }
+    }
 
-            if(player.scoreUpdate){
-                player.scoreUpdate({
-                    Access:10,
-                    Success:10,
-                    Right:score.right,
-                    Wrong:score.wrong,
-                    Empty:score.empty,
-                    TotalRight: SD.length,
-                    CurrentSceneType: "E",
-                    Complete: complete
+    /** Add CS **/
+    this.AddCS = function(Scene, index){
+        var CS = {
+            rightAnswer: jsonV2.slides[index].rightAnswer,
+            wrongCount: 0,
+            selectedID: null,
+            Buton:[]
+        }
+
+        Scene.childNodes.forEach(function(main){
+            if(main.id.includes("selectButon")){
+                var id = parseInt(main.id.split("_")[1]);
+                main.addEventListener("click", function(){
+                    selected(id);
                 });
+
+                CS.Buton[id] = {
+                    main:main,
+                    csClick: main.querySelector(".csClick"),
+                    csWrong: main.querySelector(".csWrong"),
+                    csRight: main.querySelector(".csRight"),
+                };
+
+                main.style.cursor = "pointer";
             }
+        });
+
+        if(SP[index].controlBtn){
+            SP[index].controlBtn.addEventListener("click", function(){
+                controlFNC(CS.selectedID);
+            });
         }
 
-        /** Add CS **/
-        this.AddCS = function(Scene, index){
-            var CS = {
-                rightAnswer: jsonV2.slides[index].rightAnswer,
-                wrongCount: 0,
-                selectedID: null,
-                Buton:[]
-            }
-
-            Scene.childNodes.forEach(function(main){
-                if(main.id.includes("selectButon")){
-                    var id = parseInt(main.id.split("_")[1]);
-                    main.addEventListener("click", function(){
-                        selected(id);
-                    });
-
-                    CS.Buton[id] = {
-                        main:main,
-                        csClick: main.querySelector(".csClick"),
-                        csWrong: main.querySelector(".csWrong"),
-                        csRight: main.querySelector(".csRight"),
-                    };
-
-                    main.style.cursor = "pointer";
+        if(SP[index].popupWindow.btn){
+            SP[index].popupWindow.btn.addEventListener("click", function(){
+                if(!SD[index].right === 0){
+                    reset();
                 }
+
+                disableAllSelectBtn();
             });
 
+            SP[index].popupWindow.btn.style.pointerEvents = "none";
+        }
+
+        function disableControlBtn(){
             if(SP[index].controlBtn){
-                SP[index].controlBtn.addEventListener("click", function(){
-                    controlFNC(CS.selectedID);
-                });
+                SP[index].controlBtn.style.opacity = 0.5;
+                SP[index].controlBtn.style.pointerEvents = "none";
             }
+        }
 
+        function enablePopupBtnStatus(){
             if(SP[index].popupWindow.btn){
-                SP[index].popupWindow.btn.addEventListener("click", function(){
-                    if(!SD[index].right === 0){
-                        reset();
+                SP[index].popupWindow.btn.style.opacity = 1;
+                SP[index].popupWindow.btn.style.pointerEvents = "auto";
+            }
+        }
+
+        function selected(id){
+            reset();
+            CS.Buton[id].csClick.style.visibility = "visible";
+            CS.selectedID = id;
+
+            if(KT.Mode){
+                KT.singleSelectFNC(index, id);
+            }else if(SP[index].controlBtn){
+                SP[index].controlBtn.style.opacity = 1;
+                SP[index].controlBtn.style.pointerEvents = "auto";
+            }else{
+                controlFNC(id);
+            }
+        }
+
+        function reset(){
+            CS.Buton.map(function(Buton){
+                Buton.csClick.style.visibility = "hidden";
+                Buton.csWrong.style.visibility = "hidden";
+                Buton.csRight.style.visibility = "hidden";
+            });
+        }
+
+        function controlFNC(id){
+            if(id === null){
+                return false;
+            }
+
+            CS.Buton[id].csClick.style.visibility = "hidden";
+            disableControlBtn();
+
+            if(CS.rightAnswer === id){
+                This.playRightAudio();
+                SD[index].right++;
+                SD[index].empty=0;
+                This.sceneComplete();
+                CS.Buton[id].csRight.style.visibility = "visible";
+                enablePopupBtnStatus();
+                disableAllSelectBtn();
+                This.nextScene();
+            }else{
+                This.playWrongAudio();
+                SD[index].wrong++;
+                CS.Buton[id].csWrong.style.visibility = "visible";
+
+                if(SD[index].wrong >= 3){
+                    if(SP[index].popupWindow.btn){
+                        SP[index].popupWindow.clicked = true;
+                        SP[index].popupWindow.window.style.visibility = "visible";
+                        SD[index].empty=0;
+                        This.sceneComplete();
+                        SP[index].controlBtn.style.visibility = "hidden";
+                        disableAllSelectBtn();
                     }
-
-                    disableAllSelectBtn();
-                });
-
-                SP[index].popupWindow.btn.style.pointerEvents = "none";
-            }
-
-            function disableControlBtn(){
-                if(SP[index].controlBtn){
-                    SP[index].controlBtn.style.opacity = 0.5;
-                    SP[index].controlBtn.style.pointerEvents = "none";
-                }
-            }
-
-            function enablePopupBtnStatus(){
-                if(SP[index].popupWindow.btn){
-                    SP[index].popupWindow.btn.style.opacity = 1;
-                    SP[index].popupWindow.btn.style.pointerEvents = "auto";
-                }
-            }
-
-            function selected(id){
-                reset();
-                CS.Buton[id].csClick.style.visibility = "visible";
-                CS.selectedID = id;
-
-                if(KT.Mode){
-                    KT.singleSelectFNC(index, id);
-                }else if(SP[index].controlBtn){
-                    SP[index].controlBtn.style.opacity = 1;
-                    SP[index].controlBtn.style.pointerEvents = "auto";
                 }else{
-                    controlFNC(id);
-                }
-            }
-
-            function reset(){
-                CS.Buton.map(function(Buton){
-                    Buton.csClick.style.visibility = "hidden";
-                    Buton.csWrong.style.visibility = "hidden";
-                    Buton.csRight.style.visibility = "hidden";
-                });
-            }
-
-            function controlFNC(id){
-                if(id === null){
-                    return false;
-                }
-
-                CS.Buton[id].csClick.style.visibility = "hidden";
-                disableControlBtn();
-
-                if(CS.rightAnswer === id){
-                    This.playRightAudio();
-                    SD[index].right++;
-                    SD[index].empty=0;
-                    CS.Buton[id].csRight.style.visibility = "visible";
                     enablePopupBtnStatus();
-                    disableAllSelectBtn();
-                    SD[index].complete = true;
-                }else{
-                    This.playWrongAudio();
-                    SD[index].wrong++;
-                    CS.Buton[id].csWrong.style.visibility = "visible";
-                    player.screenCloseDOM.style.display = "block";
-
-                    if(SD[index].wrong >= 3){
-                        if(SP[index].popupWindow.btn){
-                            SP[index].popupWindow.clicked = true;
-                            SP[index].popupWindow.window.style.visibility = "visible";
-                            SD[index].complete = true;
-                            SP[index].controlBtn.style.visibility = "hidden";
-                            disableAllSelectBtn();
-                        }
-                    }else{
-                        enablePopupBtnStatus();
-                    }
-
+                    SP[index].screenCloseDOM.style.display = "block";
                     player.screenCloseTimer = setTimeout(function (){
-                        player.screenCloseDOM.style.display="none";
+                        SP[index].screenCloseDOM.style.display="none";
                         CS.selectedID=null;
                         reset();
                     }, 1000);
-
                 }
-
-                console.log(SD);
-                This.scoreCalc();
             }
 
-            function disableAllSelectBtn(){
-                CS.Buton.map(function(btn){
-                    btn.main.style.pointerEvents = "none";
-                });
-            }
+            This.scoreCalc();
         }
 
-        This.searchTool = function(Scene, index){
-            var popupWindow;
-            Scene.childNodes.forEach(function(obj) {
-                if(obj.id.includes("popupButon")){
-                    SP[index].popupWindow.clicked = false;
-                    SP[index].popupWindow.btn = obj;
-                    SP[index].popupWindow.btn.addEventListener("click", function(){
-                        if(SP[index].popupWindow.clicked){
-                            popupWindow.style.visibility = "hidden";
-                            SP[index].popupWindow.clicked = false;
-                        }else{
-                            popupWindow.style.visibility = "visible";
-                            SP[index].popupWindow.clicked = true;
-                            if(SP[index].controlBtn){
-                                SP[index].controlBtn.style.opacity = 0.5;
-                                SP[index].controlBtn.style.pointerEvents = "none";
-                            }
-                        }
-                    });
-
-                    SP[index].popupWindow.btn.style.cursor = "pointer";
-                } else if(obj.id.includes("popupWindow")){
-                    SP[index].popupWindow.window = obj;
-                    popupWindow = obj;
-                    popupWindow.querySelector(".popupWindowClose").addEventListener("click",function(){
-                        popupWindow.style.visibility = "hidden";
-                        SP[index].popupWindow.clicked = false;
-                    });
-                    popupWindow.querySelector(".popupWindowClose").style.cursor = "pointer";
-                }else if(obj.id.includes("control")){
-                    SP[index].controlBtn = obj;
-                    SP[index].controlBtn.style.cursor = "pointer";
-                    SP[index].controlBtn.style.pointerEvents = "none";
-                }else if(obj.id.includes("answer")){
-                    SP[index].answerBtn = obj;
-                    SP[index].answerBtn.style.cursor = "pointer";
-                    SP[index].answerBtn.style.pointerEvents = "none";
-                }
+        function disableAllSelectBtn(){
+            CS.Buton.map(function(btn){
+                btn.main.style.pointerEvents = "none";
             });
         }
+    }
 
-        this.changeScene = function(index, navText){
-            if(this.allScene[index]){
-                this.sceneIndex = index;
-
-                this.allScene.forEach(function(Scene){
-                    Scene.style.display = "none";
+    This.searchTool = function(Scene, index){
+        var popupWindow;
+        Scene.childNodes.forEach(function(obj) {
+            if(obj.id.includes("popupButon")){
+                SP[index].popupWindow.clicked = false;
+                SP[index].popupWindow.btn = obj;
+                SP[index].popupWindow.btn.addEventListener("click", function(){
+                    if(SP[index].popupWindow.clicked){
+                        popupWindow.style.visibility = "hidden";
+                        SP[index].popupWindow.clicked = false;
+                    }else{
+                        popupWindow.style.visibility = "visible";
+                        SP[index].popupWindow.clicked = true;
+                        PLX.autoSceneChange_stopQuickly();
+                        if(SP[index].controlBtn){
+                            SP[index].controlBtn.style.opacity = 0.5;
+                            SP[index].controlBtn.style.pointerEvents = "none";
+                            if(!SD[This.sceneIndex].complete){
+                                This.sceneComplete();
+                                This.scoreCalc();
+                            }
+                        }
+                    }
                 });
 
-                this.allScene[this.sceneIndex].style.display = "block";
-                if(navText){
-                    navText.innerHTML = (index+1) +" / "+ this.allScene.length;
-                }
-
-                this.sceneCompleteControl();
+                SP[index].popupWindow.btn.style.cursor = "pointer";
+            } else if(obj.id.includes("popupWindow")){
+                SP[index].popupWindow.window = obj;
+                popupWindow = obj;
+                popupWindow.querySelector(".popupWindowClose").addEventListener("click",function(){
+                    popupWindow.style.visibility = "hidden";
+                    SP[index].popupWindow.clicked = false;
+                });
+                popupWindow.querySelector(".popupWindowClose").style.cursor = "pointer";
+            }else if(obj.id.includes("control")){
+                SP[index].controlBtn = obj;
+                SP[index].controlBtn.style.cursor = "pointer";
+                SP[index].controlBtn.style.pointerEvents = "none";
+            }else if(obj.id.includes("answer")){
+                SP[index].answerBtn = obj;
+                SP[index].answerBtn.style.cursor = "pointer";
+                SP[index].answerBtn.style.pointerEvents = "none";
             }
-        }
+        });
+    }
+
+    /* ChangeScene */
+    this.changeScene = function(index){
+        if(this.allScene[index]){
+            this.sceneIndex = index;
+            this.allScene.forEach(function(Scene){
+                Scene.style.display = "none";
+            });
+
+            this.allScene[this.sceneIndex].style.display = "block";
+            if(player.infoDiv){
+                player.infoDiv.innerHTML = (index+1) +" / "+ this.allScene.length;
+            }
+
+            this.addSceneInterval();
+            SP[index].screenCloseDOM.style.display = "none";
+            PLX.autoSceneChange_stopQuickly();
 
 
-        this.addEvents = function(){
-            window.addEventListener("resize", function() {
-                This.screenRatio();
-            }, true);
-
-            This.screenRatio();
-        }
-
-        this.addScreenClose = function(){
-            player.screenCloseDOM = utils.addDOM({className: "screenClose"});
-            player.mainDOM.appendChild(player.screenCloseDOM);
-        }
-
-        this.sceneCompleteControl = function(){
-            clearInterval(player.screenCloseTimer);
-            if(SD[This.sceneIndex].complete){
-                player.screenCloseDOM.style.display = "block";
+            if(index === 0){
+                player.backBtn.style.opacity = 0.5;
+                player.backBtn.style.cursor = "default";
+                player.backBtn.style.pointerEvents = "none";
             }else{
-                player.screenCloseDOM.style.display = "none";
+                player.backBtn.style.opacity = 1;
+                player.backBtn.style.cursor = "pointer";
+                player.backBtn.style.pointerEvents = "auto";
+            }
+
+            if(index === this.allScene.length-1){
+                player.nextBtn.style.opacity = 0.5;
+                player.nextBtn.style.cursor = "default";
+                player.nextBtn.style.pointerEvents = "none";
+            }else{
+                player.nextBtn.style.opacity = 1;
+                player.nextBtn.style.cursor = "pointer";
+                player.nextBtn.style.pointerEvents = "auto";
+            }
+        }
+    }
+
+    this.addSceneInterval = function(){
+        clearInterval(player.screenDuration);
+        if(!SD[This.sceneIndex].complete){
+            player.screenDuration = setInterval(This.addSecond, 1000);
+        }
+    }
+
+    this.addSecond = function(){
+        SD[This.sceneIndex].duration++;
+    }
+
+    this.sceneComplete = function (){
+        clearInterval(player.screenDuration);
+        SD[This.sceneIndex].complete = true;
+    }
+
+    /* NextScene */
+    this.nextScene = function(){
+        var start = This.sceneIndex+1;
+        var next;
+        for(var i=start; i<SD.length; i++){
+            if(!SD[i].complete){
+                next = i;
+                break;
             }
         }
 
-        this.screenRatio = function(){
-            var mainWidth = player.containerDOM.clientWidth;
-            var mainHeight = player.containerDOM.clientHeight;
-
-            var ratio = mainWidth / 1280;
-            var sonucH = (ratio*720);
-
-            if (sonucH > mainHeight) {
-                ratio = (mainHeight / 720);
+        if(!next){
+            for(var x=0; x<SD.length; x++){
+                if(!SD[x].complete){
+                    PLX.autoSceneChange.ShowFNC();
+                    next = x;
+                    break;
+                }
             }
-
-            player.mainDOM.style.scale = ratio;
         }
 
+        if(next !== undefined){
+            player.autoNext = next;
+            PLX.autoSceneChange.ShowFNC();
+        }
+    }
 
+    this.addEvents = function(){
+        window.addEventListener("resize", function() {
+            This.screenRatio();
+        }, true);
 
-    this.addNormal_HTML = function(){
-        var NavMain = utils.addDOM({className:"Normal_NavMain"});
-        player.mainDOM.appendChild(NavMain);
-        var backBtn = utils.addDOM({className:"Normal_NavBtn", id:"Normal_BackBtn", innerHTML:"&#9664;"});
-        var infoDiv = utils.addDOM({className:"Normal_NavInfo", textContent: "0 / 0"});
-        var nextBtn = utils.addDOM({className:"Normal_NavBtn", id:"Normal_NextBtn", innerHTML:"&#9654;"});
-        NavMain.appendChild(backBtn);
-        NavMain.appendChild(infoDiv);
-        NavMain.appendChild(nextBtn);
+        This.screenRatio();
+    }
 
-        backBtn.addEventListener("click", function(){
-            This.changeScene(This.sceneIndex-1, infoDiv);
+    this.addScreenClose = function(Scene, index){
+        SP[index].screenCloseDOM = utils.addDOM({className: "screenClose"});
+        Scene.appendChild(SP[index].screenCloseDOM);
+    }
+
+    this.screenRatio = function(){
+        var mainWidth = player.containerDOM.clientWidth;
+        var mainHeight = player.containerDOM.clientHeight;
+
+        var ratio = mainWidth / 1280;
+        var sonucH = (ratio*720);
+
+        if (sonucH > mainHeight) {
+            ratio = (mainHeight / 720);
+        }
+
+        var width = parseInt(1280*ratio);
+        var height = parseInt(720*ratio);
+        var centerX = (mainWidth - width)/2;
+        var centerY = (mainHeight - height)/2;
+
+        player.mainDOM.style.scale = ratio;
+        player.mainDOM.style.left = centerX+"px";
+        player.mainDOM.style.top = centerY+"px";
+    }
+
+    this.startPlayer = function(element){
+        This.scoreCalc();
+        initKACountDown();
+
+        Object.assign(player, element);
+        player.backBtn.addEventListener("click", function(){
+            This.changeScene(This.sceneIndex-1);
         });
 
-        nextBtn.addEventListener("click", function(){
-            This.changeScene(This.sceneIndex+1, infoDiv);
+        player.nextBtn.addEventListener("click", function(){
+            This.changeScene(This.sceneIndex+1);
         });
 
-        This.changeScene(0, infoDiv);
+        This.changeScene(0);
     }
 
     function Preview_HTML(container){
-        var backBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_BackBtn", innerHTML:"&#9664;"});
-        var nextBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_NextBtn", innerHTML:"&#9654;"});
-        var infoDiv = utils.addDOM({id:"Nav_Preview_NavInfo", textContent: "0 / 0"});
-        container.appendChild(backBtn);
-        container.appendChild(nextBtn);
-        container.appendChild(infoDiv);
+        player.backBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_BackBtn", innerHTML:"&#9664;"});
+        player.nextBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_NextBtn", innerHTML:"&#9654;"});
+        player.infoDiv = utils.addDOM({id:"Nav_Preview_NavInfo", textContent: "0 / 0"});
+        container.appendChild(player.backBtn);
+        container.appendChild(player.nextBtn);
+        container.appendChild(player.infoDiv);
 
-        backBtn.addEventListener("click", function(){
-            This.changeScene(This.sceneIndex-1, infoDiv);
+        player.backBtn.addEventListener("click", function(){
+            This.changeScene(This.sceneIndex-1);
         });
 
-        nextBtn.addEventListener("click", function(){
-            This.changeScene(This.sceneIndex+1, infoDiv);
+        player.nextBtn.addEventListener("click", function(){
+            This.changeScene(This.sceneIndex+1);
         });
 
-        This.changeScene(0, infoDiv);
+        This.changeScene(0);
     }
 
     this.playWrongAudio = function(){
@@ -503,7 +582,7 @@ function PLAYER(){
         KT.Optic_ShowBtn = document.querySelector("#Optic_Btn");
         KT.Nav_BackBtn = document.querySelector("#Nav_BackBtn");
         KT.Nav_NextBtn = document.querySelector("#Nav_NextBtn");
-        KT.Nav_Text = document.querySelector("#Nav_Text");
+        player.infoDiv = document.querySelector("#Nav_Text");
         KT.FormShow = false;
         KT.Scene=[];
         KT.currentSlide=[];
@@ -634,11 +713,11 @@ function PLAYER(){
 
 
         KT.Nav_BackBtn.addEventListener("click", function (){
-            This.changeScene(This.sceneIndex-1, KT.Nav_Text);
+            This.changeScene(This.sceneIndex-1);
         });
 
         KT.Nav_NextBtn .addEventListener("click", function (){
-            This.changeScene(This.sceneIndex+1, KT.Nav_Text);
+            This.changeScene(This.sceneIndex+1);
         });
 
         KT.Optic_ShowBtn.addEventListener("click", function(){
@@ -718,13 +797,12 @@ function PLAYER(){
 
         openOpticWindow();
         rowSelectFNC(0);
-        this.changeScene(0,KT.Nav_Text);
+        this.changeScene(0);
         return player.containerDOM;
     }
 
     function addKT_HTML(container){
-        var html =
-            `<div id="Player_Container"></div>
+        var html = `<div id="Player_Container"></div>
         <div id="Optic_MainDiv"></div>
         <div id="Nav_MainDiv">
                 <div class="Nav_Container">
@@ -741,6 +819,131 @@ function PLAYER(){
         container.innerHTML = html;
         return document.querySelector("#Player_Container");
     }
+
+    function countDown(obj, animationFinish, duration){
+        obj.append(`<svg><path id="CountdownCircle"/></svg>`);
+        var This = this;
+        this.Svg = $("#CountdownCircle")[0];
+        this.Const =  {x:15, y:15, radius: 15, start:1, end:1};
+        this.Time=0;
+        this.startAnimationFNC = function(){
+            if(this.Gsap){
+                this.Gsap.kill();
+            }
+            this.Current = Object.assign({}, this.Const);
+            this.Gsap = gsap.to(this.Current, {start:1, end:360, duration:duration, ease:'none', onUpdate:this.onTimerFNC, onComplete:this.finishFNC});
+        };
+
+        this.onTimerFNC = function(){
+            This.Time++;
+            if(This.Time === 4){
+                This.updateFNC();
+                This.Time=0;
+            }
+        };
+
+        this.animationStop = function(){
+            if(this.Gsap){
+                this.Gsap.kill();
+            }
+        }
+
+        this.polarToCartesianFNC = function(centerX, centerY, radius, angleInDegrees) {
+            var angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
+        };
+
+        this.describeArcFNC = function (x, y, radius, startAngle, endAngle) {
+            var start = this.polarToCartesianFNC(x, y, radius, endAngle);
+            var end = this.polarToCartesianFNC(x, y, radius, startAngle);
+            var arcSweep = endAngle - startAngle <= 180 ? "0" : "1";
+            return [
+                "M", start.x, start.y,
+                "A", radius, radius, 0, arcSweep, 0, end.x, end.y,
+                "L", x, y,
+                "L", start.x, start.y
+            ].join(" ");
+        };
+
+        this.updateFNC =  function () {
+            this.Svg.setAttribute("d", this.describeArcFNC(this.Const.x, this.Const.y, this.Const.radius, this.Current.start, this.Current.end));
+        };
+
+        this.finishFNC = function(){
+            This.animationStop();
+            animationFinish();
+        };
+    }
+
+    PLX.autoSceneChange_PieResize = function(){
+        /*
+        if(PLX.autoSceneChange.Pie){
+            PLX.autoSceneChange.Pie.css("transform", `scale(${ratioWidth}, ${ratioWidth})`);
+        }
+        */
+    }
+
+    PLX.autoSceneChange_stopQuickly = function(){
+        if(PLX.autoSceneChange.Pie){
+            PLX.autoSceneChange.HideFNC();
+        }
+    }
+
+    PLX.autoSceneChange = {
+        AddHtmlFNC: function(animationFinish, text, duration){
+            var html =
+                `<div id="autoSceneChange_Main">
+				<div class="autoSceneChange_Container">
+					<div id="autoSceneChange_Pie"></div>
+				</div>
+				<div id="autoSceneChange_Txt" class="STxt">${text}</div>
+				<div id="autoSceneChange_WindowClose">
+					<img class="autoMessageCloseImg" src="https://cdn.okulistik.com/mobileplayer/contentplayer/assets/image/bup/close.png" alt=""/>
+				</div>
+			</div>`;
+
+            PLX.SceneNavigationMain.append(html);
+            STxt = $(".STxt");
+
+            PLX.autoSceneChange.Main = $("#autoSceneChange_Main");
+            PLX.autoSceneChange.Pie = $("#autoSceneChange_Pie");
+            PLX.autoSceneChange.Txt = $("#autoSceneChange_Txt");
+            PLX.autoSceneChange.WindowClose = $("#autoSceneChange_WindowClose");
+
+            PLX.autoSceneChange.CountDown = new countDown(PLX.autoSceneChange.Pie, animationFinish, duration);
+            PLX.autoSceneChange_PieResize();
+        },
+
+        ShowFNC: function(){
+            PLX.autoSceneChange.Main.css({right:"-20%", display:"flex"});
+            gsap.to(PLX.autoSceneChange.Main, 0.3, {right:"0.5%"});
+            PLX.autoSceneChange.CountDown.startAnimationFNC();
+        },
+
+        HideFNC: function(){
+            PLX.autoSceneChange.CountDown.animationStop();
+            PLX.autoSceneChange.Main.hide();
+        }
+    }
+
+    function initKACountDown(){
+        PLX.SceneNavigationMain = $("#PlayerMain");
+        PLX.autoSceneChange.AddHtmlFNC(function(){ This.changeScene(player.autoNext) }, "sonraki soru", 4);
+        PLX.autoSceneChange.WindowClose.on("click", function(e){
+            PLX.autoSceneChange.HideFNC();
+            e.stopPropagation();
+        });
+
+        PLX.autoSceneChange.Main.on("click", function(){
+            PLX.autoSceneChange.HideFNC();
+            This.changeScene(This.sceneIndex+1);
+        });
+    }
+
+
 }
 
 

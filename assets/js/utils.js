@@ -64,4 +64,14 @@ function utils(){
         return add;
     }
 
+    this.getLayers = function(layer){
+        console.log(layer);
+        var all=[];
+        layer.children.map(function(obj, index){
+            all[index] = obj;
+        });
+
+        return all;
+    }
+
 }

@@ -174,8 +174,8 @@ body{
     width: 100%;
     height: 100%;
     position: absolute;
-    background-image: url("../img/player/kt_mat_bg.jpg");
     background-repeat: repeat;
+    overflow: hidden;
 }
 
 
@@ -231,10 +231,14 @@ body{
     text-align: center;
     line-height: 50px;
     color: white;
-    background-color: #0d47a1;
     border-radius: 10px;
     user-select: none;
     cursor: pointer;
+}
+
+.Normal_NavBtn img{
+    margin-top: 8%;
+    height: 84%;
 }
 
 .Normal_NavInfo{
@@ -245,8 +249,7 @@ body{
     color: white;
     user-select: none;
     cursor: pointer;
-    text-shadow: 1px 1px #606060;
-    background-color: #b1b1b1;
+    background-color: #fef4f3;
 }
 
 #Normal_BackBtn{
@@ -255,14 +258,24 @@ body{
 
 #Normal_NextBtn{
     border-radius: 0 10px 10px 0;
-    margin-right:5px;
+    margin-right: 5px;
+}
+
+#Normal_EndContent {
+    display: none;
+    margin-right: 5px;
+}
+
+#Normal_EndContent img{
+    margin-top: 8%;
+    height: 84%;
 }
 
 .Normal_NavMain{
-  display: flex;
+    display: flex;
     position: absolute;
     right: 0;
-    bottom: 5px;
+    bottom: 3px;
 }
 
 
@@ -372,125 +385,135 @@ body{
 
 /*--- Scene Auto Change ---*/
 
-
-
-
-/**** EndScreen ****/
-#endScreenMain {
-    left:0;
-    top: 0;
+#newEndScreen{
+    display: flex;
+    justify-content: center;
     width: 100%;
     height: 100%;
+    background-color: orange;
     position: absolute;
-    background-image: url("/mobileplayer/contentcreator/assets/img/player/endscreen/newEndBg.gif");
-    background-size: cover;
-    display: none;
+    user-select: none;
 }
 
-#endScreenSuccessTxtBox {
-    left: 30%;
-    top: 30%;
-    width: 40%;
-    height: 40%;
-    position: absolute;
-}
-
-#endScreenSuccessTxtBox img {
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    display: none;
-}
-
-#endScreenOtherContentBtn {
-    left: 75%;
-    top: 70%;
-    width: 12%;
-    height: 21.4%;
-    position: absolute;
-    border-radius: 100px;
-    background-color: #f76b55;
-    color: white;
-}
-
-#endScreenRestartBtn {
-    left: 13%;
-    top: 70%;
-    width: 12%;
-    height: 21.4%;
-    position: absolute;
-    border-radius: 100px;
-    background-color: #f76b55;
-    color: white;
-}
-
-#endScreenBtnBG {
-    left: 10%;
-    top: 65%;
-    width: 80%;
-    height: 31%;
-    position: absolute;
-    background-color: rgba(255, 255, 255, 0.5);
-    border-radius: 200px;
-}
-
-#endScreenBackScreenBtn {
-    left: 85%;
-    top: 62%;
-    width: 5.6%;
-    height: 10%;
-    border: 0 solid white;
-    position: absolute;
-    border-radius: 50px;
-}
-
-#endScreenAvatarImg {
-    left: 44%;
-    top: 20%;
-    width: 13%;
-    height: 23.2%;
-    position: absolute;
-    border-radius: 100px;
-}
-
-#endScreenStarMain {
-    left: 32%;
-    top: 3%;
-    width: 36%;
-    height: 23.2%;
-    position: absolute;
-}
-
-#endScreenStarMain img {
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    display: none;
-    position: absolute;
-}
-
-.endScreenBtnTxt {
-    top: 24%;
-    width: 100%;
-    position: absolute;
-    font-size: 32px;
+.endScreen_container{
+    width: 540px;
     text-align: center;
 }
 
-#endScreenAdviceTxt {
-    left: 0;
-    top: 90%;
-    width: 100%;
-    height: 40px;
-    color: #f76b55;
+.endScreen_lessonName{
+    font-size: 30px;
+    margin-top: 20px;
+    color: white;
+}
+
+.endScreen_result{
+    width: 540px;
+    display: flex;
+    position: relative;
+    font-size: 22px;
+    color: #788a9a;
+    background-color: white;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-radius: 10px;
+}
+
+.endScreen_result_box{
+    width: 180px;
+}
+
+.endScreen_result_box img{
+    width: 30%;
+    height: 30%;
+}
+
+.endScreen_result_Type{
+    margin-top: 10px;
+}
+
+.endScreen_result_valueTxt{
+    margin-top: 15px;
     font-weight: bold;
-    text-align: center;
-    position: absolute;
+
 }
 
-/*---- EndScreen ----*/
+.endScreen_score{
+    display: flex;
+    font-size: 22px;
+    background-color: white;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
 
+
+.endScreen_score_box{
+    width: 180px;
+}
+
+.endScreen_greenColor{
+    color: green;
+}
+
+.endScreen_redColor{
+    color: red;
+}
+
+.endScreen_silverColor{
+    color: silver;
+}
+
+.endScreen_btnContainer{
+    display: flex;
+    justify-content: center;
+}
+
+#endScreen_returnBtn{
+    width: 300px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-radius: 30px;
+    margin-top: 15px;
+    background-color: white;
+    color: #788a9a;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.endScreen_star{
+    width: 540px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+}
+
+.endScreen_star img{
+    display: none;
+}
+
+.endScreen_profile{
+    width: 540px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.endScreen_profile img{
+    border-radius: 100px;
+    border: 2px solid white;
+}
+
+#endScreen_showBasketBtn{
+    width: 200px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-radius: 30px;
+    margin-top: 15px;
+    background-color: white;
+    color: #788a9a;
+    font-size: 22px;
+    cursor: pointer;
+}
 
