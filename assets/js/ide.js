@@ -1,12 +1,12 @@
 function Arayuz_addLayer(obj, container){
     if(utils.editLayerControl(container)){
-        var id = Layers.length;
+        var localEX = utils.getLayers();
+        var id = localEX.length;
         var hide = false;
         var lock = false;
         obj.Layer.id = id;
         obj.Layer.hide = hide;
         obj.Layer.lock = lock;
-        Layers.push(obj);
 
         var layerHtml = `<div class="layer">
             <div class="layerIcon"><img src="assets/img/${obj.Layer.type}_icon.png"></div>
@@ -163,11 +163,13 @@ function Permission(shiftKey, object){
 
 
 function addOrganizedLayer(List, id){
+    var localEX = utils.getLayers();
+
     for(var x=List.length-1; x>-1; x--){
-        Layers[List[x]].moveToTop();
+        localEX[List[x]].moveToTop();
     }
 
-    selectItem({layer: Layers[id]})
+    selectItem({layer: localEX[id]})
 }
 
 
@@ -242,9 +244,12 @@ function openTextEditor(text){
 
 
 function delOrganizedLayer(){
-    Layers.map(function(o,i){
-        o.Layer.id = i;
+    var localEX = utils.getLayers();
+    localEX.map(function(obj, id){
+        obj.Layer.id = id;
     });
+
+    console.log("delOrganizedLayer");
 }
 
 var LayerSR = addSR({
@@ -322,7 +327,6 @@ function getProp(sameValueSearch){
 /* Object Delete */
 document.addEventListener("keyup", function(e){
     if((e.keyCode === 8 || e.keyCode === 46)){
-        //if(IDE.scope === "Stage" && Layers.length){
         if(IDE.scope === "Stage"){
             deleteObject();
         }else if(IDE.scope === "Scene"){
@@ -334,14 +338,14 @@ document.addEventListener("keyup", function(e){
 function deleteObject(){
     var allObj = IDE.activeLayer.getChildren();
     var relatedObject = false;
+
     IDE.selectedLayers.forEach(function(SL){
         if(utils.editLayerControl(IDE.activeLayer)){
-            for(var i=0; i<Layers.length; i++){
-                if(SL.Layer.id === Layers[i].Layer.id){
-                    Layers[i].destroy();
-                    Layers.splice(i, 1);
+            var localEX = utils.getLayers();
+            for(var i=0; i<localEX.length; i++){
+                if(SL.Layer.id === localEX[i].Layer.id){
+                    localEX[i].destroy();
                     LayerSR.deleted(i);
-
                     if(SL.Layer.name.includes("popup")){
                         relatedObject = true;
                     }
@@ -1013,7 +1017,8 @@ function addHistory(){
     var temp2 = [];
     temp.splice(historyStep);
 
-    Layers.map(function(e){
+    var localEX = utils.getLayers();
+    localEX.map(function(e){
         var randomName = utils.getRandomName();
         if(!e.attrs.unique){
             e.attrs.unique = randomName;
@@ -1070,17 +1075,17 @@ function historyProgress(){
     console.log(history, historyStep);
 
     //History silinmiş öğenin geri getirilmesi kalsın. geri almanın değişkenlerini optimize yap.
-
+    var localEX = utils.getLayers();
     if(history){
         history.map(function(e){
             var found = false;
-            for(var i=0; i<Layers.length; i++){
-                if(Layers[i].attrs.unique){
-                    if(e.unique === Layers[i].attrs.unique){
-                        Layers[i].x(e.x).y(e.y).width(e.width).height(e.height).scaleX(e.scaleX).scaleY(e.scaleY);
-                        Layers[i].offsetX(e.offsetX).offsetY(e.offsetY);
+            for(var i=0; i<localEX.length; i++){
+                if(localEX[i].attrs.unique){
+                    if(e.unique === localEX[i].attrs.unique){
+                        localEX[i].x(e.x).y(e.y).width(e.width).height(e.height).scaleX(e.scaleX).scaleY(e.scaleY);
+                        localEX[i].offsetX(e.offsetX).offsetY(e.offsetY);
                         if(e.fill){
-                            Layers[i].fill(e.fill);
+                            localEX[i].fill(e.fill);
                         }
                         found = true;
                         break;

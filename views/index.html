@@ -320,7 +320,6 @@
     var utils = new utils();
     var ALIGN = new ALIGN();
     var Player;
-    var Layers = [];
     var sceneIndex=-1;
 
     var jsonV2 = {
@@ -430,7 +429,8 @@
 
     var layerBackgroundColor = function(){
         if(utils.editLayerControl(IDE.activeLayer)){
-            Layers.forEach(function(tempLayer){
+            var localEX = utils.getLayers();
+            localEX.forEach(function(tempLayer){
                 tempLayer.Layer.main.style.backgroundColor = "#323232";
             });
 
@@ -450,11 +450,11 @@
     /* Layer Tüm Objeleri Silme */
     function layerDeleteAll(){
         LayerSR.resetSystem();
-        Layers.map(function(i){
+        var localEX = utils.getLayers();
+        localEX.map(function(i){
             i.destroy();
         });
 
-        Layers = [];
         deSelect();
         console.log("DELETE: All Layers");
     }

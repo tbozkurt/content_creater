@@ -64,11 +64,12 @@ function utils(){
         return add;
     }
 
-    this.getLayers = function(layer){
-        console.log(layer);
+    this.getLayers = function(){
         var all=[];
-        layer.children.map(function(obj, index){
-            all[index] = obj;
+        IDE.sceneLayer.children.map(function(obj, index){
+            if(obj.Layer){
+                all[index] = obj;
+            }
         });
 
         return all;
