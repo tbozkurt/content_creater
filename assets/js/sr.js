@@ -1,7 +1,7 @@
 function addSR(Data){
     //Reset
     var resetData = function (){
-        return {drag: [], drop: [], activeButonID: -1, list:[], container: Data.Container};
+        return {drag: [], drop: [], activeButonID: -1, list:[], XX:[], container: Data.Container};
     }
 
     var resetDom = function(){
@@ -21,7 +21,7 @@ function addSR(Data){
     var Old=[];
 
     // Start
-    var start = function(Mode) {
+    var start = function(Mode,unique) {
         SR = resetData();
 
         SR.container.style.width = SR.container.offsetWidth +"px";
@@ -46,17 +46,16 @@ function addSR(Data){
         });
 
 
-        if(Mode  === "Add"){
+        if(Mode === "Add"){
             if(Data.Before) {
-                Old.unshift(SR.drag.length-1);
+                Old.unshift([SR.drag.length-1, unique  ]);
             }else{
-                Old.push(SR.drag.length-1);
+                Old.push([SR.drag.length-1, unique ]);
             }
         }
 
-
         Old.map(function(order, index){
-            var tempDrag = SR.drag[order];
+            var tempDrag = SR.drag[order[0]];
             tempDrag.Box.style.position = "absolute";
             gsap.to(tempDrag.Box, 0, {x: SR.drag[index].xPos, y: SR.drag[index].yPos});
 
@@ -64,8 +63,8 @@ function addSR(Data){
                 type: "x,y",
                 bounds: SR.container,
                 allowEventDefault: true,
-                onDragParams:[order, false],
-                onDragEndParams:[order, true],
+                onDragParams:[order[0], false],
+                onDragEndParams:[order[0], true],
                 onDrag:function(id, dragEnd){
                     dragControlFNC(this, id, dragEnd);
                 },
@@ -74,7 +73,7 @@ function addSR(Data){
                 }
             });
 
-            SR.list[index] = order;
+            SR.XX[index] = [order[0], order[1]]; /*------*/
         });
 
         function dragControlFNC(mc, id, dragEnd){
@@ -104,28 +103,36 @@ function addSR(Data){
             }
 
             if(_hitTest){
-                if (_dragID !== SR.list[_dropID]){
-                    var dragGetArrayID = SR.list.indexOf(_dragID);
-                    var dragGetArrayValue = SR.list[dragGetArrayID];
-                    var dropGetArrayValue = SR.list[_dropID];
-                    SR.list[_dropID] = dragGetArrayValue;
-                    SR.list[dragGetArrayID] = dropGetArrayValue;
+                if (_dragID !== SR.XX[_dropID][0]){
+                    var dragGetArrayID = utils.searchIndex(_dragID, SR.XX);
+                    var dragGetArrayValue = SR.XX[dragGetArrayID].slice();
+                    var dropGetArrayValue = SR.XX[_dropID].slice();
+                    SR.XX[_dropID] = dragGetArrayValue;
+                    SR.XX[dragGetArrayID] = dropGetArrayValue;
+
                     for(var i=0; i<SR.drop.length;i++){
-                        var id = SR.list.indexOf(_dragID);
+                        var id = utils.searchIndex(_dragID, SR.XX);
                         if(id!==i){
-                            gsap.to(SR.drag[ SR.list[i] ].Box, 0.2, { x: SR.drop[i].xPos, y: SR.drop[i].yPos });
+                            gsap.to(SR.drag[ SR.XX[i][0] ].Box, 0.2, { x: SR.drop[i].xPos, y: SR.drop[i].yPos });
                         }
                     }
                 }
 
                 if(_dragEnd){
-                    var loc = SR.list.indexOf(_dragID);
+                    var loc = utils.searchIndex(_dragID, SR.XX);
                     gsap.to(SR.drag[_dragID].Box, 0.2, {x: SR.drop[loc].xPos, y: SR.drop[loc].yPos, boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
                     SR.activeButonID = -1;
 
-                    Data.AddFNC(SR.list, _dragID);
+                    var final=[];
+
+                    SR.XX.map(function(e, i){
+                        final[i] = e[0];
+                    });
+
+                    Data.AddFNC(final, _dragID, SR.XX);
                 }
             }
+
         }
     }
 
@@ -145,41 +152,62 @@ function addSR(Data){
     }
 
     //Clicked
-    var clicked = function(html){
+    var clicked = function(html, unique){
         resetDom();
         SR.drag.map(function(tempDrag){
             SR.container.append(tempDrag.Box);
         });
 
-        Old = SR.list.slice();
+        Old = SR.XX.slice();
         var Elem = addBox("drag"+ SR.drag.length, html);
-        start("Add");
+        start("Add", unique);
         return Elem;
     }
 
     //Delete
-    var deleted = function(index, unique){
+    var deleted = function(unique){
         resetDom();
+
+        var index;
+        if(typeof unique === "number"){
+            index = unique;
+        }else{
+            SR.XX.map(function(sr, i){
+                if(sr[1] === unique){
+                    index = sr[0];
+                }
+            });
+        }
+
         SR.drag.splice(index, 1);
-        SR.list.splice(SR.list.indexOf(index), 1);
+        var id = utils.searchIndex(index, SR.XX);
+        SR.XX.splice(id, 1);
+
 
         SR.drag.map(function(tempDrag){
             SR.container.append(tempDrag.Box);
         });
 
         var temp = [];
-        SR.list.map(function(order, i){
-            if(order > index){
-                order--;
+        SR.XX.map(function(order, i){
+            if(order[0] > index){
+                order[0]--;
             }
 
             temp[i] = order;
-            SR.drag[order].Box.id = "drag"+order;
+            SR.drag[order[0]].Box.id = "drag"+order[0];
         });
 
         Old = temp.slice();
         start("Delete");
-        Data.DelFNC(SR.list);
+
+        var final=[];
+        SR.XX.map(function(e, i){
+            final[i] = e[0];
+        });
+
+        console.log(SR.XX);
+        Data.DelFNC(final);
     }
 
     var resetSystem = function(){

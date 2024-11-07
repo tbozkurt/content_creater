@@ -93,7 +93,7 @@ function EXPORT(){
     }
 
     this.exportTypeSettings = function(json){
-        if(json.type === "KT_MC_Single"){
+        if(json.rightAnswer){
             json.rightAnswer = parseInt(IDE.workSpace.rightAnswer.value);
         }
     }

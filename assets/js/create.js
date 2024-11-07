@@ -14,7 +14,7 @@ function CREATE(){
         O.container.add(rect);
 
         if(O.addLayer){
-            Arayuz_addLayer(rect, O.container);
+            Arayuz_addLayer(rect);
         }
 
         if(O.layer){
@@ -39,7 +39,7 @@ function CREATE(){
         };
 
         if(O.addLayer) {
-            Arayuz_addLayer(theImg, O.container);
+            Arayuz_addLayer(theImg);
         }
 
         O.container.add(theImg);
@@ -53,7 +53,7 @@ function CREATE(){
         O.container.add( text );
 
         if(O.addLayer){
-            Arayuz_addLayer(text, O.container);
+            Arayuz_addLayer(text);
         }
     }
 
@@ -133,7 +133,7 @@ function CREATE(){
         }];
 
         addObjects(kids, container, false);
-        Arayuz_addLayer(container, O.container);
+        Arayuz_addLayer(container);
     }
 
     this.checkKontrol = function(){
@@ -169,7 +169,7 @@ function CREATE(){
             height: 461,
             cornerRadius: [10, 10, 0, 0],
             stroke:"#6c4d94",
-            fill: "#ffffff",
+            fill: "#f6f0f7",
             Layer:{type:"objectRect", name: "bg"}
         },
         {
@@ -206,7 +206,7 @@ function CREATE(){
         }];
 
         addObjects(kids, container, false);
-        Arayuz_addLayer(container, O.container);
+        Arayuz_addLayer(container);
     }
 
 
@@ -248,9 +248,8 @@ function CREATE(){
         }];
 
         addObjects(kids, container, false);
-        Arayuz_addLayer(container, O.container);
+        Arayuz_addLayer(container);
     }
-
 
     this.addControlButon = function(O){
         var container = this.movieClipFNC(O);
@@ -291,7 +290,23 @@ function CREATE(){
             }];
 
         addObjects(kids, container, false);
-        Arayuz_addLayer(container, O.container);
+        Arayuz_addLayer(container);
+    }
+
+    this.addUrlButon = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 640,
+                height: 480,
+                fill: "rgba(255, 255, 255, 0)",
+                Layer:{type:"objectRect", name: "bg"}
+            }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
     }
 
 }
@@ -342,5 +357,5 @@ function CREATE(){
         }];
 
         addObjects(kids, container, false);
-        Arayuz_addLayer(container, O.container);
+        Arayuz_addLayer(container);
     }*/

@@ -18,7 +18,32 @@
     <link rel="stylesheet" href="/assets/css/player.css">
 </head>
 <body>
-<div></div>
+<div class="WorkView" id="scope_TopMenu">
+    <div>
+        <div class="topMenuEmpty">&nbsp;</div>
+    </div>
+
+    <div class="AlignMain">
+        <div class="TopIconBox" id="createRect"><img src="assets/img/create_rect.png"></div>
+        <div class="TopIconBox image-upload">
+            <form id="uploadImageForm" enctype="multipart/form-data">
+                <label for="file_input" style="cursor: pointer">
+                    <img src="assets/img/create_img.png"/>
+                </label>
+
+                <input style="display: none" id="file_input" name="uploadImage" type="file" multiple/>
+            </form>
+        </div>
+
+        <div class="TopIconBox" id="createText"><img src="assets/img/create_text.png"></div>
+    </div>
+
+    <div style="display: flex">
+        <div class="topMenuBtn" id="save" style="border-right: 1px solid #000000">Kaydet</div>
+        <div class="topMenuBtn" id="export">Önizleme</div>
+    </div>
+</div>
+
 <div id="scope_Canvas"></div>
 
 <div class="WorkSpaces WorkView WorkSpace_Layer" id="scope_LeftWorkSpace" style="left:0; border-right:2px solid">
@@ -92,24 +117,6 @@
     </div>
 
     <div class="WorkSpaces_Group">
-        <div class="WorkSpaces_Header">&#8627; Add Object</div>
-        <div class="AlignMain">
-            <div class="AlignBox" id="createRect"><img src="assets/img/createSquare.png"></div>
-            <div class="AlignBox image-upload">
-                <form id="uploadImageForm" enctype="multipart/form-data">
-                    <label for="file_input" style="cursor: pointer">
-                        <img src="assets/img/createImage.png"/>
-                    </label>
-
-                    <input style="display: none" id="file_input" name="uploadImage" type="file" multiple/>
-                </form>
-            </div>
-
-            <div class="AlignBox" id="createText"><img src="assets/img/createText.png"></div>
-        </div>
-    </div>
-
-    <div class="WorkSpaces_Group">
         <div class="WorkSpaces_Header">&#8627; Align Object</div>
         <div class="AlignMain">
             <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
@@ -125,20 +132,19 @@
             <div class="AlignBox" id="align_SpaceHorizontal"><img src="assets/img/spaceX.svg"></div>
             <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
             <div class="AlignBox" id="align_ScaleAuto"><img src="assets/img/stagescale.svg"></div>
-
         </div>
         <div class="AlignMain">
             <div class="AlignBox" id="align_CenterStage"><img src="assets/img/stageCenter.svg"></div>
         </div>
     </div>
 
-    <div class="WorkSpaces_Group WorkSpace_Preview">
+<!--    <div class="WorkSpaces_Group WorkSpace_Preview">
         <div class="WorkSpaces_Header">&#8627; Preview</div>
         <div class="AlignMain" style="width: 150px">
             <div class="AlignBox" id="save"><img src="assets/img/save.png"></div>
             <div class="AlignBox" id="export"><img src="assets/img/preview.png"></div>
         </div>
-    </div>
+    </div>-->
 
     <div class="WorkSpaces_Group addSpace WorkSpace_SpecialObjects">
         <div class="WorkSpaces_Header">&#8627; Content Objects </div>
@@ -146,6 +152,26 @@
             <div class="AlignBox" id="createSelect"><img src="assets/img/cselect.png"></div>
             <div class="AlignBox" id="createPopup"><img src="assets/img/createPopup.png"></div>
             <div class="AlignBox" id="createControl"><img src="assets/img/createbtn.png"></div>
+        </div>
+        <div class="AlignMain">
+            <div class="AlignBox" id="createURL"><img src="assets/img/createurl.png"></div>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Group addSpace WorkSpace_Identity">
+        <div class="WorkSpaces_Header">&#8627; Identity </div>
+
+        <div class="WorkSpaces_SelectContainer">
+            <div class="altHead">ID:</div>
+            <input type="text" class="elementInput" id="identity_elementID">
+            <div class="altHead">Class:</div>
+            <input type="text" class="elementInput" id="identity_elementClass">
+            <table id="identity_table"></table>
+
+            <div class="Identity_AddParamBtn">
+                <img src="assets/img/addparam.png" id="identity_tableAddBtn" class="paramBtn_icon"/>
+            </div>
+
         </div>
     </div>
 
@@ -170,20 +196,29 @@
 <div id="welcome_main">
     <div class="welcome_window">
         <div class="welcome_windowTitle">Okulistik Content Creater</div>
-        <div class="welcome_file">
-            <div id="welcome_savedFileList">
 
+        <div class="welcome_file" id="welcome_step1">
+            <div id="welcome_savedFileList"></div>
+        </div>
+
+        <div class="welcome_file" id="welcome_step2">
+            <div id="welcome_sceneTypeList"></div>
+        </div>
+
+        <div id="welcome_closeInput">
+            <hr>
+            <div class="welcome_newFileContainer">
+                <input placeholder="Content Name" autocomplete="off" type="text" id="addFileInput">
+                <div class="addFileBtn" id="welcome_newFileBtn">
+                    <img src="/assets/img/newFile.png" alt="">
+                </div>
             </div>
         </div>
-        <hr>
-        <div class="welcome_newFileContainer">
-            <input placeholder="Content Name" autocomplete="off" type="text" id="addFileInput">
-            <div class="addFileBtn" id="welcome_newFileBtn">
-                <img src="/assets/img/newFile.png" alt="">
-            </div>
-        </div>
+
     </div>
 </div>
+
+<div id="scope_saved">Kaydedildi!</div>
 
 <div class="WorkView WorkSpace_Scene" id="scope_Scene">
     <div class="Scene_addContainer">
@@ -202,12 +237,12 @@
     </div>
 </div>
 
-
 <script>
     var IDE = {
         stage:{width: 1380, height: 820, container: "scope_Canvas", bg:"#404040"},
         layer:{x:50, y:50, width:1280, height: 720},
-        text:{write: false, leftSpace: 150, topSpace: 0},
+        text:{write: false, leftSpace: 152, topSpace: 37},
+        sceneTypes:[["Çoktan Seçmeli", "CS"], ["Boş Belge", "EMPTY"]],
         activeLayer: null,
         selectedLayers:[],
         selected: false,
@@ -219,6 +254,8 @@
         sceneSelect: null,
         editSelect: null,
         copy: null,
+        sceneUnique: null,
+        saveInterval:null,
         workSpace:{
             scope_Canvas: document.querySelector("#scope_Canvas"),
             scope_LeftWorkSpace: document.querySelector("#scope_LeftWorkSpace"),
@@ -241,6 +278,7 @@
             createSelect: document.querySelector("#createSelect"),
             createPopup: document.querySelector("#createPopup"),
             createControl: document.querySelector("#createControl"),
+            createURL: document.querySelector("#createURL"),
             uploadImageForm: document.querySelector("#uploadImageForm"),
             colorPicker: document.querySelector("#colorPicker"),
 
@@ -255,6 +293,11 @@
             align_ScaleAuto: document.querySelector("#align_ScaleAuto"),
             align_CenterStage: document.querySelector("#align_CenterStage"),
 
+            identity_elementID: document.querySelector("#identity_elementID"),
+            identity_elementClass: document.querySelector("#identity_elementClass"),
+            identity_table: document.querySelector("#identity_table"),
+            identity_tableAddBtn: document.querySelector("#identity_tableAddBtn"),
+
             rightAnswer: document.querySelector("#rightAnswer"),
             ratioCheck: document.querySelector("#ratioCheck"),
             WorkSpace_Layer: document.querySelector(".WorkSpace_Layer"),
@@ -262,15 +305,20 @@
             WorkSpace_RightAnswer: document.querySelector(".WorkSpace_RightAnswer"),
             WorkSpace_Scene: document.querySelector(".WorkSpace_Scene"),
             WorkSpace_Preview: document.querySelector(".WorkSpace_Preview"),
-            WorkSpace_ColorPicker: document.querySelector(".WorkSpace_ColorPicker")
+            WorkSpace_ColorPicker: document.querySelector(".WorkSpace_ColorPicker"),
+            WorkSpace_Identity: document.querySelector(".WorkSpace_Identity")
         },
         welcome:{
             main: document.querySelector("#welcome_main"),
+            step1: document.querySelector("#welcome_step1"),
+            step2: document.querySelector("#welcome_step2"),
+            closeInput: document.querySelector("#welcome_closeInput"),
             savedFileList: document.querySelector("#welcome_savedFileList"),
+            sceneTypeList: document.querySelector("#welcome_sceneTypeList"),
             newFileBtn: document.querySelector("#welcome_newFileBtn"),
-            addFileInput: document.querySelector("#addFileInput")
+            addFileInput: document.querySelector("#addFileInput"),
         },
-        player: null
+        identity_tableTemplate: `<th class="td1">Key</th><th class="td2">Value</th><th class="td3"></th>`
     }
 
     var stage = new Konva.Stage(IDE.stage);
@@ -320,7 +368,7 @@
     var utils = new utils();
     var ALIGN = new ALIGN();
     var Player;
-    var sceneIndex=-1;
+    var sceneIndex=0;
 
     var jsonV2 = {
         fileName: "",
@@ -405,8 +453,8 @@
         }
 
         SELECT.nodes(IDE.selectedLayers).moveToTop();
+        checkIdentity(temp.layer);
         layerBackgroundColor();
-        console.log( IDE.selectedLayers );
     }
 
     function colorPicker(set){
@@ -427,17 +475,148 @@
         }
     }
 
-    var layerBackgroundColor = function(){
-        if(utils.editLayerControl(IDE.activeLayer)){
-            var localEX = utils.getLayers();
-            localEX.forEach(function(tempLayer){
-                tempLayer.Layer.main.style.backgroundColor = "#323232";
-            });
+    /* Identity */
 
-            IDE.selectedLayers.map(function(tempLayer){
-                tempLayer.Layer.main.style.backgroundColor = "#35618f";
+    function checkIdentity(){
+        if(IDE.selectedLayers.length === 1){
+            var obj = IDE.selectedLayers[0];
+            if(obj.Layer.elementID){
+                IDE.workSpace.identity_elementID.value = obj.Layer.elementID;
+            }else{
+                IDE.workSpace.identity_elementID.value = "";
+            }
+
+            if(obj.Layer.class){
+                IDE.workSpace.identity_elementClass.value = obj.Layer.class;
+            }else{
+                IDE.workSpace.identity_elementClass.value = "";
+            }
+
+            IDE.workSpace.identity_elementID.style.opacity = 1;
+            IDE.workSpace.identity_elementID.removeAttribute("disabled");
+            IDE.workSpace.identity_elementClass.style.opacity = 1;
+            IDE.workSpace.identity_elementClass.removeAttribute("disabled");
+
+            IDE.workSpace.identity_table.innerHTML = IDE.identity_tableTemplate;
+            IDE.addTableParamFNC();
+        }else{
+            resetIdentity();
+        }
+    }
+
+    IDE.addTableParamFNC = function(){
+        var obj = IDE.selectedLayers[0];
+        if(obj.Layer.params){
+            var param = [];
+            var tableHtml = IDE.identity_tableTemplate;
+
+            for(var prop in obj.Layer.params){
+                var idKey = prop+"_key";
+                var idVal = prop+"_val";
+                var idBtn = prop+"_btn";
+
+                tableHtml += `<tr>
+                        <td><input type="text" class="input1 tableInput" id="${idKey}" value="${prop}"></td>
+                        <td><input type="text" class="td2 tableInput input2" id="${idVal}" value="${obj.Layer.params[prop]}"></td>
+                        <td class="td3"><img src="assets/img/removeparam.png" id="${idBtn}" class="paramBtn_icon" alt=""/></td>
+                    </tr>`;
+
+                param.push({prop, idKey, idVal, idBtn});
+            }
+
+            IDE.workSpace.identity_table.innerHTML = tableHtml;
+
+            param.map(function(e){
+                var prop = e.prop;
+                document.querySelector("#"+ e.idKey).addEventListener("input", function(){
+                    var oldVal = IDE.selectedLayers[0].Layer.params[prop];
+                    delete IDE.selectedLayers[0].Layer.params[prop];
+                    prop = this.value;
+                    IDE.selectedLayers[0].Layer.params[prop] = oldVal;
+                    console.log(IDE.selectedLayers[0].Layer.params);
+                });
+
+                document.querySelector("#"+ e.idVal).addEventListener("input", function(){
+                    IDE.selectedLayers[0].Layer.params[prop] = this.value;
+                    console.log(IDE.selectedLayers[0].Layer.params);
+                });
+
+                document.querySelector("#"+ e.idBtn).addEventListener("click", function(){
+                    console.log(IDE.selectedLayers[0].Layer);
+                    delete IDE.selectedLayers[0].Layer.params[prop];
+                    IDE.addTableParamFNC();
+                });
             });
         }
+    }
+
+    function resetIdentity(){
+        IDE.workSpace.identity_elementID.value = "";
+        IDE.workSpace.identity_elementID.style.opacity = 0.6;
+        IDE.workSpace.identity_elementID.setAttribute("disabled", "disabled");
+        IDE.workSpace.identity_elementClass.value = "";
+        IDE.workSpace.identity_elementClass.style.opacity = 0.6;
+        IDE.workSpace.identity_elementClass.setAttribute("disabled", "disabled");
+        IDE.workSpace.identity_table.innerHTML = IDE.identity_tableTemplate;
+    }
+
+
+    IDE.workSpace.identity_elementID.addEventListener("input", function(){
+        if(IDE.selectedLayers.length === 1){
+            IDE.selectedLayers[0].Layer.elementID = IDE.workSpace.identity_elementID.value;
+        }
+    });
+
+    IDE.workSpace.identity_elementID.addEventListener("keydown", function(e){
+        if(e.which===13 || e.keyCode===13){
+            this.blur();
+        }
+    });
+
+    IDE.workSpace.identity_elementID.addEventListener("blur", function(){
+        console.log("Blur oldu");
+        IDE.selectedLayers[0].Layer.layerNameNormal.innerHTML = IDE.workSpace.identity_elementID.value;
+    });
+
+    IDE.workSpace.identity_elementClass.addEventListener("input", function(){
+        if(IDE.selectedLayers.length === 1){
+            IDE.selectedLayers[0].Layer.class = IDE.workSpace.identity_elementClass.value;
+        }
+    });
+
+    IDE.workSpace.identity_elementClass.addEventListener("keydown", function(e){
+        if(e.which===13 || e.keyCode===13){
+            this.blur();
+        }
+    });
+
+
+    identity_tableAddBtn.addEventListener("click", function(){
+        if(IDE.selectedLayers.length === 1){
+            if(!IDE.selectedLayers[0].Layer.params){
+                IDE.selectedLayers[0].Layer.params = {}
+            }
+
+            IDE.selectedLayers[0].Layer.params["New"] = "";
+            IDE.addTableParamFNC();
+        }
+    });
+
+    /* Identity */
+
+    var layerBackgroundColor = function(){
+        var localEX = utils.getLayers();
+        localEX.forEach(function(tempLayer){
+            if(tempLayer.Layer.main){
+                tempLayer.Layer.main.style.backgroundColor = "#323232";
+            }
+        });
+
+        IDE.selectedLayers.map(function(tempLayer){
+            if(tempLayer.Layer.main){
+                tempLayer.Layer.main.style.backgroundColor = "#35618f";
+            }
+        });
     }
 
     function deSelect(){
@@ -445,6 +624,7 @@
         layerBackgroundColor();
         SELECT.nodes(IDE.selectedLayers);
         getProp(false);
+        resetIdentity();
     }
 
     /* Layer Tüm Objeleri Silme */
@@ -456,7 +636,6 @@
         });
 
         deSelect();
-        console.log("DELETE: All Layers");
     }
 
     function addObjects(kids, container, addLayer){
@@ -500,24 +679,14 @@
                 });
 
                 addObjects(e.Kids, movieClip, false);
-                Arayuz_addLayer(movieClip, container);
+                Arayuz_addLayer(movieClip);
             }
         });
     }
 
 
     /* Sahne Seçme */
-    function sceneSelect(request, saveData){
-        console.log("sceneSelect:", request, saveData);
-        try{
-            if(saveData){
-                EXPORT.convertJson();
-                console.log("SELECT SCENE: Current", sceneIndex, "Request:", request, "Save:","[OK]");
-            }
-        }catch (err){
-            console.log("SELECT SCENE: Current", sceneIndex, "Request:", request, "Save:","[FAIL]");
-        }
-
+    function sceneSelect(request){
         sceneIndex = request;
         layerDeleteAll();
         addObjects(jsonV2.slides[sceneIndex].all, IDE.sceneLayer, true);
@@ -529,100 +698,119 @@
             btn.style.backgroundColor = "#666666";
         });
 
-        document.querySelector("#"+jsonV2.slides[request].name).style.backgroundColor = "darkgreen";
+        IDE.sceneUnique = jsonV2.slides[sceneIndex].unique;
+        document.querySelector("#"+IDE.sceneUnique).style.backgroundColor = "darkgreen";
+    }
 
-        IDE.welcome.main.style.display = "none";
-        document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
-        WorkspaceShow();
+    function autoSceneSave(){
+        var saveData = false;
+        if(jsonV2.slides.length){
+            saveData = true;
+        }
+
+        if(saveData){
+            EXPORT.convertJson();
+            console.log("Current Scene Save: [OK]");
+        }
     }
 
     function importTypeSettings(){
-        if(jsonV2.slides[sceneIndex].type === "KT_MC_Single"){
+        if(jsonV2.slides[sceneIndex].rightAnswer){
             IDE.workSpace.rightAnswer.value = jsonV2.slides[sceneIndex].rightAnswer;
         }
     }
 
 
     /* Yeni Sahne Ekleme */
-    function sceneAddNewScene(saveData, template){
+    function sceneAddNewScene(template){
         jsonV2.slides.push(template);
         var lastIndex = (jsonV2.slides.length-1);
         sceneAddNavigationBtn(lastIndex);
-        console.log(jsonV2.slides);
-        sceneSelect(lastIndex, saveData);
+        sceneSelect(lastIndex);
     }
 
     /* Sahne Silme */
-    function sceneDelete(List){
+    function sceneDelete(){
         jsonV2.slides.splice(sceneIndex, 1);
 
-        List.map(function(order, index){
-            jsonV2.slides[index].sceneID = order;
-            jsonV2.slides[index].id = index;
-        });
-
-        console.log("DELETE: Scene", sceneIndex);
         if(jsonV2.slides.length){
-            sceneSelect(0, false);
+            sceneSelect(0);
         }else{
-            sceneAddNewScene(false, sceneTemplate());
+            layerDeleteAll();
+            showSceneType();
         }
     }
 
     /* Sahne Sıralama Değiştirme */
-    function sceneChangeSort(list){
+    function sceneChangeSort(list, sceneID, newList){
         var slidesClone = jsonV2.slides.slice();
+        jsonV2.slides=[];
 
-        function getSceneData(sceneID){
-            for(var i=0; i<slidesClone.length; i++){
-                if(sceneID === slidesClone[i].sceneID){
-                    return slidesClone[i];
+        newList.map(function(x, index){
+            slidesClone.map(function(y){
+                if(x[1] === y.unique){
+                    jsonV2.slides.push(y);
                 }
-            }
-        }
 
-        list.map(function(sceneID, i){
-            jsonV2.slides[i] = getSceneData(sceneID);
-        });
-
-        for(var i=0; i<jsonV2.slides.length; i++){
-            if(jsonV2.slides[i].id === sceneIndex){
-                console.log(sceneIndex, "bulundu index değiştirilecek", i);
-                sceneIndex = i;
-                break;
-            }
-        }
-
-        jsonV2.slides.map(function(scene, i){
-            scene.id = i;
+                if(x[1] === IDE.sceneUnique){
+                    sceneIndex = index;
+                }
+            });
         });
     }
 
     /* Sahne Navigasyon Buton Ekleme */
     function sceneAddNavigationBtn(id, name){
         if(!name){name="s"+id}
-        jsonV2.slides[id].id = id;
-        jsonV2.slides[id].sceneID = id;
         jsonV2.slides[id].name = name;
 
-        SceneSR.clicked(`<div class="SR_Scene_Drag" id="${name}">${name}</div>`);
+        var unique = utils.getRandomName();
+        if(jsonV2.slides[id].unique){
+            unique = jsonV2.slides[id].unique;
+        }else{
+            jsonV2.slides[id].unique = unique;
+        }
 
-        document.querySelector("#"+name).addEventListener("click", function(e){
-            jsonV2.slides.map(function(scene){
-                if(scene.name === e.currentTarget.id){
-                    sceneSelect(scene.id, true);
+        SceneSR.clicked(`<div class="SR_Scene_Drag" id="${unique}">${name}</div>`, unique);
+        document.querySelector("#"+unique).addEventListener("click", function(){
+            jsonV2.slides.map(function(scene, index){
+                if(scene.unique === unique){
+                    autoSceneSave();
+                    sceneSelect(index);
                 }
             })
         });
     }
 
+
+    function addSceneTypeBtnHTML(filename, id){
+        var htmlID = "new_"+id.toLowerCase();
+
+        let html = `<div class="welcome_fileBtn_Part">
+                        <img class="welcome_fileIcon" src="/assets/img/createscene.png" alt="file">
+                        <div>${filename}</div>
+                    </div>`;
+
+        let div = utils.addDOM({className:"welcome_fileBtn", id:htmlID, innerHTML:html});
+        IDE.welcome.sceneTypeList.appendChild(div);
+
+        document.querySelector("#"+ htmlID).addEventListener("click", function(e){
+            var template = sceneTemplate();
+            template.type = id.toLowerCase();
+            console.log(template);
+            sceneAddNewScene(template);
+            IDE.welcome.main.style.display = "none";
+        });
+    }
+
     /* File System */
-    function addSavedFileBtn(filename, data){
+    function addSavedFileBtn(filename, date){
         let html = `<div class="welcome_fileBtn_Part">
                         <img class="welcome_fileIcon" src="/assets/img/editFile.png" alt="file">
                         <div>${filename}</div>
                     </div>
                     <div class="welcome_fileBtn_Part">
+                        <div class="welcome_dateBox">${date}</div>
                         <div id="z_${filename}" class="welcome_fileBtn_smallBtn">
                             <img class="welcome_fileBtn_icon" src="/assets/img/zip.png" alt="file">
                         </div>
@@ -641,6 +829,10 @@
 
         document.querySelector("#f_"+ filename).addEventListener("click", function(e){
             selectFileAjax(filename);
+            IDE.welcome.main.style.display = "none";
+            IDE.welcome.step1.style.display = "none";
+            IDE.welcome.step2.style.marginBottom = "50px";
+            IDE.welcome.closeInput.style.display = "none";
         });
 
         document.querySelector("#z_"+ filename).addEventListener("click", function(e){
@@ -664,6 +856,22 @@
         });
     }
 
+    function showSceneType(){
+        IDE.welcome.main.style.display = "flex";
+        IDE.welcome.step2.style.display = "block";
+    }
+
+
+    function addSceneAddButon(){
+        document.querySelector("#Scene_addButon").addEventListener("click", function(){
+            autoSceneSave();
+            showSceneType();
+        });
+
+        addStageBG();
+        document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
+    }
+
     /* Ajax */
     function newFileAjax(json){
         var data = {data: JSON.stringify(json)};
@@ -673,13 +881,8 @@
     function newFileParse(data){
         console.log(data);
         IDE.files = data.files;
-        sceneAddNewScene(true, sceneTemplate());
 
-        document.querySelector("#Scene_addButon").addEventListener("click", function(){
-            sceneAddNewScene(true, sceneTemplate());
-        });
-
-        addStageBG();
+        addSceneAddButon();
     }
 
     function selectFileAjax(file){
@@ -689,7 +892,6 @@
 
     function selectFileParse(data){
         if(data.success){
-            console.log("Select", data);
             IDE.files = data.FILE.files;
             jsonV2 = data.FILE.files.data;
 
@@ -698,16 +900,13 @@
                     sceneAddNavigationBtn(i, o.name);
                 });
 
-                sceneSelect(0, true);
+                sceneSelect(0);
             }else{
-                sceneAddNewScene(true, sceneTemplate());
+                showSceneType();
             }
 
-            document.querySelector("#Scene_addButon").addEventListener("click", function(){
-                sceneAddNewScene(true, sceneTemplate());
-            });
 
-            addStageBG();
+            addSceneAddButon();
         }else{
             alert("dosya bulunamadı");
         }
@@ -803,7 +1002,6 @@
 
 
     function getFileListParse(data){
-        console.log(data);
         var saveList = [];
 
         for(var p in data.fileList.data){
@@ -817,7 +1015,7 @@
         IDE.welcome.savedFileList.innerHTML="";
 
         saveList.map(function(data){
-            addSavedFileBtn(data.fileName);
+            addSavedFileBtn(data.fileName, data.createTime);
         });
     }
 
@@ -827,6 +1025,10 @@
             container: KonvaBG
         });
     }
+
+    IDE.sceneTypes.map(function(e){
+        addSceneTypeBtnHTML(e[0], e[1]);
+    });
 
     $.ajax({url: "/getFileList", success: getFileListParse, type: "POST", error: ajaxError});
 

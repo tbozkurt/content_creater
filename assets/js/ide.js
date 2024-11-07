@@ -1,110 +1,105 @@
-function Arayuz_addLayer(obj, container){
-    if(utils.editLayerControl(container)){
-        var localEX = utils.getLayers();
-        var id = localEX.length;
-        var hide = false;
-        var lock = false;
-        obj.Layer.id = id;
-        obj.Layer.hide = hide;
-        obj.Layer.lock = lock;
+function Arayuz_addLayer(obj){
+    addWindow(obj);
+    bune(obj);
+}
 
-        var layerHtml = `<div class="layer">
+function addWindow(obj){
+    var unique;
+    if(!obj.Layer.unique){
+        unique = utils.getRandomName();
+        obj.Layer.unique = unique;
+    }else{
+        unique = obj.Layer.unique;
+    }
+
+    obj.Layer.hide = false;
+    obj.Layer.lock = false;
+
+    var layerHtml = `<div class="layer">
             <div class="layerIcon"><img src="assets/img/${obj.Layer.type}_icon.png"></div>
-            <div class="layerName">${obj.Layer.name}</div>
+            <div class="layerName">
+                <div class="layerNameNormal">${obj.Layer.name}</div>
+                <input class="layerNameEdit" type="text" value="${obj.Layer.name}">
+            </div>
             <div class="layerZButon layerView"><img src="assets/img/hide.png"></div>
             <div class="layerZButon layerLock"><img src="assets/img/lock.png"></div>
         </div>`;
 
-        var TempHTML = LayerSR.clicked(layerHtml);
+    var TempHTML = LayerSR.clicked(layerHtml, unique);
 
-        var main = TempHTML.querySelector(".layer");
-        var hideBtn = main.querySelector(".layerView");
-        var textInput = main.querySelector(".layerName");
-        var lockBtn = main.querySelector(".layerLock");
+    var main = TempHTML.querySelector(".layer");
+    var hideBtn = main.querySelector(".layerView");
+    var textInput = main.querySelector(".layerName");
+    var lockBtn = main.querySelector(".layerLock");
 
-        Object.assign(obj.Layer, {main, hideBtn, lockBtn, textInput});
+    /**/
+    var layerNameNormal = main.querySelector(".layerNameNormal");
+    var layerNameEdit = main.querySelector(".layerNameEdit");
 
-        main.addEventListener("mousedown", function(e){
-            Permission(e.shiftKey, obj);
-        })
+    Object.assign(obj.Layer, {main, hideBtn, lockBtn, textInput, layerNameNormal});
 
-        hideBtn.addEventListener("click", function(){
-            if(obj.Layer.hide){
-                obj.Layer.hide = false;
-                obj.Layer.hideBtn.style.opacity = 0.2;
-                obj.show();
-            }else{
-                obj.Layer.hide = true;
-                obj.Layer.hideBtn.style.opacity = 1;
-                obj.hide();
-                deSelect();
-            }
-        });
+    main.addEventListener("mousedown", function(e){
+        Permission(e.shiftKey, obj);
+    })
 
-        lockBtn.addEventListener("click", function(e){
-            if(obj.Layer.lock){
-                obj.Layer.lock = false;
-                obj.Layer.lockBtn.style.opacity = 0.2;
-                obj.draggable(true);
-            }else{
-                obj.Layer.lock = true;
-                obj.Layer.lockBtn.style.opacity = 1;
-                obj.draggable(false);
-                deSelect();
-            }
-        });
-
-        CREATE.checkKontrol();
-        bune(obj, null);
-    }else{
-        bune(obj, true);
-    }
-
-
-
-    /*
-    obj.on("mousedown", function(e){
-        Permission(e.evt.shiftKey, obj);
-        getProp(true);
-    }).on("mouseup", function(){
-        getProp(false);
-        currentHistoryStep = 0;
-        addHistory();
-    }).on("dragmove", function(){
-        getProp(false);
-    }).on("transform", function(){
-        getProp(false);
-    }).on("transformend", function(){
-        console.log("transformend");
-        addHistory();
+    hideBtn.addEventListener("click", function(){
+        if(obj.Layer.hide){
+            obj.Layer.hide = false;
+            obj.Layer.hideBtn.style.opacity = 0.2;
+            obj.show();
+        }else{
+            obj.Layer.hide = true;
+            obj.Layer.hideBtn.style.opacity = 1;
+            obj.hide();
+            deSelect();
+        }
     });
 
-    if(obj.Layer.type === "objectText"){
-        obj.off("transform");
-        obj.on("dblclick", function(){
-            openTextEditor(this);
-        }).on("transform", function(){
-            getProp(false);
-            textResize(this);
-        });
-    }
+    lockBtn.addEventListener("click", function(e){
+        if(obj.Layer.lock){
+            obj.Layer.lock = false;
+            obj.Layer.lockBtn.style.opacity = 0.2;
+            obj.draggable(true);
+        }else{
+            obj.Layer.lock = true;
+            obj.Layer.lockBtn.style.opacity = 1;
+            obj.draggable(false);
+            deSelect();
+        }
+    });
 
-    if(obj.Layer.type === "objectMovieClip"){
-        obj.on('dblclick', function(){
-            OpenMovieClip(obj);
-        });
-    }
+    textInput.addEventListener("dblclick", function(){
+        layerNameNormal.style.display = "none";
+        layerNameEdit.style.display = "block";
+        layerNameEdit.focus();
+        layerNameEdit.select();
+    });
 
-    deSelect();
-    */
+    layerNameEdit.addEventListener("input", function(e){
+        obj.Layer.name = this.value;
+        if(obj.Layer.type === "objectMovieClip"){
+            obj.Layer.elementID = this.value;
+        }
+
+        layerNameNormal.innerText = this.value;
+    });
+
+    layerNameEdit.addEventListener("keydown", function(e){
+        if(e.which===13 || e.keyCode===13){
+            this.blur();
+        }
+    });
+
+    layerNameEdit.addEventListener("blur", function(e){
+        layerNameNormal.style.display = "block";
+        layerNameEdit.style.display = "none";
+        checkIdentity();
+    });
+
+    CREATE.checkKontrol();
 }
 
-
-function bune(obj, konvaEditLayer){
-    if(konvaEditLayer){
-        obj.Layer.id = utils.getRandomNumber(5000);
-    }
-
+function bune(obj){
     obj.on("mousedown", function(e){
         Permission(e.evt.shiftKey, obj);
         getProp(true);
@@ -135,6 +130,7 @@ function bune(obj, konvaEditLayer){
             OpenMovieClip(obj);
             CloseMovieClip(obj);
             OpenMovieClip(obj);
+            XX();
         });
     }
 
@@ -144,7 +140,7 @@ function bune(obj, konvaEditLayer){
 function Permission(shiftKey, object){
     var selectFound = false;
     for(var i=0; i<IDE.selectedLayers.length; i++){
-        if(object.Layer.id === IDE.selectedLayers[i].Layer.id){
+        if(object.Layer.unique === IDE.selectedLayers[i].Layer.unique){
             selectFound = true;
             break;
         }
@@ -162,16 +158,20 @@ function Permission(shiftKey, object){
 }
 
 
-function addOrganizedLayer(List, id){
+function addOrganizedLayer(List, id, newList){
     var localEX = utils.getLayers();
 
-    for(var x=List.length-1; x>-1; x--){
-        localEX[List[x]].moveToTop();
+    for(var x=(newList.length-1); x>-1; x--){
+        var unique = newList[x][1];
+        localEX.map(function(obj){
+            if(obj.Layer.unique === unique){
+                obj.moveToTop();
+            }
+        });
     }
 
     selectItem({layer: localEX[id]})
 }
-
 
 function closeTextEditor(){
     if(IDE.scope === "EditText"){
@@ -243,14 +243,7 @@ function openTextEditor(text){
 
 
 
-function delOrganizedLayer(){
-    var localEX = utils.getLayers();
-    localEX.map(function(obj, id){
-        obj.Layer.id = id;
-    });
-
-    console.log("delOrganizedLayer");
-}
+function delOrganizedLayer(){}
 
 var LayerSR = addSR({
     Main: document.querySelector("#LayerMain"),
@@ -330,37 +323,26 @@ document.addEventListener("keyup", function(e){
         if(IDE.scope === "Stage"){
             deleteObject();
         }else if(IDE.scope === "Scene"){
-            SceneSR.deleted(jsonV2.slides[sceneIndex].sceneID);
+            SceneSR.deleted(IDE.sceneUnique);
         }
     }
 });
 
 function deleteObject(){
-    var allObj = IDE.activeLayer.getChildren();
     var relatedObject = false;
 
     IDE.selectedLayers.forEach(function(SL){
-        if(utils.editLayerControl(IDE.activeLayer)){
-            var localEX = utils.getLayers();
-            for(var i=0; i<localEX.length; i++){
-                if(SL.Layer.id === localEX[i].Layer.id){
-                    localEX[i].destroy();
-                    LayerSR.deleted(i);
-                    if(SL.Layer.name.includes("popup")){
-                        relatedObject = true;
-                    }
+        var localEX = utils.getLayers();
+        for(var i=0; i<localEX.length; i++){
+            if(SL.Layer.unique === localEX[i].Layer.unique){
+                localEX[i].destroy();
+                LayerSR.deleted( localEX[i].Layer.unique );
+                if(SL.Layer.name.includes("popup")){
+                    relatedObject = true;
+                }
 
-                    break;
-                }
+                break;
             }
-        }else{
-            allObj.map(function(e){
-                if(e.Layer){
-                    if(SL.Layer.id === e.Layer.id){
-                        e.destroy();
-                    }
-                }
-            })
         }
     });
 
@@ -627,15 +609,13 @@ IDE.workSpace.colorPicker.addEventListener("change",function(){
 function showWorkSpaces(){
     IDE.workSpace.WorkSpace_Layer.style.display = "block";
     IDE.workSpace.WorkSpace_SpecialObjects.style.display = "block";
-    IDE.workSpace.WorkSpace_Preview.style.display = "block";
     IDE.workSpace.WorkSpace_RightAnswer.style.display = "block";
     IDE.workSpace.WorkSpace_Scene.style.display = "flex";
 }
 
 function hideWorkSpaces(){
-    IDE.workSpace.WorkSpace_Layer.style.display = "none";
+    IDE.workSpace.WorkSpace_Layer.style.display = "block";
     IDE.workSpace.WorkSpace_SpecialObjects.style.display = "none";
-    IDE.workSpace.WorkSpace_Preview.style.display = "none";
     IDE.workSpace.WorkSpace_RightAnswer.style.display = "none";
     IDE.workSpace.WorkSpace_Scene.style.display = "none";
 }
@@ -653,6 +633,7 @@ function OpenMovieClip(mc){
     IDE.editBG.off("dblclick");
     IDE.editBG.on("dblclick", function(){
         CloseMovieClip(mc, movieClipScale);
+        XX();
     });
 
     if(mc.Layer.elementID){
@@ -674,11 +655,11 @@ function OpenMovieClip(mc){
             copyObject.scale({x:scaleX, y:scaleY});
             IDE.editLayer.add(copyObject);
             if(!selectMode){
-                bune(copyObject, true);
+                bune(copyObject);
                 copyObject.draggable(true);
             }else{
                 if(copyObject.Layer.class === "csMask"){
-                    bune(copyObject, true);
+                    bune(copyObject);
                     copyObject.draggable(true);
                 }
             }
@@ -723,6 +704,15 @@ function CloseMovieClip(mc){
     showWorkSpaces();
 }
 
+function XX(){
+    LayerSR.resetSystem();
+    var localEX = utils.getLayers();
+    localEX.map(function(e){
+        addWindow(e);
+    });
+}
+
+
 /* IDE Scopes */
 IDE.workSpace.scope_Canvas.addEventListener("mousedown", function(e) {
     closeTextEditor();
@@ -758,7 +748,7 @@ document.querySelector("#export").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     Player = new PLAYER();
     IDE.workSpace.previewMain.style.display = "block";
-    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview", ("files/"+ IDE.files.activeFile +"/"));
+    Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview", {Url:("files/"+ IDE.files.activeFile +"/")} );
     hideWorkSpaces();
 });
 
@@ -768,6 +758,11 @@ document.querySelector("#save").addEventListener("click", function(){
     saveDataAjax(json);
     console.log( json );
     console.log("kaydedildi");
+    document.querySelector("#scope_saved").style.display = "block";
+    clearInterval(IDE.saveInterval);
+    IDE.saveInterval = setTimeout(function(){
+        document.querySelector("#scope_saved").style.display = "none";
+    }, 1000);
 });
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
@@ -923,6 +918,11 @@ IDE.workSpace.align_ScaleAuto.addEventListener("click", function(){
 
 /* Welcome Menü */
 IDE.welcome.newFileBtn.addEventListener("click", function(){
+    IDE.welcome.step1.style.display = "none";
+    IDE.welcome.step2.style.display = "block";
+    IDE.welcome.step2.style.marginBottom = "50px";
+    IDE.welcome.closeInput.style.display = "none";
+
     if(IDE.welcome.addFileInput.value.length){
         jsonV2.fileName = IDE.welcome.addFileInput.value;
     }else{
@@ -930,12 +930,14 @@ IDE.welcome.newFileBtn.addEventListener("click", function(){
     }
 
     jsonV2.createTime = utils.addTimeStamp("server");
+    document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
     newFileAjax(jsonV2);
 });
 
+
 /* WorkSpace RightAnswer */
 IDE.workSpace.rightAnswer.addEventListener("change", function (){
-    jsonV2.slides[sceneIndex].rightAnswer = IDE.workSpace.rightAnswer.value;
+    jsonV2.slides[sceneIndex].rightAnswer = parseInt(IDE.workSpace.rightAnswer.value);
 });
 
 function WorkspaceShow(){
@@ -975,7 +977,7 @@ document.addEventListener("keydown", function(e){
             var jsonData = JSON.parse(stringData);
             var template = sceneTemplate();
             template.all = jsonData;
-            sceneAddNewScene(true, template);
+            sceneAddNewScene(template);
         }else{
             if(IDE.copy){
                 console.log("Document catch Ctrl+V");
@@ -999,7 +1001,7 @@ document.addEventListener("keydown", function(e){
                     });
                 }
 
-                Arayuz_addLayer(clone, IDE.sceneLayer);
+                Arayuz_addLayer(clone);
             }
         }
     }else if(ctrlDown && (e.key === "z")){
@@ -1104,7 +1106,7 @@ IDE.workSpace.createControl.addEventListener("click", function(e){
             y: 50,
             width: 200,
             height: 50,
-            draggable: true,
+            draggable: true
         },
         container: IDE.activeLayer,
         layer: {
@@ -1117,6 +1119,37 @@ IDE.workSpace.createControl.addEventListener("click", function(e){
 
 });
 
+
+IDE.workSpace.createURL.addEventListener("click", function(e){
+    CREATE.addUrlButon({
+        properties:{
+            x: 50,
+            y: 50,
+            width: 400,
+            height: 400,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "goUrl",
+            elementID: "goUrl",
+            type: "objectMovieClip",
+            params:{
+                goUrl:"https://www.okulistik.com"
+            }
+        }
+    });
+});
+
+/*
+document.querySelector("#params_goUrl").addEventListener("change", function(e) {
+    if(IDE.selectedLayers.length){
+        if(IDE.selectedLayers[0].Layer.params){
+            IDE.selectedLayers[0].Layer.params.goUrl = document.querySelector("#params_goUrl").value;
+        }
+    }
+});
+*/
 
 /*
 document.querySelector("#omg").addEventListener("click", function(e){
@@ -1135,97 +1168,4 @@ document.querySelector("#omg2").addEventListener("click", function(e){
     IDE.activeLayer = activeMC;
     console.log("değiştirildi",activeMC);
 });
-
 */
-
-
-/*
-function OpenMovieClip(mc){
-    console.log(mc);
-    //EXPORT.convertMovieClip(mc);
-    deSelect();
-    IDE.konvaEditLayer = new Konva.Layer(IDE.layer);
-    stage.add(IDE.konvaEditLayer);
-
-    var deleteObject = [];
-
-    var currentScale = mc.scale();
-    var addBG = new Konva.Rect({
-        x: 0,
-        y: 0,
-        width: 1280,
-        height: 720,
-        fill: "rgba(255, 255, 255, 0.2)",
-        draggable: false
-    });
-
-    var tr;
-    addBG.on("dblclick", function () {
-        addBG.destroy();
-        tr.destroy();
-        CloseMovieClip(mc, currentScale);
-    });
-
-    IDE.konvaEditLayer.add(addBG);
-
-    mc.getChildren().map(function(Object){
-        var copyObject = Object.clone();
-        copyObject.Layer = Object.Layer;
-        copyObject.x( Object.getAbsolutePosition().x-50 ).y( Object.getAbsolutePosition().y-50 ).scale(currentScale);
-        IDE.konvaEditLayer.add(copyObject);
-        console.log(copyObject.Layer);
-        if(copyObject.Layer.type === "objectRect"){
-            copyObject.draggable(true);
-            tr = new Konva.Transformer({
-                flipEnabled: false,
-                rotateEnabled: false,
-                nodes: [copyObject]
-            })
-            IDE.konvaEditLayer.add(tr);
-            tr.moveToTop();
-        }
-        deleteObject.push(Object);
-    });
-
-    for(var x=0; x<deleteObject.length; x++){
-        deleteObject[x].destroy();
-    }
-}
-*/
-
-
-/*
-function CloseMovieClip(mc, currentScale){
-    IDE.konvaEditLayer.getChildren().map(function(Object){
-        if(Object.Layer){
-            var convertX = (Object.x()-mc.x()) /currentScale.x;
-            var convertY = (Object.y()-mc.y()) /currentScale.y;
-            var convertWidth = ((Object.scale().x/currentScale.x)*Object.width());
-            var convertHeight = ((Object.scale().y/currentScale.y)*Object.height());
-            var convertWidth = Object.width();
-            var convertHeight = Object.height();
-            console.log("currentScale:",currentScale, convertWidth, convertHeight);
-
-            Object.x(convertX);
-            Object.y(convertY);
-            Object.width(convertWidth);
-            Object.height(convertHeight);
-            Object.draggable(false);
-            Object.scale({x:1, y:1});
-
-            Object.off("click mousedown mouseup dragmove transform transformstart transformend dblclick dbltap");
-            Object.draggable(false);
-            var clone = Object.clone();
-            clone.Layer = Object.Layer;
-            console.log("Object.Layer", clone, clone.Layer);
-            mc.add(clone);
-        }
-    });
-    IDE.konvaEditLayer.destroy();
-    SELECT = getSELECT();
-    KonvaLayer.add(SELECT);
-    IDE.activeLayer = KonvaLayer;
-}
-*/
-
-

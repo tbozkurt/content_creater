@@ -2,11 +2,13 @@ function PLAYER(){
 
     this.allScene = [];
     this.sceneIndex = 0;
+    var unique = {};
     var PLX = {};
     var This = this;
     var KT={};
     var SP = [];
     var SD = [];
+    var AC;
     var player = {
         sound: new Howl({
             src: ['https://cdn.okulistik.com/mobileplayer/edge_includes/yesno.mp3'],
@@ -23,10 +25,13 @@ function PLAYER(){
     };
 
     this.getStandart = function(e){
-        var className = e.Layer.type
-
+        var className = e.Layer.type;
         if(e.Layer.class){
             className += (" "+e.Layer.class);
+        }
+
+        if(e.Layer.unique){
+            unique[e.Layer.unique] = e.Layer.params;
         }
 
         return {
@@ -40,7 +45,8 @@ function PLAYER(){
             type: e.Layer.type,
             className: className,
             name: e.Layer.name,
-            id: e.Layer.elementID
+            id: e.Layer.elementID,
+            unique: e.Layer.unique
         }
     }
 
@@ -102,23 +108,23 @@ function PLAYER(){
         var This = this;
         kids.map(function(e){
             if(e.type === "objectRect"){
-                var rect = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                var rect = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 Object.assign(rect.style, e);
                 container.appendChild(rect);
             }if(e.type === "objectCircle"){
-                var circle = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                var circle = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 Object.assign(circle.style, e);
                 container.appendChild(circle);
             }else if(e.type === "objectImg"){
-                var img = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                var img = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 Object.assign(img.style, e);
                 container.appendChild(img);
             }else if(e.type === "objectText"){
-                var text = utils.addDOM({className:e.className, id:e.id, layername: e.name, innerText: e.text});
+                var text = utils.addDOM({className:e.className, id:e.id, layername: e.name, innerText: e.text, ccid:e.unique});
                 Object.assign(text.style, e);
                 container.appendChild(text);
             }else if(e.type === "objectMovieClip"){
-                var mc = utils.addDOM({className:e.className, id:e.id, layername: e.name});
+                var mc = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 container.appendChild(mc);
                 This.addMovieClip(e.Kids, mc);
                 Object.assign(mc.style, e);
@@ -126,65 +132,65 @@ function PLAYER(){
         });
     }
 
-    this.startBuild = function(json, currentSceneID, stageBG, container, Mode, root, scoreUpdate){
-            console.log("Start", json);
-            player.root = root;
-            player.scoreUpdate = scoreUpdate;
-            jsonV2 = json;
-            if(Mode === "optic"){
-                KT.Mode = true;
-                container = addKT_HTML(container);
-            }
-
-            player.containerDOM = container;
-            //player.containerDOM.style.overflow = "hidden";
-            player.mainDOM = utils.addDOM({id: "PlayerMain"});
-            container.appendChild(player.mainDOM);
-
-            var sceneCSS = [];
-            json.slides.map(function(slide, index){
-                var convertObjectsCSS = This.convertObject(slide.all);
-                sceneCSS.push(convertObjectsCSS);
-                SD[index] = {
-                    id: index,
-                    type:"CS",
-                    duration:0,
-                    wrong:0,
-                    right:0,
-                    empty:1,
-                    complete: false,
-                    attempt:0,
-                }
-
-                SP[index] = {
-                    id: index,
-                    popupWindow: {},
-                    screenCloseDOM:null
-                }
-            });
-
-            sceneCSS.map(function(allObject, i){
-                var sceneDiv = document.createElement('div');
-                sceneDiv.id = "sceneMain"+i;
-                This.addMovieClip(allObject, sceneDiv);
-
-                player.mainDOM.appendChild(sceneDiv);
-                This.searchTool(sceneDiv, i);
-                This.AddCS(sceneDiv, i);
-                This.allScene.push(sceneDiv);
-                This.addScreenClose(sceneDiv, i);
-            })
-
-            this.addEvents();
-
-
-            if(Mode === "optic"){
-                This.build_KT(json);
-            }else if(Mode === "preview"){
-                Preview_HTML(container);
-                initKACountDown();
-            }
+    this.startBuild = function(json, currentSceneID, stageBG, container, Mode, ActiveContent, scoreUpdate){
+        AC=ActiveContent;
+        player.root = AC.Url;
+        player.scoreUpdate = scoreUpdate;
+        jsonV2 = json;
+        if(Mode === "optic"){
+            KT.Mode = true;
+            container = addKT_HTML(container);
         }
+
+        player.containerDOM = container;
+        //player.containerDOM.style.overflow = "hidden";
+        player.mainDOM = utils.addDOM({id: "PlayerMain"});
+        container.appendChild(player.mainDOM);
+
+        var sceneCSS = [];
+        json.slides.map(function(slide, index){
+            var convertObjectsCSS = This.convertObject(slide.all);
+            sceneCSS.push(convertObjectsCSS);
+            SD[index] = {
+                id: index,
+                type:"CS",
+                duration:0,
+                wrong:0,
+                right:0,
+                empty:1,
+                complete: false,
+                attempt:0,
+            }
+
+            SP[index] = {
+                id: index,
+                popupWindow: {},
+                screenCloseDOM:null
+            }
+        });
+
+        sceneCSS.map(function(allObject, i){
+            var sceneDiv = document.createElement('div');
+            sceneDiv.id = "sceneMain"+i;
+            This.addMovieClip(allObject, sceneDiv);
+
+            player.mainDOM.appendChild(sceneDiv);
+            This.searchTool(sceneDiv, i);
+            This.AddCS(sceneDiv, i);
+            This.allScene.push(sceneDiv);
+            This.addScreenClose(sceneDiv, i);
+        })
+
+        this.addEvents();
+
+
+        if(Mode === "optic"){
+            This.build_KT(json);
+        }else if(Mode === "preview"){
+            Preview_HTML(container);
+            initKACountDown();
+        }
+    }
 
     this.scoreCalc = function(){
         var score = {right:0, wrong:0, empty:0, access:0, success:0, duration:0};
@@ -411,6 +417,19 @@ function PLAYER(){
                 SP[index].answerBtn = obj;
                 SP[index].answerBtn.style.cursor = "pointer";
                 SP[index].answerBtn.style.pointerEvents = "none";
+            }else if(obj.id.includes("goUrl")){
+                var url = "";
+                if(AC.player){
+                    url = AC.player.RUrl;
+                }
+                /* unique[obj.getAttribute("ccid")].goUrl */
+
+                obj.addEventListener("click", function(){
+                    var newwindow = window.open(url, "versiyon", "width=1280,height=720");
+                    if (window.focus) {newwindow.focus()}
+                    return false;
+                });
+                obj.style.cursor = "pointer";
             }
         });
     }

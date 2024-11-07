@@ -26,7 +26,7 @@ function utils(){
         let div = document.createElement('div');
         for(let p in prop){
             if(prop[p]){
-                if(p === "layername"){
+                if(p === "layername" || p === "ccid"){
                     div.setAttribute(p, prop[p]);
                 } else{
                     div[p] = prop[p];
@@ -49,7 +49,7 @@ function utils(){
     }
 
     this.getRandomName = function(){
-        var str = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","p","r","s","t","u","v","y","z","w","x","q","0","1","2","3","4","5","6","7","8","9"];
+        var str = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","p","r","s","t","u","v","y","z","w","x","q"];
         var random="";
 
         for(var i=0; i<15; i++){
@@ -59,20 +59,27 @@ function utils(){
         return random;
     }
 
-    this.editLayerControl = function(layer){
-        var add = (layer.attrs.layer === "main");
-        return add;
-    }
-
     this.getLayers = function(){
         var all=[];
-        IDE.sceneLayer.children.map(function(obj, index){
+        IDE.activeLayer.children.map(function(obj){
             if(obj.Layer){
-                all[index] = obj;
+                all.push(obj);
             }
         });
 
         return all;
+    }
+
+    this.searchIndex = function(search, arr){
+        var found = -1;
+        for(var i=0; i<arr.length; i++){
+            if(search === arr[i][0]){
+                found = i;
+                break;
+            }
+        }
+
+        return found;
     }
 
 }
