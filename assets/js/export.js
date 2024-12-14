@@ -94,6 +94,7 @@ function EXPORT(){
 
     this.exportTypeSettings = function(json){
         if(json.rightAnswer){
+            console.log("Right:", parseInt(IDE.workSpace.rightAnswer.value));
             json.rightAnswer = parseInt(IDE.workSpace.rightAnswer.value);
         }
     }

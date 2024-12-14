@@ -85,12 +85,11 @@ function CREATE(){
             fontFamily: "Nunito",
             fontStyle: "bold",
             fill: "white",
-            verticalAlign: "middle",
+            lineHeight: 2.3,
             padding: 0,
             align: "center",
             Layer:{type:"objectText", name: "text"}
-        },
-        {
+        }, {
             x: 0,
             y: 0,
             width: 52,
@@ -100,8 +99,7 @@ function CREATE(){
             stroke:"rgba(240, 40, 130, 0.4)",
             cornerRadius:[58, 58, 58, 58],
             Layer:{type:"objectRect", name: "csClick", class: "csClick hide"}
-        },
-        {
+        }, {
             x: 0,
             y: 0,
             width: 52,
@@ -111,8 +109,7 @@ function CREATE(){
             stroke:"rgba(150, 30, 30, 0.6)",
             cornerRadius:[58, 58, 58, 58],
             Layer:{type:"objectRect", name: "csWrong", class: "csWrong hide", hide: true}
-        },
-        {
+        }, {
             x: 0,
             y: 0,
             width: 52,
@@ -122,8 +119,7 @@ function CREATE(){
             stroke:"rgba(50, 105, 30, 0.6)",
             cornerRadius:[58, 58, 58, 58],
             Layer:{type:"objectRect", name: "csRight", class: "csRight hide", hide: true}
-        },
-        {
+        }, {
             x: 0,
             y: 0,
             width: 52,
@@ -136,26 +132,60 @@ function CREATE(){
         Arayuz_addLayer(container);
     }
 
-    this.checkKontrol = function(){
-        var selectNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
-        IDE.workSpace.rightAnswer.innerHTML = "";
-        var count = -1;
-        IDE.activeLayer.getChildren().map(function(e){
-            if(e.Layer){
-                if(e.Layer.name.includes("selectButon")){
-                    count++;
-                    e.Layer.name = "selectButon_"+count;
-                    e.Layer.elementID = "selectButon_"+count;
-                    e.Layer.textInput.innerHTML = "selectButon_"+count;
-                    e.children.map(function(e){
-                        if(e.attrs.text){
-                            e.text(selectNames[count]);
-                        }
-                    });
+    this.getMC = function(localEX, name){
+        var temp = [];
+        var temp2 = [];
 
-                    IDE.workSpace.rightAnswer.innerHTML += `<option value="${count}">${selectNames[count]}</option>`;
+        localEX.map(function(e){
+            if(e.Layer.name.includes(name)){
+                var split = e.Layer.name.split("_");
+                if(split.length>1){
+                    var id = parseInt(split[1]);
+                    if(!temp[id]){
+                        temp[id] = e;
+                    }else{
+                        temp[40] = e;
+                    }
+                }else{
+                    temp[40] = e;
                 }
             }
+        });
+
+        temp.map(function(e){
+            if(e){
+                temp2.push(e);
+            }
+        });
+
+        return temp2;
+    }
+
+    this.checkKontrol = function(){
+        var selectNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+        var count = -1;
+        var localEX = utils.getLayers();
+
+        var selectList = this.getMC(localEX, "selectButon");
+        var inputList = this.getMC(localEX, "inputArea");
+
+        selectList.map(function(obj){
+            count++;
+            obj.Layer.name = "selectButon_"+ count;
+            obj.Layer.elementID = "selectButon_"+ count;
+            obj.Layer.layerNameNormal.innerText = "selectButon_"+ count;
+            obj.children.map(function(e){
+                if(e.attrs.text){
+                    e.text(selectNames[count]);
+                }
+            });
+        });
+
+        inputList.map(function(obj){
+            count++;
+            obj.Layer.name = "inputArea_"+ count;
+            obj.Layer.elementID = "inputArea_"+ count;
+            obj.Layer.layerNameNormal.innerText = "inputArea_"+ count;
         });
     }
 
@@ -191,7 +221,7 @@ function CREATE(){
             fontFamily: "Nunito",
             fontStyle: "bold",
             fill: "#ffffff",
-            verticalAlign: "middle",
+            lineHeight: 1.5,
             padding: 0,
             Layer:{type:"objectText", name: "text"}
         },
@@ -242,7 +272,7 @@ function CREATE(){
                 fontFamily: "Nunito",
                 align: "center",
                 fill: "#000000",
-                verticalAlign: "middle",
+                lineHeight: 2.5,
                 padding: 0,
                 Layer:{type:"objectText", name: "text"}
         }];
@@ -284,7 +314,7 @@ function CREATE(){
                 fontFamily: "Nunito",
                 align: "center",
                 fill: "#000000",
-                verticalAlign: "middle",
+                lineHeight: 2.5,
                 padding: 0,
                 Layer:{type:"objectText", name: "text"}
             }];
@@ -308,6 +338,39 @@ function CREATE(){
         addObjects(kids, container, false);
         Arayuz_addLayer(container);
     }
+
+    this.addInputArea = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 200,
+                height: 50,
+                fill: "#ffffff",
+                Layer:{type:"objectRect", name: "bdBg", class: "bdBg"}
+            },
+            {
+                text: "area",
+                x: 0,
+                y: 0,
+                width: 200,
+                height: 50,
+                fontSize: 20,
+                fontFamily: "Nunito",
+                align: "center",
+                fill: "#000000",
+                lineHeight: 2.5,
+                padding: 0,
+                Layer:{type:"objectText", name: "bdText", class: "bdText"}
+            },
+        ];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
+
 
 }
 

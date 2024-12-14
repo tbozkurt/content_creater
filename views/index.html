@@ -6,7 +6,6 @@
     <script src="/libs/jquery/dist/jquery.js"></script>
     <script src="/libs/howler/dist/howler.core.min.js"></script>
     <script src="/libs/konva/konva.js"></script>
-
     <script src="/assets/js/utils.js"></script>
     <script src="/assets/js/create.js"></script>
     <script src="/assets/js/export.js"></script>
@@ -36,6 +35,13 @@
         </div>
 
         <div class="TopIconBox" id="createText"><img src="assets/img/create_text.png"></div>
+        <div id="topBanner_addObject">
+            <div class="TopIconBox" id="createSelect"><img src="assets/img/create_select.png"></div>
+            <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
+            <div class="TopIconBox" id="createControl"><img src="assets/img/create_btn.png"></div>
+            <div class="TopIconBox" id="createURL"><img src="assets/img/create_url.png"></div>
+            <div class="TopIconBox" id="createInput"><img src="assets/img/create_input.png"></div>
+        </div>
     </div>
 
     <div style="display: flex">
@@ -55,7 +61,7 @@
 
 <div class="WorkSpaces WorkView" id="scope_RightWorkSpace">
 
-    <div class="WorkSpaces_Group">
+    <div class="WorkSpaces_Group WorkSpace_PositionAndSize">
         <div class="WorkSpaces_Header">&#8627; Position And Size </div>
         <div class="Properties">
             <div class="Properties_column">
@@ -84,28 +90,19 @@
         </div>
     </div>
 
-    <div class="WorkSpaces_Group">
-        <div class="WorkSpaces_Topic">&#8627; Scale</div>
-<!--
-
-        <div class="Properties_column addSpace">
-            <div class="Properties_box">
-                <div class="Properties_name">%</div>
-                <input style="width: 123px" type="number" class="Properties_input" id="Properties_ScaleW" tabindex="5">
-            </div>
-        </div>
-
--->
-
+    <div class="WorkSpaces_Group WorkSpace_Scale">
+        <div class="WorkSpaces_Header">&#8627; Scale</div>
         <div class="Properties_column">
             <div class="Properties_box">
                 <div class="Properties_name">W</div>
-                <input type="number" class="Properties_input" id="Properties_ScaleW">
+                <input type="number" style="width:43px" class="Properties_input" id="Properties_ScaleW">
+                <div class="Properties_name">%</div>
             </div>
 
             <div class="Properties_box">
                 <div class="Properties_name">H</div>
-                <input type="number" class="Properties_input" id="Properties_ScaleH">
+                <input type="number" style="width:43px" class="Properties_input" id="Properties_ScaleH">
+                <div class="Properties_name">%</div>
             </div>
         </div>
 
@@ -113,48 +110,25 @@
             <input type="checkbox" id="ratioCheck" checked>
             <label for="ratioCheck">Constrain ratio</label><br>
         </div>
-
     </div>
 
-    <div class="WorkSpaces_Group">
+    <div class="WorkSpaces_Group WorkSpace_Align">
         <div class="WorkSpaces_Header">&#8627; Align Object</div>
         <div class="AlignMain">
             <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
             <div class="AlignBox" id="align_HorizontalCenter"><img src="assets/img/centerY.svg"></div>
             <div class="AlignBox" id="align_Right"><img src="assets/img/rightY.svg"></div>
+            <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
         </div>
         <div class="AlignMain">
             <div class="AlignBox" id="align_Top"><img src="assets/img/upX.svg"></div>
             <div class="AlignBox" id="align_VerticalCenter"><img src="assets/img/centerX.svg"></div>
             <div class="AlignBox" id="align_Bottom"><img src="assets/img/downX.svg"></div>
-        </div>
-        <div class="AlignMain">
             <div class="AlignBox" id="align_SpaceHorizontal"><img src="assets/img/spaceX.svg"></div>
-            <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
+        </div>
+        <div class="AlignMain">
             <div class="AlignBox" id="align_ScaleAuto"><img src="assets/img/stagescale.svg"></div>
-        </div>
-        <div class="AlignMain">
             <div class="AlignBox" id="align_CenterStage"><img src="assets/img/stageCenter.svg"></div>
-        </div>
-    </div>
-
-<!--    <div class="WorkSpaces_Group WorkSpace_Preview">
-        <div class="WorkSpaces_Header">&#8627; Preview</div>
-        <div class="AlignMain" style="width: 150px">
-            <div class="AlignBox" id="save"><img src="assets/img/save.png"></div>
-            <div class="AlignBox" id="export"><img src="assets/img/preview.png"></div>
-        </div>
-    </div>-->
-
-    <div class="WorkSpaces_Group addSpace WorkSpace_SpecialObjects">
-        <div class="WorkSpaces_Header">&#8627; Content Objects </div>
-        <div class="AlignMain">
-            <div class="AlignBox" id="createSelect"><img src="assets/img/cselect.png"></div>
-            <div class="AlignBox" id="createPopup"><img src="assets/img/createPopup.png"></div>
-            <div class="AlignBox" id="createControl"><img src="assets/img/createbtn.png"></div>
-        </div>
-        <div class="AlignMain">
-            <div class="AlignBox" id="createURL"><img src="assets/img/createurl.png"></div>
         </div>
     </div>
 
@@ -166,7 +140,7 @@
             <input type="text" class="elementInput" id="identity_elementID">
             <div class="altHead">Class:</div>
             <input type="text" class="elementInput" id="identity_elementClass">
-            <table id="identity_table"></table>
+            <table id="identity_table" style="margin-top: 10px"></table>
 
             <div class="Identity_AddParamBtn">
                 <img src="assets/img/addparam.png" id="identity_tableAddBtn" class="paramBtn_icon"/>
@@ -175,16 +149,58 @@
         </div>
     </div>
 
-    <div class="WorkSpaces_Group addSpace WorkSpace_RightAnswer">
-        <div class="WorkSpaces_Header">&#8627; Right Answer </div>
-        <div class="WorkSpaces_SelectContainer">
-            <select id="rightAnswer" tabindex="5"></select>
+    <div class="WorkSpaces_Group WorkSpace_Font">
+        <div class="WorkSpaces_Header">&#8627; Font</div>
+
+        <div class="font_table2">
+            <div class="font_column">
+                <div>Family</div>
+                <div class="font_row">
+                    <select id="font_fontFamily">
+                        <option value="Arial">Arial</option>
+                        <option value="Nunito">Nunito</option>
+                    </select>
+                </div>
+                <input type="text" id="font_sizeInput">
+            </div>
+            <div class="font_column">
+                <div>Color</div>
+                <div class="font_row">
+                    <input type="color" id="font_colorPicker" class="font_input">
+                </div>
+                <input type="text" id="font_hexInput" maxlength="7">
+            </div>
         </div>
     </div>
 
     <div class="WorkSpaces_Group addSpace WorkSpace_ColorPicker">
         <div class="WorkSpaces_Header">&#8627; Color Picker</div>
-        <input type="color" id="colorPicker" name="head" value="#ff0000" />
+
+        <div class="font_table2">
+            <div class="font_column">
+                <input type="color" id="colorPicker" name="head" value="#ff0000" />
+            </div>
+
+            <div class="font_column">
+                <input type="text" id="font_colorInput" maxlength="7">
+            </div>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Group addSpace WorkSpace_SceneParam">
+        <div class="WorkSpaces_Header">&#8627; Add Scene </div>
+        <table id="scene_table"></table>
+        <div class="Identity_AddParamBtn" id="param_sceneAddBtn">
+            <img src="assets/img/addparam.png" class="paramBtn_icon"/>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Group addSpace WorkSpace_AnswerParam">
+        <div class="WorkSpaces_Header">&#8627; Add Answer </div>
+        <table id="answer_table"></table>
+        <div class="Identity_AddParamBtn" id="param_answerAddBtn">
+            <img src="assets/img/addparam.png" class="paramBtn_icon"/>
+        </div>
     </div>
 
 <!--
@@ -237,6 +253,10 @@
     </div>
 </div>
 
+<div>
+    div
+</div>
+
 <script>
     var IDE = {
         stage:{width: 1380, height: 820, container: "scope_Canvas", bg:"#404040"},
@@ -279,8 +299,10 @@
             createPopup: document.querySelector("#createPopup"),
             createControl: document.querySelector("#createControl"),
             createURL: document.querySelector("#createURL"),
+            createInput: document.querySelector("#createInput"),
             uploadImageForm: document.querySelector("#uploadImageForm"),
             colorPicker: document.querySelector("#colorPicker"),
+            colorInput: document.querySelector("#font_colorInput"),
 
             align_Left: document.querySelector("#align_Left"),
             align_HorizontalCenter: document.querySelector("#align_HorizontalCenter"),
@@ -301,12 +323,22 @@
             rightAnswer: document.querySelector("#rightAnswer"),
             ratioCheck: document.querySelector("#ratioCheck"),
             WorkSpace_Layer: document.querySelector(".WorkSpace_Layer"),
-            WorkSpace_SpecialObjects: document.querySelector(".WorkSpace_SpecialObjects"),
-            WorkSpace_RightAnswer: document.querySelector(".WorkSpace_RightAnswer"),
             WorkSpace_Scene: document.querySelector(".WorkSpace_Scene"),
-            WorkSpace_Preview: document.querySelector(".WorkSpace_Preview"),
             WorkSpace_ColorPicker: document.querySelector(".WorkSpace_ColorPicker"),
-            WorkSpace_Identity: document.querySelector(".WorkSpace_Identity")
+            WorkSpace_Identity: document.querySelector(".WorkSpace_Identity"),
+            WorkSpace_Font: document.querySelector(".WorkSpace_Font"),
+            WorkSpace_SceneParam: document.querySelector(".WorkSpace_SceneParam"),
+            WorkSpace_AnswerParam: document.querySelector(".WorkSpace_AnswerParam"),
+            WorkSpace_PositionAndSize: document.querySelector(".WorkSpace_PositionAndSize"),
+            WorkSpace_Scale: document.querySelector(".WorkSpace_Scale"),
+            WorkSpace_Align: document.querySelector(".WorkSpace_Align"),
+
+            font_sizeInput: document.querySelector("#font_sizeInput"),
+            font_colorPicker: document.querySelector("#font_colorPicker"),
+            font_fontFamily: document.querySelector("#font_fontFamily"),
+            font_hexInput: document.querySelector("#font_hexInput"),
+
+            topBanner_addObject: document.querySelector("#topBanner_addObject")
         },
         welcome:{
             main: document.querySelector("#welcome_main"),
@@ -317,8 +349,7 @@
             sceneTypeList: document.querySelector("#welcome_sceneTypeList"),
             newFileBtn: document.querySelector("#welcome_newFileBtn"),
             addFileInput: document.querySelector("#addFileInput"),
-        },
-        identity_tableTemplate: `<th class="td1">Key</th><th class="td2">Value</th><th class="td3"></th>`
+        }
     }
 
     var stage = new Konva.Stage(IDE.stage);
@@ -379,6 +410,7 @@
     function sceneTemplate(){
         return {
             type: "KT_MC_Single",
+            answer:{},
             rightAnswer: null,
             scene: {},
             all: [],
@@ -448,35 +480,112 @@
             if(!IDE.selectedLayers.length){
                 IDE.selectedLayers = [temp.layer];
                 changeSelect[ temp.layer.Layer.type ](SELECT);
-                colorPicker(false);
+                colorPicker(null);
             }
         }
 
         SELECT.nodes(IDE.selectedLayers).moveToTop();
         checkIdentity(temp.layer);
         layerBackgroundColor();
+        setFontSize(null, null);
+
+        showObjectWorkSpaces();
     }
 
-    function colorPicker(set){
+
+    function showObjectWorkSpaces(){
         if(IDE.selectedLayers.length){
-            var currentType = IDE.selectedLayers[0].Layer.type;
-            if(set){
-                if(currentType==="objectText" || currentType==="objectRect"){
-                    IDE.selectedLayers[0].fill(IDE.workSpace.colorPicker.value);
-                }
-            }else{
-                if(currentType==="objectText" || currentType==="objectRect"){
-                    IDE.workSpace.colorPicker.value = IDE.selectedLayers[0].fill();
+            IDE.workSpace.WorkSpace_PositionAndSize.style.display = "block";
+            IDE.workSpace.WorkSpace_Scale.style.display = "block";
+            IDE.workSpace.WorkSpace_Align.style.display = "block";
+            IDE.workSpace.WorkSpace_Identity.style.display = "none";
+            IDE.workSpace.WorkSpace_SceneParam.style.display = "none";
+            IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
+            IDE.workSpace.WorkSpace_ColorPicker.style.display = "block";
+            IDE.workSpace.WorkSpace_Font.style.display = "block";
+
+            if(IDE.selectedLayers.length === 1){
+                IDE.workSpace.WorkSpace_Identity.style.display = "block";
+                IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
+
+                if(IDE.selectedLayers[0].Layer.type === "objectText"){
+                    IDE.workSpace.WorkSpace_Font.style.display = "block";
+                    IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
+                }else if(IDE.selectedLayers[0].Layer.type === "objectRect"){
                     IDE.workSpace.WorkSpace_ColorPicker.style.display = "block";
+                    IDE.workSpace.WorkSpace_Font.style.display = "none";
                 }else{
                     IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
+                    IDE.workSpace.WorkSpace_Font.style.display = "none";
+                }
+            }
+
+        }else{
+            IDE.workSpace.WorkSpace_PositionAndSize.style.display = "none";
+            IDE.workSpace.WorkSpace_Scale.style.display = "none";
+            IDE.workSpace.WorkSpace_Align.style.display = "none";
+            IDE.workSpace.WorkSpace_Identity.style.display = "none";
+            IDE.workSpace.WorkSpace_SceneParam.style.display = "block";
+            IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
+            IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
+            IDE.workSpace.WorkSpace_Font.style.display = "none";
+        }
+    }
+
+    function colorPicker(color){
+        if(IDE.selectedLayers.length === 1){
+            if(IDE.selectedLayers[0].Layer.type === "objectRect"){
+                if(color){
+                    if(!color.includes("#")){
+                        color = "#"+color;
+                    }
+
+                    IDE.selectedLayers[0].fill(color);
+                    IDE.workSpace.colorInput.value = color;
+                    IDE.workSpace.colorPicker.value = color;
+                }else{
+                    IDE.workSpace.colorPicker.value = IDE.selectedLayers[0].fill();
+                    IDE.workSpace.colorInput.value = IDE.selectedLayers[0].fill();
+                }
+            }
+        }
+    }
+
+    function setFontSize(size, color, family){
+        if(IDE.selectedLayers.length){
+            if(IDE.selectedLayers[0].Layer.type === "objectText"){
+                if(size){
+                    IDE.selectedLayers[0].fontSize(size);
+                }else{
+                    IDE.workSpace.font_sizeInput.value = IDE.selectedLayers[0].fontSize();
+                }
+
+                if(color){
+                    if(!color.includes("#")){
+                        color = "#"+color;
+                    }
+
+                    IDE.selectedLayers[0].fill(color);
+                    IDE.workSpace.font_colorPicker.value = color;
+                    IDE.workSpace.font_hexInput.value = color;
+                }else{
+                    IDE.workSpace.font_colorPicker.value = IDE.selectedLayers[0].fill();
+                    IDE.workSpace.font_hexInput.value = IDE.selectedLayers[0].fill();
+                }
+
+                if(family){
+                    var current = IDE.selectedLayers[0];
+                    IDE.selectedLayers[0].fontFamily(family);
+                    deSelect();
+                    selectItem({layer:current});
+                }else{
+                    IDE.workSpace.font_fontFamily.value = IDE.selectedLayers[0].fontFamily();
                 }
             }
         }
     }
 
     /* Identity */
-
     function checkIdentity(){
         if(IDE.selectedLayers.length === 1){
             var obj = IDE.selectedLayers[0];
@@ -492,90 +601,117 @@
                 IDE.workSpace.identity_elementClass.value = "";
             }
 
-            IDE.workSpace.identity_elementID.style.opacity = 1;
-            IDE.workSpace.identity_elementID.removeAttribute("disabled");
-            IDE.workSpace.identity_elementClass.style.opacity = 1;
-            IDE.workSpace.identity_elementClass.removeAttribute("disabled");
-
-            IDE.workSpace.identity_table.innerHTML = IDE.identity_tableTemplate;
-            IDE.addTableParamFNC();
-        }else{
-            resetIdentity();
+            refreshTable(IDE.selectedLayers[0].Layer.params, IDE.workSpace.identity_table);
         }
     }
 
-    IDE.addTableParamFNC = function(){
-        var obj = IDE.selectedLayers[0];
-        if(obj.Layer.params){
-            var param = [];
-            var tableHtml = IDE.identity_tableTemplate;
+    function refreshTable(list, table, tdName1, tdName2){
 
-            for(var prop in obj.Layer.params){
-                var idKey = prop+"_key";
-                var idVal = prop+"_val";
-                var idBtn = prop+"_btn";
+        if(!tdName1){
+            tdName1 = "Key";
+        }
 
-                tableHtml += `<tr>
+        if(!tdName2){
+            tdName2 = "Value";
+        }
+
+        var tableHtml = `<th class="td1">${tdName1}</th><th class="td2">${tdName2}</th><th class="td3"></th>`;
+        var param = [];
+
+        for(var prop in list){
+            var idKey = "key_"+prop;
+            var idVal = "val_"+prop;
+            var idBtn = "btn_"+prop;
+
+            tableHtml += `<tr>
                         <td><input type="text" class="input1 tableInput" id="${idKey}" value="${prop}"></td>
-                        <td><input type="text" class="td2 tableInput input2" id="${idVal}" value="${obj.Layer.params[prop]}"></td>
+                        <td><input type="text" class="td2 tableInput input2" id="${idVal}" value="${list[prop]}"></td>
                         <td class="td3"><img src="assets/img/removeparam.png" id="${idBtn}" class="paramBtn_icon" alt=""/></td>
                     </tr>`;
 
-                param.push({prop, idKey, idVal, idBtn});
-            }
-
-            IDE.workSpace.identity_table.innerHTML = tableHtml;
-
-            param.map(function(e){
-                var prop = e.prop;
-                document.querySelector("#"+ e.idKey).addEventListener("input", function(){
-                    var oldVal = IDE.selectedLayers[0].Layer.params[prop];
-                    delete IDE.selectedLayers[0].Layer.params[prop];
-                    prop = this.value;
-                    IDE.selectedLayers[0].Layer.params[prop] = oldVal;
-                    console.log(IDE.selectedLayers[0].Layer.params);
-                });
-
-                document.querySelector("#"+ e.idVal).addEventListener("input", function(){
-                    IDE.selectedLayers[0].Layer.params[prop] = this.value;
-                    console.log(IDE.selectedLayers[0].Layer.params);
-                });
-
-                document.querySelector("#"+ e.idBtn).addEventListener("click", function(){
-                    console.log(IDE.selectedLayers[0].Layer);
-                    delete IDE.selectedLayers[0].Layer.params[prop];
-                    IDE.addTableParamFNC();
-                });
-            });
+            param.push({prop, idKey, idVal, idBtn});
         }
+
+        table.innerHTML = tableHtml;
+
+        param.map(function(e){
+            var prop = e.prop;
+            var keyInput = document.querySelector("#"+ e.idKey);
+            var valInput = document.querySelector("#"+ e.idVal);
+            var delBtn = document.querySelector("#"+ e.idBtn);
+
+            keyInput.prop = prop;
+            keyInput.data = list[prop];
+            keyInput.addEventListener("focusout", function(){
+                for(var p in list){
+                    if(p === this.value){
+                        this.value = "New";
+                    }
+                }
+
+                if(this.prop !== this.value){
+                    delete list[this.prop];
+                    list[this.value] = this.data;
+                }
+            });
+
+            keyInput.addEventListener("focusout", function(){
+                this.prop = this.value;
+            });
+
+            valInput.addEventListener("input", function(){
+                var tempProp = keyInput.prop;
+                list[tempProp] = this.value;
+            });
+
+            utils.addBlur(keyInput);
+            utils.addBlur(valInput);
+
+            delBtn.addEventListener("click", function(){
+                delete list[prop];
+                refreshTable(list, table, tdName1, tdName2);
+            });
+        });
     }
 
-    function resetIdentity(){
-        IDE.workSpace.identity_elementID.value = "";
-        IDE.workSpace.identity_elementID.style.opacity = 0.6;
-        IDE.workSpace.identity_elementID.setAttribute("disabled", "disabled");
-        IDE.workSpace.identity_elementClass.value = "";
-        IDE.workSpace.identity_elementClass.style.opacity = 0.6;
-        IDE.workSpace.identity_elementClass.setAttribute("disabled", "disabled");
-        IDE.workSpace.identity_table.innerHTML = IDE.identity_tableTemplate;
-    }
+    document.querySelector("#param_answerAddBtn").addEventListener("click", function(){
+        jsonV2.slides[sceneIndex].answer["New"] = "";
+        refreshTable(jsonV2.slides[sceneIndex].answer, document.querySelector("#answer_table"), "ID", "Answer");
+        console.log( jsonV2.slides[sceneIndex] );
+    });
 
+    document.querySelector("#param_sceneAddBtn").addEventListener("click", function(){
+        jsonV2.slides[sceneIndex].scene["New"] = "";
+        refreshTable(jsonV2.slides[sceneIndex].scene, document.querySelector("#scene_table"));
+    });
 
     IDE.workSpace.identity_elementID.addEventListener("input", function(){
         if(IDE.selectedLayers.length === 1){
-            IDE.selectedLayers[0].Layer.elementID = IDE.workSpace.identity_elementID.value;
-        }
-    });
-
-    IDE.workSpace.identity_elementID.addEventListener("keydown", function(e){
-        if(e.which===13 || e.keyCode===13){
-            this.blur();
+            this.unique = IDE.selectedLayers[0].Layer.unique;
+            this.tempName = this.value;
         }
     });
 
     IDE.workSpace.identity_elementID.addEventListener("blur", function(){
-        console.log("Blur oldu");
-        IDE.selectedLayers[0].Layer.layerNameNormal.innerHTML = IDE.workSpace.identity_elementID.value;
+        var currentValue = this.tempName;
+        var currentUnique = this.unique;
+        var localEX = utils.getLayers();
+
+        localEX.map(function(obj){
+            if(obj.Layer.unique === currentUnique){
+                if(obj.Layer.type === "objectMovieClip"){
+                    if(!currentValue.length){
+                        currentValue = obj.Layer.elementID;
+                    }
+
+                    obj.Layer.name = currentValue;
+                    obj.Layer.layerNameNormal.innerText = currentValue;
+                }
+
+                obj.Layer.elementID = currentValue;
+                IDE.workSpace.identity_elementID.value = currentValue;
+            }
+        });
     });
 
     IDE.workSpace.identity_elementClass.addEventListener("input", function(){
@@ -584,12 +720,8 @@
         }
     });
 
-    IDE.workSpace.identity_elementClass.addEventListener("keydown", function(e){
-        if(e.which===13 || e.keyCode===13){
-            this.blur();
-        }
-    });
-
+    utils.addBlur(IDE.workSpace.identity_elementID);
+    utils.addBlur(IDE.workSpace.identity_elementClass);
 
     identity_tableAddBtn.addEventListener("click", function(){
         if(IDE.selectedLayers.length === 1){
@@ -598,7 +730,7 @@
             }
 
             IDE.selectedLayers[0].Layer.params["New"] = "";
-            IDE.addTableParamFNC();
+            refreshTable(IDE.selectedLayers[0].Layer.params, IDE.workSpace.identity_table);
         }
     });
 
@@ -624,7 +756,7 @@
         layerBackgroundColor();
         SELECT.nodes(IDE.selectedLayers);
         getProp(false);
-        resetIdentity();
+        showObjectWorkSpaces();
     }
 
     /* Layer Tüm Objeleri Silme */
@@ -691,15 +823,22 @@
         layerDeleteAll();
         addObjects(jsonV2.slides[sceneIndex].all, IDE.sceneLayer, true);
         addHistory();
-        importTypeSettings();
         searchSingleUseObject();
-
+        CREATE.checkKontrol();
         document.querySelectorAll(".SR_Scene_Drag").forEach(function(btn){
             btn.style.backgroundColor = "#666666";
         });
 
         IDE.sceneUnique = jsonV2.slides[sceneIndex].unique;
         document.querySelector("#"+IDE.sceneUnique).style.backgroundColor = "darkgreen";
+
+        if(!jsonV2.slides[sceneIndex].answer){
+            jsonV2.slides[sceneIndex].answer = {};
+        }
+
+        importTypeSettings();
+        refreshTable(jsonV2.slides[sceneIndex].answer, document.querySelector("#answer_table"), "ID", "Answer");
+        refreshTable(jsonV2.slides[sceneIndex].scene, document.querySelector("#scene_table"));
     }
 
     function autoSceneSave(){
@@ -715,8 +854,11 @@
     }
 
     function importTypeSettings(){
-        if(jsonV2.slides[sceneIndex].rightAnswer){
-            IDE.workSpace.rightAnswer.value = jsonV2.slides[sceneIndex].rightAnswer;
+        var btnID = jsonV2.slides[sceneIndex].rightAnswer;
+        if(btnID !== null && btnID !== undefined){
+            console.log("DELETE RIGHT ANSWER:",btnID);
+            jsonV2.slides[sceneIndex].answer[String(btnID)] = "true";
+            delete jsonV2.slides[sceneIndex].rightAnswer;
         }
     }
 
@@ -874,7 +1016,7 @@
 
     /* Ajax */
     function newFileAjax(json){
-        var data = {data: JSON.stringify(json)};
+        var data = {token: IDE.token, data: JSON.stringify(json)};
         $.ajax({url: "/createNewFile", data, success: newFileParse, type: "POST", error: ajaxError});
     }
 
@@ -886,7 +1028,7 @@
     }
 
     function selectFileAjax(file){
-        var data = {file};
+        var data = {token: IDE.token, file};
         $.ajax({url: "/selectFile", data, success: selectFileParse, type: "POST", error: ajaxError});
     }
 
@@ -913,7 +1055,7 @@
     }
 
     function saveDataAjax(json){
-        var data = {data: JSON.stringify(json)};
+        var data = {token: IDE.token, data: JSON.stringify(json)};
         $.ajax({url: "/saveData", data, success: saveDataParse, type: "POST", error: ajaxError});
     }
 
@@ -922,7 +1064,7 @@
     }
 
     function deleteFolderAjax(file){
-        var data = {file};
+        var data = {token: IDE.token, file};
         console.log(data);
         $.ajax({url: "/deleteFolder", data, success: deleteFolderParse, type: "POST", error: ajaxError});
     }
@@ -933,7 +1075,7 @@
     }
 
     function deleteFileAjax(file){
-        var data = {file};
+        var data = {token: IDE.token, file};
         $.ajax({url: "/deleteFile", data, success: deleteFileParse, type: "POST", error: ajaxError});
     }
 
@@ -942,7 +1084,7 @@
     }
 
     function zipContentAjax(file){
-        var data = {file};
+        var data = {token: IDE.token, file};
         $.ajax({url: "/getZip", data, success: zipContentParse, type: "POST", error: ajaxError});
     }
 
@@ -974,6 +1116,7 @@
     }
 
     function uploadImageAjax(data){
+        $.ajax({url: "/uploadFolderChange", data:{token: IDE.token}, async: false, type: "POST", error: ajaxError});
         $.ajax({url: "/uploadImage", data, success: uploadImageParse, type:"POST", contentType: false, cache:false, processData: false, error: ajaxError});
     }
 
@@ -1002,6 +1145,7 @@
 
 
     function getFileListParse(data){
+        IDE.token = data.token;
         var saveList = [];
 
         for(var p in data.fileList.data){

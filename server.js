@@ -5,7 +5,17 @@ var path = require("path");
 var fs = require('node:fs');
 var app = express();
 var archiver = require("archiver");
+var Users={};
 var FILE = {};
+var currentUploadFolder;
+var token;
+
+/////////////////////////
+var word = ["a","b","w","c","d","e","f","g","h","j","y","z"];
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+/////////////////////////
 
 // Klasörlerin erşim izinleri verildi..
 app.use("/libs", express.static(__dirname + "/node_modules"));
@@ -20,7 +30,7 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, FILE.files.imgFolder);
+        cb(null, currentUploadFolder);
     },
     filename: function (req, file, cb) {
         cb(null, file.originalname);
@@ -29,9 +39,11 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage })
 
-function getZip(filename, folder){
+function getZip(filename, folder, token){
     return new Promise(function(resolve, reject){
-        var zipName = path.join(FILE.root, filename +".zip");
+        var FD = Users[token];
+
+        var zipName = path.join(FD.root, filename +".zip");
         var output = fs.createWriteStream(zipName);
         var archive = archiver('zip');
         output.on("close", function () {
@@ -116,20 +128,20 @@ function readFileList(json){
 //Create New File
 app.post("/createNewFile", createNewFileFNC);
 async function createNewFileFNC(req, res){
-    console.log("-- CREATE NEW FILE START--");
+    console.log("-- CREATE NEW START--");
+    var FD = Users[req.body.token];
     var data = JSON.parse(req.body.data);
-    console.log(data);
-    FILE.files = {activeFile: data.fileName};
-    FILE.files.mainFolder = await addFolder( path.join(FILE.root, data.fileName) );
-    FILE.files.imgFolder = await addFolder( path.join(FILE.files.mainFolder, "img") );
+    FD.files = {activeFile: data.fileName};
+    FD.files.mainFolder = await addFolder( path.join(FD.root, data.fileName) );
+    FD.files.imgFolder = await addFolder( path.join(FD.files.mainFolder, "img") );
 
-    var addList = listAddFile(data);
-    FILE.files.mainJson = await createJson( path.join(FILE.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
-    FILE.fileList = await createJson( FILE.fileList.path, addList, {encoding:"utf8", flag:"w"});
-    res.send(FILE);
-    var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
-    var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
-    console.log("-- CREATE NEW FILE FINISH--");
+    var addList = listAddFile(FD, data);
+    FD.files.mainJson = await createJson( path.join(FD.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
+    FD.fileList = await createJson( FD.fileList.path, addList, {encoding:"utf8", flag:"w"});
+    res.send(FD);
+    var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
+    var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
+    console.log("-- CREATE NEW FINISH--");
 }
 
 //SaveDataFNC
@@ -137,29 +149,29 @@ app.post("/saveData", saveDataFNC);
 async function saveDataFNC(req, res){
     console.log("-- SAVE DATA START--");
     var data = JSON.parse(req.body.data);
-    console.log(data);
-    FILE.files.mainJson = await createJson(FILE.files.mainJson.path, data, {encoding:"utf8", flag:"w"});
-    res.send({success: FILE});
-    console.log("-- SAVE DATA FINISH--");
+    var FD = Users[req.body.token];
+    FD.files.mainJson = await createJson(FD.files.mainJson.path, data, {encoding:"utf8", flag:"w"});
+    res.send({success: FD});
+    console.log("-- SAVE DATA FINISH--", FD.files.mainJson.path);
 }
 
 //Select File
 app.post("/selectFile", selectFileFNC);
 
 async function selectFileFNC(req, res){
+    var FD = Users[req.body.token];
     var file = req.body.file;
     console.log("-------------");
     console.log("selectFile", file);
-    console.log(FILE);
-    console.log(FILE.fileList );
-    console.log( FILE.fileList.data[file] );
+    console.log(FD.fileList );
+    console.log( FD.fileList.data[file] );
 
-    if(FILE.fileList.data[file]){
-        FILE.files = FILE.fileList.data[file].files;
-        FILE.files.data = await readFileList(FILE.files.mainJson.path);
-        var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FILE.files.imgFolder+"/butonback.png");
-        var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FILE.files.imgFolder+"/closebtn.png");
-        res.send({success: true, FILE});
+    if(FD.fileList.data[file]){
+        FD.files = FD.fileList.data[file].files;
+        FD.files.data = await readFileList(FD.files.mainJson.path);
+        var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
+        var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
+        res.send({success: true, FILE: FD});
     }else{
         res.send({success: false});
     }
@@ -169,19 +181,20 @@ async function selectFileFNC(req, res){
 app.post("/deleteFolder", deleteFolderFNC);
 async function deleteFolderFNC(req, res){
     console.log("-- DELETE START--");
+    var FD = Users[req.body.token];
     var file = req.body.file;
-    await deleteFolder(FILE.fileList.data[file].files.mainFolder);
-    delete FILE.fileList.data[file];
+    await deleteFolder(FD.fileList.data[file].files.mainFolder);
+    delete FD.fileList.data[file];
 
-    FILE.fileList = await createJson( FILE.fileList.path, FILE.fileList.data, {encoding:"utf8", flag:"w"});
-    res.send(FILE);
+    FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
+    res.send(FD);
     console.log("-- DELETE FINISH--");
 }
 
 app.post("/deleteFile", deleteFileFNC);
-async function deleteFileFNC(){
-    console.log("Delete", FILE.root );
-    fs.unlink(FILE.root+"/Tuncay.zip", (err) => {
+async function deleteFileFNC(req, res){
+    var FD = Users[req.body.token];
+    fs.unlink(FD.root+"/Tuncay.zip", (err) => {
         if (err) throw err;
         console.log("Tuncay.zip txt was deleted");
     });
@@ -190,6 +203,7 @@ async function deleteFileFNC(){
 //Read File List
 app.post("/getZip", downloadFNC);
 async function downloadFNC(req, res){
+    var FD = Users[req.body.token];
     var file = req.body.file;
     var product = file.substring(5, 8);
     var grade = file.substring(3, 4);
@@ -208,7 +222,7 @@ async function downloadFNC(req, res){
     }
 
     try{
-        var entrance = await addFolder( path.join(FILE.root, "zip") );
+        var entrance = await addFolder( path.join(FD.root, "zip") );
         var step0 = await addFolder( path.join(entrance, "ONLINE") );
         var step1 = await addFolder( path.join(step0, "2024-2025") );
         var step2 = await addFolder( path.join(step1, product) );
@@ -223,14 +237,14 @@ async function downloadFNC(req, res){
         var step11 = await addFolder( path.join(step9, "coverimg") );
 
 
-        var mainFolder = FILE.fileList.data[file].files.mainFolder;
+        var mainFolder = FD.fileList.data[file].files.mainFolder;
         var successCopy = await copyFolder(mainFolder, step10);
         var PublisherCopy = await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step9+"/Publisher.py");
-        FILE.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance);
+        FD.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance, req.body.token);
         await deleteFolder(entrance);
-        res.send({success: true, content: FILE.fileList.data[req.body.file]});
+        res.send({success: true, content: FD.fileList.data[req.body.file]});
     }catch (e){
-        res.send({success: false, content: FILE.fileList.data[req.body.file]});
+        res.send({success: false, content: FD.fileList.data[req.body.file]});
     }
 }
 
@@ -242,6 +256,12 @@ app.post('/uploadImage', upload.array("uploadImage", 12), function (req, res) {
 //Read File List
 app.post("/getFileList", function(req, res){
     res.send(FILE);
+});
+
+app.post("/uploadFolderChange", function(req, res){
+    var FD = Users[req.body.token];
+    currentUploadFolder = FD.files.imgFolder;
+    res.send({success:true});
 });
 
 
@@ -257,22 +277,25 @@ app.use("/ide", function(req, res) {
 });
 
 async function initApp(){
+    token = "User_"+getRandomInt(9000)+"_"+word[getRandomInt(10)]+"_"+getRandomInt(9000);
     console.log('\033[2J');
     console.log("///////START APP/////////");
-    console.log("FILE", FILE);
-    FILE = {};
+    Users[token] = {};
+    FILE = Users[token];
+    var FD = Users[token];
 
     //1."files" Klasörü yoksa oluşturulur..
-    FILE.root = await addFolder( path.join(__dirname, "files") );
+    FD.root = await addFolder( path.join(__dirname, "files") );
 
     //2."files" dosyası varsa okunur. Yoksa oluşturulur...
-    FILE.fileList = {path: path.join(FILE.root, "fileList.json")};
-    FILE.fileList.data = await readFileList(FILE.fileList.path);
-    if(!FILE.fileList.data){
-        FILE.fileList = await createJson(FILE.fileList.path, {}, {encoding:"utf8", flag:"w"});
+    FD.fileList = {path: path.join(FD.root, "fileList.json")};
+    FD.fileList.data = await readFileList(FD.fileList.path);
+    if(!FD.fileList.data){
+        FD.fileList = await createJson(FD.fileList.path, {}, {encoding:"utf8", flag:"w"});
     }
 
-    FILE.systemReady = true;
+    FD.token = token;
+    FD.systemReady = true;
 }
 
 
@@ -298,7 +321,7 @@ app.listen(3630, function() {
 });
 
 
-function listAddFile(data){
-    FILE.fileList.data[data.fileName] = {create: data.createTime, files: FILE.files};
-    return FILE.fileList.data;
+function listAddFile(FD, data){
+    FD.fileList.data[data.fileName] = {create: data.createTime, files: FD.files};
+    return FD.fileList.data;
 }

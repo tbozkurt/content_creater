@@ -1,6 +1,6 @@
 function Arayuz_addLayer(obj){
     addWindow(obj);
-    bune(obj);
+    bune(obj, true);
 }
 
 function addWindow(obj){
@@ -12,17 +12,14 @@ function addWindow(obj){
         unique = obj.Layer.unique;
     }
 
-    obj.Layer.hide = false;
-    obj.Layer.lock = false;
-
     var layerHtml = `<div class="layer">
             <div class="layerIcon"><img src="assets/img/${obj.Layer.type}_icon.png"></div>
             <div class="layerName">
                 <div class="layerNameNormal">${obj.Layer.name}</div>
                 <input class="layerNameEdit" type="text" value="${obj.Layer.name}">
             </div>
-            <div class="layerZButon layerView"><img src="assets/img/hide.png"></div>
-            <div class="layerZButon layerLock"><img src="assets/img/lock.png"></div>
+            <div class="layerZButon layerView"><img src="assets/img/layer_view.png"></div>
+            <div class="layerZButon layerLock"><img src="assets/img/layer_locked.png"></div>
         </div>`;
 
     var TempHTML = LayerSR.clicked(layerHtml, unique);
@@ -37,6 +34,24 @@ function addWindow(obj){
     var layerNameEdit = main.querySelector(".layerNameEdit");
 
     Object.assign(obj.Layer, {main, hideBtn, lockBtn, textInput, layerNameNormal});
+
+    if(obj.Layer.hide === "undefined"){
+        obj.Layer.hide = false;
+    }else{
+        if(obj.Layer.hide){
+            obj.Layer.hideBtn.style.opacity = 1;
+            obj.hide();
+        }
+    }
+
+    if(obj.Layer.lock === "undefined"){
+        obj.Layer.lock = false;
+    }else{
+        if(obj.Layer.lock){
+            obj.Layer.lockBtn.style.opacity = 1;
+            obj.draggable(false);
+        }
+    }
 
     main.addEventListener("mousedown", function(e){
         Permission(e.shiftKey, obj);
@@ -69,37 +84,43 @@ function addWindow(obj){
     });
 
     textInput.addEventListener("dblclick", function(){
+        obj.tempName = obj.Layer.name;
         layerNameNormal.style.display = "none";
         layerNameEdit.style.display = "block";
+        layerNameEdit.value = obj.Layer.name;
         layerNameEdit.focus();
         layerNameEdit.select();
+
+        /*Draggable.get("#drag0").disable();*/
     });
 
     layerNameEdit.addEventListener("input", function(e){
-        obj.Layer.name = this.value;
-        if(obj.Layer.type === "objectMovieClip"){
-            obj.Layer.elementID = this.value;
-        }
-
-        layerNameNormal.innerText = this.value;
+        obj.tempName = this.value;
     });
 
-    layerNameEdit.addEventListener("keydown", function(e){
-        if(e.which===13 || e.keyCode===13){
-            this.blur();
-        }
-    });
+    utils.addBlur(layerNameEdit);
 
     layerNameEdit.addEventListener("blur", function(e){
+        if(obj.tempName.length){
+            obj.Layer.name = obj.tempName;
+            if(obj.Layer.type === "objectMovieClip"){
+                obj.Layer.elementID = obj.tempName;
+            }
+
+            layerNameNormal.innerText = obj.tempName;
+        }else{
+            layerNameNormal.innerText = obj.Layer.name;
+        }
+
         layerNameNormal.style.display = "block";
         layerNameEdit.style.display = "none";
         checkIdentity();
     });
 
-    CREATE.checkKontrol();
+    //CREATE.checkKontrol();
 }
 
-function bune(obj){
+function bune(obj, autoSelect){
     obj.on("mousedown", function(e){
         Permission(e.evt.shiftKey, obj);
         getProp(true);
@@ -110,9 +131,10 @@ function bune(obj){
     }).on("dragmove", function(){
         getProp(false);
     }).on("transform", function(){
-        getProp(false);
+        getProp(false, "transform");
     }).on("transformend", function(){
         addHistory();
+        rectSetSize();
     });
 
     if(obj.Layer.type === "objectText"){
@@ -134,7 +156,9 @@ function bune(obj){
         });
     }
 
-    deSelect();
+    if(autoSelect){
+        deSelect();
+    }
 }
 
 function Permission(shiftKey, object){
@@ -206,13 +230,16 @@ function openTextEditor(text){
         IDE.text.write = true;
         IDE.scope = "EditText";
 
+        var fontStyle = text.fontStyle();
+
         var currentCSS = {
             left: textPosition.x + IDE.text.leftSpace +"px",
             top: textPosition.y + IDE.text.topSpace +"px",
-            width: text.width(),
-            height: text.height(),
-            fontSize: 20+"px",
-            fontFamily: "Arial",
+            width: Math.ceil(text.width()).toFixed(0)+"px",
+            //width: "auto",
+            height: Math.ceil(text.height()).toFixed(0)+"px",
+            fontSize: text.fontSize().toFixed(0)+"px",
+            fontFamily: text.fontFamily(),
             color: text.fill(),
             lineHeight: text.lineHeight(),
             position: "absolute",
@@ -221,8 +248,10 @@ function openTextEditor(text){
             overflow: "hidden",
             padding: 0,
             outline: "none",
-            backgroundColor: "white",
-            display: "inline-block"
+            backgroundColor: "rgba(200,200,200,0.2)",
+            display: "inline-block",
+            textAlign: text.align(),
+            fontWeight: fontStyle
         }
 
         let div = document.createElement('div');
@@ -263,6 +292,17 @@ var SceneSR = addSR({
     DelFNC: sceneDelete
 });
 
+
+function rectSetSize(){
+    if(IDE.selectedLayers.length === 1){
+        if(IDE.selectedLayers[0].Layer.type === "objectRect"){
+            var modifiedWidth = SELECT.width().toFixed(0);
+            var modifiedHeight = SELECT.height().toFixed(0);
+            IDE.selectedLayers[0].width(parseInt(modifiedWidth)).height(parseInt(modifiedHeight)).scale({x:1, y:1});
+        }
+    }
+}
+
 function getProp(sameValueSearch){
     if(sameValueSearch){
         IDE.propValues={};
@@ -281,16 +321,18 @@ function getProp(sameValueSearch){
     }
 
     if(IDE.selectedLayers.length === 1){
-        //IDE.workSpace.leftInput.value = IDE.selectedLayers[0].x();
-        //IDE.workSpace.leftInput.value = IDE.selectedLayers[0].y();
-        //IDE.workSpace.widthInput.value = IDE.selectedLayers[0].width();
-        //IDE.workSpace.heightInput.value = IDE.selectedLayers[0].height();
-        IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
-        IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
-        IDE.workSpace.widthInput.value = SELECT.width();
-        IDE.workSpace.heightInput.value = SELECT.height();
-        IDE.workSpace.scaleWInput.value = IDE.selectedLayers[0].scaleX()*100;
-        IDE.workSpace.scaleHInput.value = IDE.selectedLayers[0].scaleY()*100;
+        var modifiedX = SELECT.x()-IDE.layer.x;
+        var modifiedY = SELECT.y()-IDE.layer.y;
+        var modifiedWidth = SELECT.width();
+        var modifiedHeight = SELECT.height();
+
+        IDE.workSpace.leftInput.value = modifiedX.toFixed(0);
+        IDE.workSpace.topInput.value = modifiedY.toFixed(0);
+        IDE.workSpace.widthInput.value = modifiedWidth.toFixed(0);
+        IDE.workSpace.heightInput.value = modifiedHeight.toFixed(0);
+
+        IDE.workSpace.scaleWInput.value = (IDE.selectedLayers[0].scaleX()*100).toFixed(0);
+        IDE.workSpace.scaleHInput.value = (IDE.selectedLayers[0].scaleY()*100).toFixed(0);
     }else if(IDE.selectedLayers.length){
         IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
         IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
@@ -319,7 +361,7 @@ function getProp(sameValueSearch){
 
 /* Object Delete */
 document.addEventListener("keyup", function(e){
-    if((e.keyCode === 8 || e.keyCode === 46)){
+    if(e.keyCode === 46){
         if(IDE.scope === "Stage"){
             deleteObject();
         }else if(IDE.scope === "Scene"){
@@ -458,7 +500,7 @@ function changeTop(newY){
 
 function changeWidth(newWidth){
     IDE.selectedLayers.map(function(obj){
-        if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg"){
+        if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg" || obj.Layer.type==="objectText"){
             obj.width(newWidth);
         }
     });
@@ -468,7 +510,7 @@ function changeWidth(newWidth){
 
 function changeHeight(newHeight){
     IDE.selectedLayers.map(function(obj){
-        if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg"){
+        if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg" || obj.Layer.type==="objectText"){
             obj.height(newHeight);
         }
     });
@@ -510,9 +552,14 @@ IDE.workSpace.createSelect.addEventListener("click", function(){
         container: IDE.activeLayer,
         layer: {
             name: "selectButon",
-            type: "objectMovieClip"
-        }
+            type: "objectMovieClip",
+            params:{
+                group: 0
+            }
+        },
     });
+
+    CREATE.checkKontrol();
 });
 
 IDE.workSpace.createText.addEventListener("click", function(){
@@ -522,7 +569,6 @@ IDE.workSpace.createText.addEventListener("click", function(){
             text: "text",
             x: position.x,
             y: position.y,
-            width: 33,
             fontSize: 20,
             fontFamily: "Arial",
             fill: "#000000",
@@ -601,23 +647,16 @@ IDE.workSpace.uploadImageForm.addEventListener("change", function(e){
     uploadImageAjax( new FormData(this) );
 });
 
-
-IDE.workSpace.colorPicker.addEventListener("change",function(){
-    colorPicker(true);
-});
-
 function showWorkSpaces(){
     IDE.workSpace.WorkSpace_Layer.style.display = "block";
-    IDE.workSpace.WorkSpace_SpecialObjects.style.display = "block";
-    IDE.workSpace.WorkSpace_RightAnswer.style.display = "block";
     IDE.workSpace.WorkSpace_Scene.style.display = "flex";
+    IDE.workSpace.topBanner_addObject.style.display = "flex";
 }
 
 function hideWorkSpaces(){
     IDE.workSpace.WorkSpace_Layer.style.display = "block";
-    IDE.workSpace.WorkSpace_SpecialObjects.style.display = "none";
-    IDE.workSpace.WorkSpace_RightAnswer.style.display = "none";
     IDE.workSpace.WorkSpace_Scene.style.display = "none";
+    IDE.workSpace.topBanner_addObject.style.display = "none";
 }
 
 function OpenMovieClip(mc){
@@ -654,15 +693,21 @@ function OpenMovieClip(mc){
 
             copyObject.scale({x:scaleX, y:scaleY});
             IDE.editLayer.add(copyObject);
+
+            bune(copyObject, false);
+            copyObject.draggable(true);
+
+            /*
             if(!selectMode){
-                bune(copyObject);
+                bune(copyObject, false);
                 copyObject.draggable(true);
             }else{
                 if(copyObject.Layer.class === "csMask"){
-                    bune(copyObject);
-                    copyObject.draggable(true);
+
                 }
             }
+            */
+
             deleteObject.push(Object);
         }
     });
@@ -748,6 +793,7 @@ document.querySelector("#export").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     Player = new PLAYER();
     IDE.workSpace.previewMain.style.display = "block";
+    console.log( IDE.stage.bg );
     Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview", {Url:("files/"+ IDE.files.activeFile +"/")} );
     hideWorkSpaces();
 });
@@ -772,114 +818,42 @@ IDE.workSpace.previewClose.addEventListener("click", function(){
     showWorkSpaces();
 });
 
-/* Workspace-Properties */
-function focusWorkSpaces(){
-    IDE.scope = "WorkSpace";
-}
 
 //Left Input
-IDE.workSpace.leftInput.addEventListener("focus", focusWorkSpaces);
+utils.addBlur(IDE.workSpace.leftInput);
 IDE.workSpace.leftInput.addEventListener("change", function(e) {
     changeLeft(Number(e.target.value));
 });
 
-/*
-IDE.workSpace.leftInput.addEventListener("keypress", function(e) {
-    console.log("BB");
-    if (event.key === "Enter") {
-        IDE.workSpace.leftInput.pointerEvents = "none";
-        changeLeft(Number(e.target.value));
-        IDE.workSpace.leftInput.pointerEvents = "auto";
-
-    }
-});
-*/
-
 //Top Input
-IDE.workSpace.topInput.addEventListener("focus", focusWorkSpaces);
-IDE.workSpace.topInput.addEventListener("change", function(e) {
+utils.addBlur(IDE.workSpace.topInput);
+IDE.workSpace.topInput.addEventListener("change", function(e){
     changeTop(Number(e.target.value));
 });
-/*
-IDE.workSpace.topInput.addEventListener("keypress", function(e) {
-    if (event.key === "Enter") {
-        changeTop(Number(e.target.value));
-    }
-});
-*/
-
 
 //Width Input
-IDE.workSpace.widthInput.addEventListener("focus", focusWorkSpaces);
+utils.addBlur(IDE.workSpace.widthInput);
 IDE.workSpace.widthInput.addEventListener("change", function(e) {
     changeWidth(Number(e.target.value));
 });
 
-/*
-IDE.workSpace.widthInput.addEventListener("keypress", function(e) {
-    if (event.key === "Enter") {
-        changeWidth(Number(e.target.value));
-    }
-});
-*/
-
 //Height Input
-IDE.workSpace.heightInput.addEventListener("focus", focusWorkSpaces);
-IDE.workSpace.heightInput.addEventListener("change", function(e) {
+utils.addBlur(IDE.workSpace.heightInput);
+IDE.workSpace.heightInput.addEventListener("change", function(e){
     changeHeight(Number(e.target.value));
 });
 
-/*
-IDE.workSpace.heightInput.addEventListener("keypress", function(e) {
-    if (event.key === "Enter") {
-        changeHeight(Number(e.target.value));
-    }
-});
-*/
-
-
-//Scale Input
-IDE.workSpace.scaleWInput.addEventListener("focus",focusWorkSpaces);
+//Scale WInput
+utils.addBlur(IDE.workSpace.scaleWInput);
 IDE.workSpace.scaleWInput.addEventListener("change", function(e) {
     changeScale(e, "width");
 });
 
-/*
-IDE.workSpace.scaleWInput.addEventListener("keypress", function(e) {
-    if (event.key === "Enter") {
-        changeScale(e, "width");
-    }
-});
-*/
-
-//Scale Input
-IDE.workSpace.scaleHInput.addEventListener("focus",focusWorkSpaces);
+//Scale HInput
+utils.addBlur(IDE.workSpace.scaleHInput);
 IDE.workSpace.scaleHInput.addEventListener("change", function(e) {
     changeScale(e, "height");
 });
-
-/*
-IDE.workSpace.scaleHInput.addEventListener("keypress", function(e) {
-    if (event.key === "Enter") {
-        changeScale(e, "height");
-    }
-});
-*/
-
-/*
-IDE.workSpace.topInput.addEventListener("blur", function(e) {
-    console.log("Top blur", Number(e.target.value));
-    changeAllYPosition(Number(e.target.value));
-    IDE.scope = "Stage";
-});
-
-IDE.workSpace.leftInput.addEventListener("blur", function(e) {
-    console.log("Left blur", Number(e.target.value));
-    changeAllXPosition(Number(e.target.value));
-    IDE.scope = "Stage";
-});
-*/
-
 
 
 /* Workspace-Align*/
@@ -935,10 +909,39 @@ IDE.welcome.newFileBtn.addEventListener("click", function(){
 });
 
 
-/* WorkSpace RightAnswer */
-IDE.workSpace.rightAnswer.addEventListener("change", function (){
-    jsonV2.slides[sceneIndex].rightAnswer = parseInt(IDE.workSpace.rightAnswer.value);
+/* WorkSpace Font */
+IDE.workSpace.font_fontFamily.addEventListener("change", function (){
+    setFontSize(null, null, this.value);
 });
+
+IDE.workSpace.font_sizeInput.addEventListener("change", function (){
+    setFontSize(parseInt(this.value));
+});
+utils.addBlur(IDE.workSpace.font_sizeInput);
+
+IDE.workSpace.font_colorPicker.addEventListener("change", function(){
+    setFontSize(null, this.value);
+});
+
+IDE.workSpace.font_hexInput.addEventListener("change", function (){
+    setFontSize(null, this.value, null);
+});
+
+utils.addBlur(IDE.workSpace.font_hexInput);
+
+
+/* Color Picker */
+IDE.workSpace.colorPicker.addEventListener("change",function(){
+    colorPicker(this.value);
+});
+
+IDE.workSpace.colorInput.addEventListener("change", function(){
+    colorPicker(this.value);
+});
+
+utils.addBlur(IDE.workSpace.colorInput);
+
+
 
 function WorkspaceShow(){
     var WorkView = document.querySelectorAll(".WorkView");
@@ -950,6 +953,8 @@ function WorkspaceShow(){
 
 var ctrlDown=false, ctrlKey=17, cmdKey=91, vKey=86, cKey=67;
 document.addEventListener("keydown", function(e){
+    //if ((e.keyCode === ctrlKey || e.keyCode === cmdKey) && IDE.scope === "Stage"){
+    //if ((e.keyCode === ctrlKey || e.keyCode === cmdKey) && (IDE.scope === "Stage" || IDE.scope === "Scene")){
     if (e.keyCode === ctrlKey || e.keyCode === cmdKey){
         ctrlDown = true;
     }
@@ -970,7 +975,7 @@ document.addEventListener("keydown", function(e){
     }
 
     if(ctrlDown && (e.keyCode === vKey)){
-
+        console.log("Sonuç nedir:", IDE.scope);
         if(IDE.scope === "Scene"){
             var json = EXPORT.convertJson();
             var stringData = JSON.stringify(json.slides[sceneIndex].all);
@@ -978,7 +983,7 @@ document.addEventListener("keydown", function(e){
             var template = sceneTemplate();
             template.all = jsonData;
             sceneAddNewScene(template);
-        }else{
+        }else if(IDE.scope === "Stage"){
             if(IDE.copy){
                 console.log("Document catch Ctrl+V");
                 if(IDE.copy.children){
@@ -1002,6 +1007,7 @@ document.addEventListener("keydown", function(e){
                 }
 
                 Arayuz_addLayer(clone);
+                CREATE.checkKontrol();
             }
         }
     }else if(ctrlDown && (e.key === "z")){
@@ -1139,6 +1145,31 @@ IDE.workSpace.createURL.addEventListener("click", function(e){
             }
         }
     });
+});
+
+
+IDE.workSpace.createInput.addEventListener("click", function(e){
+    var position = utils.getRandomPosition(640, 360, 200);
+    CREATE.addInputArea({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 200,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "inputArea",
+            elementID: "inputArea",
+            type: "objectMovieClip",
+            params:{
+
+            }
+        }
+    });
+
+    CREATE.checkKontrol();
 });
 
 /*

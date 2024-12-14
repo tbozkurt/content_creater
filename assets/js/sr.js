@@ -206,7 +206,6 @@ function addSR(Data){
             final[i] = e[0];
         });
 
-        console.log(SR.XX);
         Data.DelFNC(final);
     }
 

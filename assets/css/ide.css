@@ -20,10 +20,10 @@ body {
 
 #previewContent{
     left: 197px;
-    top: 81px;
+    top: 83px;
     width: 1280px;
     height: 720px;
-    background-color: beige;
+    background-color: #404040;
     position: absolute;
     border: 5px solid #006600;
 }
@@ -31,7 +31,7 @@ body {
 .previewMain{
     left: 0;
     top: 0;
-    width: 1680px;
+    width: 1710px;
     height: 870px;
     background-color: rgba(0, 0, 0, 0.6);
     position: absolute;
@@ -177,9 +177,9 @@ body {
 }
 
 .AlignBox{
-    width: 50px;
-    height: 50px;
-    line-height: 50px;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
     text-align: center;
     background-color: #323232;
     position: relative;
@@ -213,6 +213,14 @@ body {
     height: 80%;
     text-align: center;
     position: absolute;
+}
+
+#topBanner_addObject{
+    display: flex;
+}
+
+#createSelect{
+    border-left: 2px solid black;
 }
 
 .WorkSpaces{
@@ -643,13 +651,12 @@ select{
 
 
 
-input[type="color"] {
+#colorPicker {
     -webkit-appearance: none;
-    border: none;
-    width: 66px;
-    height: 20px;
+    border: solid 1px #484848;
+    width: 78px;
+    height: 18px;
     padding: 0;
-    margin-left: 16px;
 }
 
 input[type="color"]::-webkit-color-swatch-wrapper {
@@ -681,7 +688,7 @@ table{
     width: 180px;
     border-spacing: 0;
     background-color: #484848;
-    margin-top: 10px;
+    margin-top: 2px;
 }
 
 .td1{
@@ -724,12 +731,15 @@ tr{
 .Identity_AddParamBtn{
     text-align: left;
     margin-top: 4px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .paramBtn_icon{
     width: 15px;
     height: 15px;
     cursor: pointer;
+    vertical-align: bottom;
 }
 
 .layerNameNormal{
@@ -759,4 +769,62 @@ tr{
     text-align: center;
     line-height: 42px;
     display: none;
+}
+
+
+/* Font */
+
+.font_table1{
+    margin-left: 10px;
+}
+
+#font_fontFamily{
+    width: 92%;
+}
+
+.font_table2{
+    display: flex;
+    margin-top: 4px;
+    margin-left: 10px;
+    margin-bottom: 6px;
+}
+
+.font_column{
+    width: 84px;
+}
+
+.font_row{
+    height: 26px;
+}
+
+#font_sizeInput{
+    width: 84%;
+    font-size: 12px;
+    background-color: #282828;
+    border: solid 1px #484848;
+    color: #6ca9ff;
+}
+
+#font_hexInput{
+    width: 80%;
+    font-size: 12px;
+    background-color: #282828;
+    border: solid 1px #484848;
+    color: #6ca9ff;
+}
+
+#font_colorInput{
+    width: 80%;
+    font-size: 12px;
+    background-color: #282828;
+    border: solid 1px #484848;
+    color: #6ca9ff;
+}
+
+#font_colorPicker{
+    width: 86%;
+    border: 1px solid #767676;
+    height: 19px;
+    -webkit-appearance: none;
+    padding: 0;
 }

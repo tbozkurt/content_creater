@@ -82,4 +82,16 @@ function utils(){
         return found;
     }
 
+    this.addBlur = function(obj){
+        obj.addEventListener("keydown", function(e){
+            if(e.which===13 || e.keyCode===13){
+                this.blur();
+            }
+        });
+
+        obj.addEventListener("focus", function(){
+            IDE.scope = "input";
+        });
+    }
+
 }
