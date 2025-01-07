@@ -3,7 +3,7 @@ function PLAYER(){
     this.allScene = [];
     this.sceneIndex = 0;
     var unique = {};
-    var PLX = {};
+    var PLX = {soundConfirm: false};
     var This = this;
     var KT={};
     var SP = [];
@@ -44,6 +44,7 @@ function PLAYER(){
             position: "absolute",
             type: e.Layer.type,
             className: className,
+            opacity:e.opacity,
             name: e.Layer.name,
             id: e.Layer.elementID,
             unique: e.Layer.unique
@@ -166,10 +167,12 @@ function PLAYER(){
             }
 
             SP[index] = {
+                name: slide.name,
                 id: index,
                 fnc:[],
                 popupWindow: {},
-                screenCloseDOM:null
+                screenCloseDOM:null,
+                directive:{}
             }
         });
 
@@ -180,12 +183,13 @@ function PLAYER(){
             This.addMovieClip(allObject, sceneDiv, i);
 
             player.mainDOM.appendChild(sceneDiv);
-            This.searchTool(sceneDiv, i);
+            This.searchTool(sceneDiv, i, SP[i]);
             This.actType(SP[i], SD[i], i);
             This.allScene.push(sceneDiv);
             This.addScreenClose(sceneDiv, i);
         });
 
+        addStartScreen();
         this.addEvents();
 
         if(Mode === "optic"){
@@ -250,46 +254,6 @@ function PLAYER(){
         if(btnID !== null && btnID !== undefined){
             jsonV2.slides[slideID].answer = {};
             jsonV2.slides[slideID].answer[btnID] = true;
-        }
-    }
-
-
-    function CommonFNC(i){
-        var userAnswer = iDATA[SP.id].input[i].convertText();
-        var curAnswer = iDATA[SP.id].input[i].answer;
-        var sensitive = iDATA[SP.id].input[i].sensitive;
-        var correctAnswer = "wrong";
-        userAnswer = userAnswer.trim();
-
-        if(userAnswer !== ""){
-            if(!sensitive){
-                userAnswer = userAnswer.toLocaleLowerCase("tr-TR");
-            }
-
-            userAnswer = userAnswer.split("");
-            var finalUserAnswer="";
-            for(var x=0; x<userAnswer.length; x++){
-                if(userAnswer[x].charCodeAt(0) === 160){
-                    userAnswer[x] = " ";
-                }
-                finalUserAnswer += userAnswer[x];
-            }
-
-            for(var w=0; w<curAnswer.length; w++){
-                var tempCurAnswer = curAnswer[w];
-                if(!sensitive){
-                    tempCurAnswer = curAnswer[w].toLocaleLowerCase("tr-TR");
-                }
-
-                if(tempCurAnswer === finalUserAnswer && tempCurAnswer !== ""){
-                    correctAnswer = "right";
-                    break;
-                }
-            }
-
-            return correctAnswer;
-        }else{
-            return "empty";
         }
     }
 
@@ -684,7 +648,7 @@ function PLAYER(){
         SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: rightActionFNC});
     }
 
-
+    /** init BD **/
     this.initBD = function(SP, SD, index){
         console.log("initBD");
         var allowedLetters = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57];
@@ -737,7 +701,6 @@ function PLAYER(){
             BD.input[id].txt.remove();
 
             var input = document.createElement("input");
-            input.id = "ggs";
             input.autocomplete = "off";
 
             if(BD.input[id].count){
@@ -889,6 +852,337 @@ function PLAYER(){
         SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){} });
     }
 
+    /** Add MATCH **/
+    this.initMATCH = function(SP, SD, index){
+        console.log("initMATCH");
+        var answer = jsonV2.slides[index].answer;
+        var currentID, startPos, endPos;
+        var rubrik = {};
+        var BOX = {};
+        var LA = [];
+        var currentLine;
+        var canvas;
+        var globalColor;
+        var returnColor = [];
+        var borderColors = [
+            "#e57373",
+            "#aed581",
+            "#ffb74d",
+            "#ba68c8",
+            "#7986cb",
+            "#616161",
+            "#4dd0e1",
+            "#f06292",
+            "#4fc3f7",
+            "#fff176",
+            "#9575cd",
+            "#ffd54f",
+            "#01a6ff",
+            "#ff8a65",
+            "#a1887f",
+            "#4db6ac",
+            "#e0e0e0",
+            "#90a4ae"
+        ];
+
+        function getCSS(id, element, type){
+            BOX[id] = {main: element.main, currentPairing: [], maxPairing: 0, type:0}
+            BOX[id].type = type;
+            BOX[id].left = parseInt(element.main.style.left);
+            BOX[id].top = parseInt(element.main.style.top);
+            BOX[id].width = element.main.offsetWidth;
+            BOX[id].height = element.main.offsetHeight;
+            BOX[id].widthEnd = BOX[id].left + BOX.width;
+            BOX[id].heightEnd = BOX[id].top + BOX.height;
+        }
+
+        SP.elementList.forEach(function(element){
+            var id;
+            if(element.id.includes("matchDrop")){
+                id = parseInt(element.id.split("_")[1]);
+                getCSS(id, element, "drop");
+                SD.inputs["box"+ id] = {value: [], type: "match"};
+                rubrik[id] = answer[id].split(",");
+            }else if(element.id.includes("matchDrag")){
+                id = "d"+parseInt(element.id.split("_")[1]);
+                getCSS(id, element, "drag");
+            }else if(element.id.includes("canvas")){
+                canvas = element;
+            }
+        });
+
+        var stage = new Konva.Stage({
+            container: canvas.id,
+            width: canvas.main.offsetWidth,
+            height: canvas.main.offsetHeight
+        });
+
+        var layer = new Konva.Layer();
+        stage.add(layer);
+
+        function addCanvasObject(id, BOX){
+            BOX.canvas = new Konva.Rect({
+                x: BOX.left-parseInt(canvas.main.style.left),
+                y: BOX.top-parseInt(canvas.main.style.top),
+                width: BOX.width,
+                height: BOX.height,
+                fill: "green",
+                opacity: 0
+            });
+
+            BOX.x = BOX.canvas.x();
+            BOX.y = BOX.canvas.y();
+            BOX.width = BOX.canvas.width();
+            BOX.height = BOX.canvas.height();
+            BOX.widthEnd = (BOX.x + BOX.width);
+            BOX.heightEnd = (BOX.y + BOX.height);
+
+            BOX.canvas.on("mouseenter", function() {
+                stage.container().style.cursor = 'url(https://cdn.okulistik.com/mobileplayer/edge_includes/examObject/visual/pencilcursor.png) -22 22, auto';
+            });
+
+            BOX.canvas.on("mouseleave", function() {
+                if(!currentID){
+                    stage.container().style.cursor = "default";
+                }
+            });
+
+            BOX.canvas.on("mousedown touchstart", function() {
+                currentID = id;
+            });
+
+            //BOX.main.style.display = "none";
+            layer.add(BOX.canvas);
+        }
+
+        for(var id in BOX){
+            addCanvasObject(id, BOX[id]);
+        }
+
+        stage.on("mousedown touchstart", function(){
+            startPos = stage.getPointerPosition();
+            globalColor = borderColors[utils.getRandomNumber(borderColors.length)];
+        });
+
+        stage.on("mouseup touchend", function(){
+            if(currentID){
+                pairingFNC();
+            }
+        });
+
+        stage.on("mousemove touchmove", function (e) {
+            if(currentID){
+                currentLine.canvas.destroy();
+            }else{
+                return;
+            }
+
+            endPos = stage.getPointerPosition();
+            currentCanvasLine(startPos, endPos);
+            e.evt.preventDefault();
+        });
+
+        function pairingFNC(){
+            var found = false;
+            if(currentID && endPos !== undefined){
+                for(var i in BOX){
+                    if(currentID !== i){
+                        if(endPos.x >= BOX[i].x && endPos.x <= BOX[i].widthEnd && endPos.y >= BOX[i].canvas.y() && endPos.y <= BOX[i].heightEnd){
+                            if(BOX[currentID].type !== BOX[i].type){
+                                var temp = [];
+                                temp[currentID.length-1] = currentID;
+                                temp[i.length-1] = i;
+                                found = pairControl(temp);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(found){
+                addNewLine();
+            }else{
+                currentLine.canvas.destroy();
+                stage.container().style.cursor = "default";
+            }
+
+            currentID = undefined;
+            endPos = undefined;
+
+            console.log(SD.inputs);
+            controlBtnViewCheck();
+        }
+
+
+        function deleteBorder(deleteDragID){
+            for(var x=0; x<LA.length; x++){
+                if(LA[x].pair){
+                    var dragID = LA[x].pair.split("-")[0];
+                    var dropID = LA[x].pair.split("-")[1];
+
+                    if(deleteDragID === dragID){
+                        LA[x].canvas.destroy();
+                        LA.splice(x, 1);
+                        var drop = SD.inputs["box"+ dropID].value;
+                        var deleteID = drop.indexOf(deleteDragID);
+                        if(deleteID > -1){
+                            drop.splice(deleteID, 1);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        function pairControl(pair){
+            var dropID = pair[0];
+            var currentDragID = pair[1].split("d")[1];
+            var currentPair = currentDragID+"-"+dropID;
+            var user = SD.inputs["box"+ dropID].value;
+            var answer = rubrik[dropID];
+            var addBorder = false;
+            deleteBorder(currentDragID);
+
+            if(user.length < answer.length){
+                addBorder = true;
+            }else{
+                var del = user.shift();
+                deleteBorder(del);
+                addBorder = true;
+            }
+
+            if(addBorder){
+                user.push(currentDragID);
+                currentLine.pair = currentPair;
+                return true;
+            }
+        }
+
+        function currentCanvasLine(startPos, endPos){
+            currentLine.canvas = new Konva.Line({
+                stroke: globalColor,
+                opacity: 0.9,
+                strokeWidth: 5,
+                globalCompositeOperation: "source-over",
+                lineCap: "round",
+                points: [startPos.x, startPos.y, endPos.x, endPos.y],
+                shadowBlur: 6,
+                shadowOffset: { x: 3, y: 3 },
+                shadowOpacity: 0.4
+            });
+
+            layer.add(currentLine.canvas);
+            layer.draw();
+        }
+
+        function addNewLine(){
+            LA.push( {canvas: new Konva.Line({}), pair:null} );
+            currentLine = LA[LA.length-1];
+        }
+
+        addNewLine();
+
+        function controlBtnViewCheck() {
+            var found = false;
+            for (var i in BOX) {
+                if (!i.includes("d")) {
+                    if (SD.inputs["box" + i].value.length) {
+                        found = true;
+                    }
+                }
+            }
+
+            if (found) {
+                controlBtnView(SP, "enable");
+            } else {
+                controlBtnView(SP, "disable");
+            }
+        }
+
+        function checkRightAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"MATCH"};
+            console.log(rubrik);
+            for(var i in rubrik){
+                var user = SD.inputs["box" + i].value;
+                var right = true;
+
+                if(user.length === 0){
+                    score.totalEmpty++;
+                }else{
+                    console.log( user );
+                    console.log( rubrik );
+                    rubrik[i].map(function(id){
+                        if(!user.includes(id)){
+                            right = false;
+                        }
+                    });
+
+                    console.log(right);
+
+                    if(right){
+                        score.totalRight++;
+                        lineStatus(i, "right");
+                    }else{
+                        score.totalWrong++;
+                        lineStatus(i, "wrong");
+                    }
+                }
+            }
+
+            returnColorFNC();
+            return score;
+        }
+
+        function lineStatus(closeDropID, status){
+            LA.map(function(line){
+                if(line.pair){
+                    var dragID = "d"+line.pair.split("-")[0];
+                    var dropID = line.pair.split("-")[1];
+
+                    if(dropID === closeDropID){
+                        if(status === "right"){
+                            BOX[dragID].canvas.off("mousedown mouseenter touchstart mouseleave");
+                            BOX[dropID].canvas.off("mousedown mouseenter touchstart mouseleave");
+                            BOX[dragID].main.style.opacity = 0.5;
+                            BOX[dropID].main.style.opacity = 0.5;
+                            line.canvas.stroke("#2e7d32").opacity(0.7);
+                        }else{
+                            returnColor.push(line.canvas);
+                            var drop = SD.inputs["box"+ dropID].value;
+                            dragID = line.pair.split("-")[0];
+                            var deleteID = drop.indexOf(dragID);
+                            if(deleteID > -1){
+                                console.log("silindi");
+                                drop.splice(deleteID, 1);
+                            }
+
+                            line.canvas.stroke("#b71c1c").opacity(0.7);
+                        }
+                    }
+                }
+            });
+        }
+
+        function returnColorFNC(){
+            if(returnColor.length){
+                setTimeout(reset, 1000);
+            }
+        }
+
+        function reset(){
+            returnColor.map(function(line){
+                line.destroy();
+            });
+        }
+
+        function wrongActionFNC(){
+            console.log("wrongActionFNC");
+        }
+
+        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){} });
+    }
+
 
     this.scoreEvalution = function(score){
         if(score.totalRight && !score.totalWrong && !score.totalEmpty){
@@ -942,6 +1236,8 @@ function PLAYER(){
                 init["initCS"] = This.initCS;
             }else if(obj.id.includes("inputArea")){
                 init["initBD"] = This.initBD;
+            }else if(obj.id.includes("matchDrag")){
+                init["initMATCH"] = This.initMATCH;
             }
         });
 
@@ -964,22 +1260,22 @@ function PLAYER(){
 
 
     /////////////////////////////////////////////////////////
-    This.searchTool = function(Scene, index){
+    This.searchTool = function(Scene, index, SP){
         var popupWindow;
         Scene.childNodes.forEach(function(obj) {
             if(obj.id.includes("popupButon")){
-                SP[index].popupWindow.clicked = false;
-                SP[index].popupWindow.btn = obj;
-                SP[index].popupWindow.btn.addEventListener("click", function(){
-                    if(SP[index].popupWindow.clicked){
+                SP.popupWindow.clicked = false;
+                SP.popupWindow.btn = obj;
+                SP.popupWindow.btn.addEventListener("click", function(){
+                    if(SP.popupWindow.clicked){
                         popupWindow.style.visibility = "hidden";
-                        SP[index].popupWindow.clicked = false;
+                        SP.popupWindow.clicked = false;
                     }else{
                         popupWindow.style.visibility = "visible";
-                        SP[index].popupWindow.clicked = true;
+                        SP.popupWindow.clicked = true;
                         PLX.autoSceneChange_stopQuickly();
-                        if(SP[index].controlBtn){
-                            controlBtnView(SP[index], "disable");
+                        if(SP.controlBtn){
+                            controlBtnView(SP, "disable");
                             if(!SD[This.sceneIndex].complete){
                                 This.sceneComplete();
                                 This.scoreCalc();
@@ -988,26 +1284,26 @@ function PLAYER(){
                     }
                 });
 
-                SP[index].popupWindow.btn.style.cursor = "pointer";
+                SP.popupWindow.btn.style.cursor = "pointer";
             } else if(obj.id.includes("popupWindow")){
-                SP[index].popupWindow.window = obj;
+                SP.popupWindow.window = obj;
                 popupWindow = obj;
                 popupWindow.querySelector(".popupWindowClose").addEventListener("click",function(){
                     popupWindow.style.visibility = "hidden";
-                    SP[index].popupWindow.clicked = false;
+                    SP.popupWindow.clicked = false;
                 });
                 popupWindow.querySelector(".popupWindowClose").style.cursor = "pointer";
             }else if(obj.id.includes("control")){
-                SP[index].controlBtn = obj;
-                SP[index].controlBtn.style.cursor = "pointer";
-                SP[index].controlBtn.style.pointerEvents = "none";
-                SP[index].controlBtn.addEventListener("click", function(){
-                    This.controlHQ(SP[index], SD[index]);
+                SP.controlBtn = obj;
+                SP.controlBtn.style.cursor = "pointer";
+                SP.controlBtn.style.pointerEvents = "none";
+                SP.controlBtn.addEventListener("click", function(){
+                    This.controlHQ(SP, SD[index]);
                 });
             }else if(obj.id.includes("answer")){
-                SP[index].answerBtn = obj;
-                SP[index].answerBtn.style.cursor = "pointer";
-                SP[index].answerBtn.style.pointerEvents = "none";
+                SP.answerBtn = obj;
+                SP.answerBtn.style.cursor = "pointer";
+                SP.answerBtn.style.pointerEvents = "none";
             }else if(obj.id.includes("goUrl")){
                 var url = "";
                 if(AC.player){
@@ -1021,8 +1317,63 @@ function PLAYER(){
                     return false;
                 });
                 obj.style.cursor = "pointer";
+            }else if(obj.id.includes("directive")){
+                var soundID = SP.name.slice(1, SP.name.length);
+
+                SP.directive.sound = new Howl({
+                    src: [player.root +"img/sound_"+ soundID +".mp3"],
+                    onplay: function(){
+                        obj.style.top = "0px";
+                        directivePlay.style.visibility = "hidden";
+                    },
+                    onend: function(){
+                        obj.style.top = "-100px";
+                        directivePlay.style.visibility = "visible";
+                    },
+                    onstop: function () {
+                        obj.style.top = "-100px";
+                        directivePlay.style.visibility = "visible";
+                    }
+                });
+
+                var directivePlay = obj.querySelector(".directivePlay");
+                var directiveStop = obj.querySelector(".directiveStop");
+
+                obj.style.cursor = "pointer";
+
+                directivePlay.addEventListener("click", function(e){
+                    SP.directive.sound.play();
+                    e.stopPropagation();
+                });
+
+                obj.addEventListener("click", function(){
+                    SP.directive.sound.stop();
+                });
+
             }
         });
+    }
+
+    This.soundAllSound = function(){
+        console.log("soundAllSound");
+        SP.map(function(e){
+            if(e.directive.sound){
+                e.directive.sound.stop();
+            }
+        });
+        console.log("//////////////");
+    }
+
+    This.playAutoSound = function(){
+        if(SP[This.sceneIndex].directive.sound){
+            if(PLX.soundConfirm){
+                SP[This.sceneIndex].directive.sound.play();
+            }else{
+                PLX.playScreen.style.display = "block";
+            }
+        }else{
+            PLX.playScreen.style.display = "none";
+        }
     }
 
     /* ChangeScene */
@@ -1041,6 +1392,8 @@ function PLAYER(){
             this.addSceneInterval();
             SP[index].screenCloseDOM.style.display = "none";
             PLX.autoSceneChange_stopQuickly();
+            This.soundAllSound();
+            This.playAutoSound();
 
 
             if(index === 0){
@@ -1564,6 +1917,30 @@ function PLAYER(){
         });
     }
 
+    function addStartScreen(){
+        PLX.playScreen = utils.addDOM({id: "startScreen" });
+        var PlayerMain = document.querySelector("#PlayerMain");
+        PlayerMain.appendChild(PLX.playScreen);
+
+        PLX.playScreen.innerHTML = `<div class="startScreen_main">
+                <img src="assets/img/player/hypestart.svg" alt="">
+            </div>`;
+
+        PLX.playScreen.addEventListener("click", function(){
+            PLX.playScreen.style.display = "none";
+            PLX.soundConfirm = true;
+            This.playAutoSound();
+        });
+
+        var viewStart = "none";
+        SP.map(function(e){
+            if(e.directive.sound){
+                viewStart = "block";
+            }
+        });
+
+        PLX.playScreen.style.display = viewStart;
+    }
 
 }
 

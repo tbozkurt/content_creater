@@ -1,6 +1,7 @@
 function EXPORT(){
     this.getStandart = function(o){
-        return {
+
+        var properties = {
             x: o.x(),
             y: o.y(),
             offsetX: o.offsetX(),
@@ -9,8 +10,19 @@ function EXPORT(){
             height: o.height(),
             scale: o.scale(),
             name: o.name(),
-            draggable: o.draggable()
+            draggable: o.draggable(),
+            opacity: o.opacity()
         }
+
+        if(o.Layer.type === "objectMovieClip"){
+            if(!o.Layer.overflow){
+                var rect = o.getClientRect();
+                properties.width = rect.width;
+                properties.height = rect.height;
+            }
+        }
+
+        return properties;
     }
 
     this.convertRect = function(e){
@@ -68,19 +80,7 @@ function EXPORT(){
 
         container.children.map(function(e){
             if(e.Layer){
-                var temp;
-                if(e.Layer.type === "objectRect"){
-                    temp = This.convertRect(e);
-                }else if(e.Layer.type === "objectCircle"){
-                    temp = This.convertCircle(e);
-                }else if(e.Layer.type === "objectImg"){
-                    temp = This.convertImg(e);
-                }else if(e.Layer.type === "objectText"){
-                    temp = This.convertText(e);
-                }else if(e.Layer.type === "objectMovieClip"){
-                    temp = This.convertMC(e);
-                }
-
+                var temp = This.convertElement(e);
                 tempFinal[e.zIndex()] = temp;
             }
         });
@@ -90,6 +90,49 @@ function EXPORT(){
         });
 
         return final;
+    }
+
+    this.convertElement = function(e){
+        var temp;
+        if(e.Layer.type === "objectRect"){
+            temp = this.convertRect(e);
+        }else if(e.Layer.type === "objectCircle"){
+            temp = this.convertCircle(e);
+        }else if(e.Layer.type === "objectImg"){
+            temp = this.convertImg(e);
+        }else if(e.Layer.type === "objectText"){
+            temp = this.convertText(e);
+        }else if(e.Layer.type === "objectMovieClip"){
+            temp = this.convertMC(e);
+        }
+
+        return temp;
+    }
+
+    this.activityDetection = function(allObject){
+        var content = [];
+        var activity = [{
+            name: "selectButon",
+            type: "multipleChoice"
+        },{
+            name: "matchDrop",
+            type: "matching"
+        },{
+            name: "inputArea",
+            type: "fillBlank"
+        }];
+
+        allObject.map(function(e){
+            for(var x=0; x<activity.length; x++){
+                if(e.Layer.name.includes(activity[x].name)){
+                    if(!content.includes(activity[x].type)){
+                        content.push( activity[x].type );
+                    }
+                }
+            }
+        });
+
+        return content;
     }
 
     this.exportTypeSettings = function(json){
@@ -104,8 +147,9 @@ function EXPORT(){
         this.exportTypeSettings(jsonV2.slides[sceneIndex]);
         var allObject = this.addKids(IDE.sceneLayer);
         jsonV2.slides[sceneIndex].all = allObject;
-        console.log(allObject);
+        jsonV2.slides[sceneIndex].type = this.activityDetection(allObject);
         console.log("UYARI: Sahne", sceneIndex,"JSON Güncellendi.", jsonV2);
         return jsonV2;
     }
+
 }

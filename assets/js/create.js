@@ -88,7 +88,7 @@ function CREATE(){
             lineHeight: 2.3,
             padding: 0,
             align: "center",
-            Layer:{type:"objectText", name: "text"}
+            Layer:{type:"objectText", name: "csText"}
         }, {
             x: 0,
             y: 0,
@@ -168,6 +168,8 @@ function CREATE(){
 
         var selectList = this.getMC(localEX, "selectButon");
         var inputList = this.getMC(localEX, "inputArea");
+        var matchDragList = this.getMC(localEX, "matchDrag");
+        var matchDropList = this.getMC(localEX, "matchDrop");
 
         selectList.map(function(obj){
             count++;
@@ -175,7 +177,7 @@ function CREATE(){
             obj.Layer.elementID = "selectButon_"+ count;
             obj.Layer.layerNameNormal.innerText = "selectButon_"+ count;
             obj.children.map(function(e){
-                if(e.attrs.text){
+                if(e.Layer.name === "csText"){
                     e.text(selectNames[count]);
                 }
             });
@@ -187,8 +189,36 @@ function CREATE(){
             obj.Layer.elementID = "inputArea_"+ count;
             obj.Layer.layerNameNormal.innerText = "inputArea_"+ count;
         });
+
+        matchDragList.map(function(obj, i){
+            obj.Layer.name = "matchDrag_"+ i;
+            obj.Layer.elementID = "matchDrag_"+ i;
+            obj.Layer.layerNameNormal.innerText = "matchDrag_"+ i;
+        });
+
+        matchDropList.map(function(obj){
+            count++;
+            obj.Layer.name = "matchDrop_"+ count;
+            obj.Layer.elementID = "matchDrop_"+ count;
+            obj.Layer.layerNameNormal.innerText = "matchDrop_"+ count;
+        });
     }
 
+    this.getSceneName = function(){
+        var list = [];
+        jsonV2.slides.map(function(e){
+            if(e.name){
+                var id = e.name.slice(1, e.name.length);
+                list[parseInt(id)] = id;
+            }
+        });
+
+        for(var x=0; x<(list.length+1); x++){
+            if(!list[x]){
+                return "e"+x;
+            }
+        }
+    }
 
     this.addSolutionWindow = function(O){
         var container = this.movieClipFNC(O);
@@ -323,6 +353,48 @@ function CREATE(){
         Arayuz_addLayer(container);
     }
 
+    this.addAnswerButon = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 194,
+                height: 50,
+                cornerRadius: [50, 50, 50, 50],
+                fill: "#b3e5fc",
+                stroke: "#0277bd",
+                strokeWidth: 2,
+                Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                x: 2,
+                y: 2,
+                width: 190,
+                height: 43,
+                cornerRadius: [50, 50, 50, 50],
+                fill: "#ffffff",
+                Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                text: "Yanıtla",
+                x: 0,
+                y: 0,
+                width: 194,
+                height: 50,
+                fontSize: 20,
+                fontFamily: "Nunito",
+                align: "center",
+                fill: "#000000",
+                lineHeight: 2.5,
+                padding: 0,
+                Layer:{type:"objectText", name: "text"}
+            }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
     this.addUrlButon = function(O){
         var container = this.movieClipFNC(O);
         var kids = [
@@ -333,6 +405,13 @@ function CREATE(){
                 height: 480,
                 fill: "rgba(255, 255, 255, 0)",
                 Layer:{type:"objectRect", name: "bg"}
+            },
+            {
+                x: 0,
+                y: 0,
+                width: 640,
+                height: 480,
+                fill: "rgba(255, 255, 255, 0.5)"
             }];
 
         addObjects(kids, container, false);
@@ -370,7 +449,100 @@ function CREATE(){
         Arayuz_addLayer(container);
     }
 
+    this.addMatchDrag = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 50,
+                fill: "#ffffff",
+                opacity:0.4,
+                Layer:{type:"objectRect", name: "bdBg", class: "bdBg"}
+            }
+        ];
 
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
+    this.addMatchDrop = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 50,
+                fill: "#c0c0c0",
+                opacity:0.4,
+                Layer:{type:"objectRect", name: "bdBg", class: "bdBg"}
+            }
+        ];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
+
+    this.addCanvas = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [
+            {
+                x: 0,
+                y: 0,
+                width: 640,
+                height: 480,
+                fill: "#33691e",
+                opacity:0.2,
+                Layer:{type:"objectRect", name: "bg"}
+            }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
+    this.addDirection = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+                x: 455,
+                y: 55,
+                width: 90,
+                height: 90,
+                src: "img/directiveplay.png",
+                Layer: {name:"popupWindowClose.jpg", type:"objectImg", class:"directivePlay"}
+            }, {
+                x: 0,
+                y: 0,
+                width: 1000,
+                height: 100,
+                cornerRadius: [10, 10, 10, 10],
+                fill: "#ffffff",
+                Layer:{type:"objectRect", name: "bg"}
+            }, {
+                text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi venenatis ipsum pharetra nibh iaculis volutpat et non justo. Donec sit amet est turpis. Cras sodales eleifend erat a finibus.",
+                x: 110,
+                y: 16,
+                width: 870,
+                fontSize: 21,
+                fontFamily: "Nunito",
+                fill: "#000000",
+                lineHeight: 1.6,
+                padding: 0,
+                Layer:{type:"objectText", name: "text"}
+            }, {
+                x: 5,
+                y: 5,
+                width: 90,
+                height: 90,
+                src: "img/directivestop.png",
+                Layer: {name:"popupWindowClose.jpg", type:"objectImg", class:"directiveStop"}
+            }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
 
 }
 

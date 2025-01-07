@@ -171,6 +171,8 @@ async function selectFileFNC(req, res){
         FD.files.data = await readFileList(FD.files.mainJson.path);
         var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
         var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
+        var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
+        var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
         res.send({success: true, FILE: FD});
     }else{
         res.send({success: false});
@@ -253,9 +255,32 @@ app.post('/uploadImage', upload.array("uploadImage", 12), function (req, res) {
     res.send(req.files);
 });
 
+var userList = {
+    melike:{password:"1q2w3e"},
+    irem:{password:"1a2s3d"},
+    tuncay:{password:"1b9d8s4d"},
+};
+
 //Read File List
 app.post("/getFileList", function(req, res){
-    res.send(FILE);
+    console.log( req.body );
+    var username = req.body.username;
+    var password = req.body.password;
+
+    if(username === "guest" && password === "guest"){
+        FILE.user = "guest";
+        FILE.pw = "guest";
+        FILE.success = true;
+        res.send(FILE);
+    }else if(userList[username] && userList[username].password === password){
+        FILE.user = username;
+        FILE.pw = password;
+        FILE.success = true;
+        res.send(FILE);
+    }else{
+        FILE.success = false;
+        res.send(FILE);
+    }
 });
 
 app.post("/uploadFolderChange", function(req, res){
@@ -272,7 +297,8 @@ app.use("/player", function(req, res) {
 
 //Index Page
 app.use("/ide", function(req, res) {
-    initApp();
+    console.log("OMG");
+    initApp(req, res);
     res.sendFile(path.join(__dirname, "views/","index.html"));
 });
 
@@ -280,6 +306,7 @@ async function initApp(){
     token = "User_"+getRandomInt(9000)+"_"+word[getRandomInt(10)]+"_"+getRandomInt(9000);
     console.log('\033[2J');
     console.log("///////START APP/////////");
+
     Users[token] = {};
     FILE = Users[token];
     var FD = Users[token];
@@ -322,6 +349,6 @@ app.listen(3630, function() {
 
 
 function listAddFile(FD, data){
-    FD.fileList.data[data.fileName] = {create: data.createTime, files: FD.files};
+    FD.fileList.data[data.fileName] = {user: FILE.user, create: data.createTime, files: FD.files};
     return FD.fileList.data;
 }

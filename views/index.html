@@ -38,14 +38,19 @@
         <div id="topBanner_addObject">
             <div class="TopIconBox" id="createSelect"><img src="assets/img/create_select.png"></div>
             <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
-            <div class="TopIconBox" id="createControl"><img src="assets/img/create_btn.png"></div>
+            <div class="TopIconBox" id="createDirective"><img src="assets/img/create_directive.png"></div>
+            <div class="TopIconBox" id="createControl"><img src="assets/img/create_control.png"></div>
+            <div class="TopIconBox" id="createAnswer"><img src="assets/img/create_answer.png"></div>
             <div class="TopIconBox" id="createURL"><img src="assets/img/create_url.png"></div>
             <div class="TopIconBox" id="createInput"><img src="assets/img/create_input.png"></div>
+            <div class="TopIconBox" id="createMatchDrag"><img src="assets/img/create_matchdrag.png"></div>
+            <div class="TopIconBox" id="createMatchDrop"><img src="assets/img/create_matchdrop.png"></div>
+            <div class="TopIconBox" id="createCanvas"><img src="assets/img/create_canvas.png"></div>
         </div>
     </div>
 
     <div style="display: flex">
-        <div class="topMenuBtn" id="save" style="border-right: 1px solid #000000">Kaydet</div>
+        <div class="topMenuBtn" id="topMenuSaveBtn">Kaydet</div>
         <div class="topMenuBtn" id="export">Önizleme</div>
     </div>
 </div>
@@ -185,6 +190,10 @@
                 <input type="text" id="font_colorInput" maxlength="7">
             </div>
         </div>
+
+        <div class="font_table2">
+            <input type="range" id="font_opacity" min="1" max="100" value="50">
+        </div>
     </div>
 
     <div class="WorkSpaces_Group addSpace WorkSpace_SceneParam">
@@ -203,6 +212,26 @@
         </div>
     </div>
 
+    <div class="WorkSpaces_Group WorkSpace_OverFlow" style="display:none">
+        <div class="WorkSpaces_Header">&#8627; Area</div>
+        <div class="Properties_column">
+            <div class="Properties_box Properties_areaW">
+                <div class="Properties_name ">W</div>
+                <input type="number" class="Properties_input" id="Properties_areaW" disabled>
+            </div>
+
+            <div class="Properties_box Properties_areaH">
+                <div class="Properties_name">H</div>
+                <input type="number" class="Properties_input" id="Properties_areaH" disabled>
+            </div>
+        </div>
+
+        <div class="addSpace">
+            <input type="checkbox" id="areaCheck">
+            <label for="areaCheck">overflow</label><br>
+        </div>
+    </div>
+
 <!--
     <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
     <div id="omg2" style="width:50px; height:50px;background-color: darkred"></div>
@@ -211,7 +240,12 @@
 
 <div id="welcome_main">
     <div class="welcome_window">
-        <div class="welcome_windowTitle">Okulistik Content Creater</div>
+        <div class="welcome_header">
+            <div class="welcome_windowTitle">Okulistik Content Creater</div>
+            <div id="welcome_search">
+                <input placeholder="Search File" autocomplete="off" type="text" id="searchFile">
+            </div>
+        </div>
 
         <div class="welcome_file" id="welcome_step1">
             <div id="welcome_savedFileList"></div>
@@ -253,14 +287,28 @@
     </div>
 </div>
 
-<div>
-    div
+<div id="userMain">
+    <div class="userMain_window">
+        <div class="userMain_contentWindow">
+            <div class="welcome_windowTitle">User Login</div>
+
+            <div class="userMain_inputName">User Name</div>
+            <input class="userMain_input" type="text" id="username">
+            <div class="userMain_inputName">Password</div>
+            <input class="userMain_input" type="password" id="password">
+
+            <div class="userMain_btnContainer">
+                <div class="userMain_btn" id="userMain_submitBtn">Submit</div>
+                <div class="userMain_btn" id="userMain_guestBtn">Guest Mode</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     var IDE = {
-        stage:{width: 1380, height: 820, container: "scope_Canvas", bg:"#404040"},
-        layer:{x:50, y:50, width:1280, height: 720},
+        stage:{width: 1480, height: 920, container: "scope_Canvas", bg:"#404040"},
+        layer:{x:100, y:100},
         text:{write: false, leftSpace: 152, topSpace: 37},
         sceneTypes:[["Çoktan Seçmeli", "CS"], ["Boş Belge", "EMPTY"]],
         activeLayer: null,
@@ -275,7 +323,14 @@
         editSelect: null,
         copy: null,
         sceneUnique: null,
-        saveInterval:null,
+        saveInterval: null,
+        addHistory: true,
+        historyStep: -1,
+        historyList:[],
+        editPosGap:{x:0, y:0},
+        editRect: null,
+        searchList:[],
+        editMC: null,
         workSpace:{
             scope_Canvas: document.querySelector("#scope_Canvas"),
             scope_LeftWorkSpace: document.querySelector("#scope_LeftWorkSpace"),
@@ -292,14 +347,23 @@
             heightInput: document.querySelector("#Properties_Height"),
             scaleWInput: document.querySelector("#Properties_ScaleW"),
             scaleHInput: document.querySelector("#Properties_ScaleH"),
+            areaCheck: document.querySelector("#areaCheck"),
+            areaWInput: document.querySelector("#Properties_areaW"),
+            areaHInput: document.querySelector("#Properties_areaH"),
 
             createText: document.querySelector("#createText"),
             createRect: document.querySelector("#createRect"),
             createSelect: document.querySelector("#createSelect"),
             createPopup: document.querySelector("#createPopup"),
             createControl: document.querySelector("#createControl"),
+            createAnswer: document.querySelector("#createAnswer"),
             createURL: document.querySelector("#createURL"),
             createInput: document.querySelector("#createInput"),
+            createMatchDrag: document.querySelector("#createMatchDrag"),
+            createMatchDrop: document.querySelector("#createMatchDrop"),
+            createCanvas: document.querySelector("#createCanvas"),
+            createDirective: document.querySelector("#createDirective"),
+
             uploadImageForm: document.querySelector("#uploadImageForm"),
             colorPicker: document.querySelector("#colorPicker"),
             colorInput: document.querySelector("#font_colorInput"),
@@ -332,6 +396,7 @@
             WorkSpace_PositionAndSize: document.querySelector(".WorkSpace_PositionAndSize"),
             WorkSpace_Scale: document.querySelector(".WorkSpace_Scale"),
             WorkSpace_Align: document.querySelector(".WorkSpace_Align"),
+            WorkSpace_OverFlow: document.querySelector(".WorkSpace_OverFlow"),
 
             font_sizeInput: document.querySelector("#font_sizeInput"),
             font_colorPicker: document.querySelector("#font_colorPicker"),
@@ -349,13 +414,17 @@
             sceneTypeList: document.querySelector("#welcome_sceneTypeList"),
             newFileBtn: document.querySelector("#welcome_newFileBtn"),
             addFileInput: document.querySelector("#addFileInput"),
+
+            userMain: document.querySelector("#userMain"),
+            username: document.querySelector("#username"),
+            password: document.querySelector("#password")
         }
     }
 
     var stage = new Konva.Stage(IDE.stage);
     IDE.sceneLayer = new Konva.Layer(IDE.layer);
     IDE.editLayer = new Konva.Layer(IDE.layer);
-    var Ruler = new Konva.Layer({width: 1380, height: 820});
+    var Ruler = new Konva.Layer();
     var KonvaBG = new Konva.Layer(IDE.layer);
     IDE.sceneLayer.attrs.layer = "main";
     stage.add(Ruler);
@@ -365,6 +434,16 @@
 
     IDE.editSelect = getSELECT();
     IDE.sceneSelect = getSELECT();
+
+    //History için rect poziyonu
+    IDE.editSelect.on("dragend", function(){
+        addHistory();
+    });
+
+    IDE.sceneSelect.on("dragend", function(){
+        addHistory();
+    });
+
     IDE.editLayer.add(IDE.editSelect);
     IDE.sceneLayer.add(IDE.sceneSelect);
     var SELECT = IDE.sceneSelect;
@@ -375,10 +454,24 @@
         y: 0,
         width: 1280,
         height: 720,
-        fill: "rgba(0, 120, 0, 0.5)",
+        fill: "rgba(0, 0, 0, 0.80)",
         draggable: false
     });
-    IDE.editLayer.add(IDE.editBG).x(1400);
+
+    IDE.editRect = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: 400,
+        height: 400,
+        fill: "rgba(255, 255, 255, 0)",
+        draggable: false,
+        stroke: "#AE65AE",
+        strokeWidth: 1,
+        dash: [5, 2]
+    });
+
+    IDE.editLayer.add(IDE.editBG).x(1500);
+    IDE.editLayer.add(IDE.editRect);
 
     var imageObj = new Image();
     imageObj.onload = function () {
@@ -386,8 +479,8 @@
             x: 0,
             y: 0,
             image: imageObj,
-            width: 1380,
-            height: 820,
+            width: IDE.stage.width,
+            height: IDE.stage.height
         });
 
         Ruler.add(yoda);
@@ -404,6 +497,7 @@
     var jsonV2 = {
         fileName: "",
         createTime: "",
+        version: "1.0",
         slides: []
     };
 
@@ -414,10 +508,6 @@
             rightAnswer: null,
             scene: {},
             all: [],
-            stage: {},
-            img: [],
-            check: [],
-            text: []
         }
     }
 
@@ -480,7 +570,7 @@
             if(!IDE.selectedLayers.length){
                 IDE.selectedLayers = [temp.layer];
                 changeSelect[ temp.layer.Layer.type ](SELECT);
-                colorPicker(null);
+                colorPicker({});
             }
         }
 
@@ -532,18 +622,23 @@
         }
     }
 
-    function colorPicker(color){
+    function colorPicker(prop){
         if(IDE.selectedLayers.length === 1){
             if(IDE.selectedLayers[0].Layer.type === "objectRect"){
-                if(color){
-                    if(!color.includes("#")){
-                        color = "#"+color;
+                if(prop.color){
+                    if(!prop.color.includes("#")){
+                        prop.color = "#"+color;
                     }
 
-                    IDE.selectedLayers[0].fill(color);
-                    IDE.workSpace.colorInput.value = color;
-                    IDE.workSpace.colorPicker.value = color;
+                    IDE.selectedLayers[0].fill(prop.color);
+                    IDE.workSpace.colorInput.value = prop.color;
+                    IDE.workSpace.colorPicker.value = prop.color;
+                    addHistory();
+                }else if(prop.opacity){
+                    var tempOpacity = parseInt(document.querySelector("#font_opacity").value) / 100;
+                    IDE.selectedLayers[0].opacity(tempOpacity);
                 }else{
+                    document.querySelector("#font_opacity").value = IDE.selectedLayers[0].opacity()*100;
                     IDE.workSpace.colorPicker.value = IDE.selectedLayers[0].fill();
                     IDE.workSpace.colorInput.value = IDE.selectedLayers[0].fill();
                 }
@@ -901,9 +996,11 @@
         });
     }
 
+
+
     /* Sahne Navigasyon Buton Ekleme */
     function sceneAddNavigationBtn(id, name){
-        if(!name){name="s"+id}
+        if(!name){name=CREATE.getSceneName()}
         jsonV2.slides[id].name = name;
 
         var unique = utils.getRandomName();
@@ -938,25 +1035,27 @@
 
         document.querySelector("#"+ htmlID).addEventListener("click", function(e){
             var template = sceneTemplate();
-            template.type = id.toLowerCase();
             console.log(template);
             sceneAddNewScene(template);
             IDE.welcome.main.style.display = "none";
         });
     }
 
+    var boxColor = {tuncay: "#455a64", melike: "#1565c0", irem: "#ad1457"};
+
     /* File System */
-    function addSavedFileBtn(filename, date){
+    function addSavedFileBtn(filename, date, fileUser){
         let html = `<div class="welcome_fileBtn_Part">
                         <img class="welcome_fileIcon" src="/assets/img/editFile.png" alt="file">
                         <div>${filename}</div>
                     </div>
                     <div class="welcome_fileBtn_Part">
+                        <div class="welcome_userBox" style="background-color: ${boxColor[fileUser]}">${fileUser}</div>
                         <div class="welcome_dateBox">${date}</div>
                         <div id="z_${filename}" class="welcome_fileBtn_smallBtn">
                             <img class="welcome_fileBtn_icon" src="/assets/img/zip.png" alt="file">
                         </div>
-                        <div id="d_${filename}" class="welcome_fileBtn_smallBtn">
+                        <div id="d_${filename}" class="welcome_fileBtn_smallBtn welcomeDelete">
                             <img class="welcome_fileBtn_icon" src="/assets/img/delete.png" alt="file">
                         </div>
                         <div id="p_${filename}" class="welcome_fileBtn_smallBtn">
@@ -968,38 +1067,63 @@
                     </div>`;
         let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
         IDE.welcome.savedFileList.appendChild(div);
+        IDE.searchList.push([filename, div]);
 
-        document.querySelector("#f_"+ filename).addEventListener("click", function(e){
+        var fileBtn = document.querySelector("#f_"+ filename);
+        var zipBtn = document.querySelector("#z_"+ filename);
+        var delBtn = document.querySelector("#d_"+ filename);
+        var htmlBtn = document.querySelector("#p_"+ filename);
+        var opticBtn = document.querySelector("#o_"+ filename);
+
+        fileBtn.addEventListener("click", function(e){
             selectFileAjax(filename);
             IDE.welcome.main.style.display = "none";
             IDE.welcome.step1.style.display = "none";
             IDE.welcome.step2.style.marginBottom = "50px";
             IDE.welcome.closeInput.style.display = "none";
+
+            IDE.fileUser = fileUser;
+            saveBtnViewStatus("block");
         });
 
-        document.querySelector("#z_"+ filename).addEventListener("click", function(e){
+        zipBtn.addEventListener("click", function(e){
             zipContentAjax(filename);
             e.stopPropagation();
         });
 
-        document.querySelector("#d_"+ filename).addEventListener("click", function(e){
-            deleteFolderAjax(filename);
+        delBtn.addEventListener("click", function(e){
+            if (confirm(filename+" dosyasını silmek istediğinizden emin misiniz!")) {
+                console.log("!Silindi");
+                IDE.searchList=[];
+                deleteFolderAjax(filename);
+            }
+
             e.stopPropagation();
         });
 
-        document.querySelector("#p_"+ filename).addEventListener("click", function(e){
+        htmlBtn.addEventListener("click", function(e){
             window.open("/player/?file="+ filename +"&mode=normal");
             e.stopPropagation();
         });
 
-        document.querySelector("#o_"+ filename).addEventListener("click", function(e){
+        opticBtn.addEventListener("click", function(e){
             window.open("/player/?file="+ filename +"&mode=optic");
             e.stopPropagation();
         });
+
+        if(IDE.fileUser){
+            if(IDE.fileUser !== IDE.faceUser){
+                zipBtn.classList.add("disableBtn");
+                delBtn.classList.add("disableBtn");
+                htmlBtn.classList.add("disableBtn");
+                opticBtn.classList.add("disableBtn");
+            }
+        }
     }
 
     function showSceneType(){
         IDE.welcome.main.style.display = "flex";
+        IDE.welcome.main.style.alignItems = "center";
         IDE.welcome.step2.style.display = "block";
     }
 
@@ -1012,6 +1136,7 @@
 
         addStageBG();
         document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
+        document.querySelector("#welcome_search").style.display = "none";
     }
 
     /* Ajax */
@@ -1121,23 +1246,29 @@
     }
 
     function uploadImageParse(data){
+        console.log("uploadImageParse",data);
         data.map(function(e, i){
-            CREATE.imgFNC({
-                properties:{
-                    x: i*75,
-                    y: i*75,
-                    scale: {x: 1, y: 1},
-                    src: e.path.split("/"+ IDE.files.activeFile +"/")[1],
-                    draggable: true
-                },
-                container: IDE.activeLayer,
-                layer:{
-                    name: e.filename,
-                    type:"objectImg"
-                },
-                addLayer: true
-            });
+            if(e.mimetype.includes("image")){
+                console.log( e.path.split("/"+ IDE.files.activeFile +"/")[1] );
 
+                CREATE.imgFNC({
+                    properties:{
+                        x: i*75,
+                        y: i*75,
+                        scale: {x: 1, y: 1},
+                        src: e.path.split("/"+ IDE.files.activeFile +"/")[1],
+                        draggable: true
+                    },
+                    container: IDE.activeLayer,
+                    layer:{
+                        name: e.filename,
+                        type:"objectImg"
+                    },
+                    addLayer: true
+                });
+            }else{
+                console.log("mp3 formatı yüklendi");
+            }
         });
     }
 
@@ -1145,22 +1276,39 @@
 
 
     function getFileListParse(data){
-        IDE.token = data.token;
-        var saveList = [];
+        if(data.success){
+            IDE.token = data.token;
+            IDE.faceUser = data.user;
+            var saveList = [];
 
-        for(var p in data.fileList.data){
-            saveList.push({fileName: p, createTime: data.fileList.data[p].create});
+            for(var p in data.fileList.data){
+                saveList.push({fileName: p, createTime: data.fileList.data[p].create, username: data.fileList.data[p].user});
+            }
+
+            saveList.sort(function(a,b){
+                return new Date(b.createTime) - new Date(a.createTime);
+            });
+
+            IDE.welcome.savedFileList.innerHTML="";
+
+            saveList.map(function(data){
+                addSavedFileBtn(data.fileName, data.createTime, data.username);
+            });
+
+            IDE.welcome.main.style.display = "flex";
+            IDE.welcome.userMain.style.display = "none";
+
+            if(data.user === "guest"){
+                document.querySelector(".welcome_newFileContainer").style.display = "none";
+                document.querySelectorAll(".welcomeDelete").forEach(e => e.remove());
+            }else{
+                LocalSave(data.user, data.pw);
+            }
+        }else{
+            IDE.welcome.userMain.style.display = "flex";
+            IDE.welcome.username.value = "Hatalı!";
+            IDE.welcome.password.value = "";
         }
-
-        saveList.sort(function(a,b){
-            return new Date(b.createTime) - new Date(a.createTime);
-        });
-
-        IDE.welcome.savedFileList.innerHTML="";
-
-        saveList.map(function(data){
-            addSavedFileBtn(data.fileName, data.createTime);
-        });
     }
 
     function addStageBG(){
@@ -1174,7 +1322,74 @@
         addSceneTypeBtnHTML(e[0], e[1]);
     });
 
-    $.ajax({url: "/getFileList", success: getFileListParse, type: "POST", error: ajaxError});
+    function getFileList(username, password){
+        var data = {username, password};
+        $.ajax({url: "/getFileList", data, success: getFileListParse, type: "POST", error: ajaxError});
+    }
+
+    document.querySelector("#userMain_guestBtn").addEventListener("click", function(){
+        getFileList("guest", "guest");
+    });
+
+
+    /* Search */
+    document.querySelector("#searchFile").addEventListener("input", function(){
+        var userID = this.value;
+        IDE.searchList.map(function(e){
+            var currentID = e[0].toLowerCase();
+            userID = userID.toLowerCase();
+
+            if(currentID.includes(userID)){
+                e[1].style.display = "flex";
+            }else{
+                e[1].style.display = "none";
+            }
+        });
+    });
+
+    function searchFile(file){
+        for(var i=0; i<IDE.searchList.length; i++){
+            var currentID = IDE.searchList[i][0];
+
+            if(currentID.includes(file)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    /*-----------*/
+
+    document.querySelector("#userMain_submitBtn").addEventListener("click", function(){
+        var username = IDE.welcome.username.value;
+        var password = IDE.welcome.password.value;
+        getFileList(username, password);
+    });
+
+    function LocalGet() {
+        if (typeof(Storage) !== "undefined") {
+            var user = localStorage.getItem("occ_user");
+            var pw = localStorage.getItem("occ_pw");
+            if(user && user !== "guest"){
+                getFileList(user, pw);
+            }
+        }else{
+            showError("No Local Storage Support");
+        }
+    }
+
+    function LocalSave(user, pw) {
+        if (typeof (Storage) !== "undefined") {
+            localStorage.setItem("occ_user", user);
+            localStorage.setItem("occ_pw", pw);
+        }else{
+            showError("No Local Storage Support");
+        }
+    }
+
+    LocalGet();
 
 </script>
 <!--<div id="textEditBox" contenteditable="true">gg</div>-->
