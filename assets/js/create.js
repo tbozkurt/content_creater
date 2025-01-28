@@ -96,8 +96,9 @@ function CREATE(){
             height: 52,
             fill: "rgba(240, 130, 180, 0.4)",
             strokeWidth: 2,
+            borderPosition:"center",
             stroke:"rgba(240, 40, 130, 0.4)",
-            cornerRadius:[58, 58, 58, 58],
+            cornerRadius:58,
             Layer:{type:"objectRect", name: "csClick", class: "csClick hide"}
         }, {
             x: 0,
@@ -106,8 +107,9 @@ function CREATE(){
             height: 52,
             fill: "rgba(210, 50, 50, 0.4)",
             strokeWidth: 2,
+            borderPosition:"center",
             stroke:"rgba(150, 30, 30, 0.6)",
-            cornerRadius:[58, 58, 58, 58],
+            cornerRadius: 58,
             Layer:{type:"objectRect", name: "csWrong", class: "csWrong hide", hide: true}
         }, {
             x: 0,
@@ -116,16 +118,20 @@ function CREATE(){
             height: 52,
             fill: "rgba(155, 205, 100, 0.4)",
             strokeWidth: 2,
+            borderPosition:"center",
             stroke:"rgba(50, 105, 30, 0.6)",
-            cornerRadius:[58, 58, 58, 58],
+            cornerRadius: 58,
             Layer:{type:"objectRect", name: "csRight", class: "csRight hide", hide: true}
         }, {
             x: 0,
             y: 0,
             width: 52,
             height: 52,
-            fill: "rgba(0,0,0,0)",
-            Layer:{type:"objectRect", name: "csMask", class: "csMask"}
+            fill: "#ffffff",
+            opacity: 0,
+            strokeWidth: 0,
+            borderPosition:"center",
+            Layer:{type:"objectRect", name: "csMask"}
         }];
 
         addObjects(kids, container, false);
@@ -144,10 +150,10 @@ function CREATE(){
                     if(!temp[id]){
                         temp[id] = e;
                     }else{
-                        temp[40] = e;
+                        temp[60] = e;
                     }
                 }else{
-                    temp[40] = e;
+                    temp[60] = e;
                 }
             }
         });
@@ -161,46 +167,45 @@ function CREATE(){
         return temp2;
     }
 
+    var list = [
+        {obj: "selectButon", answer:true},
+        {obj: "inputArea", answer:true},
+        {obj: "matchDrag", answer:false},
+        {obj: "matchDrop", answer:true},
+        {obj: "boxDrag", answer:false},
+        {obj: "boxDrop", answer:true},
+    ];
+
     this.checkKontrol = function(){
         var selectNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
-        var count = -1;
         var localEX = utils.getLayers();
+        var globalCount = -1;
+        var This = this;
 
-        var selectList = this.getMC(localEX, "selectButon");
-        var inputList = this.getMC(localEX, "inputArea");
-        var matchDragList = this.getMC(localEX, "matchDrag");
-        var matchDropList = this.getMC(localEX, "matchDrop");
+        list.map(function(e){
+            var currentList = This.getMC(localEX, e.obj);
+            var currentCount = -1;
 
-        selectList.map(function(obj){
-            count++;
-            obj.Layer.name = "selectButon_"+ count;
-            obj.Layer.elementID = "selectButon_"+ count;
-            obj.Layer.layerNameNormal.innerText = "selectButon_"+ count;
-            obj.children.map(function(e){
-                if(e.Layer.name === "csText"){
-                    e.text(selectNames[count]);
+            if(e.answer){
+                currentCount = globalCount;
+            }
+
+            for(var x=0; x<currentList.length; x++){
+                currentCount++;
+                currentList[x].Layer.name = e.obj +"_"+ currentCount;
+                currentList[x].Layer.elementID = e.obj +"_"+ currentCount;
+                currentList[x].Layer.layerNameNormal.innerText = e.obj +"_"+ currentCount;
+                if(e.obj === "selectButon"){
+                    var obj = utils.searchByName(currentList[x], "csText");
+                    if(obj){
+                        obj.text(selectNames[currentCount]);
+                    }
                 }
-            });
-        });
+            }
 
-        inputList.map(function(obj){
-            count++;
-            obj.Layer.name = "inputArea_"+ count;
-            obj.Layer.elementID = "inputArea_"+ count;
-            obj.Layer.layerNameNormal.innerText = "inputArea_"+ count;
-        });
-
-        matchDragList.map(function(obj, i){
-            obj.Layer.name = "matchDrag_"+ i;
-            obj.Layer.elementID = "matchDrag_"+ i;
-            obj.Layer.layerNameNormal.innerText = "matchDrag_"+ i;
-        });
-
-        matchDropList.map(function(obj){
-            count++;
-            obj.Layer.name = "matchDrop_"+ count;
-            obj.Layer.elementID = "matchDrop_"+ count;
-            obj.Layer.layerNameNormal.innerText = "matchDrop_"+ count;
+            if(e.answer){
+                globalCount = currentCount;
+            }
         });
     }
 
@@ -229,6 +234,8 @@ function CREATE(){
             height: 461,
             cornerRadius: [10, 10, 0, 0],
             stroke:"#6c4d94",
+            strokeWidth: 0,
+            borderPosition:"center",
             fill: "#f6f0f7",
             Layer:{type:"objectRect", name: "bg"}
         },
@@ -238,6 +245,8 @@ function CREATE(){
             width: 803,
             height: 60,
             fill: "#6c4d94",
+            strokeWidth: 0,
+            borderPosition:"center",
             cornerRadius: [10, 10, 0, 0],
             Layer:{type:"objectRect", name: "bar"}
         },
@@ -277,10 +286,11 @@ function CREATE(){
                 y: 0,
                 width: 194,
                 height: 50,
-                cornerRadius: [50, 50, 50, 50],
+                cornerRadius: 50,
                 fill: "#bcb2cf",
                 stroke:"#9683b8",
                 strokeWidth: 2,
+                borderPosition:"center",
                 Layer:{type:"objectRect", name: "bg"}
             },
             {
@@ -288,7 +298,9 @@ function CREATE(){
                 y: 2,
                 width: 190,
                 height: 43,
-                cornerRadius: [50, 50, 50, 50],
+                cornerRadius: 50,
+                strokeWidth: 0,
+                borderPosition:"center",
                 fill: "#ffffff",
                 Layer:{type:"objectRect", name: "bg"}
             },
@@ -319,20 +331,23 @@ function CREATE(){
                 y: 0,
                 width: 194,
                 height: 50,
-                cornerRadius: [50, 50, 50, 50],
+                cornerRadius: 50,
                 fill: "#ffab91",
                 stroke: "#ff7043",
                 strokeWidth: 2,
-                Layer:{type:"objectRect", name: "bg"}
+                borderPosition:"center",
+                Layer:{type:"objectRect", name: "bg_orange"}
             },
             {
                 x: 2,
                 y: 2,
                 width: 190,
                 height: 43,
-                cornerRadius: [50, 50, 50, 50],
+                cornerRadius: 50,
+                strokeWidth: 0,
+                borderPosition:"center",
                 fill: "#ffffff",
-                Layer:{type:"objectRect", name: "bg"}
+                Layer:{type:"objectRect", name: "bg_white"}
             },
             {
                 text: "Kontrol",
@@ -361,20 +376,23 @@ function CREATE(){
                 y: 0,
                 width: 194,
                 height: 50,
-                cornerRadius: [50, 50, 50, 50],
+                cornerRadius: 50,
                 fill: "#b3e5fc",
                 stroke: "#0277bd",
                 strokeWidth: 2,
-                Layer:{type:"objectRect", name: "bg"}
+                borderPosition:"center",
+                Layer:{type:"objectRect", name: "bg_blue"}
             },
             {
                 x: 2,
                 y: 2,
                 width: 190,
                 height: 43,
-                cornerRadius: [50, 50, 50, 50],
+                cornerRadius: 50,
                 fill: "#ffffff",
-                Layer:{type:"objectRect", name: "bg"}
+                strokeWidth: 0,
+                borderPosition:"center",
+                Layer:{type:"objectRect", name: "bg_white"}
             },
             {
                 text: "Yanıtla",
@@ -403,15 +421,11 @@ function CREATE(){
                 y: 0,
                 width: 640,
                 height: 480,
-                fill: "rgba(255, 255, 255, 0)",
+                fill: "#ffffff",
+                opacity: 0,
+                strokeWidth: 0,
+                borderPosition:"center",
                 Layer:{type:"objectRect", name: "bg"}
-            },
-            {
-                x: 0,
-                y: 0,
-                width: 640,
-                height: 480,
-                fill: "rgba(255, 255, 255, 0.5)"
             }];
 
         addObjects(kids, container, false);
@@ -427,6 +441,8 @@ function CREATE(){
                 width: 200,
                 height: 50,
                 fill: "#ffffff",
+                strokeWidth: 0,
+                borderPosition:"center",
                 Layer:{type:"objectRect", name: "bdBg", class: "bdBg"}
             },
             {
@@ -438,8 +454,9 @@ function CREATE(){
                 fontSize: 20,
                 fontFamily: "Nunito",
                 align: "center",
+                //verticalAlign: "middle",
+                //lineHeight: 2.5,
                 fill: "#000000",
-                lineHeight: 2.5,
                 padding: 0,
                 Layer:{type:"objectText", name: "bdText", class: "bdText"}
             },
@@ -458,7 +475,9 @@ function CREATE(){
                 width: 100,
                 height: 50,
                 fill: "#ffffff",
-                opacity:0.4,
+                strokeWidth: 0,
+                borderPosition:"center",
+                opacity:0,
                 Layer:{type:"objectRect", name: "bdBg", class: "bdBg"}
             }
         ];
@@ -475,8 +494,10 @@ function CREATE(){
                 y: 0,
                 width: 100,
                 height: 50,
+                strokeWidth: 0,
+                borderPosition:"center",
                 fill: "#c0c0c0",
-                opacity:0.4,
+                opacity:0,
                 Layer:{type:"objectRect", name: "bdBg", class: "bdBg"}
             }
         ];
@@ -494,8 +515,10 @@ function CREATE(){
                 y: 0,
                 width: 640,
                 height: 480,
-                fill: "#33691e",
-                opacity:0.2,
+                fill: "#ffffff",
+                strokeWidth: 0,
+                borderPosition:"center",
+                opacity: 0,
                 Layer:{type:"objectRect", name: "bg"}
             }];
 
@@ -517,7 +540,9 @@ function CREATE(){
                 y: 0,
                 width: 1000,
                 height: 100,
-                cornerRadius: [10, 10, 10, 10],
+                cornerRadius: 10,
+                strokeWidth: 0,
+                borderPosition:"center",
                 fill: "#ffffff",
                 Layer:{type:"objectRect", name: "bg"}
             }, {
@@ -543,6 +568,51 @@ function CREATE(){
         addObjects(kids, container, false);
         Arayuz_addLayer(container);
     }
+
+
+    this.boxDrop = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: -5,
+            y: -5,
+            width: 210,
+            height: 60,
+            fill: "#ffffff",
+            borderPosition:"center",
+            cornerRadius:10,
+            Layer:{type:"objectRect", name: "boxbg", class: "boxbg hide"}
+        }, {
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 50,
+            fill: "#bdbdbd",
+            borderPosition:"center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "drop", class: "drop"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
+    this.boxDrag = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 50,
+            fill: "#ffffff",
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "boxbg"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
 
 }
 

@@ -6,7 +6,6 @@ var fs = require('node:fs');
 var app = express();
 var archiver = require("archiver");
 var Users={};
-var FILE = {};
 var currentUploadFolder;
 var token;
 
@@ -21,9 +20,6 @@ function getRandomInt(max) {
 app.use("/libs", express.static(__dirname + "/node_modules"));
 app.use('/files', express.static('files'));
 app.use('/assets', express.static('assets'));
-
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
@@ -125,6 +121,19 @@ function readFileList(json){
     })
 }
 
+//Modified Main File List
+app.post("/modifiedFilelist", modifiedFilelistFNC);
+async function modifiedFilelistFNC(req, res){
+    console.log("Modified File List");
+    var FD = Users[req.body.token];
+    console.log( req.body);
+    var data = JSON.parse(req.body.newList);
+    FD.fileList = await createJson( FD.fileList.path, data, {encoding:"utf8", flag:"w"});
+    res.send(FD);
+    console.log("-----Modified File List------");
+}
+
+
 //Create New File
 app.post("/createNewFile", createNewFileFNC);
 async function createNewFileFNC(req, res){
@@ -141,6 +150,8 @@ async function createNewFileFNC(req, res){
     res.send(FD);
     var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
     var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
+    var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
+    var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
     console.log("-- CREATE NEW FINISH--");
 }
 
@@ -163,8 +174,6 @@ async function selectFileFNC(req, res){
     var file = req.body.file;
     console.log("-------------");
     console.log("selectFile", file);
-    console.log(FD.fileList );
-    console.log( FD.fileList.data[file] );
 
     if(FD.fileList.data[file]){
         FD.files = FD.fileList.data[file].files;
@@ -241,7 +250,7 @@ async function downloadFNC(req, res){
 
         var mainFolder = FD.fileList.data[file].files.mainFolder;
         var successCopy = await copyFolder(mainFolder, step10);
-        var PublisherCopy = await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step9+"/Publisher.py");
+        var PublisherCopy = await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step6+"/Publisher.py");
         FD.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance, req.body.token);
         await deleteFolder(entrance);
         res.send({success: true, content: FD.fileList.data[req.body.file]});
@@ -259,28 +268,40 @@ var userList = {
     melike:{password:"1q2w3e"},
     irem:{password:"1a2s3d"},
     tuncay:{password:"1b9d8s4d"},
+    kamil:{password:"1z2x3c"},
+    demet:{password:"3e2w1q"},
+    goknur:{password:"3d2s1a"},
+    cansu:{password:"3c2x1z"}
 };
 
 //Read File List
 app.post("/getFileList", function(req, res){
-    console.log( req.body );
     var username = req.body.username;
     var password = req.body.password;
+    var token = req.body.token;
+
+    var FD = Users[token];
 
     if(username === "guest" && password === "guest"){
-        FILE.user = "guest";
-        FILE.pw = "guest";
-        FILE.success = true;
-        res.send(FILE);
+        FD.user = "guest";
+        FD.pw = "guest";
+        FD.success = true;
+        res.send(FD);
     }else if(userList[username] && userList[username].password === password){
-        FILE.user = username;
-        FILE.pw = password;
-        FILE.success = true;
-        res.send(FILE);
+        FD.user = username;
+        FD.pw = password;
+        FD.success = true;
+        res.send(FD);
     }else{
-        FILE.success = false;
-        res.send(FILE);
+        FD.success = false;
+        res.send(FD);
     }
+});
+
+
+//Read File List
+app.post("/prepare", function(req, res){
+    initApp(req, res);
 });
 
 app.post("/uploadFolderChange", function(req, res){
@@ -297,18 +318,16 @@ app.use("/player", function(req, res) {
 
 //Index Page
 app.use("/ide", function(req, res) {
-    console.log("OMG");
-    initApp(req, res);
+    /* initApp(req, res); */
     res.sendFile(path.join(__dirname, "views/","index.html"));
 });
 
-async function initApp(){
+async function initApp(req, res){
     token = "User_"+getRandomInt(9000)+"_"+word[getRandomInt(10)]+"_"+getRandomInt(9000);
     console.log('\033[2J');
     console.log("///////START APP/////////");
 
     Users[token] = {};
-    FILE = Users[token];
     var FD = Users[token];
 
     //1."files" Klasörü yoksa oluşturulur..
@@ -323,6 +342,8 @@ async function initApp(){
 
     FD.token = token;
     FD.systemReady = true;
+
+    res.send(FD);
 }
 
 
@@ -341,14 +362,12 @@ function copyFile(source, target){
 }
 
 
-
-
 app.listen(3630, function() {
     console.log("listening on port 3630");
 });
 
 
 function listAddFile(FD, data){
-    FD.fileList.data[data.fileName] = {user: FILE.user, create: data.createTime, files: FD.files};
+    FD.fileList.data[data.fileName] = {user: FD.user, create: data.createTime, files: FD.files};
     return FD.fileList.data;
 }

@@ -16,7 +16,7 @@ import platform
 import logging
 import subprocess
 
-version = '2.37.2'
+version = '2.41.1'
 publisherIcon = """
 _____________________________________________________________________________________________________________________
                                   _____       _     _ _     _
@@ -202,6 +202,9 @@ class Publisher():
         elif (kanal == 1):
             channel = '1'
             return channel
+        elif (kanal == 2):
+            channel = '2'
+            return channel
         else:
             self.log(Colors.FAIL + 'Lütfen geçerli bir kanal giriniz.' + Colors.ENDC)
             return self.selectChannel()
@@ -236,6 +239,7 @@ class Publisher():
 
     # Verilen isimde publish klasörü içerisinde klasör oluşturur
     def createFolder(self, path):
+        self.log(path + ' klasörü kontrolü yapılıyor.')
         if not os.path.exists(path):
             os.makedirs(path)
             self.log(path + ' klasörü oluşturuldu.')
@@ -369,8 +373,10 @@ class Publisher():
 
     # publishtemp klasörünü siler
     def removePublishTemp(self):
+        self.log(self.publishtemp + ' klasörü silinmek için kontrol ediliyor.')
         if (os.path.exists(self.publishtemp)):
-            shutil.rmtree(self.publishtemp)
+            self.log(self.publishtemp + ' klasörü siliniyor.')
+            shutil.rmtree(self.publishtemp,ignore_errors=True)
 
     def detectContentType(self):
         contentType = os.path.basename(os.path.abspath(os.path.join(os.getcwd(), '..', '..', '..', '..')))
@@ -433,12 +439,14 @@ class KA_Publisher():
         contentName = os.path.basename(os.getcwd())
 
         if (publisher.channel == '0'):
-            if (content_type in ['YEM', 'EB','CKA']):
+            if (content_type in ['YEM', 'EB','CKA','SIM','YZL']):
                 self.publishForSrc(versionName)
             else:
                 self.publishForOldPlayer(versionName)
         elif (publisher.channel == '1'):
             self.publishForHypePlayer()
+        elif (publisher.channel == '2'):
+            self.publishForContentCreator()
         if publisher.checkExistVersion(versionName):
             self.selectProcess()
             exit()
@@ -466,7 +474,6 @@ class KA_Publisher():
         files = publisher.listdir_nohidden(publisher.contentDir)
         publisher.removePublishTemp()
         publisher.createFolder(publisher.publishtemp)
-
         for file in files:
             if (file != contentName + '.hype' and fnmatch.fnmatch(file, contentName + '.*') or file == 'conf.json'):
                 if (file == contentName + '.sound'):
@@ -475,6 +482,13 @@ class KA_Publisher():
                 else:
                     shutil.move(publisher.contentDir + '/' + file, publisher.publishtemp + file)
                     publisher.log(file + ' klasörü temp  klasörüne taşındı.')
+
+
+    def publishForContentCreator(self):
+        publisher.removePublishTemp()
+        publisher.createFolder(publisher.publishtemp)
+        publisher.copyAndMergeTree(publisher.contentDir, publisher.publishtemp)
+
 
     def selectProcess(self):
         global channel
@@ -797,7 +811,7 @@ publisher = Publisher()
 try:
     publisher.checkPublisherVersion()
     content_type = publisher.detectContentType()
-    if content_type in ['KA', 'EA', 'EVA',  'YEM', 'EB', 'DM', 'YEA', 'HDE','ESK', 'YMT', 'BTD', 'BUP', 'MTL', 'DKT','DEA','ECK','EKA',  'EAK', 'EBK',   'DIM',  'YKT', 'EKT', 'EBA']:
+    if content_type in ['KA', 'EA', 'EVA',  'YEM', 'EB', 'DM', 'YEA', 'HDE','ESK', 'YMT', 'BTD', 'BUP', 'MTL', 'DKT','DEA','ECK','EKA',  'EAK', 'EBK',   'DIM',  'YKT', 'EKT', 'EBA','CKA','SIM','YZL','EYZ']:
         channel = publisher.selectChannel()
         publisher.setChannelPath(channel)
         KA_Publisher = KA_Publisher()
@@ -812,7 +826,7 @@ try:
         exit()
     publisher.log('İşlem başarıyla tamamlanmıştır.')
 except Exception as e:
-    publisher.log(['[HATA]', e.g])
+    publisher.log(['[HATA]', str(e)])
     exit()
 
 input("Çıkmak için Enter'e tıklayın..")

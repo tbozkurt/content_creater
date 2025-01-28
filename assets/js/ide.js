@@ -117,6 +117,7 @@ function addWindow(obj){
     });
 
     //CREATE.checkKontrol();
+    IDE.selectRect.moveToTop();
 }
 
 function bune(obj, autoSelect){
@@ -198,7 +199,11 @@ function addOrganizedLayer(List, id, newList){
 
 function closeTextEditor(){
     if(IDE.scope === "EditText"){
-        IDE.text.currentCanvas.text(IDE.text.editBox.innerText).width(IDE.text.editBox.offsetWidth+2);
+        if(!IDE.text.currentCanvas.Layer.autoSize){
+            IDE.text.currentCanvas.width(IDE.text.editBox.offsetWidth);
+        }
+
+        IDE.text.currentCanvas.text(IDE.text.editBox.innerText);
         IDE.text.editBox.style.display = "none";
         IDE.text.currentCanvas.show();
         selectItem({layer: IDE.text.currentCanvas});
@@ -251,6 +256,11 @@ function openTextEditor(text){
             display: "inline-block",
             textAlign: text.align(),
             fontWeight: fontStyle
+        }
+
+        if(text.Layer.autoSize){
+            currentCSS.width = "auto";
+            currentCSS.height = "auto";
         }
 
         let div = document.createElement('div');
@@ -333,8 +343,10 @@ function getProp(sameValueSearch){
         IDE.workSpace.scaleWInput.value = (IDE.selectedLayers[0].scaleX()*100).toFixed(0);
         IDE.workSpace.scaleHInput.value = (IDE.selectedLayers[0].scaleY()*100).toFixed(0);
     }else if(IDE.selectedLayers.length){
-        IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
-        IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
+        //IDE.workSpace.leftInput.value = SELECT.x()-IDE.layer.x;
+        IDE.workSpace.leftInput.value = SELECT.x()-(IDE.layer.x + IDE.editPosGap.x);
+        //IDE.workSpace.topInput.value = SELECT.y()-IDE.layer.y;
+        IDE.workSpace.topInput.value = SELECT.y()-(IDE.layer.y + IDE.editPosGap.y);
         IDE.workSpace.widthInput.value = IDE.propValues.width;
         IDE.workSpace.heightInput.value = IDE.propValues.height;
         if(IDE.propValues.scaleW===""){
@@ -487,6 +499,10 @@ function changeWidth(newWidth){
     IDE.selectedLayers.map(function(obj){
         if(obj.Layer.type==="objectRect" || obj.Layer.type==="objectImg" || obj.Layer.type==="objectText"){
             obj.width(newWidth);
+            if(obj.Layer.type === "objectText"){
+                obj.Layer.autoSize = false;
+                console.log("Bu bir text autoSize", obj.Layer.autoSize);
+            }
         }
     });
 
@@ -617,19 +633,38 @@ function openMovieClip(mc){
         XX();
     });
 
-    /* MC poziyonlama ve Alan çizgisi */
+    /* MC poziyonlama ve Alan çizgisi ve origin ekleme*/
     var mcRect = mc.getClientRect();
-    IDE.editRect.x(mcRect.x - IDE.layer.x).y(mcRect.y - IDE.layer.y)
-        .width(mcRect.width)
-        .height(mcRect.height);
+    var rectX = (mcRect.x - IDE.layer.x);
+    var rectY = (mcRect.y - IDE.layer.y);
+    var rectW = mcRect.width;
+    var rectH = mcRect.height;
 
-    IDE.editPosGap = {
-        x:(mcRect.x - IDE.layer.x),
-        y:(mcRect.y - IDE.layer.y),
-        width: mcRect.width,
-        height: mcRect.height
-    };
+    if(!mc.Layer.origin){
+        mc.Layer.origin = {x: rectX, y: rectY}
+        CREATE.rectFNC({
+            properties:{
+                x: mc.Layer.origin.x,
+                y: mc.Layer.origin.y,
+                width: 1,
+                height: 1,
+                fill: "#ffffff00"
+            },
+            container: IDE.activeLayer,
+            layer:{
+                name: "origin",
+                type: "objectRect"
+            },
+            addLayer: false
+        })
+    }else{
+        var sonuc = utils.searchByName(mc, "origin");
+        rectX = sonuc.getAbsolutePosition().x-IDE.layer.x;
+        rectY = sonuc.getAbsolutePosition().y-IDE.layer.y;
+    }
 
+    IDE.editRect.x(rectX).y(rectY).width(rectW).height(rectH);
+    IDE.editPosGap = {x:rectX, y:rectY, width:rectW, height:rectH};
     overflowCheck(mc.Layer.overflow);
     /* ------------------ */
 
@@ -691,7 +726,7 @@ function closeMovieClip(mc){
 
     SELECT = IDE.sceneSelect;
     IDE.activeLayer = IDE.sceneLayer;
-    IDE.editLayer.x(1500);
+    IDE.editLayer.x(1600);
     showWorkSpaces();
 
     /*Edit History Start*/
@@ -705,7 +740,13 @@ function XX(){
     LayerSR.resetSystem();
     var localEX = utils.getLayers();
     localEX.map(function(e){
-        addWindow(e);
+        if(e.Layer.name === "origin"){
+            e.listening(false);
+            e.draggable(false);
+            e.Layer.lock = true;
+        }else{
+            addWindow(e);
+        }
     });
 }
 
@@ -744,9 +785,11 @@ IDE.workSpace.scope_RightWorkSpace.addEventListener("mousedown", function(){
 document.querySelector("#export").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     for(var x=0; x<json.slides.length; x++){
-        if(!Object.keys(json.slides[x].answer).length){
-            IDE.showTip({txt:"Bazı etkinliklerin cevap anahtarları yok, bu nedenle etkinlikler doğru çalışmayabilir.", color: "#b71c1c", time:10000, x: 257, y: 867});
-            break;
+        if(json.slides[x].answer){
+            if(!Object.keys(json.slides[x].answer).length){
+                IDE.showTip({txt:"Bazı etkinliklerin cevap anahtarları yok, bu nedenle etkinlikler doğru çalışmayabilir.", color: "#b71c1c", time:10000, x: 260, y: (IDE.stage.height-10)});
+                break;
+            }
         }
     }
 
@@ -763,7 +806,7 @@ document.querySelector("#topMenuSaveBtn").addEventListener("click", function(){
     saveDataAjax(json);
     console.log( json );
     console.log("kaydedildi");
-    IDE.showTip({txt:"saved", color: "#1b5e20", time:1000, x: 1480, y: 862});
+    IDE.showTip({txt:"saved", color: "#1b5e20", time:1000, x: 1480, y: (IDE.stage.height-10)});
 });
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
@@ -815,7 +858,6 @@ IDE.workSpace.scaleHInput.addEventListener("change", function(e) {
 
 //Area Check
 IDE.workSpace.areaCheck.addEventListener("change", function(e) {
-    console.log("omg", this.checked);
     overflowCheck(this.checked);
 });
 
@@ -882,13 +924,7 @@ IDE.welcome.newFileBtn.addEventListener("click", function(e){
     }else{
         IDE.fileUser = IDE.faceUser;
         saveBtnViewStatus("block");
-        IDE.welcome.main.style.alignItems = "center";
-        IDE.welcome.step1.style.display = "none";
-        IDE.welcome.step2.style.display = "block";
-        IDE.welcome.step2.style.marginBottom = "50px";
-        IDE.welcome.closeInput.style.display = "none";
-
-
+        newSceneRequest();
         jsonV2.createTime = utils.addTimeStamp("server");
         document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
         newFileAjax(jsonV2);
@@ -920,19 +956,58 @@ utils.addBlur(IDE.workSpace.font_hexInput);
 
 
 /* Color Picker */
-IDE.workSpace.colorPicker.addEventListener("change",function(){
-    colorPicker({color: this.value});
+// Rect Fill
+IDE.workSpace.rect_fillColorPicker.addEventListener("change", function(){
+    colorPicker({fillColor: this.value});
 });
 
-IDE.workSpace.colorInput.addEventListener("change", function(){
-    colorPicker({color: this.value});
+utils.addBlur(IDE.workSpace.rect_fillColorInput);
+IDE.workSpace.rect_fillColorInput.addEventListener("change", function(){
+    colorPicker({fillColor: this.value});
 });
 
-document.querySelector("#font_opacity").addEventListener("input", function(){
-    colorPicker({opacity: this.value});
+utils.addBlur(IDE.workSpace.rect_fillAlphaInput);
+IDE.workSpace.rect_fillAlphaInput.addEventListener("change", function(){
+    colorPicker({fillAlpha: this.value});
 });
 
-utils.addBlur(IDE.workSpace.colorInput);
+//Rect Border
+IDE.workSpace.rect_borderColorPicker.addEventListener("change",function(){
+    colorPicker({borderColor: this.value});
+});
+
+utils.addBlur(IDE.workSpace.rect_borderColorInput);
+IDE.workSpace.rect_borderColorInput.addEventListener("change", function(){
+    colorPicker({borderColor: this.value});
+});
+
+utils.addBlur(IDE.workSpace.rect_borderAlphaInput);
+IDE.workSpace.rect_borderAlphaInput.addEventListener("change", function(){
+    colorPicker({borderAlpha: this.value});
+});
+//
+
+utils.addBlur(IDE.workSpace.rect_radiusInput);
+IDE.workSpace.rect_radiusInput.addEventListener("change", function(){
+    var radius = this.value;
+    if(radius.length){
+        colorPicker({radius});
+    }
+});
+
+utils.addBlur(IDE.workSpace.rect_borderInput);
+IDE.workSpace.rect_borderInput.addEventListener("change", function(){
+    var border = this.value;
+    if(border.length){
+        colorPicker({border});
+    }
+
+});
+
+IDE.workSpace.opacity_slider.addEventListener("input", function(){
+    var opacity = parseInt(IDE.workSpace.opacity_slider.value) / 100;
+    opacityWorkSpace({opacity});
+});
 
 
 
@@ -976,16 +1051,19 @@ document.addEventListener("keydown", function(e){
         console.log("Document catch Ctrl+C", IDE.scope);
         if(IDE.scope === "Stage"){
             if(IDE.selectedLayers.length){
-                IDE.showTip({txt:"copied Object", color: "#e65100", time:700, x: 1424, y: 863});
-                IDE.copy = EXPORT.convertElement( IDE.selectedLayers[0] );
+                IDE.showTip({txt:"copied Object", color: "#e65100", time:700, x: 1424, y: (IDE.stage.height-10) });
+                IDE.copy = [];
+                IDE.selectedLayers.map(function(obj){
+                    IDE.copy.push( EXPORT.convertElement(obj) );
+                });
             }
         }else if(IDE.scope === "Scene"){
-            IDE.showTip({txt:"copied Scene", color: "#01579b", time:700, x: 1427, y: 863});
+            IDE.showTip({txt:"copied Scene", color: "#01579b", time:700, x: 1427, y: (IDE.stage.height-10) });
         }
     }
 
     if(ctrlDown && (e.keyCode === vKey)){
-        console.log("Sonuç nedir:", IDE.scope);
+        console.log("Scope:", IDE.scope);
         if(IDE.scope === "Scene"){
             var json = EXPORT.convertJson();
             var stringData = JSON.stringify(json.slides[sceneIndex].all);
@@ -994,24 +1072,30 @@ document.addEventListener("keydown", function(e){
             template.all = jsonData;
             sceneAddNewScene(template);
         }else if(IDE.scope === "Stage"){
-            if(IDE.copy){
+            if(IDE.copy.length){
                 console.log("Document catch Ctrl+V");
-                var tempCopy = JSON.parse(JSON.stringify(IDE.copy));
-                var copyUnique = utils.getRandomName();
-                tempCopy.Layer.unique = copyUnique;
-                if(tempCopy.Kids){
-                    tempCopy.Kids.map(function(e){
-                        e.Layer.unique = utils.getRandomName();
-                    });
-                }
+                var uniqueList = [];
+                IDE.copy.map(function(obj, i){
+                    var tempCopy = JSON.parse(JSON.stringify(obj));
+                    uniqueList[i] = utils.getRandomName();
+                    tempCopy.Layer.unique = uniqueList[i];
+                    if(tempCopy.Kids){
+                        tempCopy.Kids.map(function(e){
+                            e.Layer.unique = utils.getRandomName();
+                        });
+                    }
 
-                addObjects([tempCopy], IDE.activeLayer, true);
+                    addObjects([tempCopy], IDE.activeLayer, true);
+                    CREATE.checkKontrol();
+                });
 
                 var localEX = utils.getLayers();
-                localEX.map(function(e){
-                    if(copyUnique === e.Layer.unique){
-                        selectItem({layer: e});
-                    }
+                uniqueList.map(function(unique){
+                    localEX.map(function(obj){
+                        if(unique === obj.Layer.unique){
+                            selectItem({shiftKey: true, layer: obj});
+                        }
+                    });
                 });
 
                 CREATE.checkKontrol();
@@ -1036,14 +1120,14 @@ function addHistory(){
             select.push(EXPORT.convertElement(e));
         });
 
-        if(select.length){
+        /* if(select.length){ */
             IDE.historyList.push(select);
             if(IDE.historyList.length>10){
                 IDE.historyList.shift();
             }
 
             IDE.historyStep = (IDE.historyList.length-1);
-        }
+       /* } */
     }
 }
 
@@ -1123,7 +1207,7 @@ function historyProgress(){
 
 function transferProp(obj, json){
     if(json.Layer.unique === obj.Layer.unique){
-        obj.x(json.x).y(json.y).width(json.width).height(json.height).scaleX(json.scaleX).scaleY(json.scaleY);
+        obj.x(json.x).y(json.y).width(json.width).height(json.height).scaleX(json.scale.x).scaleY(json.scale.y);
         obj.offsetX(json.offsetX).offsetY(json.offsetY).opacity(json.opacity);
         if(json.fill){
             obj.fill(json.fill);
@@ -1133,6 +1217,22 @@ function transferProp(obj, json){
 
     return false;
 }
+
+
+function selectIconGroup(id){
+    IDE.iconGroup.map(function(group){
+        group.style.display = "none";
+    });
+
+    IDE.iconGroup[id].style.display = "flex";
+}
+
+/* Type Select */
+IDE.workSpace.activityTypes.addEventListener("change", function(){
+    selectIconGroup(parseInt(this.value));
+});
+
+selectIconGroup(0);
 
 
 /* create Rect */
@@ -1146,6 +1246,8 @@ IDE.workSpace.createRect.addEventListener("click", function(){
             width: 150,
             height: 150,
             fill: "#bdbdbd",
+            strokeWidth: 0,
+            borderPosition:"center",
             draggable: true
         },
         container: IDE.activeLayer,
@@ -1164,7 +1266,7 @@ IDE.workSpace.createText.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 150);
     CREATE.textFNC({
         properties:{
-            text: "text",
+            text: "Sample",
             x: position.x,
             y: position.y,
             fontSize: 20,
@@ -1175,7 +1277,8 @@ IDE.workSpace.createText.addEventListener("click", function(){
         container: IDE.activeLayer,
         layer:{
             name: "text",
-            type: "objectText"
+            type: "objectText",
+            autoSize: true
         },
         addLayer: true
     });
@@ -1444,5 +1547,53 @@ IDE.workSpace.createDirective.addEventListener("click", function(){
         }
     });
 
+    addHistory();
+});
+
+
+/* Create Box Drop  */
+IDE.workSpace.createBoxDrop.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 200);
+    CREATE.boxDrop({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 210,
+            height: 60,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "boxDrop",
+            elementID: "boxDrop",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+});
+
+IDE.workSpace.createBoxDrag.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 200);
+    CREATE.boxDrag({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 200,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "boxDrag",
+            elementID: "boxDrag",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
     addHistory();
 });

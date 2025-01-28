@@ -15,6 +15,8 @@ function ALIGN(){
     }
 
     this.HorizontalCenter = function(Selected){
+        var This = this;
+
         if(Selected.length >= 2) {
             var temp = [];
             Selected.forEach(function (obj) {
@@ -25,23 +27,33 @@ function ALIGN(){
             var selectRectWidth = (xPos + (SELECT.width() / 2));
 
             Selected.forEach(function (obj) {
-                var halfWidth = obj.width() / 2;
+                var halfWidth = This.real(obj).width / 2;
                 obj.x(selectRectWidth - halfWidth);
             });
         }
     }
 
+    this.real = function(obj){
+        var width = obj.width() * obj.scaleX();
+        var height = obj.height() * obj.scaleY();
+        return {width, height}
+    }
+
     this.Right = function(Selected){
+        var This = this;
+
         if(Selected.length >= 2) {
             var temp = [];
             Selected.forEach(function (obj) {
-                temp.push(obj.x());
+                var maxWidth = (obj.x() + This.real(obj).width);
+                temp.push(maxWidth);
             });
 
             var max = Math.max(...temp);
 
             Selected.forEach(function (obj) {
-                obj.x(max);
+                var newPos = max - This.real(obj).width;
+                obj.x(newPos);
             });
         }
     }
@@ -62,6 +74,7 @@ function ALIGN(){
     }
 
     this.VerticalCenter = function(Selected){
+        var This = this;
         if(Selected.length >= 2) {
             var temp = [];
             Selected.forEach(function (obj) {
@@ -72,28 +85,30 @@ function ALIGN(){
             var selectRectHeight = (yPos + (SELECT.height() / 2));
 
             Selected.forEach(function (obj) {
-                var halfHeight = obj.height() / 2;
+                var halfHeight = This.real(obj).height / 2;
                 obj.y(selectRectHeight - halfHeight);
             });
         }
     }
 
     this.Bottom = function(Selected){
+        var This = this;
         if(Selected.length >= 2) {
             var tempBottom = [];
             Selected.forEach(function (obj) {
-                tempBottom.push(obj.y() + obj.height());
+                tempBottom.push(obj.y() + This.real(obj).height);
             });
 
             var max = Math.max(...tempBottom);
 
             Selected.forEach(function (obj) {
-                obj.y(max - obj.height());
+                obj.y(max - This.real(obj).height);
             });
         }
     }
 
     this.SpaceHorizontal = function(Selected){
+        var This = this;
         if(Selected.length >= 3) {
             var allLeft = [];
             var sortArray = [];
@@ -111,7 +126,7 @@ function ALIGN(){
                 for (var i = 0; i < Selected.length; i++) {
                     if (left === Selected[i].x()) {
                         sortArray.push(Selected[i]);
-                        objTotalWidth += Selected[i].width();
+                        objTotalWidth += This.real(Selected[i]).width;
                         break;
                     }
                 }
@@ -122,12 +137,13 @@ function ALIGN(){
 
             sortArray.forEach(function (o, i) {
                 o.x(allLeft[0] + (objTotalWidth + (i * gap)));
-                objTotalWidth += o.width();
+                objTotalWidth += This.real(o).width;
             })
         }
     }
 
     this.SpaceVertical = function(Selected){
+        var This = this;
         if(Selected.length >= 3) {
             var allTop = [];
             var sortArray = [];
@@ -145,7 +161,7 @@ function ALIGN(){
                 for (var i = 0; i < Selected.length; i++) {
                     if (top === Selected[i].y()) {
                         sortArray.push(Selected[i]);
-                        objTotalHeight += Selected[i].height();
+                        objTotalHeight += This.real(Selected[i]).height;
                         break;
                     }
                 }
@@ -156,7 +172,7 @@ function ALIGN(){
 
             sortArray.forEach(function (o, i) {
                 o.y(allTop[0] + (objTotalHeight + (i * gap)));
-                objTotalHeight += o.height();
+                objTotalHeight += This.real(o).height;
             })
         }
     }

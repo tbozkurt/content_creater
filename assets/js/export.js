@@ -1,17 +1,34 @@
 function EXPORT(){
     this.getStandart = function(o){
+        var left = o.x();
+        var top = o.y();
+
+        if(String(left).includes("e-")){
+            left = 0;
+        }
+
+        if(String(top).includes("e-")){
+            top = 0;
+        }
 
         var properties = {
-            x: o.x(),
-            y: o.y(),
+            x: left,
+            y: top,
             offsetX: o.offsetX(),
             offsetY: o.offsetY(),
             width: o.width(),
             height: o.height(),
             scale: o.scale(),
             name: o.name(),
-            draggable: o.draggable(),
-            opacity: o.opacity()
+            draggable: o.draggable()
+        }
+
+        if(o.opacity() !== 1){
+            properties.opacity = o.opacity();
+        }
+
+        if(o.Layer.type === "objectRect"){
+            properties.borderPosition = o.attrs.borderPosition;
         }
 
         if(o.Layer.type === "objectMovieClip"){

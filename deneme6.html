@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- USE DEVELOPMENT VERSION -->
+  <script src="https://unpkg.com/konva@9.3.18/konva.min.js"></script>
+  <meta charset="utf-8" />
+  <title>Konva Resize Text Demo</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+<div id="container"></div>
+<script>
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  var stage = new Konva.Stage({
+    container: 'container',
+    width: width,
+    height: height,
+  });
+
+  var layer = new Konva.Layer();
+
+  /*
+   * create a group which will be used to combine
+   * multiple simple shapes.  Transforming the group will
+   * transform all of the simple shapes together as
+   * one unit
+   */
+  var group = new Konva.Group({
+    x: 120,
+    y: 40,
+
+    clip: {
+      x: 0,
+      y: 0
+    },
+    draggable: true,
+/*    width: 500,
+    height: 500,
+    rotation: 0,*/
+  });
+
+  var colors = ['red', 'orange', 'yellow'];
+
+  for (var i = 0; i < 3; i++) {
+    var box = new Konva.Rect({
+      x: i * 30,
+      y: i * 18,
+      width: 50,
+      height: 50,
+      name: colors[i],
+      fill: colors[i],
+      stroke: 'black',
+      strokeWidth: 4,
+    });
+
+    group.add(box);
+  }
+
+
+  group.clipWidth(20);
+  group.clipHeight(20);
+
+
+
+  console.log(group.width());
+  console.log(group.getClientRect());
+
+  layer.add(group);
+  stage.add(layer);
+
+  var MIN_WIDTH = 20;
+  var tr = new Konva.Transformer({
+    nodes: [group],
+    ///padding: 5,
+    flipEnabled: false,
+    // enable only side anchors
+    //enabledAnchors: ['middle-left', 'middle-right'],
+    // limit transformer size
+    boundBoxFunc: (oldBox, newBox) => {
+/*      if (Math.abs(newBox.width) < MIN_WIDTH) {
+        return oldBox;
+      }
+      return newBox;*/
+    },
+  });
+  layer.add(tr);
+
+
+
+
+/*
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  var stage = new Konva.Stage({
+    container: 'container',
+    width: width,
+    height: height,
+  });
+
+  var layer = new Konva.Layer();
+  stage.add(layer);
+
+  var text = new Konva.Rect({
+    x: 50,
+    y: 60,
+    width:100,
+    height:100,
+    fill: 'red',
+    //fontSize: 20,
+    //text: 'Hello from the Konva framework. Try to resize me.',
+    //draggable: true,
+  });
+  layer.add(text);
+
+  var MIN_WIDTH = 20;
+  var tr = new Konva.Transformer({
+    nodes: [text],
+    padding: 5,
+    flipEnabled: false,
+    // enable only side anchors
+    enabledAnchors: ['middle-left', 'middle-right'],
+    // limit transformer size
+    boundBoxFunc: (oldBox, newBox) => {
+      if (Math.abs(newBox.width) < MIN_WIDTH) {
+        return oldBox;
+      }
+      return newBox;
+    },
+  });
+  layer.add(tr);
+  text.on('transform', () => {
+    console.log("omg");
+    // with enabled anchors we can only change scaleX
+    // so we don't need to reset height
+    // just width
+    console.log( Math.max(text.width() * text.scaleX(), MIN_WIDTH) );
+    text.setAttrs({
+      width: Math.max(text.width() * text.scaleX(), MIN_WIDTH),
+      scaleX: 1,
+      scaleY: 1,
+    });
+  });
+  */
+</script>
+</body>
+</html>

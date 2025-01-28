@@ -22,7 +22,7 @@
         <div class="topMenuEmpty">&nbsp;</div>
     </div>
 
-    <div class="AlignMain">
+    <div class="iconMain">
         <div class="TopIconBox" id="createRect"><img src="assets/img/create_rect.png"></div>
         <div class="TopIconBox image-upload">
             <form id="uploadImageForm" enctype="multipart/form-data">
@@ -35,17 +35,42 @@
         </div>
 
         <div class="TopIconBox" id="createText"><img src="assets/img/create_text.png"></div>
+        <div class="createSpace"></div>
         <div id="topBanner_addObject">
-            <div class="TopIconBox" id="createSelect"><img src="assets/img/create_select.png"></div>
-            <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
             <div class="TopIconBox" id="createDirective"><img src="assets/img/create_directive.png"></div>
             <div class="TopIconBox" id="createControl"><img src="assets/img/create_control.png"></div>
             <div class="TopIconBox" id="createAnswer"><img src="assets/img/create_answer.png"></div>
+            <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
             <div class="TopIconBox" id="createURL"><img src="assets/img/create_url.png"></div>
-            <div class="TopIconBox" id="createInput"><img src="assets/img/create_input.png"></div>
-            <div class="TopIconBox" id="createMatchDrag"><img src="assets/img/create_matchdrag.png"></div>
-            <div class="TopIconBox" id="createMatchDrop"><img src="assets/img/create_matchdrop.png"></div>
-            <div class="TopIconBox" id="createCanvas"><img src="assets/img/create_canvas.png"></div>
+            <div class="createSpace"></div>
+            <div id="createSelectBox">
+                <select id="activityTypes">
+                    <option value="0">Çoktan Seçmeli</option>
+                    <option value="1">Boşluk Doldurma</option>
+                    <option value="2">Eşleştirme</option>
+                    <option value="3">Sürükle Bırak</option>
+                </select>
+            </div>
+
+            <div id="iconGroup0" class="iconGroup">
+                <div class="TopIconBox" id="createSelect"><img src="assets/img/create_select.png"></div>
+            </div>
+
+            <div id="iconGroup1" class="iconGroup">
+                <div class="TopIconBox" id="createInput"><img src="assets/img/create_input.png"></div>
+            </div>
+
+            <div id="iconGroup2" class="iconGroup">
+                <div class="TopIconBox" id="createMatchDrag"><img src="assets/img/create_matchdrag.png"></div>
+                <div class="TopIconBox" id="createMatchDrop"><img src="assets/img/create_matchdrop.png"></div>
+                <div class="TopIconBox" id="createCanvas"><img src="assets/img/create_canvas.png"></div>
+            </div>
+
+            <div id="iconGroup3" class="iconGroup">
+                <div class="TopIconBox" id="createBoxDrag"><img src="assets/img/create_matchdrag.png"></div>
+                <div class="TopIconBox" id="createBoxDrop"><img src="assets/img/create_matchdrop.png"></div>
+            </div>
+
         </div>
     </div>
 
@@ -58,7 +83,7 @@
 <div id="scope_Canvas"></div>
 
 <div class="WorkSpaces WorkView WorkSpace_Layer" id="scope_LeftWorkSpace" style="left:0; border-right:2px solid">
-    <div class="WorkSpaces_Header">&#8627; Layer</div>
+    <div class="WorkSpaces_Header">Layer</div>
     <div id="LayerMain">
         <div class="SR_container2"></div>
     </div>
@@ -67,7 +92,7 @@
 <div class="WorkSpaces WorkView" id="scope_RightWorkSpace">
 
     <div class="WorkSpaces_Group WorkSpace_PositionAndSize">
-        <div class="WorkSpaces_Header">&#8627; Position And Size </div>
+        <div class="WorkSpaces_Header">Position And Size </div>
         <div class="Properties">
             <div class="Properties_column">
                 <div class="Properties_box">
@@ -96,7 +121,7 @@
     </div>
 
     <div class="WorkSpaces_Group WorkSpace_Scale">
-        <div class="WorkSpaces_Header">&#8627; Scale</div>
+        <div class="WorkSpaces_Header">Scale</div>
         <div class="Properties_column">
             <div class="Properties_box">
                 <div class="Properties_name">W</div>
@@ -118,7 +143,7 @@
     </div>
 
     <div class="WorkSpaces_Group WorkSpace_Align">
-        <div class="WorkSpaces_Header">&#8627; Align Object</div>
+        <div class="WorkSpaces_Header">Align Object</div>
         <div class="AlignMain">
             <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
             <div class="AlignBox" id="align_HorizontalCenter"><img src="assets/img/centerY.svg"></div>
@@ -138,15 +163,16 @@
     </div>
 
     <div class="WorkSpaces_Group addSpace WorkSpace_Identity">
-        <div class="WorkSpaces_Header">&#8627; Identity </div>
+        <div class="WorkSpaces_Header">Identity </div>
 
         <div class="WorkSpaces_SelectContainer">
             <div class="altHead">ID:</div>
             <input type="text" class="elementInput" id="identity_elementID">
             <div class="altHead">Class:</div>
             <input type="text" class="elementInput" id="identity_elementClass">
-            <table id="identity_table" style="margin-top: 10px"></table>
-
+            <div class="tableScroll" style="margin-top: 10px">
+                <table id="identity_table"></table>
+            </div>
             <div class="Identity_AddParamBtn">
                 <img src="assets/img/addparam.png" id="identity_tableAddBtn" class="paramBtn_icon"/>
             </div>
@@ -155,7 +181,7 @@
     </div>
 
     <div class="WorkSpaces_Group WorkSpace_Font">
-        <div class="WorkSpaces_Header">&#8627; Font</div>
+        <div class="WorkSpaces_Header">Font</div>
 
         <div class="font_table2">
             <div class="font_column">
@@ -166,7 +192,7 @@
                         <option value="Nunito">Nunito</option>
                     </select>
                 </div>
-                <input type="text" id="font_sizeInput">
+                <input type="number" id="font_sizeInput">
             </div>
             <div class="font_column">
                 <div>Color</div>
@@ -179,41 +205,58 @@
     </div>
 
     <div class="WorkSpaces_Group addSpace WorkSpace_ColorPicker">
-        <div class="WorkSpaces_Header">&#8627; Color Picker</div>
-
+        <div class="WorkSpaces_Header">Rectangle</div>
         <div class="font_table2">
-            <div class="font_column">
-                <input type="color" id="colorPicker" name="head" value="#ff0000" />
-            </div>
-
-            <div class="font_column">
-                <input type="text" id="font_colorInput" maxlength="7">
-            </div>
+            <input type="color" class="rect_colorPicker" id="rect_fillColorPicker" value="#ff0000"/>
+            <input type="text" class="rect_input1" id="rect_fillColorInput" maxlength="7">
+            <input type="number" class="rect_input2 onlyNumber" id="rect_fillAlphaInput" maxlength="3">
         </div>
 
         <div class="font_table2">
-            <input type="range" id="font_opacity" min="1" max="100" value="50">
+            <input type="color" class="rect_colorPicker" id="rect_borderColorPicker" value="#ff0000"/>
+            <input type="text" class="rect_input1" id="rect_borderColorInput" maxlength="7">
+            <input type="number" class="rect_input2 onlyNumber" id="rect_borderAlphaInput" maxlength="3">
+        </div>
+
+        <div class="font_table2">
+            <div class="font_column">
+                Radius<input type="number" class="rect_propInput onlyNumber" id="rect_radiusInput" maxlength="6">
+            </div>
+            <div class="font_column">
+                Border<input type="number" class="rect_propInput onlyNumber" id="rect_borderInput" maxlength="3">
+            </div>
+        </div>
+    </div>
+
+    <div class="WorkSpaces_Group addSpace WorkSpace_Opacity">
+        <div class="WorkSpaces_Header">Opacity</div>
+        <div class="font_table2">
+            <input type="range" id="opacity_slider" min="1" max="100" value="50">
         </div>
     </div>
 
     <div class="WorkSpaces_Group addSpace WorkSpace_SceneParam">
-        <div class="WorkSpaces_Header">&#8627; Add Scene </div>
-        <table id="scene_table"></table>
+        <div class="WorkSpaces_Header">Add Scene </div>
+        <div class="tableScroll">
+            <table id="scene_table"></table>
+        </div>
         <div class="Identity_AddParamBtn" id="param_sceneAddBtn">
             <img src="assets/img/addparam.png" class="paramBtn_icon"/>
         </div>
     </div>
 
     <div class="WorkSpaces_Group addSpace WorkSpace_AnswerParam">
-        <div class="WorkSpaces_Header">&#8627; Add Answer </div>
-        <table id="answer_table"></table>
+        <div class="WorkSpaces_Header">Add Answer</div>
+        <div class="tableScroll">
+            <table id="answer_table"></table>
+        </div>
         <div class="Identity_AddParamBtn" id="param_answerAddBtn">
             <img src="assets/img/addparam.png" class="paramBtn_icon"/>
         </div>
     </div>
 
     <div class="WorkSpaces_Group WorkSpace_OverFlow" style="display:none">
-        <div class="WorkSpaces_Header">&#8627; Area</div>
+        <div class="WorkSpaces_Header">Area</div>
         <div class="Properties_column">
             <div class="Properties_box Properties_areaW">
                 <div class="Properties_name ">W</div>
@@ -307,9 +350,9 @@
 
 <script>
     var IDE = {
-        stage:{width: 1480, height: 920, container: "scope_Canvas", bg:"#404040"},
+        stage:{width: 1430, height: 870, container: "scope_Canvas", bg:"#404040"},
         layer:{x:100, y:100},
-        text:{write: false, leftSpace: 152, topSpace: 37},
+        text:{write: false},
         sceneTypes:[["Çoktan Seçmeli", "CS"], ["Boş Belge", "EMPTY"]],
         activeLayer: null,
         selectedLayers:[],
@@ -321,7 +364,7 @@
         editLayer: null,
         sceneSelect: null,
         editSelect: null,
-        copy: null,
+        copy: [],
         sceneUnique: null,
         saveInterval: null,
         addHistory: true,
@@ -332,6 +375,7 @@
         searchList:[],
         editMC: null,
         workSpace:{
+            scope_TopMenu: document.querySelector("#scope_TopMenu"),
             scope_Canvas: document.querySelector("#scope_Canvas"),
             scope_LeftWorkSpace: document.querySelector("#scope_LeftWorkSpace"),
             scope_RightWorkSpace: document.querySelector("#scope_RightWorkSpace"),
@@ -351,6 +395,7 @@
             areaWInput: document.querySelector("#Properties_areaW"),
             areaHInput: document.querySelector("#Properties_areaH"),
 
+            createDirective: document.querySelector("#createDirective"),
             createText: document.querySelector("#createText"),
             createRect: document.querySelector("#createRect"),
             createSelect: document.querySelector("#createSelect"),
@@ -362,11 +407,24 @@
             createMatchDrag: document.querySelector("#createMatchDrag"),
             createMatchDrop: document.querySelector("#createMatchDrop"),
             createCanvas: document.querySelector("#createCanvas"),
-            createDirective: document.querySelector("#createDirective"),
+            activityTypes: document.querySelector("#activityTypes"),
+
+            createBoxDrag: document.querySelector("#createBoxDrag"),
+            createBoxDrop: document.querySelector("#createBoxDrop"),
 
             uploadImageForm: document.querySelector("#uploadImageForm"),
-            colorPicker: document.querySelector("#colorPicker"),
-            colorInput: document.querySelector("#font_colorInput"),
+
+            /* Rect */
+            rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
+            rect_fillColorInput: document.querySelector("#rect_fillColorInput"),
+            rect_fillAlphaInput: document.querySelector("#rect_fillAlphaInput"),
+            rect_borderColorPicker: document.querySelector("#rect_borderColorPicker"),
+            rect_borderColorInput: document.querySelector("#rect_borderColorInput"),
+            rect_borderAlphaInput: document.querySelector("#rect_borderAlphaInput"),
+            rect_radiusInput: document.querySelector("#rect_radiusInput"),
+            rect_borderInput: document.querySelector("#rect_borderInput"),
+
+            opacity_slider: document.querySelector("#opacity_slider"),
 
             align_Left: document.querySelector("#align_Left"),
             align_HorizontalCenter: document.querySelector("#align_HorizontalCenter"),
@@ -389,6 +447,7 @@
             WorkSpace_Layer: document.querySelector(".WorkSpace_Layer"),
             WorkSpace_Scene: document.querySelector(".WorkSpace_Scene"),
             WorkSpace_ColorPicker: document.querySelector(".WorkSpace_ColorPicker"),
+            WorkSpace_Opacity: document.querySelector(".WorkSpace_Opacity"),
             WorkSpace_Identity: document.querySelector(".WorkSpace_Identity"),
             WorkSpace_Font: document.querySelector(".WorkSpace_Font"),
             WorkSpace_SceneParam: document.querySelector(".WorkSpace_SceneParam"),
@@ -418,19 +477,25 @@
             userMain: document.querySelector("#userMain"),
             username: document.querySelector("#username"),
             password: document.querySelector("#password")
-        }
+        },
+        iconGroup:[
+            document.querySelector("#iconGroup0"),
+            document.querySelector("#iconGroup1"),
+            document.querySelector("#iconGroup2"),
+            document.querySelector("#iconGroup3")
+        ]
     }
 
-    var stage = new Konva.Stage(IDE.stage);
+    IDE.sahne = new Konva.Stage(IDE.stage);
     IDE.sceneLayer = new Konva.Layer(IDE.layer);
     IDE.editLayer = new Konva.Layer(IDE.layer);
     var Ruler = new Konva.Layer();
     var KonvaBG = new Konva.Layer(IDE.layer);
     IDE.sceneLayer.attrs.layer = "main";
-    stage.add(Ruler);
-    stage.add(KonvaBG);
-    stage.add(IDE.sceneLayer);
-    stage.add(IDE.editLayer);
+    IDE.sahne.add(Ruler);
+    IDE.sahne.add(KonvaBG);
+    IDE.sahne.add(IDE.sceneLayer);
+    IDE.sahne.add(IDE.editLayer);
 
     IDE.editSelect = getSELECT();
     IDE.sceneSelect = getSELECT();
@@ -450,10 +515,10 @@
     IDE.activeLayer = IDE.sceneLayer;
 
     IDE.editBG = new Konva.Rect({
-        x: 0,
-        y: 0,
-        width: 1280,
-        height: 720,
+        x: (IDE.layer.x-20) * -1,
+        y: (IDE.layer.y-20) * -1,
+        width: IDE.stage.width,
+        height: IDE.stage.height,
         fill: "rgba(0, 0, 0, 0.80)",
         draggable: false
     });
@@ -470,7 +535,7 @@
         dash: [5, 2]
     });
 
-    IDE.editLayer.add(IDE.editBG).x(1500);
+    IDE.editLayer.add(IDE.editBG).x(1600);
     IDE.editLayer.add(IDE.editRect);
 
     var imageObj = new Image();
@@ -479,13 +544,22 @@
             x: 0,
             y: 0,
             image: imageObj,
-            width: IDE.stage.width,
-            height: IDE.stage.height
+            listening: false
         });
 
         Ruler.add(yoda);
     };
     imageObj.src = '/assets/img/rulers.png';
+
+    IDE.selectRect = new Konva.Rect({
+        fill: "rgba(255, 255, 255, 0.3)",
+        stroke: "rgba(255, 255, 255, 0.86)",
+        strokeWidth: 1,
+        visible: false,
+        listening: false,
+    });
+    IDE.sceneLayer.add(IDE.selectRect);
+
 
     var CREATE = new CREATE();
     var EXPORT = new EXPORT();
@@ -562,8 +636,7 @@
 
     function selectItem(temp){
         IDE.selected = true;
-
-        if(temp.shiftKey){
+        if(temp.shiftKey && IDE.selectedLayers.length >= 1){
             IDE.selectedLayers.push(temp.layer);
             changeSelect["multi"](SELECT);
         }else{
@@ -571,6 +644,7 @@
                 IDE.selectedLayers = [temp.layer];
                 changeSelect[ temp.layer.Layer.type ](SELECT);
                 colorPicker({});
+                opacityWorkSpace({});
             }
         }
 
@@ -578,7 +652,6 @@
         checkIdentity(temp.layer);
         layerBackgroundColor();
         setFontSize(null, null);
-
         showObjectWorkSpaces();
     }
 
@@ -591,12 +664,14 @@
             IDE.workSpace.WorkSpace_Identity.style.display = "none";
             IDE.workSpace.WorkSpace_SceneParam.style.display = "none";
             IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
-            IDE.workSpace.WorkSpace_ColorPicker.style.display = "block";
-            IDE.workSpace.WorkSpace_Font.style.display = "block";
+            IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
+            IDE.workSpace.WorkSpace_Font.style.display = "none";
+            IDE.workSpace.WorkSpace_Opacity.style.display = "none";
 
             if(IDE.selectedLayers.length === 1){
                 IDE.workSpace.WorkSpace_Identity.style.display = "block";
                 IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
+                IDE.workSpace.WorkSpace_Opacity.style.display = "block";
 
                 if(IDE.selectedLayers[0].Layer.type === "objectText"){
                     IDE.workSpace.WorkSpace_Font.style.display = "block";
@@ -619,28 +694,99 @@
             IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
             IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
             IDE.workSpace.WorkSpace_Font.style.display = "none";
+            IDE.workSpace.WorkSpace_Opacity.style.display = "none";
+        }
+    }
+
+    function opacityWorkSpace(prop){
+        if(IDE.selectedLayers.length === 1){
+            if(prop.opacity){
+                IDE.selectedLayers[0].opacity(prop.opacity);
+            }else{
+                IDE.workSpace.opacity_slider.value = IDE.selectedLayers[0].opacity()*100;
+            }
         }
     }
 
     function colorPicker(prop){
         if(IDE.selectedLayers.length === 1){
             if(IDE.selectedLayers[0].Layer.type === "objectRect"){
-                if(prop.color){
-                    if(!prop.color.includes("#")){
-                        prop.color = "#"+color;
+                 if(prop.fillColor){
+                     if(!prop.fillColor.includes("#")){
+                         prop.fillColor = "#"+prop.fillColor;
+                     }
+
+                     if(utils.isHexCode(prop.fillColor)){
+                         var fillColor = IDE.selectedLayers[0].fill();
+                         if(!fillColor){
+                             fillColor = "#000000";
+                         }
+
+                         var fillOld = utils.hexConvert(fillColor);
+                         var fillNew = utils.hexConvert({color: prop.fillColor, alpha: fillOld.alpha});
+                         IDE.workSpace.rect_fillColorPicker.value = fillNew.color;
+                         IDE.workSpace.rect_fillColorInput.value = fillNew.color;
+                         IDE.workSpace.rect_fillAlphaInput.value = fillNew.alpha;
+                         IDE.selectedLayers[0].fill(fillNew.hex);
+                         addHistory();
+                     }
+                }else if(prop.fillAlpha){
+                    var fillColor = IDE.selectedLayers[0].fill();
+                    if(fillColor){
+                        var fillOld = utils.hexConvert(fillColor);
+                        var fillNew = utils.hexConvert({color: fillOld.color, alpha: parseInt(prop.fillAlpha)});
+                        IDE.selectedLayers[0].fill(fillNew.hex);
+                    }
+                }else if(prop.borderColor){
+                    if(!prop.borderColor.includes("#")){
+                        prop.borderColor = "#"+prop.borderColor;
                     }
 
-                    IDE.selectedLayers[0].fill(prop.color);
-                    IDE.workSpace.colorInput.value = prop.color;
-                    IDE.workSpace.colorPicker.value = prop.color;
-                    addHistory();
-                }else if(prop.opacity){
-                    var tempOpacity = parseInt(document.querySelector("#font_opacity").value) / 100;
-                    IDE.selectedLayers[0].opacity(tempOpacity);
-                }else{
-                    document.querySelector("#font_opacity").value = IDE.selectedLayers[0].opacity()*100;
-                    IDE.workSpace.colorPicker.value = IDE.selectedLayers[0].fill();
-                    IDE.workSpace.colorInput.value = IDE.selectedLayers[0].fill();
+                     if(utils.isHexCode(prop.borderColor)){
+                         var strokeColor = IDE.selectedLayers[0].stroke();
+                         if(!strokeColor){
+                             strokeColor = "#000000";
+                         }
+
+                         var borderOld = utils.hexConvert(strokeColor);
+                         var borderNew = utils.hexConvert({color: prop.borderColor, alpha: borderOld.alpha});
+                         IDE.workSpace.rect_borderColorPicker.value = borderNew.color;
+                         IDE.workSpace.rect_borderColorInput.value = borderNew.color;
+                         IDE.workSpace.rect_borderAlphaInput.value = borderNew.alpha;
+                         IDE.selectedLayers[0].stroke(borderNew.hex);
+                         addHistory();
+                     }
+                }else if(prop.borderAlpha){
+                     var strokeColor = IDE.selectedLayers[0].stroke();
+                     if(strokeColor){
+                         var borderOld = utils.hexConvert(strokeColor);
+                         var borderNew = utils.hexConvert({color: borderOld.color, alpha: parseInt(prop.borderAlpha) });
+                         IDE.selectedLayers[0].stroke(borderNew.hex);
+                     }
+                } else if(prop.radius){
+                    IDE.selectedLayers[0].cornerRadius(parseInt(prop.radius));
+                }else if(prop.border){
+                    IDE.selectedLayers[0].strokeWidth(parseInt(prop.border));
+                } else{
+                    var rect = utils.hexConvert( IDE.selectedLayers[0].fill() );
+                    IDE.workSpace.rect_fillColorPicker.value = rect.color;
+                    IDE.workSpace.rect_fillColorInput.value = rect.color;
+                    IDE.workSpace.rect_fillAlphaInput.value = rect.alpha;
+
+                    var stroke = IDE.selectedLayers[0].stroke();
+                    if(stroke){
+                        stroke = utils.hexConvert(stroke);
+                        IDE.workSpace.rect_borderColorPicker.value = stroke.color;
+                        IDE.workSpace.rect_borderColorInput.value = stroke.color;
+                        IDE.workSpace.rect_borderAlphaInput.value = stroke.alpha;
+                    }else{
+                        IDE.workSpace.rect_borderColorPicker.value = "#282828";
+                        IDE.workSpace.rect_borderColorInput.value = "";
+                        IDE.workSpace.rect_borderAlphaInput.value = "";
+                    }
+
+                    IDE.workSpace.rect_radiusInput.value = IDE.selectedLayers[0].cornerRadius();
+                    IDE.workSpace.rect_borderInput.value = IDE.selectedLayers[0].strokeWidth();
                 }
             }
         }
@@ -719,8 +865,8 @@
             var idBtn = "btn_"+prop;
 
             tableHtml += `<tr>
-                        <td><input type="text" class="input1 tableInput" id="${idKey}" value="${prop}"></td>
-                        <td><input type="text" class="td2 tableInput input2" id="${idVal}" value="${list[prop]}"></td>
+                        <td><input type="text" class="input1 tableInput" id="${idKey}" value="${prop}" autocomplete="off"></td>
+                        <td><input type="text" class="td2 tableInput input2" id="${idVal}" value="${list[prop]}" autocomplete="off"></td>
                         <td class="td3"><img src="assets/img/removeparam.png" id="${idBtn}" class="paramBtn_icon" alt=""/></td>
                     </tr>`;
 
@@ -740,7 +886,8 @@
             keyInput.addEventListener("focusout", function(){
                 for(var p in list){
                     if(p === this.value){
-                        this.value = "New";
+                        //this.value = "New";
+                        return false;
                     }
                 }
 
@@ -748,9 +895,7 @@
                     delete list[this.prop];
                     list[this.value] = this.data;
                 }
-            });
 
-            keyInput.addEventListener("focusout", function(){
                 this.prop = this.value;
             });
 
@@ -772,7 +917,6 @@
     document.querySelector("#param_answerAddBtn").addEventListener("click", function(){
         jsonV2.slides[sceneIndex].answer["New"] = "";
         refreshTable(jsonV2.slides[sceneIndex].answer, document.querySelector("#answer_table"), "ID", "Answer");
-        console.log( jsonV2.slides[sceneIndex] );
     });
 
     document.querySelector("#param_sceneAddBtn").addEventListener("click", function(){
@@ -974,7 +1118,7 @@
             sceneSelect(0);
         }else{
             layerDeleteAll();
-            showSceneType();
+            newSceneRequest();
         }
     }
 
@@ -1022,26 +1166,15 @@
     }
 
 
-    function addSceneTypeBtnHTML(filename, id){
-        var htmlID = "new_"+id.toLowerCase();
-
-        let html = `<div class="welcome_fileBtn_Part">
-                        <img class="welcome_fileIcon" src="/assets/img/createscene.png" alt="file">
-                        <div>${filename}</div>
-                    </div>`;
-
-        let div = utils.addDOM({className:"welcome_fileBtn", id:htmlID, innerHTML:html});
-        IDE.welcome.sceneTypeList.appendChild(div);
-
-        document.querySelector("#"+ htmlID).addEventListener("click", function(e){
-            var template = sceneTemplate();
-            console.log(template);
-            sceneAddNewScene(template);
-            IDE.welcome.main.style.display = "none";
-        });
-    }
-
-    var boxColor = {tuncay: "#455a64", melike: "#1565c0", irem: "#ad1457"};
+    var boxColor = {
+        melike:"#b71c1c",
+        irem:"#01579b",
+        tuncay:"#004d40",
+        kamil:"#1b5e20",
+        demet:"#f57f17",
+        goknur:"#bf360c",
+        cansu:"#880e4f"
+    };
 
     /* File System */
     function addSavedFileBtn(filename, date, fileUser){
@@ -1078,10 +1211,6 @@
         fileBtn.addEventListener("click", function(e){
             selectFileAjax(filename);
             IDE.welcome.main.style.display = "none";
-            IDE.welcome.step1.style.display = "none";
-            IDE.welcome.step2.style.marginBottom = "50px";
-            IDE.welcome.closeInput.style.display = "none";
-
             IDE.fileUser = fileUser;
             saveBtnViewStatus("block");
         });
@@ -1102,17 +1231,17 @@
         });
 
         htmlBtn.addEventListener("click", function(e){
-            window.open("/player/?file="+ filename +"&mode=normal");
+            /* window.open("/player/?file="+ filename +"&mode=normal"); */
             e.stopPropagation();
         });
 
         opticBtn.addEventListener("click", function(e){
-            window.open("/player/?file="+ filename +"&mode=optic");
+            /* window.open("/player/?file="+ filename +"&mode=optic"); */
             e.stopPropagation();
         });
 
-        if(IDE.fileUser){
-            if(IDE.fileUser !== IDE.faceUser){
+        if(fileUser){
+            if(fileUser !== IDE.faceUser){
                 zipBtn.classList.add("disableBtn");
                 delBtn.classList.add("disableBtn");
                 htmlBtn.classList.add("disableBtn");
@@ -1121,17 +1250,18 @@
         }
     }
 
-    function showSceneType(){
-        IDE.welcome.main.style.display = "flex";
-        IDE.welcome.main.style.alignItems = "center";
-        IDE.welcome.step2.style.display = "block";
+    function newSceneRequest(){
+        var template = sceneTemplate();
+        console.log(template);
+        sceneAddNewScene(template);
+        IDE.welcome.main.style.display = "none";
     }
 
 
     function addSceneAddButon(){
         document.querySelector("#Scene_addButon").addEventListener("click", function(){
             autoSceneSave();
-            showSceneType();
+            newSceneRequest();
         });
 
         addStageBG();
@@ -1169,7 +1299,7 @@
 
                 sceneSelect(0);
             }else{
-                showSceneType();
+                newSceneRequest();
             }
 
 
@@ -1277,7 +1407,6 @@
 
     function getFileListParse(data){
         if(data.success){
-            IDE.token = data.token;
             IDE.faceUser = data.user;
             var saveList = [];
 
@@ -1318,17 +1447,14 @@
         });
     }
 
-    IDE.sceneTypes.map(function(e){
-        addSceneTypeBtnHTML(e[0], e[1]);
-    });
-
-    function getFileList(username, password){
-        var data = {username, password};
+    function getFileList(username, password, token){
+        var data = {username, password, token};
         $.ajax({url: "/getFileList", data, success: getFileListParse, type: "POST", error: ajaxError});
     }
 
     document.querySelector("#userMain_guestBtn").addEventListener("click", function(){
-        getFileList("guest", "guest");
+        console.log(IDE.token);
+        getFileList("guest", "guest", IDE.token);
     });
 
 
@@ -1359,13 +1485,12 @@
         return false;
     }
 
-
     /*-----------*/
 
     document.querySelector("#userMain_submitBtn").addEventListener("click", function(){
         var username = IDE.welcome.username.value;
         var password = IDE.welcome.password.value;
-        getFileList(username, password);
+        getFileList(username, password, IDE.token);
     });
 
     function LocalGet() {
@@ -1373,7 +1498,7 @@
             var user = localStorage.getItem("occ_user");
             var pw = localStorage.getItem("occ_pw");
             if(user && user !== "guest"){
-                getFileList(user, pw);
+                getFileList(user, pw, IDE.token);
             }
         }else{
             showError("No Local Storage Support");
@@ -1389,12 +1514,153 @@
         }
     }
 
-    LocalGet();
+    function prepareParse(data){
+        IDE.token = data.token;
+        LocalGet();
+    }
+
+    function prepare(){
+        $.ajax({url: "/prepare", success: prepareParse, type: "POST", error: ajaxError});
+    }
+
+    prepare();
+
+
+    function resize(){
+        var topMenuHeight = IDE.workSpace.scope_TopMenu.clientHeight;
+        var sceneHeight = IDE.workSpace.scope_Scene.clientHeight;
+        var layerWidth = IDE.workSpace.scope_LeftWorkSpace.clientWidth;
+        var workWidth = IDE.workSpace.scope_RightWorkSpace.clientWidth;
+
+        var totalWidth = (layerWidth + IDE.stage.width + workWidth)+"px";
+        var totalHeight = (topMenuHeight + IDE.stage.height + sceneHeight)+"px";
+
+        Object.assign(IDE.workSpace.scope_TopMenu.style, {
+            left: 0,
+            top: 0,
+            width: (layerWidth + IDE.stage.width + workWidth)+"px"
+        });
+
+        Object.assign(IDE.workSpace.scope_LeftWorkSpace.style, {
+            left: 0,
+            top: topMenuHeight+"px",
+            height: IDE.stage.height+"px"
+        });
+
+        Object.assign(IDE.workSpace.scope_Canvas.style, {
+            left: layerWidth+"px",
+            width: IDE.stage.width+"px",
+            height: IDE.stage.height+"px"
+        });
+
+        Object.assign(IDE.workSpace.scope_RightWorkSpace.style, {
+            left: (layerWidth + IDE.stage.width)+"px",
+            top: topMenuHeight+"px",
+            height: IDE.stage.height+"px"
+        });
+
+        Object.assign(IDE.workSpace.scope_Scene.style, {
+            left: 0,
+            top: (topMenuHeight + IDE.stage.height)+"px",
+            width: (layerWidth + IDE.stage.width + workWidth)+"px"
+        });
+
+        Object.assign(IDE.welcome.main.style, {
+            width: totalWidth,
+            height: (topMenuHeight + IDE.stage.height + sceneHeight)+"px"
+        });
+
+        Object.assign(IDE.welcome.userMain.style, {
+            width: totalWidth,
+            height: totalHeight
+        });
+
+
+        Object.assign(document.querySelector("#previewContent").style, {
+            left: (layerWidth + IDE.layer.x)+"px",
+            top: (topMenuHeight + IDE.layer.y)+"px"
+        });
+
+        Object.assign(IDE.workSpace.previewMain.style, {
+            width: totalWidth,
+            height: totalHeight
+        });
+
+        IDE.text.leftSpace = layerWidth;
+        IDE.text.topSpace = topMenuHeight;
+
+    }
+
+    resize();
+
+
+/*
+//FileListi modifiye etmek icin kullan newList json gelecek.arayuzde dosya ismine tiklaninca calisir.
+document.querySelector("#Slide_fileName").addEventListener("click", function(){
+    var newList = JSON.stringify();
+    var data = {token: IDE.token, newList:newList};
+    $.ajax({url: "/modifiedFilelist", data, success: modifiedFilelist, type: "POST", error: ajaxError});
+});
+function modifiedFilelist(data){console.log(data)}
+*/
+
+/*
+//dosya oluşturduktan sonra 2.popup göstermek istenirse.[eski dosya tipi popup]
+//Burası aktif edilir. newSceneRequest > showSceneType olarak değiştirilir.
+function addSceneTypeBtnHTML(filename, id){
+    var htmlID = "new_"+id.toLowerCase();
+
+    let html = `<div class="welcome_fileBtn_Part">
+                    <img class="welcome_fileIcon" src="/assets/img/createscene.png" alt="file">
+                    <div>${filename}</div>
+                </div>`;
+
+    let div = utils.addDOM({className:"welcome_fileBtn", id:htmlID, innerHTML:html});
+    IDE.welcome.sceneTypeList.appendChild(div);
+
+    document.querySelector("#"+ htmlID).addEventListener("click", function(e){
+        console.log("MMC");
+        var template = sceneTemplate();
+        console.log(template);
+        sceneAddNewScene(template);
+        IDE.welcome.main.style.display = "none";
+    });
+}
+
+IDE.sceneTypes.map(function(e){
+    addSceneTypeBtnHTML(e[0], e[1]);
+});
+
+function showSceneType(){
+    IDE.welcome.main.style.display = "flex";
+    IDE.welcome.main.style.alignItems = "center";
+    IDE.welcome.step2.style.display = "block";
+}
+
+//Kaydedilmiş bir dosyaya tikladigindaki popup ayari
+function oldFileWindow(){
+    IDE.welcome.main.style.display = "none";
+    IDE.welcome.step1.style.display = "none";
+    IDE.welcome.step2.style.marginBottom = "50px";
+    IDE.welcome.closeInput.style.display = "none";
+}
+
+
+//Yeni dosya oluşturunca popup tasarim ayarlamalari
+function newFileWindow(){
+    IDE.welcome.main.style.alignItems = "center";
+    IDE.welcome.step1.style.display = "none";
+    IDE.welcome.step2.style.display = "block";
+    IDE.welcome.step2.style.marginBottom = "50px";
+    IDE.welcome.closeInput.style.display = "none";
+}
+*/
 
 </script>
 <!--<div id="textEditBox" contenteditable="true">gg</div>-->
 
 <script src="/assets/js/sr.js"></script>
 <script src="/assets/js/ide.js"></script>
+<script src="/assets/js/select.js"></script>
 </body>
 </html>
