@@ -151,7 +151,7 @@ function PLAYER(){
         });
     }
 
-    this.startBuild = function(json, currentSceneID, stageBG, container, Mode, ActiveContent, scoreUpdate){
+    this.startBuild = function(json, startScene, stageBG, container, Mode, ActiveContent, scoreUpdate){
         AC=ActiveContent;
         player.root = AC.Url;
         player.scoreUpdate = scoreUpdate;
@@ -177,6 +177,7 @@ function PLAYER(){
                 wrong:0,
                 right:0,
                 empty:0,
+                totalRight:0,
                 inputs:{},
                 complete: false,
                 attempt:0,
@@ -213,14 +214,13 @@ function PLAYER(){
         if(Mode === "optic"){
             This.build_KT(json);
         }else if(Mode === "preview"){
-            Preview_HTML(container);
+            Preview_HTML(container, startScene);
             initKACountDown();
         }
     }
 
     this.scoreCalc = function(){
         var score = {right:0, wrong:0, empty:0, access:0, success:0, duration:0};
-
         var averageScore = 100/SD.length;
 
         function accessControl(e){
@@ -275,15 +275,28 @@ function PLAYER(){
         }
     }
 
-
-    this.scoreEvalution = function(score){
+    /* Score Evalution */
+    function scoreEvalution(score){
         if(score.totalRight && !score.totalWrong && !score.totalEmpty){
             return "right";
         }else if(!score.totalWrong && !score.totalRight){
             return "empty";
+        }else if(score.totalRight && !score.totalWrong){
+            return "partially";
         } else{
             return "wrong";
         }
+    }
+
+    this.answerHQ = function (SP, SD){
+        console.log("answerHQ");
+        SP.fnc.map(function(fnc){
+            fnc.answer();
+        });
+
+        controlBtnView(SP, "disable");
+        SP.answerBtn.style.pointerEvents = "none";
+        SP.answerBtn.style.opacity = 0.5;
     }
 
     this.controlHQ = function(SP, SD){
@@ -291,31 +304,48 @@ function PLAYER(){
         var totalScore = {totalRight:0, totalWrong:0, totalEmpty:0};
         var finalStatus;
 
+        if(SP.directive.sound){
+            SP.directive.sound.stop();
+        }
+
         SP.fnc.map(function(fnc){
             var currentScore = fnc.control();
             totalScore.totalRight += currentScore.totalRight;
             totalScore.totalWrong += currentScore.totalWrong;
             totalScore.totalEmpty += currentScore.totalEmpty;
-            fnc.currentStatus = This.scoreEvalution(currentScore);
-            finalStatus = This.scoreEvalution(totalScore);
+            finalStatus = scoreEvalution(totalScore);
         });
 
         if(finalStatus === "right"){
             This.playRightAudio();
-            SD.right++;
+            SD.right = totalScore.totalRight;
             SD.empty=0;
             This.sceneComplete();
             This.nextScene();
             SP.fnc.map(function(fnc){
-                fnc.right();
+                fnc.right(finalStatus);
             });
         }else{
+            if(finalStatus === "partially"){
+                SD.right = totalScore.totalRight;
+                SD.empty = totalScore.totalEmpty;
+            }else{
+                SD.wrong++;
+            }
+
             This.playWrongAudio();
-            SD.wrong++;
 
             SP.fnc.map(function(fnc){
-                fnc.wrong();
+                fnc.wrong(finalStatus);
             });
+
+            if(SD.wrong >= 3){
+                if(SP.answerBtn){
+                    SP.answerBtn.style.cursor = "pointer";
+                    SP.answerBtn.style.pointerEvents = "auto";
+                    SP.answerBtn.style.opacity = 1;
+                }
+            }
         }
 
         This.scoreCalc();
@@ -332,12 +362,18 @@ function PLAYER(){
                 init["initMATCH"] = This.initMATCH;
             }else if(obj.id.includes("boxDrop")){
                 init["initSB"] = This.initSB;
+            }else if(obj.id.includes("colorBox")){
+                init["initPAINT"] = This.initPAINT;
+            }else if(obj.id.includes("sortDrag")){
+                init["initSORT"] = This.initSORT;
             }
         });
 
         for(var p in init){
             init[p](SP, SD, index);
         }
+
+        SD.empty = Object.keys(jsonV2.slides[index].answer).length;
     }
 
     function controlBtnView(SP, status){
@@ -398,6 +434,9 @@ function PLAYER(){
                 SP.answerBtn = obj;
                 SP.answerBtn.style.cursor = "pointer";
                 SP.answerBtn.style.pointerEvents = "none";
+                SP.answerBtn.addEventListener("click", function(){
+                    This.answerHQ(SP, SD[index]);
+                });
             }else if(obj.id.includes("goUrl")){
                 var url = "";
                 if(AC.player){
@@ -457,14 +496,16 @@ function PLAYER(){
     }
 
     This.playAutoSound = function(){
-        if(SP[This.sceneIndex].directive.sound){
-            if(PLX.soundConfirm){
-                SP[This.sceneIndex].directive.sound.play();
+        if(!SD[This.sceneIndex].complete){
+            if(SP[This.sceneIndex].directive.sound){
+                if(PLX.soundConfirm){
+                    SP[This.sceneIndex].directive.sound.play();
+                }else{
+                    PLX.playScreen.style.display = "block";
+                }
             }else{
-                PLX.playScreen.style.display = "block";
+                PLX.playScreen.style.display = "none";
             }
-        }else{
-            PLX.playScreen.style.display = "none";
         }
     }
 
@@ -595,7 +636,7 @@ function PLAYER(){
 
         player.mainDOM.style.scale = ratio;
         player.mainDOM.style.left = centerX+"px";
-        player.mainDOM.style.top = centerY+"px";
+        /* player.mainDOM.style.top = centerY+"px"; */
     }
 
     this.startPlayer = function(element){
@@ -614,7 +655,7 @@ function PLAYER(){
         This.changeScene(0);
     }
 
-    function Preview_HTML(container){
+    function Preview_HTML(container, startScene){
         player.backBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_BackBtn", innerHTML:"&#9664;"});
         player.nextBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_NextBtn", innerHTML:"&#9654;"});
         player.infoDiv = utils.addDOM({id:"Nav_Preview_NavInfo", textContent: "0 / 0"});
@@ -630,7 +671,7 @@ function PLAYER(){
             This.changeScene(This.sceneIndex+1);
         });
 
-        This.changeScene(0);
+        This.changeScene(startScene);
     }
 
     this.playWrongAudio = function(){
@@ -641,6 +682,7 @@ function PLAYER(){
         player.sound.play("right");
     }
 
+    /* Build Konu Testi */
     this.build_KT = function(jsonV2){
         KT.Optic_MainDiv = document.querySelector("#Optic_MainDiv");
         KT.Nav_MainDiv = document.querySelector("#Nav_MainDiv");
@@ -1044,6 +1086,20 @@ function PLAYER(){
         obj.style.top = top+"px";
     }
 
+    //dizi icindeki rakamlari siralar.
+    function sortArray(arr) {
+        return arr.sort(function(a,b){return a-b});
+    }
+
+    function sortDeepArray(dizi){
+        return dizi.sort(function(a,b){ return a[0]-b[0] });
+    }
+
+    //dizi icindeki objeleri siralar
+    function sortObject(arr, key) {
+        return arr.sort(function(a,b){return a[key]-b[key]});
+    }
+
 
 
     /** Add CS **/
@@ -1078,8 +1134,6 @@ function PLAYER(){
         if(jsonV2.slides[index].scene.selectMode){
             CS.selectMode = jsonV2.slides[index].scene.selectMode;
         }
-
-        SD.empty = Object.keys(answer).length;
 
         SP.elementList.forEach(function(element){
             if(element.id.includes("selectButon")){
@@ -1362,6 +1416,7 @@ function PLAYER(){
                         score.totalWrong++;
                     }
                 }
+
             }else{
                 for(var id in rubrik){
                     if(rubrik[id]){
@@ -1424,16 +1479,59 @@ function PLAYER(){
                     SD.empty=0;
                     This.sceneComplete();
                     controlBtnView(SP, "disabled");
+                }else{
+                    returnDefault();
                 }
             }else{
-                SP.screenCloseTimer = setTimeout(function(){
-                    btnEvents("auto");
-                    allDefaultBtn();
-                }, 1000);
+                returnDefault();
             }
         }
 
-        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: rightActionFNC});
+        function returnDefault(){
+            SP.screenCloseTimer = setTimeout(function(){
+                btnEvents("auto");
+                allDefaultBtn();
+            }, 1000);
+        }
+
+
+        function answerActionFNC(){
+            if(CS.evaluationMode === "count"){
+                for(var groupID in CS.group){
+                    groupID = parseInt(groupID);
+                    var currentCount = CS.group[groupID].currentList.length;
+                    var totalCount = CS.group[groupID].rightTotalCount;
+
+                    for(var bid in CS.Buton){
+                        bid = parseInt(bid);
+                        var btnGroup = CS.Buton[bid].group;
+                        if(groupID === btnGroup && !CS.group[groupID].currentList.includes(bid)){
+                            if(currentCount < totalCount){
+                                selectBtn(bid);
+                                currentCount++;
+                            }
+                        }
+                    }
+                }
+            }else{
+                for(var id in rubrik){
+                    var answer = rubrik[id];
+                    var currentAnswer = SD.inputs["box"+ id].value;
+
+                    if(answer && currentAnswer){
+                        rightBtn(parseInt(id));
+                    }else if(answer){
+                        selectBtn(parseInt(id));
+                    }else{
+                        defaultBtn(parseInt(id));
+                    }
+                }
+            }
+
+            btnEvents("none");
+        }
+
+        SP.fnc.push({ control: checkRightAnswer, wrong: wrongActionFNC, right: rightActionFNC, answer: answerActionFNC });
     }
 
     /** init BD **/
@@ -1637,14 +1735,23 @@ function PLAYER(){
         }
 
 
-        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){} });
+        function answerActionFNC(){
+            for(var answer in rubrik){
+                console.log(answer,  rubrik[answer]);
+                //BD.input[answer].bg.style.backgroundColor = "white";
+                BD.input[answer].txt.value = rubrik[answer];
+                btnEvents("none");
+            }
+        }
+
+        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){}, answer: answerActionFNC });
     }
 
     /** Add MATCH **/
     this.initMATCH = function(SP, SD, index){
         console.log("initMATCH");
         var answer = jsonV2.slides[index].answer;
-        var currentID, startPos, endPos;
+        var currentID, startPos, endPos, canvasOrigin;
         var rubrik = {};
         var BOX = {};
         var LA = [];
@@ -1696,6 +1803,10 @@ function PLAYER(){
                 getCSS(id, element, "drag");
             }else if(element.id.includes("canvas")){
                 canvas = element;
+                canvasOrigin = {
+                    left: parseInt(canvas.main.style.left),
+                    top: parseInt(canvas.main.style.top)
+                }
             }
         });
 
@@ -1710,8 +1821,8 @@ function PLAYER(){
 
         function addCanvasObject(id, BOX){
             BOX.canvas = new Konva.Rect({
-                x: BOX.left-parseInt(canvas.main.style.left),
-                y: BOX.top-parseInt(canvas.main.style.top),
+                x: BOX.left-canvasOrigin.left,
+                y: BOX.top-canvasOrigin.top,
                 width: BOX.width,
                 height: BOX.height,
                 fill: "green",
@@ -1724,6 +1835,7 @@ function PLAYER(){
             BOX.height = BOX.canvas.height();
             BOX.widthEnd = (BOX.x + BOX.width);
             BOX.heightEnd = (BOX.y + BOX.height);
+            BOX.status = true;
 
             BOX.canvas.on("mouseenter", function() {
                 stage.container().style.cursor = 'url(https://cdn.okulistik.com/mobileplayer/edge_includes/examObject/visual/pencilcursor.png) -22 22, auto';
@@ -1776,7 +1888,7 @@ function PLAYER(){
                 for(var i in BOX){
                     if(currentID !== i){
                         if(endPos.x >= BOX[i].x && endPos.x <= BOX[i].widthEnd && endPos.y >= BOX[i].canvas.y() && endPos.y <= BOX[i].heightEnd){
-                            if(BOX[currentID].type !== BOX[i].type){
+                            if(BOX[currentID].type !== BOX[i].type && BOX[i].status){
                                 var temp = [];
                                 temp[currentID.length-1] = currentID;
                                 temp[i.length-1] = i;
@@ -1790,6 +1902,7 @@ function PLAYER(){
 
             if(found){
                 addNewLine();
+                controlBtnViewCheck();
             }else{
                 currentLine.canvas.destroy();
                 stage.container().style.cursor = "default";
@@ -1797,8 +1910,6 @@ function PLAYER(){
 
             currentID = undefined;
             endPos = undefined;
-
-            controlBtnViewCheck();
         }
 
 
@@ -1828,26 +1939,20 @@ function PLAYER(){
             var currentPair = currentDragID+"-"+dropID;
             var user = SD.inputs["box"+ dropID].value;
             var answer = rubrik[dropID];
-            var addBorder = false;
             deleteBorder(currentDragID);
 
-            if(user.length < answer.length){
-                addBorder = true;
-            }else{
+            if(user.length >= answer.length){
                 var del = user.shift();
                 deleteBorder(del);
-                addBorder = true;
             }
 
-            if(addBorder){
-                user.push(currentDragID);
-                currentLine.pair = currentPair;
-                return true;
-            }
+            user.push(currentDragID);
+            currentLine.pair = currentPair;
+            return true;
         }
 
-        function currentCanvasLine(startPos, endPos){
-            currentLine.canvas = new Konva.Line({
+        function currentCanvasLine(startPos, endPos, extra){
+            var border = {
                 stroke: globalColor,
                 opacity: 0.9,
                 strokeWidth: 5,
@@ -1857,8 +1962,13 @@ function PLAYER(){
                 shadowBlur: 6,
                 shadowOffset: { x: 3, y: 3 },
                 shadowOpacity: 0.4
-            });
+            }
 
+            if(extra){
+                Object.assign(border, extra);
+            }
+
+            currentLine.canvas = new Konva.Line(border);
             layer.add(currentLine.canvas);
             layer.draw();
         }
@@ -1889,7 +1999,7 @@ function PLAYER(){
 
         function checkRightAnswer(){
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"MATCH"};
-            console.log(rubrik);
+            returnColor = [];
             for(var i in rubrik){
                 var user = SD.inputs["box" + i].value;
                 var right = true;
@@ -1929,9 +2039,11 @@ function PLAYER(){
                             BOX[dropID].canvas.off("mousedown mouseenter touchstart mouseleave");
                             BOX[dragID].main.style.opacity = 0.5;
                             BOX[dropID].main.style.opacity = 0.5;
+                            BOX[dragID].status = false;
+                            BOX[dropID].status = false;
                             line.canvas.stroke("#2e7d32").opacity(0.7);
                         }else{
-                            returnColor.push(line.canvas);
+                            returnColor.push(line);
                             var drop = SD.inputs["box"+ dropID].value;
                             dragID = line.pair.split("-")[0];
                             var deleteID = drop.indexOf(dragID);
@@ -1954,7 +2066,16 @@ function PLAYER(){
 
         function reset(){
             returnColor.map(function(line){
-                line.destroy();
+                line.canvas.destroy();
+            });
+
+            returnColor.map(function(line){
+                for(var x=0; x<LA.length; x++){
+                    if(line.pair === LA[x].pair){
+                        LA.splice (x, 1);
+                        break;
+                    }
+                }
             });
         }
 
@@ -1962,12 +2083,31 @@ function PLAYER(){
             console.log("wrongActionFNC");
         }
 
-        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){} });
+        function answerActionFNC(){
+            for(var answer in rubrik){
+                if(BOX[answer].status){
+                    rubrik[answer].map(function(rightDrag){
+                        var drag = BOX["d"+rightDrag];
+                        var drop = BOX[answer];
+
+                        var dragX = (drag.left - canvasOrigin.left) + (drag.width/2);
+                        var dragY = (drag.top - canvasOrigin.top) + (drag.height/2);
+                        var dropX = (drop.left - canvasOrigin.left) + (drop.width/2);
+                        var dropY = (drop.top - canvasOrigin.top) + (drop.height/2);
+                        drag.canvas.off("mousedown mouseenter touchstart mouseleave");
+                        drop.canvas.off("mousedown mouseenter touchstart mouseleave");
+                        currentCanvasLine({x:dragX, y:dragY}, {x:dropX, y:dropY}, {dash: [33, 10], stroke: "#ffd740" });
+                    });
+                }
+            }
+        }
+
+        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){}, answer: answerActionFNC });
     }
 
     /** Add SB **/
     this.initSB = function(SP, SD, index){
-        console.log("initSB //START");
+        console.log("initSB");
         var bounds = {left:0, top:0, width:1280, height:720};
         var answer = jsonV2.slides[index].answer;
         var createDrag = false;
@@ -2062,16 +2202,21 @@ function PLAYER(){
             }
 
             if(hitDrop > -1){
-                KontrolFNC(drag, dragID, cloneID, hitDrop);
+                KontrolFNC(drag, dragID, cloneID, hitDrop, 0.2);
             }else{
                 returnDrag(dragID, cloneID);
             }
         }
 
-        function returnDrag(dragID, cloneID){
+        function returnDrag(dragID, cloneID, noAnimation){
+            var returnTime = 0.2;
+            if(noAnimation){
+                returnTime = 0;
+            }
+
             clearSlotCloneID(cloneID);
             screeCloseFNC();
-            gsap.to(cloneList[cloneID], 0.2, {x: dragList[dragID].startLeft, y: dragList[dragID].startTop});
+            gsap.to(cloneList[cloneID], returnTime, {x: dragList[dragID].startLeft, y: dragList[dragID].startTop});
         }
 
         function screeCloseFNC(){
@@ -2110,14 +2255,14 @@ function PLAYER(){
             addCloneDrag(parseInt(e));
         });
 
-        function KontrolFNC(drag, dragID, cloneID, hitDrop){
+        function KontrolFNC(drag, dragID, cloneID, hitDrop, aniTime){
             clearSlotCloneID(cloneID);
             var found = false;
             var clone = cloneList[cloneID];
             for(var i=0; i<dropList[hitDrop].slot.length; i++){
                 if(!dropList[hitDrop].slot[i].cloneID){
                     var position = dropList[hitDrop].slot[i];
-                    gsap.to(clone, 0.2, {x: position.x, y: position.y});
+                    gsap.to(clone, aniTime, {x: position.x, y: position.y});
                     screeCloseFNC();
                     position.cloneID = cloneID;
                     found = true;
@@ -2146,7 +2291,7 @@ function PLAYER(){
                     clearSlotCloneID(slotCloneID);
                     var slotMainDrag = slotCloneID.split("_")[0];
                     returnDrag(slotMainDrag, slotCloneID);
-                    KontrolFNC(drag, dragID, cloneID, hitDrop);
+                    KontrolFNC(drag, dragID, cloneID, hitDrop, 0.2);
                     found = true;
                     break;
                 }
@@ -2305,8 +2450,689 @@ function PLAYER(){
             }
         }
 
-        SP.fnc.push({control: checkAnswer, wrong: wrongActionFNC, right: wrongActionFNC });
+
+        function usedClone(cloneID){
+            var slotList=[];
+            for(var id in dropList){
+                dropList[id].slot.map(function(clone){
+                    slotList.push(clone.cloneID);
+                });
+            }
+
+            return slotList.includes(cloneID);
+        }
+
+        function resetDragBtn(){
+            for(var id in dropList){
+                dropList[id].slot.map(function(clone){
+                    if(clone.cloneID){
+                        var dragID = clone.cloneID.split("_")[0];
+                        cloneList[clone.cloneID].style.opacity = 1;
+                        returnDrag(dragID, clone.cloneID, true);
+                    }
+                });
+            }
+        }
+
+        function answerActionFNC(){
+            resetDragBtn();
+
+            for(var hitDrop in answer){
+                var allRightAnswer = answer[hitDrop].split(",");
+                allRightAnswer.map(function(rightDrag){
+                    var foundClone = false;
+                    for(var cloneID in cloneList){
+                        var dragID = cloneID.split("_")[0];
+                        if(rightDrag === dragID && !usedClone(cloneID) && !foundClone){
+                            var drag = Draggable.get(cloneList[cloneID]);
+                            KontrolFNC(drag, dragID, cloneID, hitDrop, 0);
+                            foundClone = true;
+                        }
+                    }
+                });
+            }
+
+            for(var cid in cloneList){
+                var clone = Draggable.get(cloneList[cid]);
+                clone.disable();
+                cloneList[cid].style.userSelect = "none";
+            }
+        }
+
+        /*
+        console.log(rightAnswer);
+        console.log(dragList);
+        console.log(dropList);
+        console.log(cloneList);
+        */
+
+        SP.fnc.push({control: checkAnswer, wrong: wrongActionFNC, right: wrongActionFNC, answer: answerActionFNC });
     }
+
+    /** Add PAINT **/
+    this.initPAINT = function(SP, SD, index){
+        console.log("//initPAINT Start>");
+        var drop = {};
+        var selectedColor = "white";
+        var colorPalette = {};
+        var svgDOM = SP.sceneDiv.querySelector(".svg");
+        var svgLink;
+        var helpMode = true;
+
+        function addBG(){
+            var bg = document.createElement("div");
+            Object.assign(bg.style,{
+                width: "1280px",
+                height: "720px",
+                backgroundColor: "rgba(0, 0, 0, 0)"
+            });
+            SP.sceneDiv.insertBefore(bg, SP.sceneDiv.firstChild);
+        }
+
+        function parseSVG(){
+            if(svgDOM){
+                svgLink = svgDOM.style.backgroundImage;
+                var start = svgLink.indexOf("(")+2;
+                var end = svgLink.indexOf(")")-1;
+                svgLink = svgLink.substring(start, end);
+                svgDOM.style.backgroundImage = null;
+
+                $.ajax({
+                    url: svgLink,
+                    dataType: "html",
+                    type: "GET",
+                    success: function(data){
+                        svgDOM.innerHTML = data;
+                        var svgPaths = SP.sceneDiv.querySelector("svg");
+                        for(var x=0; x<svgPaths.children.length; x++){
+                            if(svgPaths.children[x].id.includes("paintBox")){
+                                var id = parseInt(svgPaths.children[x].id.split("_")[1]);
+                                var box = svgPaths.children[x];
+                                addPaintBox(box, id);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        addBG();
+        parseSVG();
+
+        SP.elementList.map(function(element){
+            if(element.id.includes("colorBox")){
+                var colorBoxMC = element.main;
+                colorBoxMC.childNodes.forEach(function(rect){
+                    if(rect.className.includes("color")){
+                        var colorClass = rect.className.split(" ");
+                        colorClass.forEach(function(style){
+                            if(style.includes("color")){
+                                var colorName = style.split("_")[1];
+                                rect.innerHTML = '<img class="paint_check" src="assets/img/player/check.svg">';
+                                colorPalette[colorName] = {box: rect, color: rect.style.backgroundColor, check: rect.querySelector(".paint_check")};
+                                addcolorBtn(rect, colorName);
+                            }
+                        });
+                    }else if(rect.className.includes("easer")){
+                        addEaserBtn(rect);
+                    }
+                });
+            }else if(element.id.includes("paintBox")){
+                var id = parseInt(element.id.split("_")[1]);
+                var box = element.main.querySelector(".paintBox");
+                addPaintBox(box, id);
+            }
+        });
+
+        function addPaintBox(box, id){
+            var correctAnswer = jsonV2.slides[index].answer[id];
+            drop[id] = {box: box, correctAnswer: correctAnswer, currentStatus: ""};
+            addDropBoxEvent(box, id);
+            SD.inputs["box" + id] = {value: null, type: "paint"};
+            gsap.to(box, 0, {fill: selectedColor});
+        }
+
+
+        /* Add Events */
+        function addDropBoxEvent(dropBox, id){
+            dropBox.addEventListener("click", function(){
+                setColorFNC(this, id);
+            });
+        }
+
+        function addcolorBtn(colorBtn, colorName){
+            colorBtn.addEventListener("click", function(){
+                selectColor(colorName);
+                selectedColor = colorName;
+                showModeCursor();
+                clearPointerIcon(null);
+            });
+        }
+
+        function addEaserBtn(easer){
+            easer.addEventListener("click", function(){
+                selectColor(null);
+                selectedColor = "white";
+                SP.sceneDiv.style.cursor = `url("assets/img/cursors/eraser_cursor.png") -22 22, auto`;
+            });
+        }
+
+        /* Set */
+        function selectColor(color){
+            for(var i in colorPalette){
+                colorPalette[i].check.style.display = "none";
+            }
+
+            if(color){
+                colorPalette[color].check.style.display = "block";
+            }
+        }
+
+        selectColor(null);
+
+        function setColorFNC(dropBox, id){
+            if(drop[id].currentStatus !== "right"){
+                gsap.to(dropBox, 0.4, {fill: selectedColor, backgroundColor: selectedColor});
+                if(selectedColor === "white"){
+                    SD.inputs["box"+id].value = undefined;
+                }else{
+                    SD.inputs["box"+id].value = selectedColor;
+                }
+
+                controlBtnViewCheck();
+            }
+        }
+
+        function showModeCursor(){
+            SP.sceneDiv.style.cursor = `url("assets/img/cursors/${selectedColor}_cursor.png") -22 22, auto`;
+        }
+
+
+        function clearPointerIcon(type){
+            for(var id in colorPalette){
+                colorPalette[id].box.style.cursor = type;
+            }
+        }
+
+        clearPointerIcon("pointer");
+
+        function checkAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"PAINT"};
+            for(var id in drop){
+                if(drop[id].correctAnswer){
+                    if(!SD.inputs["box"+id].value){
+                        score.totalEmpty++;
+                        drop[id].currentStatus = "empty";
+                    }else if(SD.inputs["box"+id].value === drop[id].correctAnswer){
+                        score.totalRight++;
+                        drop[id].currentStatus = "right";
+                    }else{
+                        score.totalWrong++;
+                        drop[id].currentStatus = "wrong";
+                    }
+                }else{
+                    if(SD.inputs["box"+id].value){
+                        score.totalWrong++;
+                        drop[id].currentStatus = "wrong";
+                    }
+                }
+            }
+
+            console.log(score);
+            return score;
+        }
+
+        function controlAfterFNC(status){
+            if(helpMode){
+                for(var id in drop){
+                    drop[id].box.style.pointerEvents = "none";
+                    var borderRight = {outline: "green solid 4px"};
+                    var borderWrong = {outline: "red solid 4px"};
+
+                    if(svgDOM){
+                        borderRight = {strokeWidth: 4, stroke: "green"};
+                        borderWrong = {strokeWidth: 4, stroke: "red"};
+                    }
+
+                    if(drop[id].currentStatus === "right"){
+                        gsap.to(drop[id].box, 0, borderRight);
+                    }else if(drop[id].currentStatus === "wrong"){
+                        gsap.to(drop[id].box, 0, borderWrong);
+                    }
+                }
+
+                if(status !== "right"){
+                    setTimeout(resetStroke, 1000);
+                }
+
+            }else{
+                if(status === "right"){
+                    for(var id in drop){
+                        drop[id].box.style.pointerEvents = "none";
+                    }
+                }else{
+                    for(var id in drop){
+                        drop[id].currentStatus = "";
+                    }
+
+                    controlBtnViewCheck();
+                }
+            }
+        }
+
+        function resetStroke(){
+            for(var id in drop){
+                if(drop[id].currentStatus === "right"){
+                    gsap.to(drop[id].box, 0.4, {strokeWidth:4, opacity:0.7});
+                }else{
+                    drop[id].currentStatus = "";
+                    drop[id].box.style.pointerEvents = "auto";
+                    gsap.to(drop[id].box, 0, {backgroundColor:"white", fill:"white", strokeWidth: 0, outline: "red solid 0px"});
+                    SD.inputs["box"+id].value = undefined;
+                }
+            }
+
+            controlBtnViewCheck();
+        }
+
+        function answerActionFNC(){
+            for(var id in drop){
+                drop[id].box.style.pointerEvents = "none";
+                var answer = drop[id].correctAnswer;
+                if(!answer){
+                    answer = "white";
+                }
+
+                if(svgDOM){
+                    gsap.to(drop[id].box, 0.4, {fill: answer});
+                }else{
+                    gsap.to(drop[id].box, 0.4, {backgroundColor: answer});
+                }
+            }
+        }
+
+        function controlBtnViewCheck() {
+            var found = false;
+            for(var i in SD.inputs){
+                if(SD.inputs[i].value){
+                    found = true;
+                }
+            }
+
+            if (found) {
+                controlBtnView(SP, "enable");
+            } else {
+                controlBtnView(SP, "disable");
+            }
+        }
+
+
+        SP.fnc.push({control: checkAnswer, wrong: controlAfterFNC, right: controlAfterFNC, answer: answerActionFNC });
+        console.log("//<End Paint///");
+    }
+
+    /** Add Sort **/
+    this.initSORT = function(SP, SD, index){
+        var SR = {};
+        var activeButonID = -1;
+        var answer = jsonV2.slides[index].answer;
+        var helpMode = true;
+
+        function getFirstDrag(){
+            var children = SP.sceneDiv.children;
+            for(var x=0; x<children.length; x++){
+                if (children[x].id.includes("sortDrag")){
+                    return children[x];
+                }
+            }
+        }
+
+        var firstChildrenDrag = getFirstDrag();
+        var setDrop = {};
+
+        SP.elementList.map(function(element){
+            if(element.id.includes("sortDrag")){
+                var drag = element.main;
+                var bid = parseInt( element.id.split("_")[1] );
+                var gid = parseInt( element.data.group );
+
+                if(!SR[gid]){
+                    SR[gid] = {drag:{}, drop:{}, start:null, list:{}, allDragID:[], status:"", statusBorder:null}
+                    setDrop[gid] = {start:null, drag:[]}
+                    SD.inputs["box"+gid] = {value: [], type:"sort"};
+
+                    if(answer[gid]){
+                        SR[gid].correctAnswer = answer[gid].split(",");
+                    }else{
+                        SR[gid].correctAnswer = [];
+                    }
+                }
+
+                var gsapDraggable = Draggable.create(drag, {
+                    type: "x,y",
+                    bounds: SR[gid].area,
+                    onPressParams:[bid, gid],
+                    onDragParams:[bid, gid, false],
+                    onDragEndParams:[bid, gid, true],
+                    onDrag:function(bid, gid, dragEnd){
+                        dragControlFNC(this, bid, gid, dragEnd);
+                    },
+                    onDragEnd:function(bid, gid, dragEnd){
+                        dragControlFNC(this, bid, gid, dragEnd);
+                    }
+                });
+
+                var dragPos = getPosition(drag);
+                SR[gid].allDragID.push(bid);
+
+                var props = {
+                    left: dragPos.left,
+                    top: dragPos.top,
+                    dom: drag,
+                    gsapDraggable: gsapDraggable,
+                    groupID: gid,
+                    butonID: bid
+                }
+
+                setDrop[gid].drag.push(props);
+                SR[gid].drag[bid] = props;
+                setPosition(drag, 0, 0);
+
+                gsap.to(drag, 0, {x: dragPos.left, y: dragPos.top});
+            }
+        });
+
+        console.log( SR );
+
+        function addBorder(bounds){
+            var border = document.createElement("div");
+            var modifiedLeft = bounds.left-6;
+            var modifiedTop = bounds.top-6;
+            var modifiedWidth = bounds.width+10;
+            var modifiedHeight = bounds.height+10;
+
+            Object.assign(border.style, {
+                left: modifiedLeft +"px",
+                top: modifiedTop +"px",
+                width: modifiedWidth +"px",
+                height: modifiedHeight +"px",
+                border: "2px solid #ff0000",
+                borderRadius: "10px",
+                position: "absolute",
+                visibility: "hidden"
+            });
+
+            SP.sceneDiv.insertBefore(border, firstChildrenDrag);
+            return border;
+        }
+
+        function addDropArea(){
+            for(var section in setDrop){
+                sortObject(setDrop[section].drag, "left");
+                var bounds = addBound( setDrop[section].drag );
+                SR[section].statusBorder = addBorder(bounds);
+
+                if(bounds.width < bounds.height){
+                    sortObject(setDrop[section].drag, "top");
+                }
+
+                sortArray(SR[section].allDragID);
+                setDrop[section].drag.map(function(drag, i){
+                    var startID = SR[section].allDragID[i];
+                    var area = document.createElement("div");
+                    area.id = "s"+ index +"-sortDrop_"+ startID;
+
+                    Object.assign(area.style, {
+                        left: drag.left+"px",
+                        top: drag.top+"px",
+                        width: drag.dom.style.width,
+                        height: drag.dom.style.height,
+                        position: "absolute"
+                    });
+
+                    SP.sceneDiv.insertBefore(area, firstChildrenDrag);
+                    SR[ drag.groupID ].drop[startID] = {dom: area, left: drag.left, top: drag.top};
+                });
+
+            }
+
+            hitDrag();
+        }
+
+        function addBound(drag){
+            var allLeft = [];
+            var allTop = [];
+            var allWidth = [];
+            var allHeight = [];
+
+            drag.map(function(e){
+                allLeft.push(e.left);
+                allTop.push(e.top);
+                allWidth.push(e.left + parseInt(e.dom.style.width));
+                allHeight.push(e.top + parseInt(e.dom.style.height));
+            });
+
+            sortArray(allLeft);
+            sortArray(allTop);
+            sortArray(allWidth);
+            sortArray(allHeight);
+
+            var startX = allLeft[0];
+            var startY = allTop[0];
+            var last =  drag.length-1;
+
+            var dragWidth = (allWidth[last]);
+            var dragHeight = (allHeight[last]);
+
+            var width = (dragWidth - startX);
+            var height = (dragHeight - startY);
+            return {left: startX, top: startY, width: width, height: height};
+        }
+
+        function hitDrag(){
+            for(var section in SR){
+                SR[section].bounds = addBound(setDrop[section].drag);
+
+                for(var dragID in SR[section].drag){
+                    var drag = SR[section].drag[dragID].gsapDraggable;
+                    drag[0].applyBounds( SR[section].bounds );
+
+                    for(var dropID in SR[section].drop){
+                        var drop = SR[section].drop[dropID].dom;
+
+                        if(drag[0].hitTest(drop, "80%")){
+                            SR[section].list[dropID] = parseInt(dragID);
+                            SD.inputs["box"+ section].value.push(parseInt(dropID));
+                        }
+                    }
+                }
+            }
+        }
+
+        addDropArea();
+        console.log( SD.inputs );
+
+        function dragControlFNC(btn, bid, gid, dragEnd){
+            var dropID = -1;
+            var dropList = SR[gid].drop;
+            var drag = SR[gid].drag[bid].dom;
+            var list = SR[gid].list;
+
+            for(var p in dropList){
+                if(dropID === -1){
+                    if(btn.hitTest(dropList[p].dom, "50%")){
+                        dropID = p;
+                    }
+                }
+            }
+
+            if(dropID > -1){
+                KontrolEtFNC(true, drag, bid, gid, dropID, dragEnd, list, 0.2);
+            }else{
+                KontrolEtFNC(false, drag, bid, gid, dropID, dragEnd, list, 0.2);
+            }
+        }
+
+        function KontrolEtFNC(hitTest, drag, bid, gid, dropID, dragEnd, list, aniTime){
+            if(activeButonID !== bid){
+                selectedButonEfectAni(drag);
+                activeButonID = bid;
+            }
+
+            if(hitTest){
+                var curDrop = parseInt(findValueInObject(list, bid));
+                var newDrop = parseInt(dropID);
+
+                if(curDrop !== newDrop){
+                    var curValue = list[curDrop];
+                    var newValue = list[newDrop];
+
+                    list[curDrop] = newValue;
+                    list[newDrop] = curValue;
+
+                    for(var drop in list){
+                        if(bid !== list[drop]){
+                            gsap.to(SR[gid].drag[ list[drop] ].dom, aniTime, { x: SR[gid].drop[drop].left, y: SR[gid].drop[drop].top });
+                        }
+                    }
+                }
+            }
+
+            if(dragEnd){
+                var dragIndex = findValueInObject(list, bid);
+                returnBtnAni(drag, gid, dragIndex);
+
+                SD.inputs["box"+gid].value=[];
+                for(var p in list){
+                    SD.inputs["box"+gid].value.push(list[p]);
+                }
+
+                /* console.log(SD.inputs["box"+ gid].value); */
+                controlBtnView(SP, "enable");
+            }
+        }
+
+        function selectedButonEfectAni(drag){
+            gsap.to(drag, 0.2, {boxShadow: "rgba(0,0,0,0.2) 0px 16px 32px 0px", scale: 1.1, transformOrigin:"50% 50%"});
+        }
+
+        function returnBtnAni(drag, gid, dropID){
+            gsap.to(drag, 0.2, {x: SR[gid].drop[dropID].left, y: SR[gid].drop[dropID].top, boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
+            activeButonID = -1;
+        }
+
+        function findValueInObject(obj, targetValue){
+            for (let key in obj) {
+                if (obj[key] === targetValue) {
+                    return key;
+                }
+            }
+            return null;
+        }
+
+        function checkAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"SORT"};
+            /* console.log( SD.inputs["box"+0].value ); */
+
+            for(var section in SR){
+                var user = SD.inputs["box"+section].value;
+                var right = true;
+                SR[section].correctAnswer.map(function(correct, index){
+                    if(user[index] !== parseInt(correct)){
+                        right = false;
+                    }
+                });
+
+                console.log("sonuc:", right);
+                console.log("checkAnswer:", SD.inputs["box"+section].value, SR[section].correctAnswer);
+
+                if(right){
+                    score.totalRight++;
+                    SR[section].status = "right";
+                }else{
+                    score.totalWrong++;
+                    SR[section].status = "wrong";
+                }
+            }
+
+            console.log( score );
+            return score;
+        }
+
+        function afterAction(){
+            if(helpMode){
+                closeGroup();
+            }
+        }
+
+        function showAnwers(){
+            console.log("Show Answers");
+
+            for(var section in SR){
+                SR[section].correctAnswer.map(function(dragID, index){
+                    var drag = SR[section].drag[dragID].dom;
+                    var id = SR[section].allDragID[index];
+                    gsap.to(drag, 0.2, {x: SR[section].drop[id].left, y: SR[section].drop[id].top, boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
+                    drag.style.pointerEvents = "none";
+                });
+
+            }
+        }
+
+        function closeGroup(){
+            for(var section in SR){
+                if(SR[section].status === "right"){
+                    SR[section].statusBorder.style.visibility = "visible";
+                    SR[section].statusBorder.style.borderColor = "green";
+
+                    for(var id in SR[section].drag){
+                        SR[section].drag[id].dom.style.pointerEvents = "none";
+                        SR[section].drag[id].dom.style.opacity = 0.75;
+                    }
+                }else if(SR[section].status === "wrong"){
+                    SR[section].statusBorder.style.visibility = "visible";
+                    SR[section].statusBorder.style.borderColor = "red";
+                }
+            }
+
+            setTimeout(resetGroup, 1000);
+        }
+
+        function resetGroup(){
+            for(var section in SR){
+                if(SR[section].status === "wrong"){
+                    SR[section].statusBorder.style.visibility = "hidden";
+                }
+            }
+        }
+
+        SP.fnc.push({control: checkAnswer, wrong: afterAction, right: afterAction, answer: showAnwers});
+
+
+        /*
+        function controlBtnViewCheck() {
+            var found = false;
+            for(var i in dropList){
+                var slot = dropList[i].slot;
+                slot.map(function(slot){
+                    if(slot.cloneID){
+                        found = true;
+                    }
+                });
+            }
+
+            if (found) {
+                controlBtnView(SP, "enable");
+            } else {
+                controlBtnView(SP, "disable");
+            }
+        }
+        */
+
+    }
+
+
+
 
 }
 

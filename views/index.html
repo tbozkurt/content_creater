@@ -22,6 +22,11 @@
         <div class="topMenuEmpty">&nbsp;</div>
     </div>
 
+    <div id="main">
+        <div id="child_1"></div>
+        <div id="child_2"></div>
+    </div>
+
     <div class="iconMain">
         <div class="TopIconBox" id="createRect"><img src="assets/img/create_rect.png"></div>
         <div class="TopIconBox image-upload">
@@ -40,6 +45,11 @@
             <div class="TopIconBox" id="createDirective"><img src="assets/img/create_directive.png"></div>
             <div class="TopIconBox" id="createControl"><img src="assets/img/create_control.png"></div>
             <div class="TopIconBox" id="createAnswer"><img src="assets/img/create_answer.png"></div>
+
+            <div class="TopIconBox" id="createComplete"><img src="assets/img/create_complete.png"></div>
+            <div class="TopIconBox" id="createSolution" style="display: none"><img src="assets/img/create_solution.png"></div>
+            <div class="TopIconBox" id="createRefresh"><img src="assets/img/create_refresh.png"></div>
+
             <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
             <div class="TopIconBox" id="createURL"><img src="assets/img/create_url.png"></div>
             <div class="createSpace"></div>
@@ -49,6 +59,8 @@
                     <option value="1">Boşluk Doldurma</option>
                     <option value="2">Eşleştirme</option>
                     <option value="3">Sürükle Bırak</option>
+                    <option value="4">Boyama</option>
+                    <option value="5">Sıralama</option>
                 </select>
             </div>
 
@@ -69,6 +81,28 @@
             <div id="iconGroup3" class="iconGroup">
                 <div class="TopIconBox" id="createBoxDrag"><img src="assets/img/create_matchdrag.png"></div>
                 <div class="TopIconBox" id="createBoxDrop"><img src="assets/img/create_matchdrop.png"></div>
+            </div>
+
+            <div id="iconGroup4" class="iconGroup">
+                <div class="TopIconBox" id="createColor"><img src="assets/img/create_palette.png"></div>
+                <div class="TopIconBox image-upload">
+                    <form id="uploadSvgForm" enctype="multipart/form-data">
+                        <label for="svg_input" style="cursor: pointer">
+                            <img src="assets/img/create_svg.png"/>
+                        </label>
+
+                        <input style="display: none" id="svg_input" name="uploadImage" type="file" accept=".svg" multiple/>
+                    </form>
+                </div>
+                <div class="TopIconBox" id="createPaintBox"><img src="assets/img/create_paintbox.png"></div>
+            </div>
+
+            <div id="iconGroup5" class="iconGroup">
+                <div class="TopIconBox" id="createSortDrag"><img src="assets/img/create_matchdrag.png"></div>
+                <!--
+                <div class="TopIconBox" id="createSortDrop"><img src="assets/img/create_matchdrop.png"></div>
+                <div class="TopIconBox" id="createSortArea"><img src="assets/img/create_canvas.png"></div>
+                -->
             </div>
 
         </div>
@@ -374,6 +408,7 @@
         editRect: null,
         searchList:[],
         editMC: null,
+        imgClass: "",
         workSpace:{
             scope_TopMenu: document.querySelector("#scope_TopMenu"),
             scope_Canvas: document.querySelector("#scope_Canvas"),
@@ -402,6 +437,13 @@
             createPopup: document.querySelector("#createPopup"),
             createControl: document.querySelector("#createControl"),
             createAnswer: document.querySelector("#createAnswer"),
+
+            createComplete: document.querySelector("#createComplete"),
+            createSolution: document.querySelector("#createSolution"),
+            createRefresh: document.querySelector("#createRefresh"),
+            createColor: document.querySelector("#createColor"),
+            createPaintBox: document.querySelector("#createPaintBox"),
+
             createURL: document.querySelector("#createURL"),
             createInput: document.querySelector("#createInput"),
             createMatchDrag: document.querySelector("#createMatchDrag"),
@@ -412,7 +454,12 @@
             createBoxDrag: document.querySelector("#createBoxDrag"),
             createBoxDrop: document.querySelector("#createBoxDrop"),
 
+            createSortDrag: document.querySelector("#createSortDrag"),
+            createSortDrop: document.querySelector("#createSortDrop"),
+            createSortArea: document.querySelector("#createSortArea"),
+
             uploadImageForm: document.querySelector("#uploadImageForm"),
+            uploadSvgForm: document.querySelector("#uploadSvgForm"),
 
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
@@ -482,7 +529,9 @@
             document.querySelector("#iconGroup0"),
             document.querySelector("#iconGroup1"),
             document.querySelector("#iconGroup2"),
-            document.querySelector("#iconGroup3")
+            document.querySelector("#iconGroup3"),
+            document.querySelector("#iconGroup4"),
+            document.querySelector("#iconGroup5")
         ]
     }
 
@@ -1231,7 +1280,7 @@
         });
 
         htmlBtn.addEventListener("click", function(e){
-            /* window.open("/player/?file="+ filename +"&mode=normal"); */
+            window.open("/player/?file="+ filename +"&mode=normal");
             e.stopPropagation();
         });
 
@@ -1380,6 +1429,14 @@
         data.map(function(e, i){
             if(e.mimetype.includes("image")){
                 console.log( e.path.split("/"+ IDE.files.activeFile +"/")[1] );
+                var layer = {
+                    name: e.filename,
+                    type:"objectImg"
+                }
+
+                if(IDE.imgClass.length){
+                    layer.class = IDE.imgClass;
+                }
 
                 CREATE.imgFNC({
                     properties:{
@@ -1390,10 +1447,7 @@
                         draggable: true
                     },
                     container: IDE.activeLayer,
-                    layer:{
-                        name: e.filename,
-                        type:"objectImg"
-                    },
+                    layer: layer,
                     addLayer: true
                 });
             }else{

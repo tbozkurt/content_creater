@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body{
+            background-color: black;
+        }
+
+        #color{
+            display: flex;
+        }
+
+        .colorBox{
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+        }
+
+    </style>
+</head>
+<body>
+<div id="svg"></div>
+<div id="color"></div>
+<script>
+    var boxList = [];
+    var colors = ["red", "green", "blue", "yellow"];
+    var selectedColor = "white";
+
+    $.ajax({
+        url: "pop.svg",
+        dataType: "html",
+        type: 'GET',
+        success: function (data) {
+            console.log(data);
+            svgParse(data);
+        }
+    });
+
+
+/*
+    axios.get('pop.svg')
+        .then(function (response) {
+            //console.log(response);
+            // handle success
+            //console.log(response);
+            svgParse(response.data);
+        })
+        .catch(function (error) {
+            // handle error
+            console.log(error);
+        })
+        .finally(function () {
+            // always executed
+        });
+*/
+
+
+
+
+    function svgParse(data){
+        var svg = document.querySelector("#svg");
+        var colorDOM = document.querySelector("#color");
+        var colorHtml="";
+
+        colors.map(function(color, i){
+            colorHtml += `<div class="colorBox" id="color_${i}" style="background-color: ${color}"></div>`;
+        })
+
+        colors.map((color, index) => {
+            const colorBox = document.createElement("div");
+            colorBox.className = "colorBox";
+            colorBox.style.backgroundColor = color;
+            colorBox.addEventListener("click", function(){
+                console.log(`${color} kutusuna tıklandı!`);
+                selectedColor = color;
+            });
+
+            colorDOM.appendChild(colorBox);
+        });
+
+        //colorDOM.innerHTML = colorHtml;
+        svg.innerHTML = data;
+
+        for(var i=0; i<10; i++){
+           var  box = svg.querySelector("#box"+i);
+           if(box){
+               boxList[i] = box;
+           }
+        }
+
+        boxList.map(function(box){
+            box.addEventListener("click", function(){
+                console.log("OMG");
+                gsap.to(this, 1, {
+                    x: 50,
+                    y: 50,
+                    fill: selectedColor
+                });
+            })
+        });
+
+
+
+        /*
+        document.querySelector("#box0").addEventListener("click", function(){
+            console.log("OMG");
+            gsap.to("#box0", 1, {
+                x:50,
+                y:50,
+                fill:"red"
+            });
+        })
+        */
+
+        /*
+         gsap.to("#box0", 1, {
+            x:50,
+            y:50,
+            fill:"red"
+        });
+        gsap.to("#box1", 1, {
+            x:50,
+            y:50,
+            fill:"red"
+        });
+        gsap.to("#box2", 1, {
+            x:50,
+            y:50,
+            fill:"red"
+        });
+        gsap.to("#box3", 1, {
+            x:50,
+            y:50,
+            fill:"red"
+        });
+        */
+
+
+
+    }
+
+
+/*    document.querySelector("#box0").addEventListener("click", function(){
+        console.log("OMG");
+    })*/
+</script>
+
+</body>
+</html>

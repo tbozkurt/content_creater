@@ -5,14 +5,16 @@
     <title>Title</title>
     <script src="/libs/jquery/dist/jquery.js"></script>
     <script src="/libs/howler/dist/howler.core.min.js"></script>
+    <script src="/assets/js/Draggable.min.js"></script>
     <script src="/assets/js/gsap.min.js"></script>
     <script src="/assets/js/utils.js"></script>
     <script src="/assets/js/player.js"></script>
+    <script src="/assets/js/konva.min.js"></script>
     <link rel="stylesheet" href="/assets/css/creator.css">
 </head>
 <body>
 
-<div id="newKT">
+<div id="newKT" style="background-color: black">
 <!--
     <div id="Player_Container"></div>
     <div id="Optic_Main"></div>
@@ -42,12 +44,49 @@
         console.log(e);
     }
 
+
+    function addNavigation(){
+        var html = `<div class="Normal_NavBtn" id="Normal_BackBtn">◀</div>
+                        <div class="Normal_NavInfo">1 / 5</div>
+                        <div class="Normal_NavBtn" id="Normal_NextBtn">▶</div>
+                        <div class="Normal_NavBtn" id="Normal_EndContent">
+                            <img src="https://cdn.okulistik.com/mobileplayer/contentplayer/assets/image/performance2.svg">
+                        </div>`;
+
+        var navMain = document.createElement('div');
+        navMain.className = "Normal_NavMain";
+        navMain.innerHTML = html;
+
+        PlayerMain.appendChild(navMain);
+
+        navigation = {
+            backBtn: document.querySelector("#Normal_BackBtn"),
+            nextBtn: document.querySelector("#Normal_NextBtn"),
+            infoDiv: document.querySelector(".Normal_NavInfo"),
+            endBtn: document.querySelector("#Normal_EndContent")
+        }
+
+        navigation.endBtn.addEventListener("click", function(){
+            endScreen.mainDOM.style.display = "flex";
+        });
+
+        return navigation;
+    }
+
+
+
     function selectFileParse(data){
-        console.log(data.FILE.files.activeFile);
+        //console.log( data );
+        //console.log(data.FILE.files.activeFile);
+        //jsonV2 = data.FILE.files.data;
+        jsonV2 = data;
+        var jsonPath = `/files/${file}/`;
+        //Player.startBuild(jsonV2, 0, "#000000", newKT, mode, {Url:("/files/"+ data.FILE.files.activeFile +"/")} );
 
-        jsonV2 = data.FILE.files.data;
+        Player.startBuild(jsonV2, 0, "#404040", newKT, "normal", {Url:jsonPath});
+        var elements = addNavigation();
+        Player.startPlayer(elements);
 
-        Player.startBuild(jsonV2, 0, "#000000", newKT, mode, {Url:("/files/"+ data.FILE.files.activeFile +"/")} );
         /*
         createOptikForm();
         KTMode();
@@ -57,8 +96,12 @@
 
 
     function selectFileAjax(file){
-        var data = {file};
-        $.ajax({url: "/selectFile", data, success: selectFileParse, type: "POST", error: ajaxError});
+        console.log("selectFileAjax");
+        //var data = {file};
+        var jsonPath = `/files/${file}/${file}.json`;
+        console.log("selectFileAjax", jsonPath);
+        //$.ajax({url: "/selectFile", data, success: selectFileParse, type: "GET", error: ajaxError});
+        $.ajax({url: jsonPath, success: selectFileParse, type: "GET", error: ajaxError});
     }
 
 

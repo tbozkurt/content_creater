@@ -152,6 +152,7 @@ async function createNewFileFNC(req, res){
     var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
     var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
     var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
+    var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
     console.log("-- CREATE NEW FINISH--");
 }
 
@@ -182,6 +183,7 @@ async function selectFileFNC(req, res){
         var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
         var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
         var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
+        var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
         res.send({success: true, FILE: FD});
     }else{
         res.send({success: false});

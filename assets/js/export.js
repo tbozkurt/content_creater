@@ -137,6 +137,12 @@ function EXPORT(){
         },{
             name: "inputArea",
             type: "fillBlank"
+        },{
+            name: "boxDrop",
+            type: "dragAndDrop"
+        },{
+            name: "colorBox",
+            type: "paint"
         }];
 
         allObject.map(function(e){

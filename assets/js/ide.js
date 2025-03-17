@@ -588,6 +588,12 @@ function overflowChange(o){
 }
 
 IDE.workSpace.uploadImageForm.addEventListener("change", function(e){
+    IDE.imgClass="";
+    uploadImageAjax( new FormData(this) );
+});
+
+IDE.workSpace.uploadSvgForm.addEventListener("change", function(e){
+    IDE.imgClass="svg";
     uploadImageAjax( new FormData(this) );
 });
 
@@ -1238,7 +1244,7 @@ selectIconGroup(0);
 /* create Rect */
 IDE.workSpace.createRect.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 150);
-    CREATE.rectFNC({
+    var obj = CREATE.rectFNC({
         properties:{
             text: "text",
             x: position.x,
@@ -1259,12 +1265,13 @@ IDE.workSpace.createRect.addEventListener("click", function(){
     });
 
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 /* create Text */
 IDE.workSpace.createText.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 150);
-    CREATE.textFNC({
+    var obj = CREATE.textFNC({
         properties:{
             text: "Sample",
             x: position.x,
@@ -1284,13 +1291,14 @@ IDE.workSpace.createText.addEventListener("click", function(){
     });
 
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
 /* create Select buton*/
 IDE.workSpace.createSelect.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 150);
-    CREATE.CheckFNC({
+    var obj = CREATE.CheckFNC({
         properties:{
             x: position.x,
             y: position.y,
@@ -1310,6 +1318,7 @@ IDE.workSpace.createSelect.addEventListener("click", function(){
 
     CREATE.checkKontrol();
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
@@ -1332,22 +1341,26 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
         }
     });
 
-    CREATE.addSolutionButon({
+    CREATE.newSolutionFNC({
         properties:{
-            x: 690,
-            y: 650,
-            width: 200,
+            x: 880,
+            y: 646,
+            width: 180,
             height: 50,
-            draggable: true,
+            draggable: true
         },
         container: IDE.activeLayer,
         layer: {
             name: "popupButon_0",
             elementID: "popupButon_0",
             type: "objectMovieClip",
-            class: "semiopacity"
+            class: "semiopacity",
+            params:{}
         }
     });
+
+    addHistory();
+
 
     this.style.pointerEvents = "none";
     this.style.opacity = 0.5;
@@ -1357,12 +1370,12 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
 
 
 /* Create Control Buton */
-IDE.workSpace.createControl.addEventListener("click", function(e){
-    CREATE.addControlButon({
+IDE.workSpace.createControl.addEventListener("click", function(){
+    var obj = CREATE.newControlFNC({
         properties:{
-            x: 50,
-            y: 50,
-            width: 200,
+            x: 450,
+            y: 646,
+            width: 180,
             height: 50,
             draggable: true
         },
@@ -1371,21 +1384,23 @@ IDE.workSpace.createControl.addEventListener("click", function(e){
             name: "control",
             elementID: "control",
             type: "objectMovieClip",
-            class: "semiopacity"
+            class: "semiopacity",
+            params:{}
         }
     });
 
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
 /* Create Answer Buton */
-IDE.workSpace.createAnswer.addEventListener("click", function(e){
-    CREATE.addAnswerButon({
+IDE.workSpace.createAnswer.addEventListener("click", function(){
+    var obj = CREATE.newAnswerFNC({
         properties:{
-            x: 50,
-            y: 50,
-            width: 200,
+            x: 650,
+            y: 646,
+            width: 180,
             height: 50,
             draggable: true
         },
@@ -1394,16 +1409,18 @@ IDE.workSpace.createAnswer.addEventListener("click", function(e){
             name: "answer",
             elementID: "answer",
             type: "objectMovieClip",
-            class: "hide"
+            class: "semiopacity",
+            params:{}
         }
     });
 
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 /* Create URL Area */
-IDE.workSpace.createURL.addEventListener("click", function(e){
-    CREATE.addUrlButon({
+IDE.workSpace.createURL.addEventListener("click", function(){
+    var obj = CREATE.addUrlButon({
         properties:{
             x: 50,
             y: 50,
@@ -1421,13 +1438,15 @@ IDE.workSpace.createURL.addEventListener("click", function(e){
             }
         }
     });
+
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 /* Create Input Area */
 IDE.workSpace.createInput.addEventListener("click", function(e){
     var position = utils.getRandomPosition(640, 360, 200);
-    CREATE.addInputArea({
+    var obj = CREATE.addInputArea({
         properties:{
             x: position.x,
             y: position.y,
@@ -1448,13 +1467,14 @@ IDE.workSpace.createInput.addEventListener("click", function(e){
 
     CREATE.checkKontrol();
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
 /* Create Match Buton */
 IDE.workSpace.createMatchDrag.addEventListener("click", function(){
     var positionA = utils.getRandomPosition(640, 360, 200);
-    CREATE.addMatchDrag({
+    var obj = CREATE.addMatchDrag({
         properties:{
             x: positionA.x,
             y: positionA.y,
@@ -1475,13 +1495,14 @@ IDE.workSpace.createMatchDrag.addEventListener("click", function(){
 
     CREATE.checkKontrol();
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
 /* Create Match Drag Buton */
 IDE.workSpace.createMatchDrop.addEventListener("click", function(){
     var positionB = utils.getRandomPosition(640, 360, 200);
-    CREATE.addMatchDrop({
+    var obj = CREATE.addMatchDrop({
         properties:{
             x: positionB.x,
             y: positionB.y,
@@ -1502,12 +1523,13 @@ IDE.workSpace.createMatchDrop.addEventListener("click", function(){
 
     CREATE.checkKontrol();
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
 /* Create Match Drop Buton */
 IDE.workSpace.createCanvas.addEventListener("click", function(){
-    CREATE.addCanvas({
+    var obj = CREATE.addCanvas({
         properties:{
             x: 50,
             y: 50,
@@ -1525,11 +1547,12 @@ IDE.workSpace.createCanvas.addEventListener("click", function(){
     });
 
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 /* Create Match Drop Buton */
 IDE.workSpace.createDirective.addEventListener("click", function(){
-    CREATE.addDirection({
+    var obj = CREATE.addDirection({
         properties:{
             x: 140,
             y: -100,
@@ -1548,13 +1571,14 @@ IDE.workSpace.createDirective.addEventListener("click", function(){
     });
 
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 
 /* Create Box Drop  */
 IDE.workSpace.createBoxDrop.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 200);
-    CREATE.boxDrop({
+    var obj = CREATE.boxDrop({
         properties:{
             x: position.x,
             y: position.y,
@@ -1573,11 +1597,12 @@ IDE.workSpace.createBoxDrop.addEventListener("click", function(){
 
     CREATE.checkKontrol();
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
 
 IDE.workSpace.createBoxDrag.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 200);
-    CREATE.boxDrag({
+    var obj = CREATE.boxDrag({
         properties:{
             x: position.x,
             y: position.y,
@@ -1596,4 +1621,213 @@ IDE.workSpace.createBoxDrag.addEventListener("click", function(){
 
     CREATE.checkKontrol();
     addHistory();
+    selectItem({shiftKey: false, layer: obj});
 });
+
+
+IDE.workSpace.createComplete.addEventListener("click", function(){
+    var obj = CREATE.newCompleteFNC({
+        properties:{
+            x: 550,
+            y: 646,
+            width: 180,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "complete",
+            elementID: "complete",
+            type: "objectMovieClip",
+            class: "semiopacity",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+IDE.workSpace.createSolution.addEventListener("click", function(){
+    var obj = CREATE.newSolutionFNC({
+        properties:{
+            x: 880,
+            y: 646,
+            width: 180,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "solution",
+            elementID: "solution",
+            type: "objectMovieClip",
+            class: "semiopacity",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+IDE.workSpace.createRefresh.addEventListener("click", function(){
+    var obj = CREATE.newRefreshFNC({
+        properties:{
+            x: 880,
+            y: 646,
+            width: 180,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "refresh",
+            elementID: "refresh",
+            type: "objectMovieClip",
+            class: "semiopacity",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+
+/* create Select buton*/
+IDE.workSpace.createColor.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.createBox({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 100,
+            height: 100,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "colorBox",
+            elementID: "colorBox",
+            type: "objectMovieClip",
+            params:{
+                group: 0
+            }
+        },
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* create paint box */
+IDE.workSpace.createPaintBox.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.paintBox({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 80,
+            height: 80,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "paintBox",
+            elementID: "paintBox",
+            type: "objectMovieClip",
+            params:{
+                group: 0
+            }
+        },
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+
+/* create paint box */
+IDE.workSpace.createSortDrag.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.sortDrag({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 80,
+            height: 80,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "sortDrag",
+            elementID: "sortDrag",
+            type: "objectMovieClip",
+            params:{
+                group: 0
+            }
+        },
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+/*
+IDE.workSpace.createSortDrop.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.sortDrop({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 80,
+            height: 80,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "sortDrop",
+            elementID: "sortDrop",
+            type: "objectMovieClip"
+        },
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+IDE.workSpace.createSortArea.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.rectFNC({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 300,
+            height: 80,
+            fill: "#bdbdbd",
+            strokeWidth: 0,
+            borderPosition:"center",
+            draggable: true,
+            opacity:0.2
+        },
+        container: IDE.activeLayer,
+        layer:{
+            name: "rect",
+            type: "objectRect"
+        },
+        addLayer: true
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+*/
