@@ -52,10 +52,12 @@ function PLAYER(){
     }
 
     this.getRadius = function(data){
-        if(typeof data === "number"){
-            return data+"px";
-        }else{
-            return `${data[0]}px ${data[1]}px ${data[2]}px ${data[3]}px`;
+        if(data){
+            if(typeof data === "number"){
+                return data+"px";
+            }else{
+                return `${data[0]}px ${data[1]}px ${data[2]}px ${data[3]}px`;
+            }
         }
     }
 
@@ -88,7 +90,8 @@ function PLAYER(){
                 }else if (e.Layer.type === "objectImg") {
                     obj = Object.assign({
                         backgroundImage: `url(${player.root+e.src})`,
-                        backgroundSize: `${e.width}px ${e.height}px`
+                        backgroundSize: `${e.width}px ${e.height}px`,
+                        borderRadius: This.getRadius(e.cornerRadius),
                     }, This.getStandart(e));
                 }else if(e.Layer.type === "objectText"){
                     obj = Object.assign({
@@ -172,15 +175,18 @@ function PLAYER(){
             sceneCSS.push(convertObjectsCSS);
             SD[index] = {
                 id: index,
-                type:"CS",
+                type: "e",
                 duration:0,
                 wrong:0,
                 right:0,
                 empty:0,
                 totalRight:0,
+                totalWrong:0,
                 inputs:{},
                 complete: false,
-                attempt:0,
+                attempt: -1,
+                historyRight:[],
+                success:0
             }
 
             SP[index] = {
@@ -196,6 +202,14 @@ function PLAYER(){
         sceneCSS.map(function(allObject, i){
             var sceneDiv = document.createElement('div');
             sceneDiv.id = "sceneMain"+i;
+            Object.assign(sceneDiv.style, {
+                left: 0,
+                top: 0,
+                width: "1280px",
+                height: "720px",
+                position: "absolute"
+            });
+
             SP[i].elementList=[];
             SP[i].sceneDiv = sceneDiv;
             This.addMovieClip(allObject, sceneDiv, i);
@@ -205,10 +219,9 @@ function PLAYER(){
             This.addScreenClose(sceneDiv, i);
             This.actType(SP[i], SD[i], i);
             This.allScene.push(sceneDiv);
-
         });
 
-        addStartScreen();
+        addStartScreen(Mode);
         this.addEvents();
 
         if(Mode === "optic"){
@@ -217,53 +230,218 @@ function PLAYER(){
             Preview_HTML(container, startScene);
             initKACountDown();
         }
+
+        this.scoreCalc();
     }
 
     this.scoreCalc = function(){
-        var score = {right:0, wrong:0, empty:0, access:0, success:0, duration:0};
-        var averageScore = 100/SD.length;
+        var score = {
+            right:0,
+            wrong:0,
+            empty:0,
+            access:0,
+            success:0,
+            duration:0
+        };
 
-        function accessControl(e){
-            if(e.right || e.wrong){
+        var accessTotalScene=0;
+        var totalActivity=0;
+        var rates = [1, 0.7, 0.4, 0.2, 0.1];
+        var complete = true;
+
+        SD.map(function(scene){
+            if(scene.type === "e"){
+                totalActivity++;
+            }
+        });
+
+        function difference(a, b) {
+            return Math.abs(a - b);
+        }
+
+        function accessControl(scene){
+            if(scene.right || scene.wrong || scene.complete){
                 return 1;
             }
 
             return 0;
         }
 
+        var singleSceneScore = 100/totalActivity;
+
+        SD.map(function(scene, index){
+            if(scene.totalRight){
+                var lastRight;
+                var historyLength = scene.historyRight.length;
+                if(historyLength > 1){
+                    var last = scene.historyRight[historyLength-1].right;
+                    var prev = scene.historyRight[historyLength-2].right;
+                    lastRight = difference(prev, last);
+                }else{
+                    lastRight = scene.right;
+                }
+
+                var currentRate = rates[scene.attempt];
+                if(!currentRate){currentRate = 0.1}
+                var singleQuestionScore = (singleSceneScore / scene.totalRight);
+
+                if(scene.historyRight[scene.attempt]){
+                    scene.historyRight[scene.attempt].success = (singleQuestionScore * lastRight) * currentRate;
+                }
+
+                if(scene.wrong){
+                    scene.totalWrong++;
+                }
+
+                score.wrong += scene.totalWrong;
+            }
+
+            if(scene.type === "e"){
+                if(scene.complete){
+                    score.right++;
+
+                    var sceneSuccess=0;
+                    scene.historyRight.map(function(history){
+                        sceneSuccess += history.success;
+                    });
+                    score.success += sceneSuccess;
+
+                }else{
+                    score.empty++;
+                }
+            }
+
+            accessTotalScene += accessControl(scene);
+            if(!scene.complete){
+                complete = false;
+            }
+        });
+
+        /* Calc Access */
+        if(accessTotalScene){
+            score.access = (accessTotalScene / SD.length) * 100;
+        }else{
+            score.access = accessTotalScene;
+        }
+
+        if(player.scoreUpdate){
+            player.scoreUpdate({
+                Access: parseInt(score.access),
+                Success: parseInt(score.success),
+                Duration: score.duration,
+                Right: score.right,
+                Wrong: score.wrong,
+                Empty: score.empty,
+                TotalRight: score.empty,
+                CurrentSceneType: "E",
+                Complete: complete
+            });
+
+            console.log("--> Complete:", complete);
+        }
+
+        if(PLX.scoreTable){
+            var html =
+                `<div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">success:</div> <div class="scoreTableColumn2">${parseInt(score.success)}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">complete:</div> <div class="scoreTableColumn2">${score.right}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">attempt:</div> <div class="scoreTableColumn2">${score.wrong}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">remain:</div> <div class="scoreTableColumn2">${score.empty}</div></div>
+                </div>`;
+
+            PLX.scoreTable.innerHTML = html;
+        }
+
+        console.log(SD);
+        console.log("accessTotalScene:", accessTotalScene);
+        console.log("totalActivity:", totalActivity);
+    }
+
+    this.scoreCalc2 = function(){
+        var score = {
+            right:0,
+            wrong:0,
+            empty:0,
+            access:0,
+            success:0,
+            duration:0,
+            sceneEmpty:0
+        };
+
+        var rates = [1, 0.7, 0.4, 0.2, 0.1];
+        var totalActivity=0;
+
+        SD.map(function(e){
+           if(e.type === "e"){
+               totalActivity++;
+           }
+        });
+
+        function accessControl(e){
+            if(e.right || e.wrong || e.complete){
+                return 1;
+            }
+
+            return 0;
+        }
+
+        var averageScore = 100/totalActivity;
         var complete = true;
         SD.map(function(e){
-            score.right += e.right;
-            score.wrong += e.wrong;
-            score.empty += e.empty;
-            score.duration += e.duration;
-            score.access += accessControl(e);
-            score.success += (e.right / (e.right + e.wrong + e.empty)) * averageScore;
+            if(e.totalRight){
+                var currentRate = rates[e.attempt];
+                if(!currentRate){currentRate = 0.1}
+                var singleSuccess = ((averageScore / e.totalRight) * currentRate);
+                score.right += e.right;
+                score.wrong += e.wrong;
+                score.empty += e.empty;
+                score.duration += e.duration;
+                score.success += (singleSuccess * e.right);
+                /* score.success += (e.right / (e.right + e.wrong + e.empty)) * averageScore; */
 
+                if(e.right === 0 && e.wrong === 0 && e.empty === 0){
+                    score.success = 0;
+                }
+            }
+
+            score.access += accessControl(e);
             if(!e.complete){
                 complete = false;
             }
         });
 
-
         if(score.access){
-            score.access = (score.access  / SD.length)*100;
+            score.access = (score.access / SD.length) * 100;
         }else{
             score.access = 0;
         }
 
         if(player.scoreUpdate){
             player.scoreUpdate({
-                Access: score.access,
+                Access: parseInt(score.access),
                 Success: parseInt(score.success),
                 Duration: score.duration,
-                Right:score.right,
-                Wrong:score.wrong,
-                Empty:score.empty,
-                TotalRight: SD.length,
+                Right: score.right,
+                Wrong: score.wrong,
+                Empty: score.empty,
+                TotalRight: score.empty,
                 CurrentSceneType: "E",
                 Complete: complete
             });
+        }
+
+        if(PLX.scoreTable){
+            var html =
+                `<div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">success:</div> <div class="scoreTableColumn2">${parseInt(score.success)}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">right:</div> <div class="scoreTableColumn2">${score.right}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">wrong:</div> <div class="scoreTableColumn2">${score.wrong}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">empty:</div> <div class="scoreTableColumn2">${score.empty}</div></div>
+                </div>`;
+
+            PLX.scoreTable.innerHTML = html;
         }
     }
 
@@ -297,6 +475,16 @@ function PLAYER(){
         controlBtnView(SP, "disable");
         SP.answerBtn.style.pointerEvents = "none";
         SP.answerBtn.style.opacity = 0.5;
+        SD.empty=0;
+
+        /*
+        if(jsonV2.fileName.indexOf("ECK") > -1){
+            SD.empty=0;
+        }
+        */
+
+        This.sceneComplete();
+        This.scoreCalc();
     }
 
     this.controlHQ = function(SP, SD){
@@ -316,16 +504,23 @@ function PLAYER(){
             finalStatus = scoreEvalution(totalScore);
         });
 
+        SD.attempt++;
+        SD.right = totalScore.totalRight;
+        SD.wrong = totalScore.totalWrong;
+        SD.empty = totalScore.totalEmpty;
+        SD.historyRight[SD.attempt] = {right: totalScore.totalRight, success: 0};
+
         if(finalStatus === "right"){
             This.playRightAudio();
-            SD.right = totalScore.totalRight;
-            SD.empty=0;
+            //SD.right = totalScore.totalRight;
+            //SD.empty=0;
             This.sceneComplete();
             This.nextScene();
             SP.fnc.map(function(fnc){
                 fnc.right(finalStatus);
             });
         }else{
+            /*
             if(finalStatus === "partially"){
                 SD.right = totalScore.totalRight;
                 SD.empty = totalScore.totalEmpty;
@@ -333,13 +528,17 @@ function PLAYER(){
                 SD.wrong++;
             }
 
-            This.playWrongAudio();
+            SD.right = totalScore.totalRight;
+            SD.empty = totalScore.totalEmpty;
+            SD.attempt++;
+            */
 
+            This.playWrongAudio();
             SP.fnc.map(function(fnc){
                 fnc.wrong(finalStatus);
             });
 
-            if(SD.wrong >= 3){
+            if(SD.attempt >= 2){
                 if(SP.answerBtn){
                     SP.answerBtn.style.cursor = "pointer";
                     SP.answerBtn.style.pointerEvents = "auto";
@@ -349,9 +548,11 @@ function PLAYER(){
         }
 
         This.scoreCalc();
+        console.log(SD);
     }
 
     this.actType = function(SP, SD, index){
+        console.log("<<----- Start:", index ,"----->>");
         var init = {};
         SP.elementList.map(function(obj){
             if(obj.id.includes("selectButon")){
@@ -366,6 +567,13 @@ function PLAYER(){
                 init["initPAINT"] = This.initPAINT;
             }else if(obj.id.includes("sortDrag")){
                 init["initSORT"] = This.initSORT;
+            }else if(obj.id.includes("videoBox")){
+                init["initVIDEO"] = This.initVIDEO;
+                SD.type = "a";
+            } else if(obj.id.includes("drawCanvas")){
+                init["initLINECORRECT"] = This.initLINECORRECT;
+            }else if(obj.id.includes("pointButon")){
+                init["initPOINT"] = This.initPOINT;
             }
         });
 
@@ -373,7 +581,8 @@ function PLAYER(){
             init[p](SP, SD, index);
         }
 
-        SD.empty = Object.keys(jsonV2.slides[index].answer).length;
+        SD.totalRight = SD.empty = Object.keys(jsonV2.slides[index].answer).length;
+        console.log("<<----- Finish:", index ,"----->>");
     }
 
     function controlBtnView(SP, status){
@@ -512,6 +721,12 @@ function PLAYER(){
     /* ChangeScene */
     this.changeScene = function(index){
         if(this.allScene[index]){
+            SP.map(function(slide){
+                if(slide.video){
+                    slide.video.StopVideo();
+                }
+            })
+
             this.sceneIndex = index;
             this.allScene.forEach(function(Scene){
                 Scene.style.display = "none";
@@ -527,7 +742,6 @@ function PLAYER(){
             PLX.autoSceneChange_stopQuickly();
             This.soundAllSound();
             This.playAutoSound();
-
 
             if(index === 0){
                 player.backBtn.style.opacity = 0.5;
@@ -574,8 +788,10 @@ function PLAYER(){
     }
 
     this.sceneComplete = function (){
+        console.log("sceneComplete >>");
         clearInterval(player.screenDuration);
         SD[This.sceneIndex].complete = true;
+        This.scoreCalc();
     }
 
     /* NextScene */
@@ -1047,11 +1263,11 @@ function PLAYER(){
 
         PLX.autoSceneChange.Main.on("click", function(){
             PLX.autoSceneChange.HideFNC();
-            This.changeScene(This.sceneIndex+1);
+            This.changeScene(player.autoNext);
         });
     }
 
-    function addStartScreen(){
+    function addStartScreen(Mode){
         PLX.playScreen = utils.addDOM({id: "startScreen" });
         var PlayerMain = document.querySelector("#PlayerMain");
         PlayerMain.appendChild(PLX.playScreen);
@@ -1074,6 +1290,11 @@ function PLAYER(){
         });
 
         PLX.playScreen.style.display = viewStart;
+
+        if(Mode === "preview"){
+            PLX.scoreTable = utils.addDOM({id: "scoreTable" });
+            PlayerMain.appendChild(PLX.scoreTable);
+        }
     }
 
     /** Utils **/
@@ -1529,6 +1750,7 @@ function PLAYER(){
             }
 
             btnEvents("none");
+            clearInterval(SP.screenCloseTimer);
         }
 
         SP.fnc.push({ control: checkRightAnswer, wrong: wrongActionFNC, right: rightActionFNC, answer: answerActionFNC });
@@ -1565,7 +1787,7 @@ function PLAYER(){
             }
         });
 
-        for(var p in answer){
+        for(var p in rubrik){
             rubrik[p] = answer[p];
         }
 
@@ -2522,8 +2744,11 @@ function PLAYER(){
         function addBG(){
             var bg = document.createElement("div");
             Object.assign(bg.style,{
+                left: "0px",
+                top: "0px",
                 width: "1280px",
                 height: "720px",
+                position: "absolute",
                 backgroundColor: "rgba(0, 0, 0, 0)"
             });
             SP.sceneDiv.insertBefore(bg, SP.sceneDiv.firstChild);
@@ -3131,9 +3356,680 @@ function PLAYER(){
 
     }
 
+    /**  Add Video **/
+    this.initVIDEO = function(SP, SD, index){
+        console.log("initVIDEO");
+
+        SP.elementList.map(function(element){
+            if(element.id.includes("videoBox")){
+                var videoWidth = element.main.offsetWidth;
+                addPlayer(element.id, videoWidth);
+            }
+        });
+
+        function endFNC(){
+            This.nextScene();
+        }
+
+        function watchedFNC(){
+            This.sceneComplete();
+        }
+
+        function addPlayer(id, videoWidth){
+            var videoPath = "undefined.m3u8";
+            jsonV2.slides[index].videoPath.map(function(video){
+                if(video.active){
+                    videoPath = video.videoPath;
+                    videoPath = videoPath.replace("www", "cdn");
+                }
+            });
+
+            var playerProperties = {
+                div: $("#"+id),
+                src: [videoPath],
+                width: videoWidth,
+                videoCapture: true,
+                fullScreen: false,
+                endFNC: endFNC,
+                watchedFNC: watchedFNC,
+                occMode: true
+            };
+
+            SP.video = AddPlayer(playerProperties);
+        }
+    }
+
+    this.initLINECORRECT = function(SP, SD, index){
+        console.log("initLINECORRECT");
+        var answer = jsonV2.slides[index].answer;
+        var lineComplete = false;
+        var lineContainer;
+        var lineNavContainer;
+        var interval;
+        var isDrawing = false;
+        var erasing = false;
+        var draw = {};
+        var settings = {
+            brushSize: 10,
+            brushColor: "#000000"
+        }
+
+        for(var prop in jsonV2.slides[index].scene){
+            settings[prop] = jsonV2.slides[index].scene[prop];
+        }
+
+        SP.elementList.map(function(element){
+            if(element.id.includes("drawCanvas")){
+                var id = parseInt(element.id.split("_")[1]);
+                lineContainer = element.main;
+                draw.rightRate = parseInt(answer[id]);
+                draw.lineBG = element.main.querySelector(".lineBg");
+                draw.lineBgColor = draw.lineBG.style.backgroundColor;
+            }else if(element.id.includes("drawNav")){
+                lineNavContainer = element.main;
+                draw.drawBox = element.main.querySelector(".drawBox");
+                draw.eraserBox = element.main.querySelector(".eraserBox");
+
+                draw.drawBox.addEventListener("click",function(){
+                    activeBtnFNC(this);
+                    passiveBtnFNC(draw.eraserBox);
+                    erasing = false;
+
+                });
+
+                draw.eraserBox.addEventListener("click",function(){
+                    activeBtnFNC(this);
+                    passiveBtnFNC(draw.drawBox);
+                    erasing = true;
+                });
+            }
+        });
+
+        function activeBtnFNC(btn){
+            btn.style.border = "2px solid #183153";
+        }
+
+        function passiveBtnFNC(btn){
+            btn.style.border = "0px";
+        }
+
+        draw.drawPNG = lineContainer.querySelector(".shapePNG");
+        draw.rightPNG = lineContainer.querySelector(".rightPNG");
+
+        function getBackgroundBG(img){
+            var drawImgLink = img.style.backgroundImage;
+            var start = drawImgLink.indexOf("(")+2;
+            var end = drawImgLink.indexOf(")")-1;
+            return drawImgLink.substring(start, end);
+        }
+
+        draw.drawPngLink = getBackgroundBG(draw.drawPNG);
+        draw.rightPngLink = getBackgroundBG(draw.rightPNG);
+
+        var canvasWidth = parseInt(draw.drawPNG.style.width);
+        var canvasHeight = parseInt(draw.drawPNG.style.height);
+        var position = getPosition(draw.drawPNG);
+
+
+        function createCanvas(name, obj){
+            var canvas = document.createElement("canvas");
+            canvas.id = name;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            canvas.style.position = "absolute";
+            canvas.style.border = "1px solid";
+            canvas.style.left = position.left+"px";
+            canvas.style.top = position.top+"px";
+            lineContainer.appendChild(canvas);
+            var ctx = canvas.getContext('2d');
+
+            obj[name+"Canvas"] = canvas;
+            obj[name+"Ctx"] = ctx;
+            obj.success = false;
+        }
+
+        createCanvas("right", draw);
+        createCanvas("front", draw);
+        createCanvas("draw", draw);
+
+        draw.frontCanvas.style.pointerEvents = "none";
+        draw.rightCanvas.style.opacity = 0;
+
+        function loadImageToCanvas(imgLink, ctx) {
+            var img = new Image();
+            img.onload = function(){
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            };
+            img.src = imgLink;
+        }
+
+        loadImageToCanvas(draw.drawPngLink, draw.frontCtx);
+        loadImageToCanvas(draw.rightPngLink , draw.rightCtx);
+
+        draw.drawCanvas.addEventListener('mousedown', startDrawing);
+        draw.drawCanvas.addEventListener('mouseup', stopDrawing);
+        draw.drawCanvas.addEventListener('mouseleave', stopDrawing);
+        draw.drawCanvas.addEventListener('mousemove', drawCanvasFNC);
+
+        draw.drawCanvas.addEventListener('touchstart', startDrawing);
+        draw.drawCanvas.addEventListener('touchend', stopDrawing);
+        draw.drawCanvas.addEventListener('touchcancel', stopDrawing);
+        draw.drawCanvas.addEventListener('touchmove', drawCanvasFNC);
+
+        function startDrawing(e) {
+            e.preventDefault();
+
+            if(!lineComplete){
+                controlBtnView(SP, "enable");
+            }
+
+            isDrawing = true;
+            var pos = canvasGetPosition(e);
+            draw.drawCtx.beginPath();
+            draw.drawCtx.moveTo(pos.x, pos.y);
+            drawCanvasFNC(e);
+        }
+
+        function stopDrawing(e) {
+            e.preventDefault();
+            isDrawing = false;
+            draw.drawCtx.beginPath();
+        }
+
+
+        function canvasGetPosition(e) {
+            var rect = draw.drawCanvas.getBoundingClientRect();
+            if(e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }else{
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+        }
+
+
+        function drawCanvasFNC(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            var pos = canvasGetPosition(e);
+            draw.drawCtx.lineWidth = settings.brushSize;
+            draw.drawCtx.lineCap = "round";
+
+            if (erasing) {
+                draw.drawCtx.globalCompositeOperation = 'destination-out';
+                draw.drawCtx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                draw.drawCtx.globalCompositeOperation = 'source-over';
+                draw.drawCtx.strokeStyle = settings.brushColor;
+            }
+
+            draw.drawCtx.lineTo(pos.x, pos.y);
+            draw.drawCtx.stroke();
+            draw.drawCtx.beginPath();
+            draw.drawCtx.moveTo(pos.x, pos.y);
+        }
+
+
+        function checkAnswer() {
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"LINECORRECT"};
+            var data1 = draw.drawCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+            var data2 = draw.rightCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+
+            var totalPixels=0;
+            var overlappingPixels=0;
+
+            for (var i=0; i<data1.length; i+=4) {
+                var alpha1 = data1[i+3];
+                var alpha2 = data2[i+3];
+
+                if(alpha1>0 || alpha2>0) totalPixels++;
+                if(alpha1>0 && alpha2>0) overlappingPixels++;
+            }
+
+            var overlapPercent = (overlappingPixels / totalPixels) * 100;
+            var correctRate = Math.ceil( Number(overlapPercent.toFixed(2)) );
+
+            console.log("overlappingPixels:", overlappingPixels, "totalPixels:", totalPixels);
+            console.log("Çarpışma %:", overlapPercent, "Sonuç:", correctRate );
+
+            if(correctRate < 0){
+                score.totalEmpty++;
+            }else if(correctRate >= draw.rightRate){
+                score.totalRight++;
+                draw.success = true;
+            }else{
+                score.totalWrong++;
+            }
+
+            controlBtnView(SP, "disable");
+            closeCanvas();
+            return score;
+        }
+
+
+        function stopDraw(){
+            console.log("stopDraw");
+            draw.drawCanvas.style.pointerEvents="none";
+            lineNavContainer.style.display = "none";
+            lineComplete = true;
+        }
+
+
+        function rightFNC(){
+            console.log("Line rightFNC FNC");
+            stopDraw();
+        }
+
+
+        function closeCanvas(){
+            if(draw.success){
+                stopDraw();
+                draw.lineBG.style.backgroundColor = "green";
+            }else{
+                draw.lineBG.style.backgroundColor = "red";
+                interval = setTimeout(returnWarning, 1000);
+            }
+        }
+
+        function wrongFNC(){
+            console.log("Line wrongFNC FNC");
+        }
+
+        function answerFNC(){
+            draw.drawCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+            draw.drawCtx.beginPath();
+            draw.rightCanvas.style.opacity = 100;
+            console.log("Line answerFNC ");
+        }
+
+
+        function returnWarning(){
+            draw.lineBG.style.backgroundColor = draw.lineBgColor;
+        }
+
+        SP.fnc.push({control: checkAnswer, wrong: wrongFNC, right: rightFNC, answer: answerFNC});
+
+    }
+
+
+    this.initPOINT = function(SP, SD, index){
+        var answer = jsonV2.slides[index].answer;
+        console.log(SP);
+        console.log(SD);
+        console.log( jsonV2.slides[index] );
+
+        var rightAnswer;
+        var fixedPoints=[];
+        var userPoints = [];
+        var allCircle = [];
+        var grid=[];
+        var canvas;
+        const lines = [];
+        let selectedCircle = null;
+        let mode = "draw";
+        var canvasOrigin;
+        var drawBtn;
+        var easeBtn;
+        var time;
+        var set = {
+            lineColor: "#0ABBBF",
+            strokeWidth: 3
+        }
+
+        for(var prop in jsonV2.slides[index].scene){
+            set[prop] = jsonV2.slides[index].scene[prop];
+        }
+
+        SP.elementList.map(function(element){
+            if(element.id.includes("pointButon")){
+                var id = parseInt(element.id.split("_")[1]);
+                var pos = getPosition(element.main);
+                var bg = element.main.querySelector(".bg");
+                var strokeWidth = parseInt(bg.style.outlineWidth);
+                var strokeGap=0;
+                if(strokeWidth){
+                    strokeGap = (strokeWidth/2);
+                }
+
+                fixedPoints[id] = {
+                    x: (pos.left + strokeGap),
+                    y: (pos.top + strokeGap),
+                    width: bg.offsetWidth,
+                    height: bg.offsetHeight,
+                    cornerRadius: parseInt(bg.style.borderRadius),
+                    fill: bg.style.backgroundColor,
+                    stroke: bg.style.outlineColor,
+                    strokeWidth: strokeWidth,
+                    row: parseInt(element.data.group),
+                    butonID: id
+                };
+            }else if(element.id.includes("pointCanvas")){
+                var id = parseInt(element.id.split("_")[1]);
+                rightAnswer = answer[id];
+                canvas = element;
+                canvasOrigin = getPosition(element.main);
+            }else if(element.id.includes("pointNav")){
+                drawBtn = element.main.querySelector(".drawBox");
+                easeBtn = element.main.querySelector(".eraserBox");
+
+                drawBtn.addEventListener("click",function(){
+                    activeBtnFNC(this);
+                    passiveBtnFNC(easeBtn);
+                    mode = "draw";
+                });
+
+                easeBtn.addEventListener("click",function(){
+                    activeBtnFNC(this);
+                    passiveBtnFNC(drawBtn);
+                    mode = "erase";
+                });
+
+                activeBtnFNC(drawBtn);
+            }
+        });
+
+        const stage = new Konva.Stage({
+            container: canvas.id,
+            width: canvas.main.offsetWidth,
+            height: canvas.main.offsetHeight
+        });
+
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        if(rightAnswer){
+            rightAnswer = rightAnswer.replace(/\s+/g, "");
+            rightAnswer = rightAnswer.split(",");
+
+            for(var i=0; i<rightAnswer.length; i++){
+                var editAnswer = rightAnswer[i].split("-");
+                rightAnswer[i] = pointIdEdit(editAnswer[0], editAnswer[1]);
+            }
+        }
+
+        // Sabit noktaları çiz
+        function addCircles(){
+            fixedPoints.forEach((obj, index) => {
+                obj.x = (obj.x-canvasOrigin.left);
+                obj.y = (obj.y-canvasOrigin.top);
+
+                const circle = new Konva.Rect(obj);
+                circle.strokeWidth(0);
+
+                if(!grid[obj.row]){
+                    grid[obj.row] = [];
+                }
+
+                grid[obj.row].push(obj.butonID);
+
+                circle.on('mousedown touchstart', function(){
+                    if (mode === 'draw') {
+                        handleDrawMode(circle);
+                    } else if (mode === 'erase') {
+                        //handleEraseMode(circle);
+                        easeLines(circle);
+                    }
+                });
+
+                allCircle[obj.butonID] = circle;
+                layer.add(circle);
+            });
+        }
+
+        addCircles();
+
+        function handleDrawMode(nextCircle) {
+            var id = nextCircle.attrs.butonID;
+
+            if (!selectedCircle){
+                selectedCircle = nextCircle;
+                selectedCircle.strokeWidth(fixedPoints[id].strokeWidth);
+            }else if(selectedCircle === nextCircle){
+                defaultCircle();
+            }else{
+                createLine(selectedCircle, nextCircle);
+                nextCircle.strokeWidth(fixedPoints[id].strokeWidth);
+                selectedCircle = nextCircle;
+            }
+        }
+
+        function permissionControl(oldPoint){
+            if(oldPoint){
+                var oldPointID = oldPoint.attrs.butonID;
+
+                var rowBack = grid[oldPoint.attrs.row-1];
+                var row = grid[oldPoint.attrs.row];
+                var rowNext = grid[oldPoint.attrs.row+1];
+
+                var index = row.indexOf(oldPointID);
+                var down, back, next, up;
+                var crossDownBack, crossDownNext, crossUpBack, crossUpNext;
+
+                if(rowBack){
+                    crossDownBack = rowBack[index-1];
+                    down = rowBack[index];
+                    crossDownNext = rowBack[index+1];
+                }
+
+                next = row[(index+1)];
+                back = row[(index-1)];
+
+                if(rowNext){
+                    crossUpBack = rowNext[index-1];
+                    up = rowNext[index];
+                    crossUpNext = rowNext[index+1];
+                }
+
+                return [crossDownBack, down, crossDownNext, next, back, crossUpBack, up, crossUpNext]
+            }
+        }
+
+
+        function addPointControl(oldPoint, newPoint){
+            var pin = pointIdEdit(oldPoint.attrs.butonID, newPoint.attrs.butonID);
+            var found = false;
+
+            userPoints.map(function(e){
+                if(e.point === pin){
+                    found = true;
+                }
+            });
+
+            if(!found){
+                return {point: pin};
+            }
+
+            return found;
+        }
+
+        function pointIdEdit(pointOld, pointNew){
+            var min = Math.min(pointOld, pointNew);
+            var max = Math.max(pointOld, pointNew);
+            return min+"_"+max;
+        }
+
+
+        function easeLines(circle){
+            var id = circle.attrs.butonID;
+            var clean=[];
+
+            defaultCircle();
+            selectedCircle = circle;
+            selectedCircle.strokeWidth(fixedPoints[id].strokeWidth);
+
+            for(var i=0; i<userPoints.length; i++){
+                if(userPoints[i].point.includes(id)){
+                    userPoints[i].line.destroy();
+                    userPoints[i] = null;
+                }
+            }
+
+            userPoints.map(function(line){
+                if(line){
+                    clean.push(line);
+                }
+            });
+
+            userPoints = clean;
+            if(userPoints.length){
+                controlBtnView(SP, "enable");
+            }else{
+                controlBtnView(SP, "disable");
+            }
+        }
+
+        // Çizgi oluşturma
+        function createLine(selectedCircle, nextCircle) {
+            var control = addPointControl(selectedCircle, nextCircle);
+
+            var permissionList = permissionControl(selectedCircle);
+            var permission = permissionList.indexOf(nextCircle.attrs.butonID);
+
+            if(typeof control === "object" && permission > -1){
+                var selectOriginX = (selectedCircle.x() + (selectedCircle.width()/2));
+                var selectOriginY = (selectedCircle.y() + (selectedCircle.height()/2));
+
+                var nextOriginX = (nextCircle.x() + (nextCircle.width()/2));
+                var nextOriginY = (nextCircle.y() + (nextCircle.height()/2));
+
+                var line = new Konva.Line({
+                    points: [selectOriginX, selectOriginY, nextOriginX, nextOriginY],
+                    stroke: set.lineColor,
+                    strokeWidth: parseInt(set.strokeWidth),
+                    lineCap: "round",
+                    lineJoin: "round"
+                });
+
+                selectedCircle.strokeWidth(0);
+                control.line = line;
+                line.listening(false);
+
+
+                layer.add(line);
+                userPoints.push(control);
+                lines.push({ line, pointsRef: [selectedCircle, nextCircle] });
+                controlBtnView(SP, "enable");
+            }else{
+                defaultCircle();
+            }
+        }
+
+        function defaultCircle(){
+            selectedCircle = null;
+            allCircle.map(function(circle){
+                circle.strokeWidth(0);
+            });
+        }
+
+
+        function activeBtnFNC(btn){
+            btn.style.border = "2px solid #183153";
+        }
+
+        function passiveBtnFNC(btn){
+            btn.style.border = "0px";
+        }
+
+
+        function checkAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"POINT"};
+
+            if(!userPoints.length){
+                score.totalEmpty = 1;
+            }else if(userPoints.length === rightAnswer.length){
+                var result = true;
+                rightAnswer.map(function(right){
+                    var found = false;
+                    for(var i=0; i<userPoints.length; i++){
+                        if(right === userPoints[i].point){
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if(!found){
+                        result = false;
+                    }
+                });
+
+                if(result){
+                    score.totalRight = 1;
+                }else{
+                    score.totalWrong = 1;
+                }
+            }else{
+                score.totalWrong = 1;
+            }
+
+            return score;
+        }
+
+        function wrongFNC(){
+            changeLineColor("#ff0000");
+            time = setTimeout(function(){
+                changeLineColor(set.lineColor);
+            }, 1000);
+        }
 
 
 
+        function rightFNC(){
+            changeLineColor("#00c853");
+            defaultCircle();
+            allButonDisable();
+        }
+
+        function answerFNC(){
+            allCircle.map(function(btn){
+                easeLines(btn);
+            });
+
+            rightAnswer.map(function(right){
+                var rightPoints = right.split("_");
+                var point1 = allCircle[rightPoints[0]];
+                var point2 = allCircle[rightPoints[1]];
+                createLine(point1, point2);
+            });
+
+            allButonDisable();
+            defaultCircle();
+        }
+
+        function changeLineColor(color){
+            lines.map(function(stroke){
+                stroke.line.stroke(color);
+            });
+        }
+
+        function allButonDisable(){
+            allCircle.map(function(btn){
+                btn.off("mousedown touchstart");
+            });
+        }
+
+        SP.fnc.push({control: checkAnswer, wrong: wrongFNC, right: rightFNC, answer: answerFNC});
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

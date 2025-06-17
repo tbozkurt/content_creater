@@ -179,7 +179,10 @@ function CREATE(){
         {obj: "boxDrag", answer:false},
         {obj: "boxDrop", answer:true},
         {obj: "paintBox", answer:true},
-        {obj: "sortDrag", answer:true}
+        {obj: "sortDrag", answer:true},
+        {obj: "drawCanvas", answer:true},
+        {obj: "pointButon", answer:false},
+        {obj: "pointCanvas", answer:true}
     ];
 
     this.checkKontrol = function(){
@@ -445,7 +448,7 @@ function CREATE(){
                 height: 480,
                 fill: "#ffffff",
                 strokeWidth: 0,
-                borderPosition:"center",
+                borderPosition: "center",
                 opacity: 0,
                 Layer:{type:"objectRect", name: "bg"}
             }];
@@ -482,7 +485,7 @@ function CREATE(){
                 width: 870,
                 fontSize: 21,
                 fontFamily: "Nunito",
-                fill: "#000000",
+                fill: "#5085C4",
                 lineHeight: 1.6,
                 padding: 0,
                 Layer:{type:"objectText", name: "text"}
@@ -869,7 +872,24 @@ function CREATE(){
 
         addObjects(kids, container, false);
         Arayuz_addLayer(container);
+        return container;
+    }
 
+    this.videoBox = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 1280,
+            height: 720,
+            fill: "#303f46",
+            borderPosition: "center",
+            cornerRadius: 0,
+            Layer:{type:"objectRect", name:"bg"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
         return container;
     }
 
@@ -922,6 +942,83 @@ function CREATE(){
             borderPosition: "center",
             cornerRadius: 20,
             Layer:{type:"objectRect", name: "bg", class:"paintBox"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.lineCorrect = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 400,
+            height: 400,
+            fill: "gray",
+            opacity: 1,
+            borderPosition: "center",
+            Layer:{type:"objectRect", name: "bg", class:"lineBg"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.lineNav = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 155,
+            height: 80,
+            fill: "silver",
+            borderPosition: "center",
+            cornerRadius: 10,
+            Layer:{type:"objectRect", name: "bg"}
+        },
+        {
+            x: 20,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/draw_icon.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"draw_icon", class:"drawBox"}
+        },
+        {
+            x: 85,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/draw_easer.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"draw_easer", class:"eraserBox"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.Point = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 2,
+            y: 2,
+            width: 80,
+            height: 80,
+            fill: "rgba(255, 255, 255, 0)",
+            strokeWidth: 4,
+            stroke: "#c0c0c0",
+            borderPosition: "center",
+            cornerRadius: 40,
+            Layer:{type:"objectRect", name: "bg", class:"bg"}
         }];
 
         addObjects(kids, container, false);

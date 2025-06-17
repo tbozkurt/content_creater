@@ -167,6 +167,14 @@ function utils(){
         return `#${redHex}${greenHex}${blueHex}${alphaHex}`;
     }
 
+
+    this.changeCharacter = function(str){
+        console.log("str", str);
+        str = str.replace("ü", "u");
+        str = str.replace("ç", "c");
+        return str;
+    }
+
     /*
     console.log(this.rgbaToHex(255, 99, 71, 0.5));
     console.log(this.rgbaToHex(0, 0, 0, 1));

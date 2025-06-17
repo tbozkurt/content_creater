@@ -597,6 +597,17 @@ IDE.workSpace.uploadSvgForm.addEventListener("change", function(e){
     uploadImageAjax( new FormData(this) );
 });
 
+IDE.workSpace.uploadDrawShape.addEventListener("change", function(e){
+    IDE.imgClass="shapePNG hide";
+    uploadImageAjax( new FormData(this) );
+});
+
+IDE.workSpace.uploadDrawRight.addEventListener("change", function(e){
+    IDE.imgClass="rightPNG hide";
+    uploadImageAjax( new FormData(this) );
+});
+
+
 function showWorkSpaces(){
     IDE.workSpace.WorkSpace_Layer.style.display = "block";
     IDE.workSpace.WorkSpace_Scene.style.display = "flex";
@@ -604,6 +615,9 @@ function showWorkSpaces(){
     IDE.workSpace.WorkSpace_OverFlow.style.display = "none";
     document.querySelector("#export").style.display = "block";
     saveBtnViewStatus("block");
+    if(IDE.workSpace.activityTypes.value === "7"){
+        document.querySelector("#iconGroup7_Detail").style.display = "none";
+    }
 }
 
 function hideWorkSpaces(){
@@ -612,11 +626,16 @@ function hideWorkSpaces(){
     IDE.workSpace.topBanner_addObject.style.display = "none";
     IDE.workSpace.WorkSpace_OverFlow.style.display = "block";
     document.querySelector("#export").style.display = "none";
+
+    if(IDE.workSpace.activityTypes.value === "7"){
+        document.querySelector("#iconGroup7_Detail").style.display = "flex";
+    }
+
     saveBtnViewStatus("none");
 }
 
 function saveBtnViewStatus(status){
-    if(IDE.fileUser === IDE.faceUser){
+    if(IDE.user.fileUser === IDE.user.appUser){
         document.querySelector("#topMenuSaveBtn").style.display = status;
     }else{
         document.querySelector("#topMenuSaveBtn").style.display = "none";
@@ -792,7 +811,7 @@ document.querySelector("#export").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     for(var x=0; x<json.slides.length; x++){
         if(json.slides[x].answer){
-            if(!Object.keys(json.slides[x].answer).length){
+            if(!Object.keys(json.slides[x].answer).length && !json.slides[x].type.includes("video")){
                 IDE.showTip({txt:"Bazı etkinliklerin cevap anahtarları yok, bu nedenle etkinlikler doğru çalışmayabilir.", color: "#b71c1c", time:10000, x: 260, y: (IDE.stage.height-10)});
                 break;
             }
@@ -810,9 +829,16 @@ document.querySelector("#topMenuSaveBtn").addEventListener("click", function(){
     var json = EXPORT.convertJson();
     //StorageSave(json);
     saveDataAjax(json);
+    if(IDE.user.occMode){
+        occSaveFile(json);
+    }
+
     console.log( json );
-    console.log("kaydedildi");
-    IDE.showTip({txt:"saved", color: "#1b5e20", time:1000, x: 1480, y: (IDE.stage.height-10)});
+    IDE.showTip({txt:"prepare..", color: "#ef6c00", time:1000, x: 1458, y: (IDE.stage.height-10)});
+    /*
+    console.log("lütfen bekleyin");
+    IDE.showTip({txt:"orange", color: "#1b5e20", time:1000, x: 1480, y: (IDE.stage.height-10)});
+    */
 });
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
@@ -928,12 +954,15 @@ IDE.welcome.newFileBtn.addEventListener("click", function(e){
             IDE.welcome.addFileInput.focus();
         }
     }else{
-        IDE.fileUser = IDE.faceUser;
+        IDE.user.fileUser = IDE.user.appUser;
         saveBtnViewStatus("block");
         newSceneRequest();
         jsonV2.createTime = utils.addTimeStamp("server");
         document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
         newFileAjax(jsonV2);
+        if(IDE.user.occMode){
+            occSaveFile(jsonV2);
+        }
     }
 
     e.stopPropagation();
@@ -942,6 +971,7 @@ IDE.welcome.newFileBtn.addEventListener("click", function(e){
 
 /* WorkSpace Font */
 IDE.workSpace.font_fontFamily.addEventListener("change", function (){
+    console.log(this.value);
     setFontSize(null, null, this.value);
 });
 
@@ -1337,7 +1367,8 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
             name: "popupWindow_0",
             elementID: "popupWindow_0",
             type: "objectMovieClip",
-            class: "hide"
+            class: "hide",
+            params:{}
         }
     });
 
@@ -1459,9 +1490,7 @@ IDE.workSpace.createInput.addEventListener("click", function(e){
             name: "inputArea",
             elementID: "inputArea",
             type: "objectMovieClip",
-            params:{
-
-            }
+            params:{}
         }
     });
 
@@ -1487,9 +1516,7 @@ IDE.workSpace.createMatchDrag.addEventListener("click", function(){
             name: "matchDrag",
             elementID: "matchDrag",
             type: "objectMovieClip",
-            params:{
-
-            }
+            params:{}
         }
     });
 
@@ -1778,6 +1805,171 @@ IDE.workSpace.createSortDrag.addEventListener("click", function(){
     CREATE.checkKontrol();
     addHistory();
     selectItem({shiftKey: false, layer: obj});
+});
+
+
+/* create new video */
+IDE.workSpace.createVideo.addEventListener("click", function(){
+    console.log("createVideo");
+    var obj = CREATE.videoBox({
+        properties:{
+            x: 0,
+            y: 0,
+            width: 1280,
+            height: 720,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "videoBox",
+            elementID: "videoBox",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+/* create draw navigation */
+IDE.workSpace.createLineCorrect.addEventListener("click", function(){
+    console.log("create Draw Navigation");
+    var obj = CREATE.lineCorrect({
+        properties:{
+            x: 0,
+            y: 0,
+            width: 400,
+            height: 400,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "drawCanvas",
+            elementID: "drawCanvas",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+/* create draw navigation */
+IDE.workSpace.createLineNav.addEventListener("click", function(){
+    console.log("create Draw Navigation");
+    var obj = CREATE.lineNav({
+        properties:{
+            x: 160,
+            y: 460,
+            width: 100,
+            height: 100,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "drawNav",
+            elementID: "drawNav",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* create draw navigation */
+IDE.workSpace.createPoint.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.Point({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 100,
+            height: 100,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "pointButon",
+            elementID: "pointButon",
+            type: "objectMovieClip",
+            class: "hide",
+            params:{group:0}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* create draw navigation */
+IDE.workSpace.createPointNav.addEventListener("click", function(){
+    console.log("create Point Navigation");
+    var obj = CREATE.lineNav({
+        properties:{
+            x: 160,
+            y: 460,
+            width: 100,
+            height: 100,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "pointNav",
+            elementID: "pointNav",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* Create Match Drop Buton */
+IDE.workSpace.createPointCanvas.addEventListener("click", function(){
+    console.log("createPointCanvas");
+    var obj = CREATE.addCanvas({
+        properties:{
+            x: 50,
+            y: 50,
+            width: 600,
+            height: 600,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "pointCanvas",
+            elementID: "pointCanvas",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+IDE.welcome.loaderMain.addEventListener("click", function(){
+    document.querySelector("#loaderMain_img").style.animationPlayState = "paused";
+});
+
+document.querySelector("#home_icon").addEventListener("click", function(){
+    window.location.href = '/ide';
+});
+
+
+document.querySelector(".welcome_windowTitle").addEventListener("click", function(){
+    returnData();
 });
 
 

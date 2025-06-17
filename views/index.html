@@ -13,13 +13,16 @@
     <script src="/assets/js/player.js"></script>
     <script src="/assets/js/gsap.min.js"></script>
     <script src="/assets/js/Draggable.min.js"></script>
+    <script src="/assets/js/hlscodecMay.js"></script>
+    <script src="/assets/js/hlsplayer2025.js"></script>
+
     <link rel="stylesheet" href="/assets/css/ide.css">
     <link rel="stylesheet" href="/assets/css/player.css">
 </head>
 <body>
 <div class="WorkView" id="scope_TopMenu">
     <div>
-        <div class="topMenuEmpty">&nbsp;</div>
+        <div class="TopIconBox" id="home_icon"><img src="assets/img/home_icon.png"></div>
     </div>
 
     <div id="main">
@@ -61,6 +64,9 @@
                     <option value="3">Sürükle Bırak</option>
                     <option value="4">Boyama</option>
                     <option value="5">Sıralama</option>
+                    <option value="6">Video</option>
+                    <option value="7">Çizgi Doğrulama</option>
+                    <option value="8">Nokta Çizim </option>
                 </select>
             </div>
 
@@ -99,13 +105,51 @@
 
             <div id="iconGroup5" class="iconGroup">
                 <div class="TopIconBox" id="createSortDrag"><img src="assets/img/create_matchdrag.png"></div>
-                <!--
-                <div class="TopIconBox" id="createSortDrop"><img src="assets/img/create_matchdrop.png"></div>
-                <div class="TopIconBox" id="createSortArea"><img src="assets/img/create_canvas.png"></div>
-                -->
+            </div>
+
+            <div id="iconGroup6" class="iconGroup">
+                <div class="TopIconBox" id="createVideo"><img src="assets/img/create_video.png"></div>
+            </div>
+
+            <div id="iconGroup7" class="iconGroup">
+                <div class="TopIconBox" id="createLineNav"><img src="assets/img/create_drawnav.png"></div>
+                <div class="TopIconBox" id="createLineCorrect"><img src="assets/img/create_paintbox.png"></div>
+            </div>
+
+            <div id="iconGroup8" class="iconGroup">
+                <div class="TopIconBox" id="createPoint"><img src="assets/img/create_select.png"></div>
+                <div class="TopIconBox" id="createPointCanvas"><img src="assets/img/create_canvas.png"></div>
+                <div class="TopIconBox" id="createPointNav"><img src="assets/img/create_drawnav.png"></div>
             </div>
 
         </div>
+
+
+
+        <div id="iconGroup7_Detail" class="iconGroup">
+            <div class="TopIconBox image-upload">
+                <form id="uploadDrawShape" enctype="multipart/form-data">
+                    <label for="drawShape_input" style="cursor: pointer">
+                        <img src="assets/img/create_uploadshape.png"/>
+                    </label>
+
+                    <input style="display: none" id="drawShape_input" name="uploadImage" type="file" accept=".png" multiple/>
+                </form>
+            </div>
+
+            <div class="TopIconBox image-upload">
+                <form id="uploadDrawRight" enctype="multipart/form-data">
+                    <label for="drawRight_input" style="cursor: pointer">
+                        <img src="assets/img/create_uploadright.png"/>
+                    </label>
+
+                    <input style="display: none" id="drawRight_input" name="uploadImage" type="file" accept=".png" multiple/>
+                </form>
+            </div>
+        </div>
+
+
+
     </div>
 
     <div style="display: flex">
@@ -179,9 +223,9 @@
     <div class="WorkSpaces_Group WorkSpace_Align">
         <div class="WorkSpaces_Header">Align Object</div>
         <div class="AlignMain">
-            <div class="AlignBox" id="align_Left"><img src="assets/img/leftY.svg"></div>
-            <div class="AlignBox" id="align_HorizontalCenter"><img src="assets/img/centerY.svg"></div>
-            <div class="AlignBox" id="align_Right"><img src="assets/img/rightY.svg"></div>
+            <div class="AlignBox" id="align_Left"><img src="/assets/img/leftY.svg"></div>
+            <div class="AlignBox" id="align_HorizontalCenter"><img src="/assets/img/centerY.svg"></div>
+            <div class="AlignBox" id="align_Right"><img src="/assets/img/rightY.svg"></div>
             <div class="AlignBox" id="align_SpaceVertical"><img src="assets/img/spaceY.svg"></div>
         </div>
         <div class="AlignMain">
@@ -224,6 +268,7 @@
                     <select id="font_fontFamily">
                         <option value="Arial">Arial</option>
                         <option value="Nunito">Nunito</option>
+                        <option value="temelyazi">Temel Yazı</option>
                     </select>
                 </div>
                 <input type="number" id="font_sizeInput">
@@ -382,6 +427,13 @@
     </div>
 </div>
 
+<div id="loaderMain">
+    <div class="loaderMain_window">
+        <div class="loaderMain_windowTitle">Please wait</div>
+        <img id="loaderMain_icon" src="/assets/img/loader.png" alt="">
+    </div>
+</div>
+
 <script>
     var IDE = {
         stage:{width: 1430, height: 870, container: "scope_Canvas", bg:"#404040"},
@@ -408,7 +460,9 @@
         editRect: null,
         searchList:[],
         editMC: null,
+        user:{},
         imgClass: "",
+        auto: 0,
         workSpace:{
             scope_TopMenu: document.querySelector("#scope_TopMenu"),
             scope_Canvas: document.querySelector("#scope_Canvas"),
@@ -434,6 +488,7 @@
             createText: document.querySelector("#createText"),
             createRect: document.querySelector("#createRect"),
             createSelect: document.querySelector("#createSelect"),
+            createDraw: document.querySelector("#createDraw"),
             createPopup: document.querySelector("#createPopup"),
             createControl: document.querySelector("#createControl"),
             createAnswer: document.querySelector("#createAnswer"),
@@ -453,6 +508,7 @@
 
             createBoxDrag: document.querySelector("#createBoxDrag"),
             createBoxDrop: document.querySelector("#createBoxDrop"),
+            createVideo: document.querySelector("#createVideo"),
 
             createSortDrag: document.querySelector("#createSortDrag"),
             createSortDrop: document.querySelector("#createSortDrop"),
@@ -460,6 +516,15 @@
 
             uploadImageForm: document.querySelector("#uploadImageForm"),
             uploadSvgForm: document.querySelector("#uploadSvgForm"),
+
+            createLineCorrect: document.querySelector("#createLineCorrect"),
+            createLineNav: document.querySelector("#createLineNav"),
+            uploadDrawShape: document.querySelector("#uploadDrawShape"),
+            uploadDrawRight: document.querySelector("#uploadDrawRight"),
+
+            createPoint: document.querySelector("#createPoint"),
+            createPointCanvas: document.querySelector("#createPointCanvas"),
+            createPointNav: document.querySelector("#createPointNav"),
 
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
@@ -523,7 +588,10 @@
 
             userMain: document.querySelector("#userMain"),
             username: document.querySelector("#username"),
-            password: document.querySelector("#password")
+            password: document.querySelector("#password"),
+
+            loaderMain: document.querySelector("#loaderMain"),
+            loaderMain_icon: document.querySelector("#loaderMain_icon"),
         },
         iconGroup:[
             document.querySelector("#iconGroup0"),
@@ -531,7 +599,10 @@
             document.querySelector("#iconGroup2"),
             document.querySelector("#iconGroup3"),
             document.querySelector("#iconGroup4"),
-            document.querySelector("#iconGroup5")
+            document.querySelector("#iconGroup5"),
+            document.querySelector("#iconGroup6"),
+            document.querySelector("#iconGroup7"),
+            document.querySelector("#iconGroup8")
         ]
     }
 
@@ -607,8 +678,8 @@
         visible: false,
         listening: false,
     });
-    IDE.sceneLayer.add(IDE.selectRect);
 
+    IDE.sceneLayer.add(IDE.selectRect);
 
     var CREATE = new CREATE();
     var EXPORT = new EXPORT();
@@ -626,8 +697,9 @@
 
     function sceneTemplate(){
         return {
-            type: "KT_MC_Single",
-            answer:{},
+            /*type: "KT_MC_Single",*/
+            type: [],
+            answer: {},
             rightAnswer: null,
             scene: {},
             all: [],
@@ -1017,6 +1089,12 @@
                 IDE.selectedLayers[0].Layer.params = {}
             }
 
+            /*
+            else if(Array.isArray(IDE.selectedLayers[0].Layer.params)){
+                IDE.selectedLayers[0].Layer.params = {}
+            }
+            */
+
             IDE.selectedLayers[0].Layer.params["New"] = "";
             refreshTable(IDE.selectedLayers[0].Layer.params, IDE.workSpace.identity_table);
         }
@@ -1218,12 +1296,36 @@
     var boxColor = {
         melike:"#b71c1c",
         irem:"#01579b",
-        tuncay:"#004d40",
         kamil:"#1b5e20",
         demet:"#f57f17",
         goknur:"#bf360c",
-        cansu:"#880e4f"
+        cansu:"#880e4f",
+        tuncay:"#004d40",
+        gulcin:"#37474f"
     };
+
+    var occUser = {
+        user_15513246: "melike",
+        user_9244372: "melike",
+        user_15432145: "irem",
+        user_7729542: "kamil",
+        user_2521680: "demet",
+        user_12621116: "goknur",
+        user_15480368: "cansu",
+        user_7729545: "tuncay",
+        user_20: "gulcin"
+    }
+
+    var occUserName = {
+        melike: "9244372",
+        irem: "15432145",
+        kamil: "7729542",
+        demet: "2521680",
+        goknur: "12621116",
+        cansu: "15480368",
+        tuncay: "7729545",
+        gulcin: "20"
+    }
 
     /* File System */
     function addSavedFileBtn(filename, date, fileUser){
@@ -1258,10 +1360,16 @@
         var opticBtn = document.querySelector("#o_"+ filename);
 
         fileBtn.addEventListener("click", function(e){
-            selectFileAjax(filename);
+            if(IDE.user.occMode){
+                occSelectFile(filename);
+            }else{
+                selectFileAjax(filename);
+            }
+
             IDE.welcome.main.style.display = "none";
-            IDE.fileUser = fileUser;
+            IDE.user.fileUser = fileUser;
             saveBtnViewStatus("block");
+            console.log(IDE.user);
         });
 
         zipBtn.addEventListener("click", function(e){
@@ -1274,6 +1382,10 @@
                 console.log("!Silindi");
                 IDE.searchList=[];
                 deleteFolderAjax(filename);
+
+                if(IDE.user.occMode){
+                    occDeleteFile(filename);
+                }
             }
 
             e.stopPropagation();
@@ -1289,17 +1401,17 @@
             e.stopPropagation();
         });
 
-        if(fileUser){
-            if(fileUser !== IDE.faceUser){
-                zipBtn.classList.add("disableBtn");
-                delBtn.classList.add("disableBtn");
-                htmlBtn.classList.add("disableBtn");
-                opticBtn.classList.add("disableBtn");
-            }
+        if(fileUser !== IDE.user.appUser){
+            zipBtn.classList.add("disableBtn");
+            delBtn.classList.add("disableBtn");
+            htmlBtn.classList.add("disableBtn");
+            opticBtn.classList.add("disableBtn");
         }
+
     }
 
     function newSceneRequest(){
+        console.log("new Scene Request >>");
         var template = sceneTemplate();
         console.log(template);
         sceneAddNewScene(template);
@@ -1318,9 +1430,10 @@
         document.querySelector("#welcome_search").style.display = "none";
     }
 
-    /* Ajax */
+    /* Ajax New File*/
     function newFileAjax(json){
-        var data = {token: IDE.token, data: JSON.stringify(json)};
+        console.log("STD new File request");
+        var data = {token: IDE.user.token, data: JSON.stringify(json)};
         $.ajax({url: "/createNewFile", data, success: newFileParse, type: "POST", error: ajaxError});
     }
 
@@ -1331,55 +1444,9 @@
         addSceneAddButon();
     }
 
-    function selectFileAjax(file){
-        var data = {token: IDE.token, file};
-        $.ajax({url: "/selectFile", data, success: selectFileParse, type: "POST", error: ajaxError});
-    }
-
-    function selectFileParse(data){
-        if(data.success){
-            IDE.files = data.FILE.files;
-            jsonV2 = data.FILE.files.data;
-
-            if(jsonV2.slides.length){
-                jsonV2.slides.map(function(o, i){
-                    sceneAddNavigationBtn(i, o.name);
-                });
-
-                sceneSelect(0);
-            }else{
-                newSceneRequest();
-            }
-
-
-            addSceneAddButon();
-        }else{
-            alert("dosya bulunamadı");
-        }
-    }
-
-    function saveDataAjax(json){
-        var data = {token: IDE.token, data: JSON.stringify(json)};
-        $.ajax({url: "/saveData", data, success: saveDataParse, type: "POST", error: ajaxError});
-    }
-
-    function saveDataParse(data){
-        console.log("saveDataParse", data);
-    }
-
-    function deleteFolderAjax(file){
-        var data = {token: IDE.token, file};
-        console.log(data);
-        $.ajax({url: "/deleteFolder", data, success: deleteFolderParse, type: "POST", error: ajaxError});
-    }
-
-    function deleteFolderParse(data){
-        console.log("deleted Content Parse:", data);
-        getFileListParse(data);
-    }
 
     function deleteFileAjax(file){
-        var data = {token: IDE.token, file};
+        var data = {token: IDE.user.token, file};
         $.ajax({url: "/deleteFile", data, success: deleteFileParse, type: "POST", error: ajaxError});
     }
 
@@ -1388,7 +1455,7 @@
     }
 
     function zipContentAjax(file){
-        var data = {token: IDE.token, file};
+        var data = {token: IDE.user.token, file};
         $.ajax({url: "/getZip", data, success: zipContentParse, type: "POST", error: ajaxError});
     }
 
@@ -1420,7 +1487,7 @@
     }
 
     function uploadImageAjax(data){
-        $.ajax({url: "/uploadFolderChange", data:{token: IDE.token}, async: false, type: "POST", error: ajaxError});
+        $.ajax({url: "/uploadFolderChange", data:{token: IDE.user.token}, async: false, type: "POST", error: ajaxError});
         $.ajax({url: "/uploadImage", data, success: uploadImageParse, type:"POST", contentType: false, cache:false, processData: false, error: ajaxError});
     }
 
@@ -1459,58 +1526,12 @@
     function ajaxError(e){console.log(e)}
 
 
-    function getFileListParse(data){
-        if(data.success){
-            IDE.faceUser = data.user;
-            var saveList = [];
-
-            for(var p in data.fileList.data){
-                saveList.push({fileName: p, createTime: data.fileList.data[p].create, username: data.fileList.data[p].user});
-            }
-
-            saveList.sort(function(a,b){
-                return new Date(b.createTime) - new Date(a.createTime);
-            });
-
-            IDE.welcome.savedFileList.innerHTML="";
-
-            saveList.map(function(data){
-                addSavedFileBtn(data.fileName, data.createTime, data.username);
-            });
-
-            IDE.welcome.main.style.display = "flex";
-            IDE.welcome.userMain.style.display = "none";
-
-            if(data.user === "guest"){
-                document.querySelector(".welcome_newFileContainer").style.display = "none";
-                document.querySelectorAll(".welcomeDelete").forEach(e => e.remove());
-            }else{
-                LocalSave(data.user, data.pw);
-            }
-        }else{
-            IDE.welcome.userMain.style.display = "flex";
-            IDE.welcome.username.value = "Hatalı!";
-            IDE.welcome.password.value = "";
-        }
-    }
-
     function addStageBG(){
         CREATE.rectFNC({
             properties:{x: 0, y: 0, width: 1280, height: 720, fill: IDE.stage.bg},
             container: KonvaBG
         });
     }
-
-    function getFileList(username, password, token){
-        var data = {username, password, token};
-        $.ajax({url: "/getFileList", data, success: getFileListParse, type: "POST", error: ajaxError});
-    }
-
-    document.querySelector("#userMain_guestBtn").addEventListener("click", function(){
-        console.log(IDE.token);
-        getFileList("guest", "guest", IDE.token);
-    });
-
 
     /* Search */
     document.querySelector("#searchFile").addEventListener("input", function(){
@@ -1544,41 +1565,302 @@
     document.querySelector("#userMain_submitBtn").addEventListener("click", function(){
         var username = IDE.welcome.username.value;
         var password = IDE.welcome.password.value;
-        getFileList(username, password, IDE.token);
+
+        if(IDE.user.occMode){
+            occLogin(username, password);
+        }else{
+            getFileList(username, password, IDE.user.token);
+        }
     });
 
-    function LocalGet() {
+
+    document.querySelector("#userMain_guestBtn").addEventListener("click", function(){
+        //autoGetFileList();
+        //getFileList("guest", "guest", IDE.user.token);
+    });
+
+
+    /* 4. STD Save File */
+    function deleteFolderAjax(deleteFile){
+        IDE.user.deleteFile = deleteFile;
+        $.ajax({url: "/deleteFolder", data: IDE.user, success: deleteFolderParse, type: "POST", error: ajaxError});
+    }
+
+    function deleteFolderParse(data){
+        console.log("deleted Content Parse:", data);
+        if(!IDE.user.occMode){
+            getFileListParse(data);
+        }
+    }
+
+
+    /* 3. STD Save File */
+    function saveDataAjax(json){
+        showLoader();
+        console.log("STD: saveDataAjax", IDE.user.token);
+        IDE.user.stringJSON = JSON.stringify(json);
+        $.ajax({url: "/saveData", data: IDE.user, success: saveDataParse, type: "POST", error: ajaxError});
+    }
+
+    function saveDataParse(data){
+        console.log("STD: kaydedildi", data);
+        if(data.success){
+            IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+            hideLoader();
+        }
+    }
+
+    /* 2. STD Select File */
+    function selectFileAjax(selectedFile){
+        showLoader();
+        IDE.user.selectedFile = selectedFile;
+        $.ajax({url: "/selectFile", data: IDE.user, success: selectFileParse, type: "POST", error: ajaxError});
+    }
+
+    function selectFileParse(data){
+        console.log(data);
+        if(data.success){
+            console.log(data);
+            IDE.files = data.FILE.files;
+            jsonV2 = data.FILE.files.data;
+            importScene();
+            hideLoader();
+        }else{
+            alert("dosya bulunamadı");
+        }
+    }
+
+
+    /* 1. STD Login And Filelist */
+    function getFileList(username, password){
+        showLoader();
+        IDE.user.username = username;
+        IDE.user.password = password;
+        $.ajax({url: "/getFileList", data: IDE.user, success: getFileListParse, type: "POST", error: ajaxError});
+    }
+
+    function getFileListParse(data){
+        console.log(data);
+
+        if(data.success){
+            IDE.user.appUser = data.user;
+            var saveList = [];
+
+            for(var p in data.fileList.data){
+                saveList.push({fileName: p, createTime: data.fileList.data[p].create, username: data.fileList.data[p].user});
+            }
+
+            importFileList(saveList, data.pw);
+        }else{
+            IDE.welcome.userMain.style.display = "flex";
+            IDE.welcome.username.value = "Hatalı!";
+            IDE.welcome.password.value = "";
+        }
+
+        hideLoader();
+    }
+
+
+    /* 0. Prepare Login */
+    function prepare(){
+        var urlParams = new URLSearchParams(window.location.search);
+        var service = urlParams.get("service");
+        IDE.user.occMode = false;
+        if(service){
+            IDE.user.occMode = true;
+        }
+
+        $.ajax({url: "/prepare", data: {service}, success: prepareParse, type: "POST", error: ajaxError});
+    }
+
+    function prepareParse(data){
+        console.log( data );
+        IDE.user.token = data.token;
+        IDE.user.root = data.root;
+        LocalGet();
+    }
+
+    prepare();
+
+
+    /* 1. OCC Login And Filelist */
+    function occLogin(username, password){
+        showLoader();
+        IDE.user.username = username;
+        IDE.user.password = password;
+        $.ajax({url: "/occLogin", data: IDE.user, async: true, success: occLogin_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occLogin_Parse(data){
+        console.log(data);
+        if(data.success){
+            if(data.user){
+                var name = data.user.profile.name;
+                name = utils.changeCharacter(name);
+                IDE.user.appUser = name.toLocaleLowerCase('tr-TR');
+                IDE.user.jwt = data.user.jwt;
+                IDE.user.uid = data.user.uid;
+                jsonV2.uid = data.user.uid;
+            }
+
+            var saveList = [];
+
+            data.response.list.map(function(e){
+                var user = occUser["user_"+e.creator];
+                if(!user){
+                    user = "-";
+                }
+
+                saveList.push({fileName: e.fileName, createTime: e.createTime, username: user});
+            });
+
+            importFileList(saveList);
+        }else{
+            IDE.welcome.userMain.style.display = "flex";
+            IDE.welcome.username.value = "Geçersiz Kullanıcı!";
+            IDE.welcome.password.value = "";
+        }
+
+        hideLoader();
+    }
+
+    /* 2.OCC Select File */
+    function occSelectFile(selectedFile){
+        showLoader();
+        IDE.user.selectedFile = selectedFile;
+        $.ajax({url: "/occSelectFile", data: IDE.user, success: occSelectFile_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occSelectFile_Parse(data){
+        console.log(data);
+        if(data.success){
+            jsonV2 = data.response.list;
+            jsonV2.uid = IDE.user.uid;
+            IDE.files = {
+                activeFile: jsonV2.fileName,
+                data: jsonV2,
+                imgFolder: "",
+                mainFolder: ""
+            }
+
+            importScene();
+            hideLoader();
+        }
+    }
+
+    /* 3.OCC Save File */
+    function occSaveFile(json){
+        showLoader();
+        console.log("occSaveFile", json);
+        IDE.user.stringJSON = JSON.stringify(json);
+        $.ajax({url: "/occSaveFile", data: IDE.user, success: occSaveFile_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occSaveFile_Parse(data){
+        if(data.success){
+            console.log("OCC kaydedildi.");
+            hideLoader();
+            IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+        }
+    }
+
+    /* 4.OCC Delete File */
+    function occDeleteFile(deleteFile){
+        showLoader();
+        IDE.user.deleteFile = deleteFile;
+        $.ajax({url: "/occDeleteFile", data: IDE.user, success: occDeleteFile_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occDeleteFile_Parse(data){
+        if(data.success){
+            console.log("OCC Dosya silindi");
+            console.log(data);
+            $.ajax({url: "/occRefreshList", data: IDE.user, success: occLogin_Parse, type: "POST", error: ajaxError});
+        }
+    }
+
+
+
+    //Render FileList
+    function importFileList(saveList){
+        saveList.sort(function(a, b){
+            return new Date(b.createTime) - new Date(a.createTime);
+        });
+
+        IDE.welcome.savedFileList.innerHTML="";
+
+        saveList.map(function(data){
+            addSavedFileBtn(data.fileName, data.createTime, data.username);
+        });
+
+        IDE.welcome.main.style.display = "flex";
+        IDE.welcome.userMain.style.display = "none";
+
+        if(IDE.user.appUser === "guest"){
+            document.querySelector(".welcome_newFileContainer").style.display = "none";
+            document.querySelectorAll(".welcomeDelete").forEach(e => e.remove());
+        }else{
+            LocalSaveUser();
+        }
+    }
+
+    //Render Scene
+    function importScene(){
+        if(jsonV2.slides.length){
+            jsonV2.slides.map(function(o, i){
+                sceneAddNavigationBtn(i, o.name);
+            });
+
+            sceneSelect(0);
+        }else{
+            newSceneRequest();
+        }
+
+        addSceneAddButon();
+    }
+
+    function LocalGet(){
         if (typeof(Storage) !== "undefined") {
             var user = localStorage.getItem("occ_user");
             var pw = localStorage.getItem("occ_pw");
+
             if(user && user !== "guest"){
-                getFileList(user, pw, IDE.token);
+                if(IDE.user.occMode){
+                    occLogin(user, pw, IDE.user.token);
+                }else{
+                    getFileList(user, pw, IDE.user.token);
+                }
+            }else{
+                hideLoader();
             }
         }else{
             showError("No Local Storage Support");
         }
     }
 
-    function LocalSave(user, pw) {
+    function LocalSaveUser(){
         if (typeof (Storage) !== "undefined") {
-            localStorage.setItem("occ_user", user);
-            localStorage.setItem("occ_pw", pw);
+            localStorage.setItem("occ_user", IDE.user.username);
+            localStorage.setItem("occ_pw", IDE.user.password);
         }else{
             showError("No Local Storage Support");
         }
     }
 
-    function prepareParse(data){
-        IDE.token = data.token;
-        LocalGet();
+
+    /* ------------ */
+
+    function showLoader(){
+        IDE.welcome.loaderMain.style.display = "flex";
+        IDE.welcome.loaderMain_icon.style.display = "flex";
+        IDE.welcome.loaderMain_icon.classList.add("LoaderMain_addAnimation");
     }
 
-    function prepare(){
-        $.ajax({url: "/prepare", success: prepareParse, type: "POST", error: ajaxError});
+    function hideLoader(){
+        IDE.welcome.loaderMain.style.display = "none";
+        IDE.welcome.loaderMain_icon.style.display = "none";
+        IDE.welcome.loaderMain_icon.classList.remove("LoaderMain_addAnimation");
     }
-
-    prepare();
-
 
     function resize(){
         var topMenuHeight = IDE.workSpace.scope_TopMenu.clientHeight;
@@ -1629,6 +1911,11 @@
             height: totalHeight
         });
 
+        Object.assign(IDE.welcome.loaderMain.style, {
+            width: totalWidth,
+            height: totalHeight
+        });
+
 
         Object.assign(document.querySelector("#previewContent").style, {
             left: (layerWidth + IDE.layer.x)+"px",
@@ -1648,11 +1935,104 @@
     resize();
 
 
+    var saveFileList = [];
+
+    function autoGetFileList(){
+        $.ajax({url: "/occAutoGetFile", success: autoGetFileList_Parse, type: "POST", error: ajaxError});
+    }
+
+    function autoGetFileList_Parse(data){
+        for(var name in data.response){
+            saveFileList.push({
+                url:`http://contentcreator.okulistik.com:3630/files/${data.response[name].files.activeFile}/${data.response[name].files.activeFile}.json`,
+                uid: occUserName[ data.response[name].user ]
+            });
+        }
+
+        autoGetJson();
+    }
+
+
+    function autoGetJson(){
+       $.ajax({url: "/autoGetJson", data: saveFileList[IDE.auto], success: autoGetJson_Parse, type: "POST", error: ajaxError});
+    }
+
+    function autoGetJson_Parse(data){
+        data.response.slides.map(function(slide){
+            if(slide.type === "KT_MC_Single"){
+                slide.type=["multipleChoice"];
+            }
+        });
+
+        if(data.success){
+            var stringJSON = data.response;
+            stringJSON.version = "1.0";
+            stringJSON.uid = saveFileList[IDE.auto].uid;
+            stringJSON = JSON.stringify(stringJSON);
+            autoSaveData(stringJSON);
+        }
+    }
+
+    function autoSaveData(stringJSON){
+        IDE.user.jwt = "eyJqdGkiOiIzYTUxMTc2ZjJlMGQ0Y2I0MDljYWZhZTQxZDcwMzk1OSIsImFsZyI6IlJTMjU2IiwidHlwIjoiSldUIn0.eyJleHAiOjE3NDQ5MTczODAsImZ1bGxOYW1lIjoiVHVuY2F5IEJvemt1cnQiLCJuYmYiOjE3NDQ4MzA5ODAsIm5hbWUiOiJUdW5jYXkiLCJkYXRhIjpmYWxzZSwibGFzdG5hbWUiOiJCb3prdXJ0Iiwic2NvcGVzIjpbImF1dGguYmFzaWMiLCJtYXJrZXQuYmFzaWMiLCJhdXRoLmJhc2ljIiwiYXV0aC5vY2MiXSwidGFyZ2V0IjoiL3FiL2luZGV4Iiwic3ViIjoiNzcyOTU0NSIsImlhdCI6MTc0NDgzMDk4MCwidVR5cGUiOiJBRE1JTiIsImp0aSI6IjNhNTExNzZmMmUwZDRjYjQwOWNhZmFlNDFkNzAzOTU5IiwiYXVkIjoiYW5hc2F5ZmFfY29kZSIsIm1haWwiOiIifQ.guDmoVcKZNgTay8hJBOkSu8s7Y7N1MyvDuLv7HEZtGAInc4nStVkok5jCDsYVdgGL0D0-WdRAKjOqjdgFAc3UEp2IGoEkwoM0qrj8c0vl_1QLg4OKa2VDIgKM_ObH6I-QBx0hCuhZ0UsczjOmRz17kqIGG7hooAsss7VJtPQtdn-VFf7iPiMnESR3VgDss_EXN43DiWT8H97umGYcZ5_oKywZTT4FJmsVRHXWT19nIUHz3S0sJeRgbCdXECrDT6TFgN4HZA8PhdpzBI7FPdllMRXExqRo39QkPGiMNfP7cea8v8B3VAILWkdC0EijsKiLZWU2M5MCjPNyOUAyLK5sA";
+        $.ajax({url: "/autoSaveData", data: {jwt:IDE.user.jwt, stringJSON}, success: autoSaveData_Parse, type: "POST", error: ajaxError});
+    }
+
+
+    function autoSaveData_Parse(data){
+        //console.log( data );
+        if(data.success){
+            console.log(IDE.auto, "tamamlandı sonraki");
+            IDE.auto++;
+            if(saveFileList[IDE.auto]){
+                console.log("Sonraki Mevcut:", IDE.auto);
+                autoGetJson();
+            }
+        }
+    }
+
+
+    function returnData(){
+        //?rescueFile=Batman&rescueUser=tuncay
+        var urlParams = new URLSearchParams(window.location.search);
+        var rescueFile = urlParams.get("rescueFile");
+        var rescueUser = urlParams.get("rescueUser");
+
+        if(rescueFile && rescueUser){
+            IDE.user.rescueFile = rescueFile;
+            IDE.user.rescueData = {
+                user: rescueUser,
+                create: utils.addTimeStamp("server"),
+                files:{
+                    activeFile: IDE.user.rescueFile,
+                    mainFolder: `${IDE.user.root}/${IDE.user.rescueFile}`,
+                    imgFolder: `${IDE.user.root}/${IDE.user.rescueFile}/img`,
+                    mainJson: {
+                        path: `${IDE.user.root}/${IDE.user.rescueFile}/${IDE.user.rescueFile}.json`
+
+                    }
+                }
+            }
+
+            $.ajax({url: "/return", data: IDE.user, success: returnData_Parse, type: "POST", error: ajaxError});
+        }else{
+            console.log("Refresh Parametre Yok");
+        }
+    }
+
+    function returnData_Parse(data){
+        if(data.success){
+            console.log("Kaydedildi");
+        }
+    }
+
+
+
 /*
 //FileListi modifiye etmek icin kullan newList json gelecek.arayuzde dosya ismine tiklaninca calisir.
 document.querySelector("#Slide_fileName").addEventListener("click", function(){
     var newList = JSON.stringify();
-    var data = {token: IDE.token, newList:newList};
+    var data = {token: IDE.user.token, newList:newList};
     $.ajax({url: "/modifiedFilelist", data, success: modifiedFilelist, type: "POST", error: ajaxError});
 });
 function modifiedFilelist(data){console.log(data)}

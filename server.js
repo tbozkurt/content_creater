@@ -1,5 +1,6 @@
 var express = require("express");
 var multer  = require('multer');
+var axios = require('axios');
 var bodyParser = require('body-parser');
 var path = require("path");
 var fs = require('node:fs');
@@ -8,11 +9,24 @@ var archiver = require("archiver");
 var Users={};
 var currentUploadFolder;
 var token;
+var service = "preprod";
 
 /////////////////////////
 var word = ["a","b","w","c","d","e","f","g","h","j","y","z"];
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
+}
+
+var occUser = {
+    user_15513246: "melike",
+    user_9244372: "melike",
+    user_15432145: "irem",
+    user_7729542: "kamil",
+    user_2521680: "demet",
+    user_12621116: "goknur",
+    user_15480368: "cansu",
+    user_7729545: "tuncay",
+    user_20: "gulcin"
 }
 /////////////////////////
 
@@ -89,7 +103,8 @@ function deleteFolder(target){
     return new Promise(function(resolve, reject) {
         fs.rm(target, { recursive: true, force: true }, err => {
             if (err) {
-                throw err;
+                //throw err;
+                resolve(err);
             }
             resolve(target);
         });
@@ -144,6 +159,9 @@ async function createNewFileFNC(req, res){
     FD.files.mainFolder = await addFolder( path.join(FD.root, data.fileName) );
     FD.files.imgFolder = await addFolder( path.join(FD.files.mainFolder, "img") );
 
+    console.log("///////////");
+    console.log(FD);
+    console.log("///////////");
     var addList = listAddFile(FD, data);
     FD.files.mainJson = await createJson( path.join(FD.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
     FD.fileList = await createJson( FD.fileList.path, addList, {encoding:"utf8", flag:"w"});
@@ -153,6 +171,8 @@ async function createNewFileFNC(req, res){
     var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
     var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
     var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
+    var copyImageF = await copyFile(path.join(__dirname, "assets/img/template/draw_icon.png"), FD.files.imgFolder+"/draw_icon.png");
+    var copyImageG = await copyFile(path.join(__dirname, "assets/img/template/draw_easer.png"), FD.files.imgFolder+"/draw_easer.png");
     console.log("-- CREATE NEW FINISH--");
 }
 
@@ -160,10 +180,10 @@ async function createNewFileFNC(req, res){
 app.post("/saveData", saveDataFNC);
 async function saveDataFNC(req, res){
     console.log("-- SAVE DATA START--");
-    var data = JSON.parse(req.body.data);
+    var stringJSON = JSON.parse(req.body.stringJSON);
     var FD = Users[req.body.token];
-    FD.files.mainJson = await createJson(FD.files.mainJson.path, data, {encoding:"utf8", flag:"w"});
-    res.send({success: FD});
+    FD.files.mainJson = await createJson(FD.files.mainJson.path, stringJSON, {encoding:"utf8", flag:"w"});
+    res.send({response: FD, success: true});
     console.log("-- SAVE DATA FINISH--", FD.files.mainJson.path);
 }
 
@@ -172,18 +192,20 @@ app.post("/selectFile", selectFileFNC);
 
 async function selectFileFNC(req, res){
     var FD = Users[req.body.token];
-    var file = req.body.file;
+    var selectedFile = req.body.selectedFile;
     console.log("-------------");
-    console.log("selectFile", file);
+    console.log("selectedFile:", selectedFile);
 
-    if(FD.fileList.data[file]){
-        FD.files = FD.fileList.data[file].files;
+    if(FD.fileList.data[selectedFile]){
+        FD.files = FD.fileList.data[selectedFile].files;
         FD.files.data = await readFileList(FD.files.mainJson.path);
         var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
         var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
         var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
         var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
         var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
+        var copyImageF = await copyFile(path.join(__dirname, "assets/img/template/draw_icon.png"), FD.files.imgFolder+"/draw_icon.png");
+        var copyImageG = await copyFile(path.join(__dirname, "assets/img/template/draw_easer.png"), FD.files.imgFolder+"/draw_easer.png");
         res.send({success: true, FILE: FD});
     }else{
         res.send({success: false});
@@ -195,13 +217,20 @@ app.post("/deleteFolder", deleteFolderFNC);
 async function deleteFolderFNC(req, res){
     console.log("-- DELETE START--");
     var FD = Users[req.body.token];
-    var file = req.body.file;
-    await deleteFolder(FD.fileList.data[file].files.mainFolder);
-    delete FD.fileList.data[file];
+    var deleteFile = req.body.deleteFile;
+    var foundDeleteFile = FD.fileList.data[deleteFile];
 
-    FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
-    res.send(FD);
-    console.log("-- DELETE FINISH--");
+    if(foundDeleteFile){
+        var sonuc = await deleteFolder(FD.fileList.data[deleteFile].files.mainFolder);
+        delete FD.fileList.data[deleteFile];
+        FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
+        FD.success = true;
+        res.send(FD);
+        console.log("-- DELETE FINISH --");
+    }else{
+        res.send({success: false});
+    }
+
 }
 
 app.post("/deleteFile", deleteFileFNC);
@@ -234,8 +263,12 @@ async function downloadFNC(req, res){
         lesson = "TRK";
     }
 
+    var info = ["deneme"];
+
     try{
+        info[6] = ["girdi"];
         var entrance = await addFolder( path.join(FD.root, "zip") );
+        info[1] = [entrance];
         var step0 = await addFolder( path.join(entrance, "ONLINE") );
         var step1 = await addFolder( path.join(step0, "2024-2025") );
         var step2 = await addFolder( path.join(step1, product) );
@@ -248,16 +281,26 @@ async function downloadFNC(req, res){
         var step9 = await addFolder( path.join(step7, "src") );
         var step10 = await addFolder( path.join(step9, "content") );
         var step11 = await addFolder( path.join(step9, "coverimg") );
-
+        info[7] = ["bitti"];
 
         var mainFolder = FD.fileList.data[file].files.mainFolder;
+        info[2] = mainFolder;
+
         var successCopy = await copyFolder(mainFolder, step10);
         var PublisherCopy = await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step6+"/Publisher.py");
         FD.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance, req.body.token);
         await deleteFolder(entrance);
-        res.send({success: true, content: FD.fileList.data[req.body.file]});
+
+        //info = [entrance, mainFolder , step10 , PublisherCopy , req.body.file];
+/*        info[1] = entrance;
+        info[2] = mainFolder;
+        info[3] = step10;
+        info[4] = PublisherCopy;
+        info[5] = req.body.file;*/
+
+        res.send({success: true, content: FD.fileList.data[req.body.file], info, FD, file});
     }catch (e){
-        res.send({success: false, content: FD.fileList.data[req.body.file]});
+        res.send({success: false, content: FD.fileList.data[req.body.file], info, FD, file});
     }
 }
 
@@ -273,7 +316,8 @@ var userList = {
     kamil:{password:"1z2x3c"},
     demet:{password:"3e2w1q"},
     goknur:{password:"3d2s1a"},
-    cansu:{password:"3c2x1z"}
+    cansu:{password:"3c2x1z"},
+    gulcin:{password:"1q2w3e"}
 };
 
 //Read File List
@@ -299,7 +343,6 @@ app.post("/getFileList", function(req, res){
         res.send(FD);
     }
 });
-
 
 //Read File List
 app.post("/prepare", function(req, res){
@@ -328,6 +371,15 @@ async function initApp(req, res){
     token = "User_"+getRandomInt(9000)+"_"+word[getRandomInt(10)]+"_"+getRandomInt(9000);
     console.log('\033[2J');
     console.log("///////START APP/////////");
+
+    //service
+/*
+    if(req.body.service){
+        console.log("service var");
+        service = req.body.service;
+    }
+*/
+
 
     Users[token] = {};
     var FD = Users[token];
@@ -372,4 +424,181 @@ app.listen(3630, function() {
 function listAddFile(FD, data){
     FD.fileList.data[data.fileName] = {user: FD.user, create: data.createTime, files: FD.files};
     return FD.fileList.data;
+}
+
+
+//Login
+app.post("/occLogin", function(req, res){
+    console.log(req.body);
+    var username = req.body.username;
+    var password = req.body.password;
+    var token = req.body.token;
+
+    console.log(username, password, token);
+
+    axios.get(`https://${service}.okulistik.com/srv/login?username=${username}&password=${password}&auth_type=1&ltype=2&utype=other`).then(resp => {
+        var user = occUser["user_"+resp.data.uid];
+        if(user){
+            var FD = Users[token];
+            FD.user = user;
+        }
+
+        var jwt = resp.data.jwt;
+
+        var config = {
+            headers: {Authorization: "Bearer "+jwt}
+        }
+
+        axios.get(`https://${service}.okulistik.com/api/occ`, config).then(response => {
+            res.send({success: true, response: response.data, user: resp.data});
+        }).catch(function (error) {
+            res.send({success: false, err:error});
+        });
+    }).catch(function (error) {
+        res.send({success: false, err:error});
+    });
+});
+
+
+//Read File List
+app.post("/occSelectFile", function(req, res){
+    var selectedFile = req.body.selectedFile;
+    var jwt = req.body.jwt;
+    var token = req.body.token;
+    console.log(selectedFile, jwt, token);
+
+    var FD = Users[token];
+    if(FD.fileList.data[selectedFile]){
+        FD.files = FD.fileList.data[selectedFile].files;
+    }
+
+    var config = {
+        headers: {
+            Authorization: "Bearer "+jwt
+        }
+    }
+
+    axios.get(`https://${service}.okulistik.com/api/occ/${selectedFile}`, config).then(response => {
+        res.send({success: true, response: response.data});
+    });
+});
+
+
+//Read File List
+app.post("/occSaveFile", function(req, res){
+    var jwt = req.body.jwt;
+    var stringJSON = req.body.stringJSON;
+    axios({
+        method: "post",
+        url: `https://${service}.okulistik.com/api/occ`,
+        headers: {
+            Authorization: "Bearer "+jwt
+        },
+        data: {
+            json: stringJSON,
+        }
+    }).then(response => {
+        console.log("res", response.data);
+        res.send({success: true, response: response.data});
+    }).catch(err => {
+        console.log("error in request", err);
+    });
+
+});
+
+//Read File List
+app.post("/occDeleteFile", function(req, res){
+    var jwt = req.body.jwt;
+    var deleteFile = req.body.deleteFile;
+
+    axios({
+        method: "delete",
+        url: `https://${service}.okulistik.com/api/occ/${deleteFile}`,
+        headers: {
+            Authorization: "Bearer "+jwt
+        }
+    }).then(response => {
+        console.log("res", response.data);
+        res.send({success: true, response: response.data});
+    }).catch(err => {
+        console.log("error in request", err);
+    });
+
+});
+
+
+//Login
+app.post("/occRefreshList", function(req, res){
+    var jwt = req.body.jwt;
+
+    var config = {
+        headers: {Authorization: "Bearer "+jwt}
+    }
+
+    axios.get(`https://${service}.okulistik.com/api/occ`, config).then(response => {
+        res.send({success: true, response: response.data});
+    }).catch(function (error) {
+        console.log(error);
+        res.send({success: false, error});
+    });
+
+});
+
+
+//Login
+app.post("/autoGetJson", function(req, res){
+    var url = req.body.url;
+
+    axios.get(url).then(response => {
+        res.send({success: true, response: response.data});
+    }).catch(function (error) {
+        console.log(error);
+        res.send({success: false, error});
+    });
+});
+
+app.post("/autoSaveData", function(req, res){
+    var jwt = req.body.jwt;
+    var stringJSON = req.body.stringJSON;
+
+    axios({
+        method: "post",
+        url: `https://${service}.okulistik.com/api/occ`,
+        headers: {
+            Authorization: "Bearer "+jwt
+        },
+        data: {
+            json: stringJSON,
+        }
+    }).then(response => {
+        console.log("res", response.data);
+        res.send({success: true, response: response.data});
+    }).catch(err => {
+        console.log("error in request", err);
+    });
+});
+
+
+//Login
+app.post("/occAutoGetFile", function(req, res){
+
+    axios.get('http://contentcreator.okulistik.com:3630/files/fileList.json').then(response => {
+        res.send({success: true, response: response.data});
+    }).catch(function (error) {
+        console.log(error);
+        res.send({success: false, error});
+    });
+
+});
+
+//Return File
+app.post("/return", returnFileFNC);
+async function returnFileFNC(req, res){
+    var FD = Users[req.body.token];
+    var rescueFile = req.body.rescueFile;
+    var rescueData = req.body.rescueData;
+
+    FD.fileList.data[rescueFile] = rescueData;
+    FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
+    res.send({success: true, response: FD});
 }

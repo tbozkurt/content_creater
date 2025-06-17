@@ -79,6 +79,7 @@ function EXPORT(){
     this.convertImg = function(e){
         return Object.assign({
             src: e.attrs.src,
+            cornerRadius: e.cornerRadius(),
             Layer: e.Layer
         }, this.getStandart(e));
     }
@@ -143,6 +144,15 @@ function EXPORT(){
         },{
             name: "colorBox",
             type: "paint"
+        },{
+            name: "videoBox",
+            type: "video"
+        },{
+            name: "drawCanvas",
+            type: "drawCorrect"
+        },{
+            name: "pointButon",
+            type: "pointDraw"
         }];
 
         allObject.map(function(e){
@@ -165,14 +175,22 @@ function EXPORT(){
         }
     }
 
-
     this.convertJson = function(){
         this.exportTypeSettings(jsonV2.slides[sceneIndex]);
         var allObject = this.addKids(IDE.sceneLayer);
         jsonV2.slides[sceneIndex].all = allObject;
+        var types = this.activityDetection(allObject);
+        if(types.includes("video")){
+            if(!jsonV2.slides[sceneIndex].videoPath){
+                jsonV2.slides[sceneIndex].videoPath = [];
+            }
+        }
+
+        console.log("types:", types);
         jsonV2.slides[sceneIndex].type = this.activityDetection(allObject);
         console.log("UYARI: Sahne", sceneIndex,"JSON Güncellendi.", jsonV2);
         return jsonV2;
     }
+
 
 }
