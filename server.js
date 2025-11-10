@@ -18,6 +18,7 @@ function getRandomInt(max) {
 }
 
 var occUser = {
+    user_15514575: "basak",
     user_15513246: "melike",
     user_9244372: "melike",
     user_15432145: "irem",
@@ -26,7 +27,9 @@ var occUser = {
     user_12621116: "goknur",
     user_15480368: "cansu",
     user_7729545: "tuncay",
-    user_20: "gulcin"
+    user_20: "gulcin",
+    user_15515696: "bahar",
+    user_15517168: "duygu"
 }
 /////////////////////////
 
@@ -88,7 +91,16 @@ function addFolder(target){
 }
 
 function copyFolder(source, target){
+    console.log("source:", source);
+    console.log("target:", target);
     return new Promise(function(resolve, reject){
+/*        try{
+            deleteFolder(target);
+            console.log("mevcut klasörü silme: OK");
+        }catch(e){
+            console.log("mevcut klasörü silme: FAIL");
+        }*/
+
         fs.cp(source, target, {recursive: true}, (err) => {
             if (err) {
                 resolve(false);
@@ -112,6 +124,7 @@ function deleteFolder(target){
 }
 
 function createJson(json, data, flag){
+    console.log("createJson");
     return  new Promise(function(resolve, reject){
         fs.writeFile(json, JSON.stringify(data), flag, function(err){
             if (err) {
@@ -189,7 +202,6 @@ async function saveDataFNC(req, res){
 
 //Select File
 app.post("/selectFile", selectFileFNC);
-
 async function selectFileFNC(req, res){
     var FD = Users[req.body.token];
     var selectedFile = req.body.selectedFile;
@@ -235,11 +247,33 @@ async function deleteFolderFNC(req, res){
 
 app.post("/deleteFile", deleteFileFNC);
 async function deleteFileFNC(req, res){
-    var FD = Users[req.body.token];
-    fs.unlink(FD.root+"/Tuncay.zip", (err) => {
-        if (err) throw err;
-        console.log("Tuncay.zip txt was deleted");
+    var delList = req.body.deleteList;
+    var delStatusList = [];
+
+    delList.map(function(file){
+        console.log("deleted file:", file);
+        /*
+        fs.unlink(file, function(err){
+            if (err){
+                //throw err;
+                delStatusList.push({path:file, deleteStatus: false});
+            }else{
+                delStatusList.push({path:file, deleteStatus: true});
+            }
+        });
+        */
+
+        try{
+            fs.unlinkSync(file);
+            delStatusList.push({path:file, deleteStatus: true, err:null});
+            console.log("Dosya başarıyla silindi.");
+        }catch(err){
+            delStatusList.push({path:file, deleteStatus: false, err:err});
+            console.error("Dosya silinirken hata oluştu:", err);
+        }
     });
+
+    res.send({success: true, delStatusList, refreshFileList: req.body.refreshFileList});
 }
 
 //Read File List
@@ -317,7 +351,9 @@ var userList = {
     demet:{password:"3e2w1q"},
     goknur:{password:"3d2s1a"},
     cansu:{password:"3c2x1z"},
-    gulcin:{password:"1q2w3e"}
+    gulcin:{password:"1q2w3e"},
+    bahar:{password:"1q2w3e"},
+    duygu:{password:"1b9d8s4d"}
 };
 
 //Read File List
@@ -434,7 +470,8 @@ app.post("/occLogin", function(req, res){
     var password = req.body.password;
     var token = req.body.token;
 
-    console.log(username, password, token);
+    console.log(username, password, token, service);
+    console.log(`https://${service}.okulistik.com/srv/login?username=${username}&password=${password}&auth_type=1&ltype=2&utype=other`);
 
     axios.get(`https://${service}.okulistik.com/srv/login?username=${username}&password=${password}&auth_type=1&ltype=2&utype=other`).then(resp => {
         var user = occUser["user_"+resp.data.uid];
@@ -594,11 +631,48 @@ app.post("/occAutoGetFile", function(req, res){
 //Return File
 app.post("/return", returnFileFNC);
 async function returnFileFNC(req, res){
+
+    console.log(req.body);
     var FD = Users[req.body.token];
     var rescueFile = req.body.rescueFile;
     var rescueData = req.body.rescueData;
 
+    console.log(rescueFile);
+    console.log(rescueData);
+    console.log(FD.fileList);
+    console.log(FD.fileList.data[rescueFile]);
+
     FD.fileList.data[rescueFile] = rescueData;
     FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
     res.send({success: true, response: FD});
+}
+
+//Duplicate File
+app.post("/duplicate", duplicateFileFNC);
+async function duplicateFileFNC(req, res){
+    var FD = Users[req.body.token];
+
+    var curFolder = FD.root+"/"+req.body.duplicate_curName;
+    var newFolder = FD.root+"/"+req.body.duplicate_newName;
+    var oldJson = newFolder+"/"+req.body.duplicate_curName+".json";
+    req.body.duplicate_curFolder = curFolder;
+    req.body.duplicate_newFolder = newFolder;
+    req.body.duplicate_oldJson = [oldJson];
+
+    var currentNewFolderDel = await deleteFolder(newFolder);
+    var successCopy = await copyFolder(curFolder, newFolder);
+
+    if(successCopy){
+        var jwt = req.body.jwt;
+        var config = {
+            headers: {
+                Authorization: "Bearer "+jwt
+            }
+        }
+
+        axios.get(`https://${service}.okulistik.com/api/occ/${req.body.duplicate_curName}`, config).then(response => {
+            FD.files = { mainJson:{ path: newFolder+"/"+req.body.duplicate_newName+".json" } };
+            res.send({success: true, response: response.data, clone: req.body, FD});
+        });
+    }
 }

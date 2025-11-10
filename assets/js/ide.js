@@ -401,10 +401,12 @@ function deleteObject(){
 
     CREATE.checkKontrol();
     deSelect();
-    searchRelatedObject(relatedObject);
+    /* searchRelatedObject(relatedObject); */
     addHistory();
 }
 
+/*
+Popup Window için tek kullanma
 function searchRelatedObject(relatedObject){
     if(relatedObject){
         var allObj = IDE.activeLayer.getChildren();
@@ -441,6 +443,7 @@ function searchSingleUseObject(){
         IDE.workSpace.createPopup.style.opacity=1;
     }
 }
+*/
 
 /* Objects Position Change */
 document.addEventListener("keydown", function(e){
@@ -808,22 +811,43 @@ IDE.workSpace.scope_RightWorkSpace.addEventListener("mousedown", function(){
 
 
 document.querySelector("#export").addEventListener("click", function(){
+    exportFNC();
+});
+
+document.querySelector("#preview_icon").addEventListener("click", function(){
+    exportFNC();
+});
+
+function exportFNC(){
     var json = EXPORT.convertJson();
+    var foundSR = false;
     for(var x=0; x<json.slides.length; x++){
+        if(!foundSR){
+            for(var y=0; y<json.slides[x].all.length; y++){
+                if(json.slides[x].all[y].Layer.name.includes("sortDrag")){
+                    IDE.showTip({txt:"Sıralama etkinliğini lütfen kontrol edin.", color: "#ff8f00", time:5000, x: 260, y: (IDE.stage.height-10)});
+                    foundSR = true;
+                    break;
+                }
+            }
+        }
+
         if(json.slides[x].answer){
             if(!Object.keys(json.slides[x].answer).length && !json.slides[x].type.includes("video")){
                 IDE.showTip({txt:"Bazı etkinliklerin cevap anahtarları yok, bu nedenle etkinlikler doğru çalışmayabilir.", color: "#b71c1c", time:10000, x: 260, y: (IDE.stage.height-10)});
                 break;
             }
         }
+
+        console.log(json.slides);
     }
 
     Player = new PLAYER();
     IDE.workSpace.previewMain.style.display = "block";
     Player.startBuild(json, sceneIndex, IDE.stage.bg, IDE.workSpace.playerContainer, "preview", {Url:("files/"+ IDE.files.activeFile +"/")} );
     hideWorkSpaces();
+}
 
-});
 
 document.querySelector("#topMenuSaveBtn").addEventListener("click", function(){
     var json = EXPORT.convertJson();
@@ -1353,6 +1377,7 @@ IDE.workSpace.createSelect.addEventListener("click", function(){
 
 
 /* create Popup Set*/
+
 IDE.workSpace.createPopup.addEventListener("click", function(){
     CREATE.addSolutionWindow({
         properties:{
@@ -1390,14 +1415,16 @@ IDE.workSpace.createPopup.addEventListener("click", function(){
         }
     });
 
+
+    CREATE.checkKontrol();
     addHistory();
-
-
+    /*
     this.style.pointerEvents = "none";
     this.style.opacity = 0.5;
-
-    addHistory();
+    */
 });
+
+
 
 
 /* Create Control Buton */
@@ -1833,6 +1860,35 @@ IDE.workSpace.createVideo.addEventListener("click", function(){
 });
 
 
+/* create new video */
+IDE.workSpace.createRectVideo.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.rectFNC({
+        properties:{
+            text: "text",
+            x: position.x,
+            y: position.y,
+            width: 640,
+            height: 360,
+            fill: "#bdbdbd",
+            strokeWidth: 0,
+            borderPosition:"center",
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer:{
+            name: "videoBox",
+            type: "objectRect",
+            class: "videoPlayer",
+        },
+        addLayer: true
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
 /* create draw navigation */
 IDE.workSpace.createLineCorrect.addEventListener("click", function(){
     console.log("create Draw Navigation");
@@ -1970,6 +2026,20 @@ document.querySelector("#home_icon").addEventListener("click", function(){
 
 document.querySelector(".welcome_windowTitle").addEventListener("click", function(){
     returnData();
+});
+
+document.querySelector("#duplicate_action").addEventListener("click", function(){
+    var file = document.querySelector(".duplicate_input").value;
+    if(file.length){
+        occDuplicate(file);
+    }else{
+        alert("Boş olmamalı");
+    }
+});
+
+document.querySelector("#duplicate_close").addEventListener("click", function(){
+    var duplicatewindow = document.querySelector("#duplicate_window");
+    duplicatewindow.style.display = "none";
 });
 
 

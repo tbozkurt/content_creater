@@ -163,6 +163,16 @@ function EXPORT(){
                     }
                 }
             }
+
+            /* video Rect Search */
+            if(e.Layer.name.includes("popupWindow")){
+                e.Kids.map(function(e){
+                    if(e.Layer.class === "videoPlayer" && !content.includes("video")){
+                        content.push("video");
+                    }
+                });
+            }
+            /* ----------------- */
         });
 
         return content;

@@ -8,6 +8,7 @@ function PLAYER(){
     var KT={};
     var SP = [];
     var SD = [];
+    var stateLog = {};
     var AC;
     var player = {
         sound: new Howl({
@@ -21,7 +22,14 @@ function PLAYER(){
         screenCloseTimer: null,
         screenDuration: null,
         backBtn: null,
-        nextBtn: null
+        nextBtn: null,
+        warningList: [
+            "Tekrar dene, 2. hakkında başarabilirsin.",
+            "Yanıtını bir daha kontrol et.",
+            "Biraz daha dikkat et, doğruya yaklaştın.",
+            "Az kaldı, pes etme.",
+            "Dikkatini topla bir daha dene."
+        ]
     };
 
     this.getStandart = function(e){
@@ -155,6 +163,8 @@ function PLAYER(){
     }
 
     this.startBuild = function(json, startScene, stageBG, container, Mode, ActiveContent, scoreUpdate){
+        console.log("################ PLAYER ################");
+        console.log(json);
         AC=ActiveContent;
         player.root = AC.Url;
         player.scoreUpdate = scoreUpdate;
@@ -194,6 +204,7 @@ function PLAYER(){
                 id: index,
                 fnc:[],
                 popupWindow: {},
+                popEx: {},
                 screenCloseDOM:null,
                 directive:{}
             }
@@ -209,6 +220,8 @@ function PLAYER(){
                 height: "720px",
                 position: "absolute"
             });
+            console.log("");
+            console.log("<<----- Start:", i ,"----->>");
 
             SP[i].elementList=[];
             SP[i].sceneDiv = sceneDiv;
@@ -219,10 +232,18 @@ function PLAYER(){
             This.addScreenClose(sceneDiv, i);
             This.actType(SP[i], SD[i], i);
             This.allScene.push(sceneDiv);
+
+            console.log("<<----- Finish:", i ,"----->>");
+            console.log("");
         });
 
         addStartScreen(Mode);
         this.addEvents();
+        addWarning();
+        addCheckIcon();
+        addReadOnlyDOM();
+        addOpenEndedDOM();
+        infoSystemFNC();
 
         if(Mode === "optic"){
             This.build_KT(json);
@@ -231,10 +252,130 @@ function PLAYER(){
             initKACountDown();
         }
 
-        this.scoreCalc();
+        this.scoreCalc(false);
     }
 
-    this.scoreCalc = function(){
+    this.scoreCalc = function(saveData){
+        var complete = true;
+        var score = {
+            right:0,
+            wrong:0,
+            empty:0,
+            access:0,
+            success:0,
+            duration:0
+        };
+
+        function accessControl(scene){
+            if(scene.right || scene.wrong || scene.complete){
+                return 1;
+            }
+
+            return 0;
+        }
+
+        var accessTotalRight=0;
+        var accessTotalScene=0;
+        var accessRight=0;
+
+        SD.map(function(scene){
+            if(scene.totalRight){
+                if(scene.historyRight){
+                    if(scene.historyRight.length){
+                        accessTotalRight += scene.totalRight;
+                        accessRight += scene.right;
+                        score.wrong += scene.historyRight.length;
+                    }
+                }
+            }
+
+            if(scene.complete){
+                score.right++;
+            }else{
+                score.empty++;
+            }
+
+            if(!scene.complete){
+                complete = false;
+            }
+
+            accessTotalScene += accessControl(scene);
+            score.duration += scene.duration;
+        });
+
+        var calc = accessRight / accessTotalRight;
+        if(calc){
+            score.success = calc * 100;
+        }
+
+        /* Calc Access */
+        if(accessTotalScene){
+            score.access = (accessTotalScene / SD.length) * 100;
+        }else{
+            score.access = accessTotalScene;
+        }
+
+        var state = JSON.stringify(setState());
+
+        if(player.scoreUpdate){
+            player.scoreUpdate({
+                Access: parseInt(score.access),
+                Success: parseInt(score.success),
+                Duration: score.duration,
+                Right: score.right,
+                Wrong: score.wrong,
+                Empty: score.empty,
+                Attempt: score.wrong,
+                State: state,
+                TotalRight: score.empty,
+                CurrentSceneType: "E",
+                Complete: complete
+            }, saveData);
+        }
+
+        if(PLX.scoreTable){
+            var oldScore = This.oldScoreCalc();
+            console.log("oldScore:", oldScore);
+            var html =
+                `<div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">success:</div> <div class="scoreTableColumn2">${parseInt(score.success)}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">complete:</div> <div class="scoreTableColumn2">${score.right}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">attempt:</div> <div class="scoreTableColumn2">${score.wrong}</div></div>
+                </div>`;
+
+            PLX.scoreTable.innerHTML = html;
+        }
+
+        /* addState(); */
+    }
+
+
+    function setState(){
+        var version = jsonV2.createTime.replace(/[-: ]/g, "");
+        var state = {version: version};
+
+        SD.map(function(slide, index){
+            state["s"+index] = {h0:slide.inputs};
+        });
+
+        return state;
+    }
+
+
+    function addState(){
+        var gg = 0;
+        gg++;
+        console.log( stateLog );
+        if(!stateLog[This.sceneIndex]){
+            console.log("ilgili kayıt yok");
+            stateLog[This.sceneIndex] = {}
+        }
+
+        stateLog[This.sceneIndex].tuncay;
+    }
+
+    this.scoreCalc2 = function(){
         var score = {
             right:0,
             wrong:0,
@@ -269,7 +410,7 @@ function PLAYER(){
 
         var singleSceneScore = 100/totalActivity;
 
-        SD.map(function(scene, index){
+        SD.map(function(scene){
             if(scene.totalRight){
                 var lastRight;
                 var historyLength = scene.historyRight.length;
@@ -289,11 +430,7 @@ function PLAYER(){
                     scene.historyRight[scene.attempt].success = (singleQuestionScore * lastRight) * currentRate;
                 }
 
-                if(scene.wrong){
-                    scene.totalWrong++;
-                }
-
-                score.wrong += scene.totalWrong;
+                score.wrong += scene.historyRight.length;
             }
 
             if(scene.type === "e"){
@@ -315,6 +452,8 @@ function PLAYER(){
             if(!scene.complete){
                 complete = false;
             }
+
+            score.duration += scene.duration;
         });
 
         /* Calc Access */
@@ -341,6 +480,8 @@ function PLAYER(){
         }
 
         if(PLX.scoreTable){
+            var oldScore = This.oldScoreCalc();
+            console.log("oldScore:", oldScore);
             var html =
                 `<div>
                     <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
@@ -348,14 +489,13 @@ function PLAYER(){
                     <div class="scoreTableRow"><div class="scoreTableColumn1">complete:</div> <div class="scoreTableColumn2">${score.right}</div></div>
                     <div class="scoreTableRow"><div class="scoreTableColumn1">attempt:</div> <div class="scoreTableColumn2">${score.wrong}</div></div>
                     <div class="scoreTableRow"><div class="scoreTableColumn1">remain:</div> <div class="scoreTableColumn2">${score.empty}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">right:</div> <div class="scoreTableColumn2">${oldScore.right}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">wrong:</div> <div class="scoreTableColumn2">${oldScore.wrong}</div></div>
+                    <div class="scoreTableRow"><div class="scoreTableColumn1">empty:</div> <div class="scoreTableColumn2">${oldScore.empty}</div></div>
                 </div>`;
 
             PLX.scoreTable.innerHTML = html;
         }
-
-        console.log(SD);
-        console.log("accessTotalScene:", accessTotalScene);
-        console.log("totalActivity:", totalActivity);
     }
 
     this.scoreCalc2 = function(){
@@ -445,6 +585,62 @@ function PLAYER(){
         }
     }
 
+    this.oldScoreCalc = function(){
+        var score = {right:0, wrong:0, empty:0, access:0, success:0, duration:0};
+        var averageScore = 100/SD.length;
+
+        function accessControl(e){
+            if(e.right || e.wrong){
+                return 1;
+            }
+
+            return 0;
+        }
+
+        var complete = true;
+        SD.map(function(e){
+            score.right += e.right;
+            score.wrong += e.wrong;
+            score.empty += e.empty;
+            score.duration += e.duration;
+            score.access += accessControl(e);
+            score.success += (e.right / (e.right + e.wrong + e.empty)) * averageScore;
+
+            if(!e.complete){
+                complete = false;
+            }
+
+            if(e.right === 0 && e.wrong === 0 && e.empty === 0){
+                score.success = 0;
+            }
+        });
+
+
+        if(score.access){
+            score.access = (score.access  / SD.length)*100;
+        }else{
+            score.access = 0;
+        }
+
+        /*
+        if(player.scoreUpdate){
+            player.scoreUpdate({
+                Access: score.access,
+                Success: parseInt(score.success),
+                Duration: score.duration,
+                Right: score.right,
+                Wrong: score.wrong,
+                Empty: score.empty,
+                TotalRight: score.empty,
+                CurrentSceneType: "E",
+                Complete: complete
+            });
+        }
+        */
+
+        return score;
+    }
+
     This.convertRubrik = function(slideID){
         var btnID = jsonV2.slides[slideID].rightAnswer;
         if(btnID !== null && btnID !== undefined){
@@ -473,8 +669,7 @@ function PLAYER(){
         });
 
         controlBtnView(SP, "disable");
-        SP.answerBtn.style.pointerEvents = "none";
-        SP.answerBtn.style.opacity = 0.5;
+        answerBtnView(SP, "disable");
         SD.empty=0;
 
         /*
@@ -484,7 +679,8 @@ function PLAYER(){
         */
 
         This.sceneComplete();
-        This.scoreCalc();
+        This.scoreCalc(true);
+        This.nextScene();
     }
 
     this.controlHQ = function(SP, SD){
@@ -501,6 +697,7 @@ function PLAYER(){
             totalScore.totalRight += currentScore.totalRight;
             totalScore.totalWrong += currentScore.totalWrong;
             totalScore.totalEmpty += currentScore.totalEmpty;
+            fnc.currentStatus = scoreEvalution(currentScore);
             finalStatus = scoreEvalution(totalScore);
         });
 
@@ -508,7 +705,11 @@ function PLAYER(){
         SD.right = totalScore.totalRight;
         SD.wrong = totalScore.totalWrong;
         SD.empty = totalScore.totalEmpty;
-        SD.historyRight[SD.attempt] = {right: totalScore.totalRight, success: 0};
+        SD.historyRight[SD.attempt] = {
+            right: totalScore.totalRight,
+            wrong: totalScore.totalWrong,
+            success: 0
+        };
 
         if(finalStatus === "right"){
             This.playRightAudio();
@@ -519,6 +720,10 @@ function PLAYER(){
             SP.fnc.map(function(fnc){
                 fnc.right(finalStatus);
             });
+
+            controlBtnView(SP, "disable");
+            answerBtnView(SP, "disable");
+            checkViewFNC(SD);
         }else{
             /*
             if(finalStatus === "partially"){
@@ -534,26 +739,32 @@ function PLAYER(){
             */
 
             This.playWrongAudio();
+            showWarning(SP, SD);
+
             SP.fnc.map(function(fnc){
-                fnc.wrong(finalStatus);
+                if(fnc.currentStatus === "right"){
+                    fnc.right(fnc.currentStatus);
+                }else{
+                    fnc.wrong(finalStatus);
+                }
             });
 
-            if(SD.attempt >= 2){
-                if(SP.answerBtn){
-                    SP.answerBtn.style.cursor = "pointer";
-                    SP.answerBtn.style.pointerEvents = "auto";
-                    SP.answerBtn.style.opacity = 1;
-                }
+            if(SD.attempt >= 4){
+                answerBtnView(SP, "enable");
             }
         }
 
-        This.scoreCalc();
+        console.log("History:", SD.historyRight);
+
+        This.scoreCalc(true);
+        showToolTip(SP, SD);
         console.log(SD);
     }
 
     this.actType = function(SP, SD, index){
-        console.log("<<----- Start:", index ,"----->>");
         var init = {};
+        console.log(SP);
+        console.log(SD);
         SP.elementList.map(function(obj){
             if(obj.id.includes("selectButon")){
                 init["initCS"] = This.initCS;
@@ -567,22 +778,25 @@ function PLAYER(){
                 init["initPAINT"] = This.initPAINT;
             }else if(obj.id.includes("sortDrag")){
                 init["initSORT"] = This.initSORT;
-            }else if(obj.id.includes("videoBox")){
-                init["initVIDEO"] = This.initVIDEO;
-                SD.type = "a";
-            } else if(obj.id.includes("drawCanvas")){
+            }else if(obj.id.includes("drawCanvas")){
                 init["initLINECORRECT"] = This.initLINECORRECT;
             }else if(obj.id.includes("pointButon")){
                 init["initPOINT"] = This.initPOINT;
+            }else if(obj.id.includes("popupWindow")){
+                init["initVIDEO"] = This.initVIDEO;
+            }else if(obj.id.includes("videoBox")){
+                init["initVIDEO"] = This.initVIDEO;
+                SD.type = "a";
             }
         });
+
+        console.log(init);
 
         for(var p in init){
             init[p](SP, SD, index);
         }
 
         SD.totalRight = SD.empty = Object.keys(jsonV2.slides[index].answer).length;
-        console.log("<<----- Finish:", index ,"----->>");
     }
 
     function controlBtnView(SP, status){
@@ -597,11 +811,279 @@ function PLAYER(){
         }
     }
 
+    function answerBtnView(SP, status){
+        if(SP.answerBtn){
+            if(status === "enable"){
+                SP.answerBtn.style.opacity = 1;
+                SP.answerBtn.style.pointerEvents = "auto";
+            }else{
+                SP.answerBtn.style.opacity = 0.5;
+                SP.answerBtn.style.pointerEvents = "none";
+            }
+        }
+    }
+
+
+    //add infoBtn
+    function infoSystemFNC(){
+        player.infoBtnDOM = utils.addDOM({className: "infoBtnDOM"});
+        player.infoPopupDOM = utils.addDOM({className: "infoPopupDOM"});
+        player.mainDOM.appendChild(player.infoBtnDOM);
+        player.mainDOM.appendChild(player.infoPopupDOM);
+
+        player.infoPopupDOM.innerHTML = '<img src="assets/img/player/info_popup.png"><div class="infoPopupCloseBtn"></div>';
+
+        player.infoBtnDOM.addEventListener("click", function(e){
+            console.log("click");
+            player.infoPopupDOM.style.visibility = "visible";
+        });
+
+        player.infoPopupDOM.querySelector(".infoPopupCloseBtn").addEventListener("click", function(e){
+            player.infoPopupDOM.style.visibility = "hidden";
+        });
+
+        player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png"><div class="infoPopupCloseBtn"></div>';
+    }
+
+
+    //add read-only mode
+    function addNavigationDOM(){
+        player.Normal_NavListMain = utils.addDOM({className: "Normal_NavListMain"});
+        player.mainDOM.appendChild(player.Normal_NavListMain);
+
+        player.Normal_NavList = utils.addDOM({className: "Normal_NavList"});
+        player.Normal_NavListMain.appendChild(player.Normal_NavList);
+
+        player.Normal_NavListMain.addEventListener("click", function(){
+            player.Normal_NavListMain.style.visibility = "hidden";
+        });
+
+        /* End Main */
+        player.watcher_main = utils.addDOM({className: "watcher_main"});
+        player.mainDOM.appendChild(player.watcher_main);
+
+        player.Normal_NavListMain.addEventListener("click", function(){
+            player.Normal_NavListMain.style.visibility = "hidden";
+        });
+
+        player.watcher_main.innerHTML = '<div class="watcher_container"><div class="watcher_head">Tamamlanmayan ekranlar var!</div><div class="watcher_footer">Tamamlanmayan ekranlara dönmek için butonlara tıklayın.</div><div class="watcher_list"></div></div>';
+        var watcherList = player.watcher_main.querySelector(".watcher_list");
+
+        SD.map(function(e, i){
+            var navBox = utils.addDOM({className: "Normal_NavList_Box", textContent:(i+1)});
+            player.Normal_NavList.appendChild(navBox);
+
+            navBox.addEventListener("mouseenter", function(){
+                this.style.backgroundColor = "#4db6ac";
+            });
+
+            navBox.addEventListener("mouseleave", function() {
+                if(This.sceneIndex !== i){
+                    this.style.backgroundColor = "silver";
+                }
+            });
+
+            navBox.addEventListener("click", function(e){
+                This.changeScene(i);
+            });
+
+            var watcherBox = utils.addDOM({className: "watcher_box", textContent:(i+1)});
+            watcherList.appendChild(watcherBox);
+
+            watcherBox.addEventListener("mouseenter", function(){
+                this.style.backgroundColor = "#4db6ac";
+            });
+
+            watcherBox.addEventListener("mouseleave", function() {
+                this.style.backgroundColor = "silver";
+            });
+
+            watcherBox.addEventListener("click", function(){
+                player.watcher_main.style.visibility = "hidden";
+                This.changeScene(i);
+            });
+        });
+
+        player.Normal_NavListMain.addEventListener("click", function(){
+            player.Normal_NavListMain.style.visibility = "hidden";
+        });
+
+        player.navListAllBox = player.Normal_NavListMain.querySelectorAll(".Normal_NavList_Box");
+        player.watcherListAllBox = player.watcher_main.querySelectorAll(".watcher_box");
+    }
+
+
+    function endScreenBoxStatus(){
+        var unComplete = 0;
+        for(var x=0; x<SD.length; x++){
+            if(SD[x].complete){
+                player.watcherListAllBox[x].style.display = "none";
+            }else{
+                unComplete++;
+            }
+        }
+
+        if(unComplete){
+            player.watcher_main.style.visibility = "visible";
+        }
+    }
+
+    function navListReset(){
+        player.navListAllBox.forEach(function(box) {
+            box.style.backgroundColor = "silver";
+            box.style.pointerEvents = "auto";
+        });
+    }
+
+    function navListSelect(pageID){
+        if(player.navListAllBox){
+            navListReset();
+            player.navListAllBox[pageID].style.backgroundColor = "orange";
+            player.navListAllBox[pageID].style.pointerEvents = "none";
+        }
+    }
+
+    //add read-only mode
+    function addOpenEndedDOM(SP, index){
+        player.openEndedDOM = utils.addDOM({className: "openEndedDOM"});
+        player.mainDOM.appendChild(player.openEndedDOM);
+        player.openEndedDOM.innerHTML = '<div class="openEndedWindow"><img class="openEndedWindow_icon" src="assets/img/player/check.png"><div>Kaydedildi</div> </div>';
+    }
+
+    function hideOpenEndedDOM(){
+        player.openEndedDOM.style.visibility = "hidden";
+    }
+
+
+    //add read-only mode
+    function addReadOnlyDOM(SP, index){
+        player.readOnlyDOM = utils.addDOM({className: "readOnlyDOM"});
+        player.mainDOM.appendChild(player.readOnlyDOM);
+        player.readOnlyDOM.innerHTML = '<img src="assets/img/player/readonly.png">';
+    }
+
+    this.showReadOnly = function(){
+        player.readOnlyDOM.style.visibility = "visible";
+    }
+
+    //add tooltip
+    function addToolTip(SP, index){
+        SP.toolTipDOM = utils.addDOM({className: "toolTipDOM"});
+        SP.controlBtn.appendChild(SP.toolTipDOM);
+    }
+
+    function showToolTip(SP,SD){
+        var currentWarning = SD.historyRight.length;
+        SP.toolTipDOM.style.visibility = "visible";
+        SP.toolTipDOM.innerHTML = currentWarning;
+    }
+
+    //add check
+    function addCheckIcon(){
+        player.checkIconDOM = utils.addDOM({id: "checkIconDOM", className: "checkIconDOM"});
+        player.mainDOM.appendChild(player.checkIconDOM);
+        player.checkIconDOM.innerHTML = '<div class="checkIconImg"><img src="assets/img/player/check.png"></div><div class="notice"></div>';
+        player.notice = player.checkIconDOM.querySelector(".notice");
+    }
+
+    function checkViewFNC(SD){
+        if(SD.complete){
+            player.checkIconDOM.style.visibility = "visible";
+            var currentWarning = SD.historyRight.length;
+            player.notice.innerHTML = currentWarning+". denemede tamamlandı.";
+        }else{
+            player.checkIconDOM.style.visibility = "hidden";
+        }
+    }
+
+    //add Warning settings
+    function addWarning(){
+        player.warningDOM = utils.addDOM({id: "warningDOM", className:"warningDOM"});
+        player.mainDOM.appendChild(player.warningDOM);
+        player.warningDOM.addEventListener("click", function(e){
+            hideWarning();
+        });
+    }
+
+    function showWarning(SP, SD){
+        var currentWarning = SD.historyRight.length-1;
+
+        if(!player.warningList[currentWarning]){
+            currentWarning = player.warningList.length-1;
+        }
+
+        player.warningDOM.innerHTML = player.warningList[currentWarning];
+
+        if(player.warningAnimation){
+            player.warningAnimation.kill();
+            clearInterval(player.warningTimer);
+        }
+
+        player.warningDOM.style.right = "-380px";
+        player.warningAnimation = gsap.to(player.warningDOM, 0.3, {right:5, onComplete: startWarningTime});
+    }
+
+    function startWarningTime(){
+        player.warningTimer = setTimeout(hideWarning, 3000);
+    }
+
+    function hideWarning(){
+        if(player.warningAnimation){
+            player.warningAnimation.kill();
+        }
+
+        player.warningInterval = gsap.to(player.warningDOM, 0.3, {right:-380});
+    }
 
     /////////////////////////////////////////////////////////
     This.searchTool = function(Scene, index, SP){
         var popupWindow;
         Scene.childNodes.forEach(function(obj) {
+            /*
+            if(obj.id.includes("popupButon")){
+                var id = parseInt( obj.id.split("_")[1] );
+                console.log("popupButon", id);
+                if(!SP.popEx[id]){
+                    SP.popEx[id] = {};
+                }
+                SP.popEx[id].clicked = false;
+                SP.popEx[id].btn = obj;
+
+                obj.addEventListener("click", function(){
+                    if(SP.popupWindow.clicked){
+                        SP.popEx[id].window.style.visibility = "hidden";
+                        SP.popupWindow.clicked = false;
+                        This.popupVideoPlayStatus(SP, false);
+                    }else{
+                        SP.popEx[id].window.style.visibility = "visible";
+                        SP.popupWindow.clicked = true;
+                        PLX.autoSceneChange_stopQuickly();
+                    }
+
+                    SP.popEx[id].window.style.visibility = "visible";
+                });
+
+                obj.style.cursor = "pointer";
+            }else if(obj.id.includes("popupWindow")){
+                var id = parseInt( obj.id.split("_")[1] );
+                console.log("popupWindow", id);
+                if(!SP.popEx[id]){
+                    SP.popEx[id] = {};
+                }
+
+                SP.popEx[id].window = obj;
+                obj.querySelector(".popupWindowClose").addEventListener("click", function(){
+                    obj.style.visibility = "hidden";
+                    SP.popEx[id].clicked = false;
+                    This.popupVideoPlayStatus(SP, false);
+                });
+
+                obj.querySelector(".popupWindowClose").style.cursor = "pointer";
+            }
+
+            console.log("/////////////////////////////");
+            */
+
             if(obj.id.includes("popupButon")){
                 SP.popupWindow.clicked = false;
                 SP.popupWindow.btn = obj;
@@ -609,27 +1091,30 @@ function PLAYER(){
                     if(SP.popupWindow.clicked){
                         popupWindow.style.visibility = "hidden";
                         SP.popupWindow.clicked = false;
+                        This.popupVideoPlayStatus(SP, false);
                     }else{
                         popupWindow.style.visibility = "visible";
                         SP.popupWindow.clicked = true;
                         PLX.autoSceneChange_stopQuickly();
+                        This.popupVideoPlayStatus(SP, true);
                         if(SP.controlBtn){
                             controlBtnView(SP, "disable");
                             if(!SD[This.sceneIndex].complete){
                                 This.sceneComplete();
-                                This.scoreCalc();
+                                This.scoreCalc(true);
                             }
                         }
                     }
                 });
 
                 SP.popupWindow.btn.style.cursor = "pointer";
-            } else if(obj.id.includes("popupWindow")){
+            }else if(obj.id.includes("popupWindow")){
                 SP.popupWindow.window = obj;
                 popupWindow = obj;
                 popupWindow.querySelector(".popupWindowClose").addEventListener("click",function(){
                     popupWindow.style.visibility = "hidden";
                     SP.popupWindow.clicked = false;
+                    This.popupVideoPlayStatus(SP, false);
                 });
                 popupWindow.querySelector(".popupWindowClose").style.cursor = "pointer";
             }else if(obj.id.includes("control")){
@@ -639,6 +1124,8 @@ function PLAYER(){
                 SP.controlBtn.addEventListener("click", function(){
                     This.controlHQ(SP, SD[index]);
                 });
+
+                addToolTip(SP, index);
             }else if(obj.id.includes("answer")){
                 SP.answerBtn = obj;
                 SP.answerBtn.style.cursor = "pointer";
@@ -646,6 +1133,18 @@ function PLAYER(){
                 SP.answerBtn.addEventListener("click", function(){
                     This.answerHQ(SP, SD[index]);
                 });
+            }else if(obj.id.includes("complete")){
+                console.log("omg >>", obj.id);
+                console.log("omg >>", SP);
+                SP.completeBtn = obj;
+                SP.completeBtn.addEventListener("click", function(){
+                    player.openEndedDOM.style.visibility = "visible";
+                    This.scoreCalc(true);
+                    This.nextScene();
+                });
+
+                SP.completeBtn.style.opacity = 1;
+                SP.completeBtn.style.cursor = "pointer";
             }else if(obj.id.includes("goUrl")){
                 var url = "";
                 if(AC.player){
@@ -762,6 +1261,10 @@ function PLAYER(){
                 player.nextBtn.style.cursor = "pointer";
                 player.nextBtn.style.pointerEvents = "auto";
             }
+
+            checkViewFNC(SD[index]);
+            navListSelect(index);
+            hideOpenEndedDOM();
         }
     }
 
@@ -791,12 +1294,27 @@ function PLAYER(){
         console.log("sceneComplete >>");
         clearInterval(player.screenDuration);
         SD[This.sceneIndex].complete = true;
-        This.scoreCalc();
+        This.scoreCalc(false);
+    }
+
+    this.popupVideoPlayStatus = function(SP, playVideo){
+        if(SP.video){
+            if(playVideo){
+                if(SP.video.firstPlay){
+                    SP.video.PlayVideo();
+                }else{
+                    SP.video.FullScreenPlay();
+                }
+            }else{
+                SP.video.StopVideo();
+            }
+        }
     }
 
     /* NextScene */
     this.nextScene = function(){
         var start = This.sceneIndex+1;
+        var end = SD.length;
         var next;
         for(var i=start; i<SD.length; i++){
             if(!SD[i].complete){
@@ -808,14 +1326,15 @@ function PLAYER(){
         if(!next){
             for(var x=0; x<SD.length; x++){
                 if(!SD[x].complete){
-                    PLX.autoSceneChange.ShowFNC();
                     next = x;
                     break;
                 }
             }
         }
 
-        if(next !== undefined){
+        if(start === end){
+            setTimeout(endScreenBoxStatus, 2000);
+        } else if(next !== undefined){
             player.autoNext = next;
             PLX.autoSceneChange.ShowFNC();
         }
@@ -856,7 +1375,7 @@ function PLAYER(){
     }
 
     this.startPlayer = function(element){
-        This.scoreCalc();
+        This.scoreCalc(false);
         initKACountDown();
 
         Object.assign(player, element);
@@ -868,6 +1387,11 @@ function PLAYER(){
             This.changeScene(This.sceneIndex+1);
         });
 
+        player.infoDiv.addEventListener("click", function(){
+            player.Normal_NavListMain.style.visibility = "visible";
+        });
+
+        addNavigationDOM();
         This.changeScene(0);
     }
 
@@ -1255,7 +1779,7 @@ function PLAYER(){
 
     function initKACountDown(){
         PLX.SceneNavigationMain = $("#PlayerMain");
-        PLX.autoSceneChange.AddHtmlFNC(function(){ This.changeScene(player.autoNext) }, "sonraki soru", 4);
+        PLX.autoSceneChange.AddHtmlFNC(function(){ This.changeScene(player.autoNext) }, "Sonraki Ekran", 4);
         PLX.autoSceneChange.WindowClose.on("click", function(e){
             PLX.autoSceneChange.HideFNC();
             e.stopPropagation();
@@ -1305,6 +1829,10 @@ function PLAYER(){
     function setPosition(obj, left, top){
         obj.style.left = left+"px";
         obj.style.top = top+"px";
+    }
+
+    function stringSpaceDelete(str){
+        return str.replace(/\s+/g, "");
     }
 
     //dizi icindeki rakamlari siralar.
@@ -1430,7 +1958,6 @@ function PLAYER(){
         console.log(rubrik);
         console.log(CS);
         console.log(jsonV2);
-        console.log("//////////////"+index);
 
         if(SP.popupWindow.btn){
             SP.popupWindow.btn.addEventListener("click", function(){
@@ -1770,7 +2297,6 @@ function PLAYER(){
         SP.elementList.forEach(function(element){
             if(element.id.includes("inputArea")){
                 var id = parseInt(element.id.split("_")[1]);
-
                 BD.input[id] = {
                     main: element.main,
                     txt: element.main.querySelector(".bdText"),
@@ -1782,10 +2308,13 @@ function PLAYER(){
                     events: true
                 };
 
+                BD.input[id].bgColor = BD.input[id].bg.style.backgroundColor;
                 convertInput(id);
                 rubrik[id] = null;
             }
         });
+
+        BD.inputLength = Object.keys(BD.input).length;
 
         for(var p in rubrik){
             rubrik[p] = answer[p];
@@ -1826,6 +2355,10 @@ function PLAYER(){
             SD.inputs["box"+ id] = {value: null, type: "bd"};
         }
 
+        console.log(answer);
+        console.log(rubrik);
+        console.log(SD.inputs);
+
         function addEvent(input, id){
             input.addEventListener("input", function(e){
                 if(BD.input[id].mode === "number"){
@@ -1833,8 +2366,20 @@ function PLAYER(){
                 }
 
                 SD.inputs["box"+ id].value = this.value;
+                console.log( SD.inputs );
                 controlBtnViewCheck();
+                countCharacter(this, id);
             });
+        }
+
+        function countCharacter(input, id){
+            var count = parseInt( BD.input[id].count );
+            if(input.value.length === count){
+                var next = ++id;
+                if(next < BD.inputLength){
+                    BD.input[next].txt.focus();
+                }
+            }
         }
 
         function numberLayout(input){
@@ -1883,7 +2428,7 @@ function PLAYER(){
         }
 
         function showDefaultView(id){
-            BD.input[id].bg.style.backgroundColor = "white";
+            BD.input[id].bg.style.backgroundColor = BD.input[id].bgColor;
             BD.input[id].txt.value = "";
             SD.inputs["box"+ id].value = "";
         }
@@ -2332,37 +2877,54 @@ function PLAYER(){
         console.log("initSB");
         var bounds = {left:0, top:0, width:1280, height:720};
         var answer = jsonV2.slides[index].answer;
+        console.log(answer);
         var createDrag = false;
 
         if(jsonV2.slides[index].scene.createDrag){
             createDrag = jsonV2.slides[index].scene.createDrag === "true";
         }
 
-        var rightAnswer={};
+        var rightAnswer = {};
         function rightAnswerParse(){
             for(var p in answer){
-                rightAnswer[p]=[];
-                var dropAnswers = answer[p].split(",");
+                rightAnswer[p] = [];
+                var dropAnswers = stringSpaceDelete(answer[p]).split(",");
+                console.log( dropAnswers );
                 dropAnswers.map(function(answer){
                     if(answer.includes("-")){
+                        var answerOption = [];
                         var id = parseInt( answer.split("-")[0] );
                         var count = parseInt( answer.split("-")[1] );
+                        console.log(id, count);
                         for(var c=0; c<count; c++){
-                            rightAnswer[p].push(id);
+                            answerOption.push(id);
                         }
-                    }else{
-                        rightAnswer[p].push(parseInt(answer));
-                    }
-                });
 
+                        rightAnswer[p].push(answerOption);
+                    }else{
+                        if(!rightAnswer[p][0]){
+                            rightAnswer[p].push([]);
+                        }
+
+                        rightAnswer[p][0].push(parseInt(answer));
+                    }
+
+                });
             }
         }
+
         rightAnswerParse();
+
+        console.log("////");
+        console.log(answer);
+        console.log(rightAnswer);
+        console.log("////");
 
         var dragCount=0;
         var dragList = {};
         var dropList = {};
         var cloneList = {};
+        var rightAnswerNone = false;
         SP.elementList.map(function(element){
             var id;
             if(element.id.includes("boxDrag")){
@@ -2383,6 +2945,7 @@ function PLAYER(){
                     slot:[],
                     online: true
                 };
+
                 var childrenDrops =  element.main.children;
                 for(var x=0; x<childrenDrops.length; x++){
                     var child = childrenDrops[x];
@@ -2412,11 +2975,13 @@ function PLAYER(){
             }
 
             SP.screenCloseDOM.style.zIndex = 2000;
+            if(!rightAnswer[id]){
+                rightAnswerNone = true;
+            }
         });
 
         function dragControlFNC(drag, dragID, cloneID){
             var hitDrop = -1;
-
             for(var id in dropList){
                 if (drag.hitTest(dropList[id].drop, "2%") && dropList[id].online){
                     hitDrop = id;
@@ -2484,9 +3049,14 @@ function PLAYER(){
             for(var i=0; i<dropList[hitDrop].slot.length; i++){
                 if(!dropList[hitDrop].slot[i].cloneID){
                     var position = dropList[hitDrop].slot[i];
+                    console.log(position);
+                    console.log(dropList[hitDrop].slot);
+                    console.log(cloneID);
                     gsap.to(clone, aniTime, {x: position.x, y: position.y});
                     screeCloseFNC();
                     position.cloneID = cloneID;
+                    SD.inputs["box"+ hitDrop].value[i] = dragID;
+                    console.log();
                     found = true;
                     break;
                 }
@@ -2509,7 +3079,7 @@ function PLAYER(){
                 var slotCloneID = slot.cloneID;
                 var cloneBtn = cloneList[slotCloneID];
 
-                if (drag.hitTest(cloneBtn, "2%")){
+                if (drag.hitTest(cloneBtn, "2%") && slot.status){
                     clearSlotCloneID(slotCloneID);
                     var slotMainDrag = slotCloneID.split("_")[0];
                     returnDrag(slotMainDrag, slotCloneID);
@@ -2527,9 +3097,10 @@ function PLAYER(){
 
         function clearSlotCloneID(cloneID){
             for(var drop in dropList){
-                dropList[drop].slot.map(function(e){
+                dropList[drop].slot.map(function(e,i){
                     if(e.cloneID === cloneID){
                         e.cloneID = null;
+                        SD.inputs["box"+ drop].value[i] = null;
                     }
                 });
             }
@@ -2603,22 +3174,48 @@ function PLAYER(){
                 userAnswers[i] = [];
                 slot.map(function(e){
                     if(e.cloneID){
-                        var id = parseInt(e.cloneID.split("_"));
+                        var id = parseInt(e.cloneID.split("_")[0]);
                         userAnswers[i].push(id);
+                        e.id = id;
+                        e.status = true;
                     }
                 });
             }
 
+            console.log( dropList );
+
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"MATCH"};
+
             for(var n in dropList){
-                if(!userAnswers[n].length){
-                    score.totalEmpty++;
-                }else{
-                    var grupControl = arraysAreEqualUnordered(rightAnswer[n], userAnswers[n]);
-                    if(grupControl){
-                        score.totalRight++;
-                        dropList[n].online = false;
+                if(rightAnswer[n]){
+                    if(!userAnswers[n].length){
+                        score.totalEmpty++;
                     }else{
+                        var grupControl;
+                        for(var option=0; option<rightAnswer[n].length; option++){
+                            if(rightAnswer[n].length === 1){
+                                partialControlFNC(dropList[n].slot, rightAnswer[n][option]);
+                            }
+
+                            grupControl = checkArray(userAnswers[n], rightAnswer[n][option]);
+
+                            if(grupControl){
+                                if(rightAnswer[n].length > 1){
+                                    partialControlFNC(dropList[n].slot, rightAnswer[n][option]);
+                                }
+                                break;
+                            }
+                        }
+
+                        if(grupControl){
+                            score.totalRight++;
+                            dropList[n].online = false;
+                        }else{
+                            score.totalWrong++;
+                        }
+                    }
+                }else{
+                    if(userAnswers[n].length){
                         score.totalWrong++;
                     }
                 }
@@ -2628,17 +3225,58 @@ function PLAYER(){
         }
 
 
+        function partialControlFNC(drop, right) {
+            var limitler = {};
+            var sayaclar = {};
+            var i, id;
 
-        function arraysAreEqualUnordered(array1, array2) {
-            if (array1.length !== array2.length) {
-                return false;
+            for(i=0; i<right.length; i++) {
+                id = right[i];
+                if (limitler[id]) {
+                    limitler[id]++;
+                } else {
+                    limitler[id] = 1;
+                }
             }
 
-            array1.sort();
-            array2.sort();
+            for(i=0; i<drop.length; i++) {
+                id = drop[i].id;
+                if (limitler[id]) {
+                    if (!sayaclar[id]) {
+                        sayaclar[id] = 0;
+                    }
+                    sayaclar[id]++;
 
-            for (var i=0; i<array1.length; i++) {
-                if (array1[i] !== array2[i]){
+                    if(sayaclar[id] <= limitler[id]){
+                        drop[i].status = false;
+                    } else {
+                        drop[i].status = true;
+                    }
+                }else{
+                    drop[i].status = true;
+                }
+            }
+
+            return drop;
+        }
+
+        function checkArray(A, B) {
+            var countA = {};
+            var countB = {};
+            var i, num;
+
+            for (i=0; i<A.length; i++) {
+                num = A[i];
+                countA[num] = (countA[num] || 0)+1;
+            }
+
+            for (i=0; i<B.length; i++) {
+                num = B[i];
+                countB[num] = (countB[num] || 0)+1;
+            }
+
+            for (num in countB) {
+                if (!countA[num] || countA[num] < countB[num]) {
                     return false;
                 }
             }
@@ -2646,11 +3284,43 @@ function PLAYER(){
             return true;
         }
 
+/*
+function arraysAreEqualUnordered(array1, array2) {
+    if (array1.length !== array2.length) {
+        return false;
+    }
 
-        function wrongActionFNC(){
+    array1.sort();
+    array2.sort();
+
+    for (var i=0; i<array1.length; i++) {
+        if (array1[i] !== array2[i]){
+            return false;
+        }
+    }
+
+    return true;
+}
+*/
+
+        function wrongActionFNC(status){
             for(var i in dropList){
                 var slot = dropList[i].slot;
+                slot.map(function(e){
+                    if(e.cloneID){
+                        if(!e.status){
+                            cloneList[e.cloneID].style.opacity = 0.5;
+                            Draggable.get( cloneList[e.cloneID] ).disable();
+                            cloneList[e.cloneID].style.userSelect = "none";
+                        }else{
+                            var mainID = parseInt(e.cloneID.split("_")[0]);
+                            returnDrag(mainID, e.cloneID);
+                        }
+                    }
+                });
+
                 if(!dropList[i].online){
+                    /*
                     slot.map(function(e){
                         if(e.cloneID){
                             cloneList[e.cloneID].style.opacity = 0.5;
@@ -2658,20 +3328,22 @@ function PLAYER(){
                             cloneList[e.cloneID].style.userSelect = "none";
                         }
                     });
-
+                    */
                     dropList[i].background.style.visibility = "visible";
                     dropList[i].background.style.backgroundColor = "green";
+                }
+            }
+
+            if(rightAnswerNone){
+                if(status === "right"){
+                    for(var id in cloneList){
+                        Draggable.get( cloneList[id] ).disable();
+                    }
                 }else{
-                    slot.map(function(e){
-                        if(e.cloneID){
-                            var mainID = parseInt(e.cloneID.split("_")[0]);
-                            returnDrag(mainID, e.cloneID);
-                        }
-                    });
+                    setTimeout(controlBtnViewCheck, 1000);
                 }
             }
         }
-
 
         function usedClone(cloneID){
             var slotList=[];
@@ -2698,10 +3370,10 @@ function PLAYER(){
 
         function answerActionFNC(){
             resetDragBtn();
-
-            for(var hitDrop in answer){
-                var allRightAnswer = answer[hitDrop].split(",");
+            for(var hitDrop in dropList){
+                var allRightAnswer = rightAnswer[hitDrop][0];
                 allRightAnswer.map(function(rightDrag){
+                    rightDrag = rightDrag.toString();
                     var foundClone = false;
                     for(var cloneID in cloneList){
                         var dragID = cloneID.split("_")[0];
@@ -2720,13 +3392,6 @@ function PLAYER(){
                 cloneList[cid].style.userSelect = "none";
             }
         }
-
-        /*
-        console.log(rightAnswer);
-        console.log(dragList);
-        console.log(dropList);
-        console.log(cloneList);
-        */
 
         SP.fnc.push({control: checkAnswer, wrong: wrongActionFNC, right: wrongActionFNC, answer: answerActionFNC });
     }
@@ -2811,12 +3476,20 @@ function PLAYER(){
 
         function addPaintBox(box, id){
             var correctAnswer = jsonV2.slides[index].answer[id];
-            drop[id] = {box: box, correctAnswer: correctAnswer, currentStatus: ""};
+            var strokeColor = window.getComputedStyle(box).stroke;
+            var strokeWidth = window.getComputedStyle(box).strokeWidth;
+            drop[id] = {
+                box: box,
+                correctAnswer: correctAnswer,
+                currentStatus: "",
+                strokeColor: strokeColor,
+                strokeWidth: strokeWidth
+            };
+
             addDropBoxEvent(box, id);
             SD.inputs["box" + id] = {value: null, type: "paint"};
             gsap.to(box, 0, {fill: selectedColor});
         }
-
 
         /* Add Events */
         function addDropBoxEvent(dropBox, id){
@@ -2857,7 +3530,14 @@ function PLAYER(){
 
         function setColorFNC(dropBox, id){
             if(drop[id].currentStatus !== "right"){
-                gsap.to(dropBox, 0.4, {fill: selectedColor, backgroundColor: selectedColor});
+                var currentColor = colorPalette[selectedColor];
+                if(currentColor){
+                    currentColor = currentColor.color;
+                }else{
+                    currentColor = selectedColor;
+                }
+
+                gsap.to(dropBox, 0.4, {fill: currentColor, backgroundColor: currentColor});
                 if(selectedColor === "white"){
                     SD.inputs["box"+id].value = undefined;
                 }else{
@@ -2952,7 +3632,8 @@ function PLAYER(){
                 }else{
                     drop[id].currentStatus = "";
                     drop[id].box.style.pointerEvents = "auto";
-                    gsap.to(drop[id].box, 0, {backgroundColor:"white", fill:"white", strokeWidth: 0, outline: "red solid 0px"});
+                    gsap.to(drop[id].box, 0, {backgroundColor:"white", fill:"white", stroke: drop[id].strokeColor, strokeWidth: drop[id].strokeWidth, outline: "red solid 0px"});
+                    /* "red solid 0px"; */
                     SD.inputs["box"+id].value = undefined;
                 }
             }
@@ -2998,6 +3679,7 @@ function PLAYER(){
 
     /** Add Sort **/
     this.initSORT = function(SP, SD, index){
+        console.log("initSORT");
         var SR = {};
         var activeButonID = -1;
         var answer = jsonV2.slides[index].answer;
@@ -3098,6 +3780,12 @@ function PLAYER(){
                 SR[section].statusBorder = addBorder(bounds);
 
                 if(bounds.width < bounds.height){
+                    sortObject(setDrop[section].drag, "top");
+                }
+
+                if(jsonV2.slides[index].scene["group"+section] === "horizontal"){
+                    sortObject(setDrop[section].drag, "left");
+                }else if(jsonV2.slides[index].scene["group"+section] === "vertical"){
                     sortObject(setDrop[section].drag, "top");
                 }
 
@@ -3257,7 +3945,6 @@ function PLAYER(){
 
         function checkAnswer(){
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"SORT"};
-            /* console.log( SD.inputs["box"+0].value ); */
 
             for(var section in SR){
                 var user = SD.inputs["box"+section].value;
@@ -3268,9 +3955,6 @@ function PLAYER(){
                     }
                 });
 
-                console.log("sonuc:", right);
-                console.log("checkAnswer:", SD.inputs["box"+section].value, SR[section].correctAnswer);
-
                 if(right){
                     score.totalRight++;
                     SR[section].status = "right";
@@ -3280,7 +3964,6 @@ function PLAYER(){
                 }
             }
 
-            console.log( score );
             return score;
         }
 
@@ -3360,16 +4043,39 @@ function PLAYER(){
     this.initVIDEO = function(SP, SD, index){
         console.log("initVIDEO");
 
-        SP.elementList.map(function(element){
-            if(element.id.includes("videoBox")){
-                var videoWidth = element.main.offsetWidth;
-                addPlayer(element.id, videoWidth);
-            }
-        });
-
-        function endFNC(){
+        var endFNC = function(){
             This.nextScene();
         }
+
+        var mainDivCSS = {};
+        var videoCapture = true;
+
+        SP.elementList.map(function(element){
+            var videoWidth;
+            if(element.id.includes("videoBox")){
+                videoWidth = element.main.offsetWidth;
+                addPlayer(element.id, videoWidth);
+            }else if(element.id.includes("popupWindow")){
+                var videoRect = element.main.querySelector(".videoPlayer");
+                if(videoRect){
+                    videoWidth = videoRect.offsetWidth;
+                    var newID = "vp_s"+index+"_0";
+                    videoRect.id = newID;
+                    var pos = getPosition(videoRect);
+
+                    mainDivCSS = {
+                        left: pos.left+"px",
+                        top: pos.top+"px",
+                        position: "absolute"
+                    };
+
+                    videoCapture = false;
+                    endFNC = function(){};
+                    addPlayer(newID, videoWidth);
+                }
+
+            }
+        });
 
         function watchedFNC(){
             This.sceneComplete();
@@ -3386,9 +4092,10 @@ function PLAYER(){
 
             var playerProperties = {
                 div: $("#"+id),
+                divCSS: mainDivCSS,
                 src: [videoPath],
                 width: videoWidth,
-                videoCapture: true,
+                videoCapture: videoCapture,
                 fullScreen: false,
                 endFNC: endFNC,
                 watchedFNC: watchedFNC,
@@ -3434,6 +4141,7 @@ function PLAYER(){
                     activeBtnFNC(this);
                     passiveBtnFNC(draw.eraserBox);
                     erasing = false;
+                    mouseCursorStatus();
 
                 });
 
@@ -3441,6 +4149,7 @@ function PLAYER(){
                     activeBtnFNC(this);
                     passiveBtnFNC(draw.drawBox);
                     erasing = true;
+                    mouseCursorStatus();
                 });
             }
         });
@@ -3452,6 +4161,18 @@ function PLAYER(){
         function passiveBtnFNC(btn){
             btn.style.border = "0px";
         }
+
+        function mouseCursorStatus(){
+            if(erasing){
+                SP.sceneDiv.style.cursor = "url(assets/img/player/easercursor.png) -22 22, auto";
+            }else{
+                SP.sceneDiv.style.cursor = "url(assets/img/player/pencilcursor.png) -22 22, auto";
+            }
+        }
+
+        activeBtnFNC(draw.drawBox);
+        passiveBtnFNC(draw.eraserBox);
+        mouseCursorStatus();
 
         draw.drawPNG = lineContainer.querySelector(".shapePNG");
         draw.rightPNG = lineContainer.querySelector(".rightPNG");
@@ -3540,16 +4261,23 @@ function PLAYER(){
 
         function canvasGetPosition(e) {
             var rect = draw.drawCanvas.getBoundingClientRect();
+            var x = e.clientX - rect.left;
+            var y = e.clientY - rect.top;
+
             if(e.touches) {
-                return {
-                    x: e.touches[0].clientX - rect.left,
-                    y: e.touches[0].clientY - rect.top
-                };
-            }else{
-                return {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                };
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            }
+
+            var scaleX = rect.width / draw.drawCanvas.offsetWidth;
+            var scaleY = rect.height / draw.drawCanvas.offsetHeight;
+
+            var originalX = x/scaleX;
+            var originalY = y/scaleY;
+
+            return {
+                x: originalX,
+                y: originalY
             }
         }
 
@@ -3660,9 +4388,6 @@ function PLAYER(){
 
     this.initPOINT = function(SP, SD, index){
         var answer = jsonV2.slides[index].answer;
-        console.log(SP);
-        console.log(SD);
-        console.log( jsonV2.slides[index] );
 
         var rightAnswer;
         var fixedPoints=[];
@@ -3677,6 +4402,7 @@ function PLAYER(){
         var drawBtn;
         var easeBtn;
         var time;
+        var pointNav;
         var set = {
             lineColor: "#0ABBBF",
             strokeWidth: 3
@@ -3715,22 +4441,7 @@ function PLAYER(){
                 canvas = element;
                 canvasOrigin = getPosition(element.main);
             }else if(element.id.includes("pointNav")){
-                drawBtn = element.main.querySelector(".drawBox");
-                easeBtn = element.main.querySelector(".eraserBox");
-
-                drawBtn.addEventListener("click",function(){
-                    activeBtnFNC(this);
-                    passiveBtnFNC(easeBtn);
-                    mode = "draw";
-                });
-
-                easeBtn.addEventListener("click",function(){
-                    activeBtnFNC(this);
-                    passiveBtnFNC(drawBtn);
-                    mode = "erase";
-                });
-
-                activeBtnFNC(drawBtn);
+                pointNav = element.main;
             }
         });
 
@@ -3742,6 +4453,30 @@ function PLAYER(){
 
         const layer = new Konva.Layer();
         stage.add(layer);
+
+        function addBtn(){
+            drawBtn = pointNav.querySelector(".drawBox");
+            easeBtn = pointNav.querySelector(".eraserBox");
+
+            drawBtn.addEventListener("click",function(){
+                activeBtnFNC(this);
+                passiveBtnFNC(easeBtn);
+                mode = "draw";
+                mouseCursorStatus();
+            });
+
+            easeBtn.addEventListener("click",function(){
+                activeBtnFNC(this);
+                passiveBtnFNC(drawBtn);
+                mode = "erase";
+                mouseCursorStatus();
+            });
+
+            activeBtnFNC(drawBtn);
+            mouseCursorStatus();
+        }
+
+        addBtn();
 
         if(rightAnswer){
             rightAnswer = rightAnswer.replace(/\s+/g, "");
@@ -3934,6 +4669,14 @@ function PLAYER(){
 
         function passiveBtnFNC(btn){
             btn.style.border = "0px";
+        }
+
+        function mouseCursorStatus(){
+           if(mode === "draw"){
+               SP.sceneDiv.style.cursor = "url(assets/img/player/pencilcursor.png) -22 22, auto";
+           }else{
+               SP.sceneDiv.style.cursor = "url(assets/img/player/easercursor.png) -22 22, auto";
+           }
         }
 
 

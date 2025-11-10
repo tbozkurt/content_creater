@@ -179,10 +179,12 @@ function CREATE(){
         {obj: "boxDrag", answer:false},
         {obj: "boxDrop", answer:true},
         {obj: "paintBox", answer:true},
-        {obj: "sortDrag", answer:true},
+        {obj: "sortDrag", answer:false},
         {obj: "drawCanvas", answer:true},
         {obj: "pointButon", answer:false},
-        {obj: "pointCanvas", answer:true}
+        {obj: "pointCanvas", answer:true},
+        {obj: "popupWindow", answer:false},
+        {obj: "popupButon", answer:false}
     ];
 
     this.checkKontrol = function(){
@@ -479,11 +481,11 @@ function CREATE(){
                 fill: "#ffffff",
                 Layer:{type:"objectRect", name: "bg"}
             }, {
-                text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi venenatis ipsum pharetra nibh iaculis volutpat et non justo. Donec sit amet est turpis. Cras sodales eleifend erat a finibus.",
+                text: "Verilen yönergelere göre etkinlikleri yapın.",
                 x: 110,
-                y: 16,
+                y: 30,
                 width: 870,
-                fontSize: 21,
+                fontSize: 28,
                 fontFamily: "Nunito",
                 fill: "#5085C4",
                 lineHeight: 1.6,
@@ -582,12 +584,12 @@ function CREATE(){
                 cornerRadius: 8,
                 Layer:{type:"objectRect", name: "boxbg"}
             },{
-                text: "KONTROL",
+                text: "KONTROL ET",
                 x: 0,
                 y: 0,
                 width: 176,
                 height: 46,
-                fontSize: 26,
+                fontSize: 25,
                 fontFamily: "Nunito",
                 align: "center",
                 fill: "#ffffff",
@@ -632,12 +634,12 @@ function CREATE(){
             cornerRadius: 8,
             Layer:{type:"objectRect", name: "boxbg"}
         },{
-            text: "YANITLA",
+            text: "CEVABI GÖR",
             x: 0,
             y: 0,
             width: 176,
             height: 46,
-            fontSize: 26,
+            fontSize: 25,
             fontFamily: "Nunito",
             align: "center",
             fill: "#ffffff",

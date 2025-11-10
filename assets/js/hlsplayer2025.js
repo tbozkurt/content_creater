@@ -219,7 +219,7 @@ function JWPlayerRefreshFNC(){
 			width: "100%"
 		}
 		
-		var conf = {occMode:false, div:"", src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:true, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, currentMediaID:0, lang:"tr"};
+		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:true, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, currentMediaID:0, lang:"tr"};
 		var playerListMode = false;
 		var playlist = [];
 		for (var x in obj) {
@@ -232,6 +232,7 @@ function JWPlayerRefreshFNC(){
 		var MainDivName = MainDIV.attr("id");
 		MainDIV.replaceWith("<div id='"+ MainDivName +"'></div>");
 		MainDIV = $("#"+MainDivName);
+		MainDIV.css(conf.divCSS);
 		var MainSrc = conf.src;
 		var MainWidth = conf.width;
 		var fullScreen = conf.fullScreen;
@@ -371,7 +372,9 @@ function JWPlayerRefreshFNC(){
 		var mediaNavigationArrow;
 
 		if(!videoCapture && coverImg.length>0){
-			fullScreenPlay.html('<img src="'+ coverImg +'" alt="Smiley face" height="100%" width="100%">');
+			fullScreenPlay.html('<img src="'+ coverImg +'" alt="" height="100%" width="100%">');
+		}else{
+			fullScreenPlay.html('<img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/play.svg" style="top:35%; left:45%; width:15%; position: relative;" alt="">');
 		}
 
 		/* Object CSS append Start*/
@@ -437,7 +440,7 @@ function JWPlayerRefreshFNC(){
 			loaderCount=0;
 			loaderActive=true;
 			LoaderRings.css("animation-play-state", "running");
-			Loader.css("visibility", "visible");
+			Loader.css("visibility", "unset");
 		}
 		
 		function LoaderClose(){
@@ -540,7 +543,7 @@ function JWPlayerRefreshFNC(){
 					methods.hlsSupport = false;
 					settingsBtn.hide();
 					MediaChangeFNC();
-					playerSkin.css("visibility","visible");
+					playerSkin.css("visibility","unset");
 				}
 			}else if(playerType==="mp4"){
 				MediaChangeFNC();
@@ -625,7 +628,7 @@ function JWPlayerRefreshFNC(){
 
 					if(!firstFragLoaded){
 						LoaderClose();
-						playerSkin.css("visibility","visible");
+						playerSkin.css("visibility","unset");
 						firstFragLoaded = true;
 					}
 				}
@@ -661,10 +664,10 @@ function JWPlayerRefreshFNC(){
 		
 		function showMediaListFNC(visible){
 			if(visible){
-				mediaNavigationMain.css("visibility" , "visible");
+				mediaNavigationMain.css("visibility", "unset");
 				mediaNavigationMain.show();
 			}else{
-				mediaNavigationMain.css("visibility" , "hidden");
+				mediaNavigationMain.css("visibility", "hidden");
 				mediaNavigationMain.hide();
 			}
 		}
@@ -809,7 +812,7 @@ function JWPlayerRefreshFNC(){
 		
 		settingsBtn.on(userEvent.click, function(){
 			if(qualityBoxMain.css("visibility")==="hidden"){
-				qualityBoxMain.css("visibility", "visible");
+				qualityBoxMain.css("visibility", "unset");
 				settingsBtn.css("background-color","rgba(150,200,150,0.75)");
 				blackScreen.show();
 			}else{
@@ -1336,9 +1339,9 @@ function JWPlayerRefreshFNC(){
 		video.onplaying = function() {
 			methods.globalPlay = true;
 			if(!methods.firstPlay){
-				playerSkin.css("visibility", "visible");
+				playerSkin.css("visibility", "unset");
 				fullScreenPlay.hide();
-				playerFullScreenControl.css("visibility", "visible");
+				playerFullScreenControl.css("visibility", "unset");
 				if(methods.hlsSupport){
 					settingsBtn.show();
 				}
@@ -1397,7 +1400,7 @@ function JWPlayerRefreshFNC(){
 		
 		video.onsuspend = function() {
 			if(playlist[methods.currentMediaID][1]==="mp4"){
-				playerSkin.css("visibility", "visible");
+				playerSkin.css("visibility", "unset");
 			}
 		};
 		
@@ -1416,11 +1419,11 @@ function JWPlayerRefreshFNC(){
 		function PlayingIconVisibleFNC(visible){
 			if(methods.firstPlay){
 				if(visible){
-					playBtn.css("visibility", "visible");
+					playBtn.css("visibility", "unset");
 					stopBtn.css("visibility", "hidden");
 				}else{
 					playBtn.css("visibility", "hidden");
-					stopBtn.css("visibility", "visible");
+					stopBtn.css("visibility", "unset");
 					autoChangeHide();
 				}
 			}
@@ -1431,7 +1434,7 @@ function JWPlayerRefreshFNC(){
 				clearInterval(skinTimer);
 				pointerLeave = false;
 				playerSkin.animate({opacity:1}, 200);
-				playerFullScreenControl.css("visibility", "visible");
+				playerFullScreenControl.css("visibility", "unset");
 			}).on(userEvent.leave, function() {
 				pointerLeave = true;
 			});
@@ -1458,6 +1461,6 @@ function JWPlayerRefreshFNC(){
 				return x;
 			}
 		}
-		
+
 		return methods;
 	}

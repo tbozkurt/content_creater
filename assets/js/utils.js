@@ -172,6 +172,8 @@ function utils(){
         console.log("str", str);
         str = str.replace("ü", "u");
         str = str.replace("ç", "c");
+        str = str.replace("ş", "s");
+        console.log(str);
         return str;
     }
 

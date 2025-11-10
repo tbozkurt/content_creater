@@ -25,6 +25,10 @@
         <div class="TopIconBox" id="home_icon"><img src="assets/img/home_icon.png"></div>
     </div>
 
+    <div>
+        <div class="TopIconBox" id="preview_icon"><img src="assets/img/home_icon.png"></div>
+    </div>
+
     <div id="main">
         <div id="child_1"></div>
         <div id="child_2"></div>
@@ -43,6 +47,7 @@
         </div>
 
         <div class="TopIconBox" id="createText"><img src="assets/img/create_text.png"></div>
+        <div class="TopIconBox" id="createRectVideo"><img src="assets/img/create_video.png"></div>
         <div class="createSpace"></div>
         <div id="topBanner_addObject">
             <div class="TopIconBox" id="createDirective"><img src="assets/img/create_directive.png"></div>
@@ -427,6 +432,21 @@
     </div>
 </div>
 
+
+<div id="duplicate_window">
+    <div class="duplicate_popup">
+        <div class="duplicate_mainDiv">
+            <div id="duplicate_fileName">MAT3_KA_0000</div>
+            <div class="duplicate_arrowIcon"> &raquo; </div>
+            <input placeholder="Edit" autocomplete="off" type="text" class="duplicate_input">
+            <button type="button" class="duplicate_button" id="duplicate_action">Kopyala</button>
+            <button type="button" class="duplicate_button" id="duplicate_close">Kapat</button>
+        </div>
+
+    </div>
+</div>
+
+
 <div id="loaderMain">
     <div class="loaderMain_window">
         <div class="loaderMain_windowTitle">Please wait</div>
@@ -509,6 +529,7 @@
             createBoxDrag: document.querySelector("#createBoxDrag"),
             createBoxDrop: document.querySelector("#createBoxDrop"),
             createVideo: document.querySelector("#createVideo"),
+            createRectVideo: document.querySelector("#createRectVideo"),
 
             createSortDrag: document.querySelector("#createSortDrag"),
             createSortDrop: document.querySelector("#createSortDrop"),
@@ -1189,7 +1210,7 @@
         layerDeleteAll();
         addObjects(jsonV2.slides[sceneIndex].all, IDE.sceneLayer, true);
         addHistory();
-        searchSingleUseObject();
+        /* searchSingleUseObject(); */
         CREATE.checkKontrol();
         document.querySelectorAll(".SR_Scene_Drag").forEach(function(btn){
             btn.style.backgroundColor = "#666666";
@@ -1267,8 +1288,6 @@
         });
     }
 
-
-
     /* Sahne Navigasyon Buton Ekleme */
     function sceneAddNavigationBtn(id, name){
         if(!name){name=CREATE.getSceneName()}
@@ -1294,6 +1313,7 @@
 
 
     var boxColor = {
+        basak:"#9e9d24",
         melike:"#b71c1c",
         irem:"#01579b",
         kamil:"#1b5e20",
@@ -1301,7 +1321,9 @@
         goknur:"#bf360c",
         cansu:"#880e4f",
         tuncay:"#004d40",
-        gulcin:"#37474f"
+        gulcin:"#37474f",
+        bahar: "#01579b",
+        duygu: "#3e2723"
     };
 
     var occUser = {
@@ -1313,7 +1335,10 @@
         user_12621116: "goknur",
         user_15480368: "cansu",
         user_7729545: "tuncay",
-        user_20: "gulcin"
+        user_15514575: "basak",
+        user_20: "gulcin",
+        user_15515696: "bahar",
+        user_15517168: "duygu"
     }
 
     var occUserName = {
@@ -1324,8 +1349,13 @@
         goknur: "12621116",
         cansu: "15480368",
         tuncay: "7729545",
-        gulcin: "20"
+        basak: "15514575",
+        gulcin: "20",
+        bahar: "15515696",
+        duygu: "15517168"
     }
+
+    //15517168
 
     /* File System */
     function addSavedFileBtn(filename, date, fileUser){
@@ -1348,6 +1378,9 @@
                         <div id="o_${filename}" class="welcome_fileBtn_smallBtn">
                             <img class="welcome_fileBtn_icon" src="/assets/img/optic.png" alt="file">
                         </div>
+                        <div id="c_${filename}" class="welcome_fileBtn_smallBtn">
+                            <img class="welcome_fileBtn_icon" src="/assets/img/create_copy.png" alt="file">
+                        </div>
                     </div>`;
         let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
         IDE.welcome.savedFileList.appendChild(div);
@@ -1358,6 +1391,7 @@
         var delBtn = document.querySelector("#d_"+ filename);
         var htmlBtn = document.querySelector("#p_"+ filename);
         var opticBtn = document.querySelector("#o_"+ filename);
+        var copyBtn = document.querySelector("#c_"+ filename);
 
         fileBtn.addEventListener("click", function(e){
             if(IDE.user.occMode){
@@ -1397,7 +1431,12 @@
         });
 
         opticBtn.addEventListener("click", function(e){
-            /* window.open("/player/?file="+ filename +"&mode=optic"); */
+            window.open("/player/?file="+ filename +"&mode=optic");
+            e.stopPropagation();
+        });
+
+        copyBtn.addEventListener("click", function(e){
+            duplicateFile(filename);
             e.stopPropagation();
         });
 
@@ -1445,13 +1484,17 @@
     }
 
 
-    function deleteFileAjax(file){
-        var data = {token: IDE.user.token, file};
+    function deleteFileAjax(deleteList, refreshFileList){
+        console.log("delete", deleteList);
+        var data = {deleteList, refreshFileList};
         $.ajax({url: "/deleteFile", data, success: deleteFileParse, type: "POST", error: ajaxError});
     }
 
     function deleteFileParse(data){
         console.log("deleted File Parse:", data);
+        if(data.success && data.refreshFileList === "1"){
+            $.ajax({url: "/occRefreshList", data: IDE.user, success: occLogin_Parse, type: "POST", error: ajaxError});
+        }
     }
 
     function zipContentAjax(file){
@@ -1760,6 +1803,7 @@
         if(data.success){
             console.log("OCC kaydedildi.");
             hideLoader();
+            duplicateWindowStatus("none");
             IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
         }
     }
@@ -2022,8 +2066,70 @@
 
     function returnData_Parse(data){
         if(data.success){
-            console.log("Kaydedildi");
+            console.log(data);
+            console.log("FileList Dosya Eklendi");
         }
+    }
+
+    function duplicateFile(file){
+        duplicateWindowStatus("block");
+        var duplicate_fileName = document.querySelector("#duplicate_fileName");
+        duplicate_fileName.innerText = file;
+        IDE.user.duplicate_curName = file;
+        console.log("duplicateFile", file);
+    }
+
+    function duplicateWindowStatus(status){
+        var duplicatewindow = document.querySelector("#duplicate_window");
+        duplicatewindow.style.display = status;
+    }
+
+    function occDuplicate(cloneName){
+        showLoader();
+        IDE.user.duplicate_newName = cloneName;
+        $.ajax({url: "/duplicate", data: IDE.user, async: true, success: occDuplicate_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occDuplicate_Parse(data){
+        if(data.success){
+            console.log(data);
+            console.log(data.response.list);
+            console.log("fileName:", data.response.list.fileName );
+
+            var json = data.response.list;
+            json.fileName = data.clone.duplicate_newName;
+            json.uid = data.clone.uid;
+            json.createTime = utils.addTimeStamp("server");
+
+            saveDataAjax(json);
+            occSaveFile(json);
+            deleteFileAjax(data.clone.duplicate_oldJson, "1");
+            addFL(IDE.user.appUser, IDE.user.duplicate_newName);
+            console.log( utils.addTimeStamp("server") );
+            console.log(json);
+            console.log("IDE.user:", IDE.user);
+            console.log("IDE.appUser:", IDE.user.appUser);
+            console.log("IDE.newName:", IDE.user.duplicate_newName);
+        }
+    }
+
+    function addFL(user, file){
+        IDE.user.rescueFile = file;
+        IDE.user.rescueData = {
+            user: user,
+            create: utils.addTimeStamp("server"),
+            files:{
+                activeFile: IDE.user.rescueFile,
+                mainFolder: `${IDE.user.root}/${IDE.user.rescueFile}`,
+                imgFolder: `${IDE.user.root}/${IDE.user.rescueFile}/img`,
+                mainJson: {
+                    path: `${IDE.user.root}/${IDE.user.rescueFile}/${IDE.user.rescueFile}.json`
+
+                }
+            }
+        }
+
+        $.ajax({url: "/return", data: IDE.user, success: returnData_Parse, type: "POST", error: ajaxError});
     }
 
 

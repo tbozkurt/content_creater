@@ -1,0 +1,33 @@
+<div id="box" style="
+  width: 200px;
+  height: 200px;
+  background: lightblue;
+  transform: scale(1.5);
+  transform-origin: top left;
+"></div>
+
+<script>
+    const box = document.getElementById("box");
+
+    box.addEventListener("mousemove", (e) => {
+        // kutunun ekrandaki gerçek boyutu
+        const rect = box.getBoundingClientRect();
+
+        // mouse’un scaled kutu içindeki konumu
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        console.log("Mouse scaled koordinatları:", x, y);
+
+        // Eğer scale öncesindeki (orijinal ölçülere göre) koordinatı istiyorsan:
+        const scaleX = rect.width / box.offsetWidth;
+        const scaleY = rect.height / box.offsetHeight;
+
+        console.log(rect.width, box.offsetWidth);
+
+        const originalX = x / scaleX;
+        const originalY = y / scaleY;
+
+        console.log("Mouse orijinal koordinatları:", originalX, originalY);
+    });
+</script>
