@@ -219,7 +219,7 @@ function JWPlayerRefreshFNC(){
 			width: "100%"
 		}
 		
-		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:true, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, currentMediaID:0, lang:"tr"};
+		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:false, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, currentMediaID:0, lang:"tr"};
 		var playerListMode = false;
 		var playlist = [];
 		for (var x in obj) {
@@ -451,7 +451,7 @@ function JWPlayerRefreshFNC(){
 		}
 		
 		addLoader();
-		
+
 		if(!conf.skin){
 			playerSkin.css("display","none");
 		}
@@ -606,7 +606,7 @@ function JWPlayerRefreshFNC(){
 			}
 
 			hls.on(Hls.Events.LEVEL_UPDATED,function() {
-				LocalSaveBTD(hls.nextLoadLevel);
+				/* LocalSaveBTD(hls.nextLoadLevel); */
 			});
 
 			hls.on(Hls.Events.MANIFEST_PARSED,function() {
@@ -765,14 +765,16 @@ function JWPlayerRefreshFNC(){
 			}
 
 			var capping = 0;
-			if(Height<=360){
+			if(Height<=240){
 				capping=0;
-			}else if(Height<=480){
+			}else if(Height<=360){
 				capping=1;
-			}else if(Height<=959){
+			}else if(Height<=480){
 				capping=2;
-			}else if(Height>960){
+			}else if(Height<=720){
 				capping=3;
+			}else if(Height>960){
+				capping=4;
 			}
 
 			return capping;
@@ -791,7 +793,7 @@ function JWPlayerRefreshFNC(){
 				video.play();
 				PlayingIconVisibleFNC(false);
 				if(!firstCaptureSettings){
-					methods.HlsSelectLevel(-1, true);
+					methods.HlsSelectLevel(LocalBTDTotalGet(), true);
 					if(frag3Loaded){
 						hls.startLoad();
 					}
@@ -961,6 +963,20 @@ function JWPlayerRefreshFNC(){
 				e.preventDefault();
 			}
 		});
+
+		function getClientPoint(e) {
+			if (e.touches && e.touches.length) {
+				return {
+					x: e.touches[0].clientX,
+					y: e.touches[0].clientY
+				};
+			}
+
+			return {
+				x: e.clientX,
+				y: e.clientY
+			};
+		}
 		
 		function gotoCircle(e){
 			if ($mobileDevice) {
@@ -968,10 +984,12 @@ function JWPlayerRefreshFNC(){
 			} else {
 				xMouse = e.pageX;
 			}
-			
-			localX = (xMouse-sliderContainer.offset().left);
 
-			
+			var sliderRect = sliderContainer[0].getBoundingClientRect();
+			var scaleX = sliderContainer[0].offsetWidth / sliderRect.width;
+			const p = getClientPoint(e);
+			localX = (p.x - sliderRect.left) * scaleX;
+
 			if(localX<0){
 				localX=0;
 			}else if(localX > sliderWidth){
@@ -1223,7 +1241,7 @@ function JWPlayerRefreshFNC(){
 				qualityBoxMain.append(_html);
 				ButonArray[i] = $(MainDIV.find(".qualityBox")[i]);
 				ButonArray[i].on("click", function(){
-					methods.HlsSelectLevel($(this).data().quality, true);
+					methods.HlsSelectLevel($(this).data().quality, true, true);
 					blackScreenClose();
 				}).css("cursor", "pointer").data({quality: sortArray[i][1] });
 			}
@@ -1247,16 +1265,27 @@ function JWPlayerRefreshFNC(){
 		}
 		
 		/* Hls videoları için Kalite ayarları Buradan Yapılır */
-		methods.HlsSelectLevel = function (selectedQuality, loaderShow){
+		methods.HlsSelectLevel = function (selectedQuality, loaderShow, click){
 			if(methods.selectedQuality !== selectedQuality){
 				if(loaderShow){
 					LoaderOpen();
 				}
 				methods.selectedQuality = selectedQuality;
 				if(methods.selectedQuality === -1){
+					if(click){
+						hls.currentLevel = -1;
+					}
 					hls.loadLevel = -1;
 				}else{
-					hls.currentLevel = selectedQuality;
+					if(click){
+						hls.currentLevel = selectedQuality;
+					}else{
+						hls.loadLevel = selectedQuality;
+					}
+				}
+
+				if(click){
+					LocalSaveBTD(selectedQuality);
 				}
 				qualitySelectedBtn(selectedQuality);
 				methods.resizePosition();
@@ -1447,6 +1476,10 @@ function JWPlayerRefreshFNC(){
 		videoContainer.on("contextmenu", function (e) {
 			e.preventDefault();
 		});
+
+		methods.videoSkinHide = function(){
+			playerSkin.css("display", "none");
+		}
 		
 		function digit(x) {
 			var dk = parseInt(x / 60);

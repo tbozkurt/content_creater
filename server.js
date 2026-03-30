@@ -9,7 +9,7 @@ var archiver = require("archiver");
 var Users={};
 var currentUploadFolder;
 var token;
-var service = "preprod";
+var service = "www";
 
 /////////////////////////
 var word = ["a","b","w","c","d","e","f","g","h","j","y","z"];
@@ -29,7 +29,8 @@ var occUser = {
     user_7729545: "tuncay",
     user_20: "gulcin",
     user_15515696: "bahar",
-    user_15517168: "duygu"
+    user_15517168: "duygu",
+    user_12896817: "taner"
 }
 /////////////////////////
 
@@ -38,8 +39,8 @@ app.use("/libs", express.static(__dirname + "/node_modules"));
 app.use('/files', express.static('files'));
 app.use('/assets', express.static('assets'));
 
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '11mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '11mb' }));
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -47,10 +48,18 @@ var storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         cb(null, file.originalname);
+    },
+    limits: {
+        fileSize: 11 * 1024 * 1024 // 10 MB
     }
 });
 
-var upload = multer({ storage: storage })
+var upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 11 * 1024 * 1024 // 11 MB
+    }
+});
 
 function getZip(filename, folder, token){
     return new Promise(function(resolve, reject){
@@ -186,17 +195,48 @@ async function createNewFileFNC(req, res){
     var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
     var copyImageF = await copyFile(path.join(__dirname, "assets/img/template/draw_icon.png"), FD.files.imgFolder+"/draw_icon.png");
     var copyImageG = await copyFile(path.join(__dirname, "assets/img/template/draw_easer.png"), FD.files.imgFolder+"/draw_easer.png");
+    var copyImageH = await copyFile(path.join(__dirname, "assets/img/template/sp_pause.png"), FD.files.imgFolder+"/sp_pause.png");
+    var copyImageJ = await copyFile(path.join(__dirname, "assets/img/template/sp_play.png"), FD.files.imgFolder+"/sp_play.png");
+    var copyImageK = await copyFile(path.join(__dirname, "assets/img/template/sp_return.png"), FD.files.imgFolder+"/sp_return.png");
+    var copyImageL = await copyFile(path.join(__dirname, "assets/img/template/record_off.png"), FD.files.imgFolder+"/record_off.png");
+    var copyImageM = await copyFile(path.join(__dirname, "assets/img/template/record_on.png"), FD.files.imgFolder+"/record_on.png");
     console.log("-- CREATE NEW FINISH--");
 }
 
 //SaveDataFNC
 app.post("/saveData", saveDataFNC);
+/*
 async function saveDataFNC(req, res){
     console.log("-- SAVE DATA START--");
     var stringJSON = JSON.parse(req.body.stringJSON);
     var FD = Users[req.body.token];
     FD.files.mainJson = await createJson(FD.files.mainJson.path, stringJSON, {encoding:"utf8", flag:"w"});
     res.send({response: FD, success: true});
+    console.log("-- SAVE DATA FINISH--", FD.files.mainJson.path);
+}
+*/
+
+async function saveDataFNC(req, res){
+    console.log("-- SAVE DATA START--");
+
+    var FD = Users[req.body.token];
+
+    if (!FD || !FD.files || !FD.files.mainJson) {
+        return res.status(400).send({
+            success: false,
+            message: "Aktif dosya yok. Önce dosya seçilmeli veya oluşturulmalı."
+        });
+    }
+
+    var stringJSON = JSON.parse(req.body.stringJSON);
+
+    FD.files.mainJson = await createJson(
+        FD.files.mainJson.path,
+        stringJSON,
+        { encoding:"utf8", flag:"w" }
+    );
+
+    res.send({ response: FD, success: true });
     console.log("-- SAVE DATA FINISH--", FD.files.mainJson.path);
 }
 
@@ -218,6 +258,11 @@ async function selectFileFNC(req, res){
         var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
         var copyImageF = await copyFile(path.join(__dirname, "assets/img/template/draw_icon.png"), FD.files.imgFolder+"/draw_icon.png");
         var copyImageG = await copyFile(path.join(__dirname, "assets/img/template/draw_easer.png"), FD.files.imgFolder+"/draw_easer.png");
+        var copyImageH = await copyFile(path.join(__dirname, "assets/img/template/sp_pause.png"), FD.files.imgFolder+"/sp_pause.png");
+        var copyImageJ = await copyFile(path.join(__dirname, "assets/img/template/sp_play.png"), FD.files.imgFolder+"/sp_play.png");
+        var copyImageK = await copyFile(path.join(__dirname, "assets/img/template/sp_return.png"), FD.files.imgFolder+"/sp_return.png");
+        var copyImageL = await copyFile(path.join(__dirname, "assets/img/template/record_off.png"), FD.files.imgFolder+"/record_off.png");
+        var copyImageM = await copyFile(path.join(__dirname, "assets/img/template/record_on.png"), FD.files.imgFolder+"/record_on.png");
         res.send({success: true, FILE: FD});
     }else{
         res.send({success: false});
@@ -339,8 +384,17 @@ async function downloadFNC(req, res){
 }
 
 //Upload Image
-app.post('/uploadImage', upload.array("uploadImage", 12), function (req, res) {
-    res.send(req.files);
+app.post('/uploadImage', function (req, res) {
+    upload.array("uploadImage", 12)(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).send({ success: false, message: "Dosya boyutu limiti aşıldı" });
+            }
+        } else if (err) {
+            return res.status(500).send({ success: false, message: "Yükleme hatası" });
+        }
+        res.send(req.files);
+    });
 });
 
 var userList = {
@@ -353,7 +407,8 @@ var userList = {
     cansu:{password:"3c2x1z"},
     gulcin:{password:"1q2w3e"},
     bahar:{password:"1q2w3e"},
-    duygu:{password:"1b9d8s4d"}
+    duygu:{password:"1q2w3e"},
+    taner:{password:"1q2w3e"},
 };
 
 //Read File List
@@ -404,6 +459,12 @@ app.use("/ide", function(req, res) {
 });
 
 async function initApp(req, res){
+    if(req.body.service){
+        service = req.body.service;
+    }
+
+    console.log(service);
+
     token = "User_"+getRandomInt(9000)+"_"+word[getRandomInt(10)]+"_"+getRandomInt(9000);
     console.log('\033[2J');
     console.log("///////START APP/////////");
@@ -469,6 +530,7 @@ app.post("/occLogin", function(req, res){
     var username = req.body.username;
     var password = req.body.password;
     var token = req.body.token;
+    console.log("service:", service);
 
     console.log(username, password, token, service);
     console.log(`https://${service}.okulistik.com/srv/login?username=${username}&password=${password}&auth_type=1&ltype=2&utype=other`);
@@ -536,7 +598,7 @@ app.post("/occSaveFile", function(req, res){
         }
     }).then(response => {
         console.log("res", response.data);
-        res.send({success: true, response: response.data});
+        res.send({response: response.data, domain:service});
     }).catch(err => {
         console.log("error in request", err);
     });

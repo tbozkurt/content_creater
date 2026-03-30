@@ -81,9 +81,16 @@
         //jsonV2 = data.FILE.files.data;
         jsonV2 = data;
         var jsonPath = `/files/${file}/`;
-        //Player.startBuild(jsonV2, 0, "#000000", newKT, mode, {Url:("/files/"+ data.FILE.files.activeFile +"/")} );
 
-        Player.startBuild(jsonV2, 0, "#404040", newKT, "normal", {Url:jsonPath});
+        Player.startBuild({
+            json: jsonV2,
+            startScene:0,
+            container: newKT,
+            mode: "normal",
+            activeContent: {
+                Url: jsonPath
+            }
+        });
         var elements = addNavigation();
         Player.startPlayer(elements);
 

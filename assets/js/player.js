@@ -1,5 +1,4 @@
 function PLAYER(){
-
     this.allScene = [];
     this.sceneIndex = 0;
     var unique = {};
@@ -20,6 +19,7 @@ function PLAYER(){
         }),
         autoNext:null,
         screenCloseTimer: null,
+        dataSendTimer: null,
         screenDuration: null,
         backBtn: null,
         nextBtn: null,
@@ -88,18 +88,21 @@ function PLAYER(){
                         borderRadius: This.getRadius(e.cornerRadius),
                         //boxSizing:"border-box"
                         outline: `${e.strokeWidth}px solid ${e.stroke}`,
-                        outlineOffset: `${borderOffset}px`
+                        outlineOffset: `${borderOffset}px`,
+                        params: e.Layer.params
                     }, This.getStandart(e));
                 }else if(e.Layer.type === "objectCircle"){
                     obj = Object.assign({
                         backgroundColor: e.fill,
                         borderRadius: e.borderRadius+"px",
+                        params: e.Layer.params
                     }, This.getStandart(e));
                 }else if (e.Layer.type === "objectImg") {
                     obj = Object.assign({
                         backgroundImage: `url(${player.root+e.src})`,
                         backgroundSize: `${e.width}px ${e.height}px`,
                         borderRadius: This.getRadius(e.cornerRadius),
+                        params: e.Layer.params
                     }, This.getStandart(e));
                 }else if(e.Layer.type === "objectText"){
                     obj = Object.assign({
@@ -110,6 +113,7 @@ function PLAYER(){
                         lineHeight: e.lineHeight,
                         textAlign: e.align,
                         color: e.fill,
+                        params: e.Layer.params
                     }, This.getStandart(e));
 
                     if(e.verticalAlign === "middle"){
@@ -129,8 +133,25 @@ function PLAYER(){
         return Kids;
     }
 
-    this.addMovieClip = function(kids, container, index){
+    this.addMovieClip = function(kids, container, index, addData){
         var This = this;
+
+        function addKidsData(e, type){
+            var param = {};
+            if(addData){
+                if(e.params){
+                    param = e.params;
+                }
+
+                addData.kids.push({
+                    id: e.id,
+                    main: type,
+                    data: param,
+                    className: e.className,
+                });
+            }
+        }
+
         kids.map(function(e){
             if(e.id){
                 e.id = "s"+index+"-"+e.id;
@@ -140,50 +161,64 @@ function PLAYER(){
                 var rect = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 Object.assign(rect.style, e);
                 container.appendChild(rect);
+                addKidsData(e, rect);
             }if(e.type === "objectCircle"){
                 var circle = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 Object.assign(circle.style, e);
                 container.appendChild(circle);
+                addKidsData(e, circle);
             }else if(e.type === "objectImg"){
                 var img = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 Object.assign(img.style, e);
                 container.appendChild(img);
+                addKidsData(e, img);
             }else if(e.type === "objectText"){
                 var text = utils.addDOM({className:e.className, id:e.id, layername: e.name, innerText: e.text, ccid:e.unique});
                 Object.assign(text.style, e);
                 container.appendChild(text);
+                addKidsData(e, text);
             }else if(e.type === "objectMovieClip"){
                 var mc = utils.addDOM({className:e.className, id:e.id, layername: e.name, ccid:e.unique});
                 container.appendChild(mc);
-                SP[index].elementList.push({id:e.id, main:mc, data:e.params});
-                This.addMovieClip(e.Kids, mc);
+                var tempObj = {
+                    id: e.id,
+                    main: mc,
+                    data: e.params,
+                    className: e.className,
+                    kids: []
+                }
+                SP[index].elementList.push(tempObj);
+                This.addMovieClip(e.Kids, mc, index, tempObj);
                 Object.assign(mc.style, e);
             }
         });
     }
 
-    this.startBuild = function(json, startScene, stageBG, container, Mode, ActiveContent, scoreUpdate){
+    this.startBuild = function(BUILD){
         console.log("################ PLAYER ################");
-        console.log(json);
-        AC=ActiveContent;
+        console.log(BUILD);
+        AC=BUILD.activeContent;
         player.root = AC.Url;
-        player.scoreUpdate = scoreUpdate;
-        jsonV2 = json;
-        if(Mode === "optic"){
+        PLX.scoreUpdate = BUILD.scoreUpdate;
+        PLX.HDX = BUILD.HDX;
+        PLX.mode = BUILD.mode;
+        jsonV2 = BUILD.json;
+        if(BUILD.mode === "optic"){
             KT.Mode = true;
-            container = addKT_HTML(container);
+            BUILD.container = addKT_HTML(BUILD.container);
         }
 
-        player.containerDOM = container;
-        //player.containerDOM.style.overflow = "hidden";
+        player.containerDOM = BUILD.container;
         player.mainDOM = utils.addDOM({id: "PlayerMain"});
-        container.appendChild(player.mainDOM);
+        BUILD.container.appendChild(player.mainDOM);
+        PLX.isEKT = jsonV2.fileName.includes("EKT");
 
         var sceneCSS = [];
-        json.slides.map(function(slide, index){
+        jsonV2.slides.map(function(slide, index){
             var convertObjectsCSS = This.convertObject(slide.all);
             sceneCSS.push(convertObjectsCSS);
             SD[index] = {
+                name: slide.name,
                 id: index,
                 type: "e",
                 duration:0,
@@ -204,11 +239,17 @@ function PLAYER(){
                 id: index,
                 fnc:[],
                 popupWindow: {},
-                popEx: {},
+                popEx: [],
                 screenCloseDOM:null,
-                directive:{}
+                directive:{},
+                soundPlayer:[],
+                feedBack:[],
+                soundRecord:{},
+                history:[]
             }
         });
+
+        HDE_virtualControlBtn();
 
         sceneCSS.map(function(allObject, i){
             var sceneDiv = document.createElement('div');
@@ -237,7 +278,7 @@ function PLAYER(){
             console.log("");
         });
 
-        addStartScreen(Mode);
+        addStartScreen(BUILD.mode);
         this.addEvents();
         addWarning();
         addCheckIcon();
@@ -245,17 +286,20 @@ function PLAYER(){
         addOpenEndedDOM();
         infoSystemFNC();
 
-        if(Mode === "optic"){
-            This.build_KT(json);
-        }else if(Mode === "preview"){
-            Preview_HTML(container, startScene);
+        if(BUILD.mode === "optic"){
+            This.build_KT(jsonV2);
+        }else if(BUILD.mode === "preview"){
+            Preview_HTML(BUILD.container, BUILD.startScene);
             initKACountDown();
         }
 
         this.scoreCalc(false);
+        PLX.Mode = BUILD.mode;
+        HDE_Status(BUILD);
     }
 
-    this.scoreCalc = function(saveData){
+    this.scoreCalc = function(saveData, hideEndScreen){
+        var viewEndScreen = !hideEndScreen;
         var complete = true;
         var score = {
             right:0,
@@ -289,10 +333,12 @@ function PLAYER(){
                 }
             }
 
-            if(scene.complete){
-                score.right++;
-            }else{
-                score.empty++;
+            if(scene.type === "e"){
+                if(scene.complete){
+                    score.right++;
+                }else{
+                    score.empty++;
+                }
             }
 
             if(!scene.complete){
@@ -316,9 +362,8 @@ function PLAYER(){
         }
 
         var state = JSON.stringify(setState());
-
-        if(player.scoreUpdate){
-            player.scoreUpdate({
+        if(PLX.scoreUpdate){
+            PLX.scoreUpdate({
                 Access: parseInt(score.access),
                 Success: parseInt(score.success),
                 Duration: score.duration,
@@ -330,7 +375,7 @@ function PLAYER(){
                 TotalRight: score.empty,
                 CurrentSceneType: "E",
                 Complete: complete
-            }, saveData);
+            }, saveData, viewEndScreen);
         }
 
         if(PLX.scoreTable){
@@ -346,33 +391,78 @@ function PLAYER(){
 
             PLX.scoreTable.innerHTML = html;
         }
-
-        /* addState(); */
     }
 
+    function HDE_ScoreCalc(complete){
+        var accessCount=0;
+        var rightCount=0;
+        var emptyCount=0;
+        var totalAccessScene = SP.length;
+        var totalSuccessScene = 0;
+        var totalDuration = 0;
+        var accessPercent = 0;
+        var successPercent = 0;
+
+
+        if(complete){
+            SP.map(function(sp){
+                if(sp.hdeStatus === 'right'){
+                    rightCount++;
+                }
+
+                if(sp.hdeStatus === 'empty'){
+                    emptyCount++;
+                }else{
+                    accessCount++;
+                }
+
+                if(sp.hdeStatus.length){
+                    totalSuccessScene++;
+                }
+            });
+
+            accessPercent = parseInt((accessCount/totalAccessScene)*100);
+            successPercent = parseInt((rightCount/totalSuccessScene)*100);
+        }
+
+        SD.map(function(sd){
+            totalDuration += sd.duration;
+        });
+
+        var state = setState();
+        if(complete){
+            state.status = 'complete';
+        }else{
+            state.status = 'update';
+        }
+
+        if (PLX.HDX) {
+            PLX.HDX({
+                Access: accessPercent,
+                Success: successPercent,
+                Duration: totalDuration,
+                Right: accessCount,
+                Wrong: 1,
+                Empty: emptyCount,
+                Attempt: 0,
+                State: JSON.stringify(state),
+                TotalRight: 0,
+                CurrentSceneType: "E",
+                Complete: complete,
+                Cmd: state.status
+            });
+        }
+    }
 
     function setState(){
-        var version = jsonV2.createTime.replace(/[-: ]/g, "");
-        var state = {version: version};
+        var state = {version: AC.VersionFile, status:"update", questions:{}};
+        if(AC.user){state.uid = AC.user.uid};
 
-        SD.map(function(slide, index){
-            state["s"+index] = {h0:slide.inputs};
+        SD.map(function(slide){
+            state.questions[slide.name] = [slide.inputs];
         });
 
         return state;
-    }
-
-
-    function addState(){
-        var gg = 0;
-        gg++;
-        console.log( stateLog );
-        if(!stateLog[This.sceneIndex]){
-            console.log("ilgili kayıt yok");
-            stateLog[This.sceneIndex] = {}
-        }
-
-        stateLog[This.sceneIndex].tuncay;
     }
 
     this.scoreCalc2 = function(){
@@ -463,8 +553,8 @@ function PLAYER(){
             score.access = accessTotalScene;
         }
 
-        if(player.scoreUpdate){
-            player.scoreUpdate({
+        if(PLX.scoreUpdate){
+            PLX.scoreUpdate({
                 Access: parseInt(score.access),
                 Success: parseInt(score.success),
                 Duration: score.duration,
@@ -557,8 +647,8 @@ function PLAYER(){
             score.access = 0;
         }
 
-        if(player.scoreUpdate){
-            player.scoreUpdate({
+        if(PLX.scoreUpdate){
+            PLX.scoreUpdate({
                 Access: parseInt(score.access),
                 Success: parseInt(score.success),
                 Duration: score.duration,
@@ -623,8 +713,8 @@ function PLAYER(){
         }
 
         /*
-        if(player.scoreUpdate){
-            player.scoreUpdate({
+        if(PLX.scoreUpdate){
+            PLX.scoreUpdate({
                 Access: score.access,
                 Success: parseInt(score.success),
                 Duration: score.duration,
@@ -649,15 +739,288 @@ function PLAYER(){
         }
     }
 
+
+    /* HDE Zone */
+    function inputsChange(SD, id, data){
+        if(!PLX.showReadOnly){
+            if(id !== undefined && id !== null){
+                SD.inputs["box"+ id].value = data;
+            }
+
+            if(jsonV2.fileName.includes("HDE")){
+                clearInterval(player.dataSendTimer);
+                player.dataSendTimer = setTimeout(function(){
+                    console.log(SD.inputs);
+                    HDE_ScoreCalc(false);
+                }, 1000);
+            }
+        }
+    }
+
+    function HDE_virtualControlBtn(){
+        if(jsonV2.fileName.includes("HDE")){
+            player.virtualControlBtn = utils.addDOM({id: "virtualControlBtn"});
+            player.mainDOM.appendChild(player.virtualControlBtn);
+
+            SP.map(function(scene){
+                scene.controlBtn = player.virtualControlBtn;
+            });
+        }
+    }
+
+    // HDE file, version control and history load
+    function HDE_Status(BUILD){
+        console.log('<<HDE STATUS>>');
+        if(jsonV2.fileName.includes("HDE")){
+            if(BUILD){
+                if(BUILD.accessData){
+                    var contentJsonVersion = AC.VersionFile;
+                    var dataJsonVersion = BUILD.accessData.state.version;
+                    console.log("contentJsonVersion", contentJsonVersion);
+                    console.log("dataJsonVersion", dataJsonVersion);
+
+                    if(contentJsonVersion === dataJsonVersion){
+                        var allHistory = BUILD.accessData.state.questions;
+                        console.log('allHistory:', allHistory);
+
+                        for(var sceneName in allHistory){
+                            SP.map(function(scene, index) {
+                                if(sceneName === scene.name){
+                                    console.log( allHistory[sceneName] );
+                                    scene.history = allHistory[sceneName];
+                                    SD[index].inputs = allHistory[sceneName][0];
+                                    console.log('sahne', sceneName, scene.name, index, 'eklendi');
+                                }
+                            });
+                        }
+
+                        addHistoryControl();
+                    }
+                }
+            }
+
+            addHDEStatus();
+        }
+    }
+
+    // HDE history execute
+    function addHistoryControl(){
+        for(var scene in SP){
+            SP[scene].fnc.map(function(fnc, index){
+                try{
+                    if(fnc.history){
+                        fnc.history();
+                    }
+                }catch(err){
+                    console.log("<< History Load Fail:", index);
+                    console.log("Err", err, ">>");
+                }
+            });
+        }
+    }
+
+    // HDE show and hide user answer
+    this.showAndHideAnswerFNC = function(view){
+        var sp = SP[This.sceneIndex];
+        var sd = SD[This.sceneIndex];
+
+        if(view === 'rightAnswer'){
+            sp.history[0] = JSON.parse(JSON.stringify(sd.inputs));
+            sp.fnc.map(function(fnc){
+                fnc.answer();
+            });
+        }else{
+            if(sp.history.length){
+                sd.inputs = JSON.parse(JSON.stringify(sp.history[0]));
+                sp.fnc.map(function(fnc){
+                    try{
+                        if(fnc.reset){
+                            fnc.reset();
+                        }
+
+                        if(fnc.history){
+                            fnc.history();
+                        }
+
+                    }catch(err){}
+                });
+            }
+        }
+    }
+
+    // HDE Button Events
+    function HDE_addEvent(){
+        if(player.userAnswer){
+            player.userAnswer.addEventListener("click", function(){
+                this.style.display = 'none';
+                player.rightAnswer.style.display = 'block';
+                This.showAndHideAnswerFNC('userAnswer');
+            });
+
+            player.userAnswer.style.display = 'none';
+        }
+
+        if(player.rightAnswer){
+            player.rightAnswer.addEventListener("click", function(){
+                this.style.display = 'none';
+                player.userAnswer.style.display = 'block';
+                This.showAndHideAnswerFNC('rightAnswer');
+            });
+
+            player.rightAnswer.style.display = 'none';
+        }
+
+        if(player.videoSolution){
+            player.videoSolution.addEventListener("click", function(){
+                var sp = SP[This.sceneIndex];
+                if(sp.popEx[0].clicked){
+                    sp.popEx[0].window.style.visibility = "hidden";
+                    sp.popEx[0].clicked = false;
+                    This.popupVideoPlayStatus(sp, false);
+                }else{
+                    sp.popEx[0].window.style.visibility = "visible";
+                    sp.popEx[0].clicked = true;
+                    PLX.autoSceneChange_stopQuickly();
+                }
+            });
+
+            player.videoSolution.style.display = 'none';
+        }
+    }
+
+    function HDE_endExam(){
+        PLX.showReadOnly = true;
+        HDE_ControlFNC();
+        if(player.watcher_main){
+            player.watcher_main.style.visibility = "hidden";
+        }
+        player.readOnlyDOM.style.visibility = "visible";
+        clearInterval(player.dataSendTimer);
+        HDE_ScoreCalc(true);
+        HDE_StatusFNC();
+
+        SP.map(function(sp){
+            sp.fnc.map(function(fnc){
+                fnc.close();
+            });
+        });
+
+        if(SP[This.sceneIndex].allControl){
+            SP[This.sceneIndex].allControl.style.display = 'none';
+        }
+    }
+
+    // HDE answer control
+    function HDE_ControlFNC(){
+        console.log("HDEControl FNC");
+
+        SP.map(function(sp){
+            var totalScore = {totalRight:0, totalWrong:0, totalEmpty:0};
+
+            if(Object.keys(sp.tempAnswer).length){
+                sp.fnc.map(function(fnc, index){
+                    var currentScore = fnc.control();
+                    totalScore.totalRight += currentScore.totalRight;
+                    totalScore.totalWrong += currentScore.totalWrong;
+                    totalScore.totalEmpty += currentScore.totalEmpty;
+                    fnc.currentStatus = scoreEvalution(currentScore);
+                });
+                sp.hdeStatus = scoreEvalution(totalScore);
+            }else{
+                sp.hdeStatus = '';
+            }
+        });
+
+        watcherHDE();
+    }
+
+    function watcherHDE(){
+        console.log('watcherHDE FNC');
+
+        if(PLX.Mode === "normal"){
+            var emptyFound = false;
+            SP.map(function(sp){
+                if(sp.hdeStatus === "empty"){
+                    emptyFound = true;
+                    player.watcherListAllBox[sp.id].style.display = "block";
+                }else{
+                    player.watcherListAllBox[sp.id].style.display = "none";
+                }
+            });
+
+            /* Burada Kaldın */
+            if(emptyFound){
+                player.watcher_head.innerHTML = 'Tamamlanmayan ekranlar var!';
+                player.watcher_footer.style.display = 'none';
+            }else{
+                player.watcher_head.innerHTML = 'Sonlandırmak istediğinizden emin misiniz!';
+                player.watcher_footer.style.display = 'none';
+            }
+
+            player.watcher_main.style.visibility = "visible";
+        }
+    }
+
+    function HDE_StatusFNC(){
+        if(jsonV2.fileName.includes("HDE") && PLX.showReadOnly){
+            var sp = SP[This.sceneIndex];
+
+            var hdeStatus = sp.hdeStatus;
+            var iconDOM = player.statusIcon[hdeStatus];
+
+            if(iconDOM){
+                player.statusIconMain.style.display = "block";
+                for(var name in player.statusIcon){
+                    player.statusIcon[name].style.visibility = "hidden";
+                }
+
+                iconDOM.style.visibility = "visible";
+            }else{
+                player.statusIconMain.style.display = "none";
+            }
+
+            var userAnswerView;
+            var rightAnswerView;
+            var videoSolutionView = 'block';
+
+            if(hdeStatus === 'right' && hdeStatus === 'right'){
+                userAnswerView = 'none';
+                rightAnswerView = 'none';
+            }else if(!Object.keys(sp.tempAnswer).length){
+                userAnswerView = 'none';
+                rightAnswerView = 'none';
+            } else{
+                userAnswerView = 'none';
+                rightAnswerView = 'block';
+            }
+
+            if(!sp.popEx.length){
+                videoSolutionView = 'none'
+            }
+
+            if(player.userAnswer){
+                player.userAnswer.style.display = userAnswerView;
+            }
+
+            if(player.rightAnswer){
+                player.rightAnswer.style.display = rightAnswerView;
+            }
+
+            if(player.videoSolution){
+                player.videoSolution.style.display = videoSolutionView;
+            }
+
+            This.showAndHideAnswerFNC('userAnswer');
+        }
+    }
+
     /* Score Evalution */
     function scoreEvalution(score){
         if(score.totalRight && !score.totalWrong && !score.totalEmpty){
             return "right";
         }else if(!score.totalWrong && !score.totalRight){
             return "empty";
-        }else if(score.totalRight && !score.totalWrong){
-            return "partially";
-        } else{
+        }else{
             return "wrong";
         }
     }
@@ -678,8 +1041,7 @@ function PLAYER(){
         }
         */
 
-        This.sceneComplete();
-        This.scoreCalc(true);
+        This.sceneComplete(true);
         This.nextScene();
     }
 
@@ -715,7 +1077,7 @@ function PLAYER(){
             This.playRightAudio();
             //SD.right = totalScore.totalRight;
             //SD.empty=0;
-            This.sceneComplete();
+            This.sceneComplete(false);
             This.nextScene();
             SP.fnc.map(function(fnc){
                 fnc.right(finalStatus);
@@ -724,6 +1086,7 @@ function PLAYER(){
             controlBtnView(SP, "disable");
             answerBtnView(SP, "disable");
             checkViewFNC(SD);
+            showFeedBack("right", "auto", 0);
         }else{
             /*
             if(finalStatus === "partially"){
@@ -751,7 +1114,10 @@ function PLAYER(){
 
             if(SD.attempt >= 4){
                 answerBtnView(SP, "enable");
+                showFeedBack("answer", "auto", 0);
             }
+
+            showFeedBack("wrong", "auto", SD.historyRight.length);
         }
 
         console.log("History:", SD.historyRight);
@@ -765,6 +1131,8 @@ function PLAYER(){
         var init = {};
         console.log(SP);
         console.log(SD);
+        This.convertRubrik(index);
+        SP.tempAnswer = JSON.parse(JSON.stringify(jsonV2.slides[index].answer));
         SP.elementList.map(function(obj){
             if(obj.id.includes("selectButon")){
                 init["initCS"] = This.initCS;
@@ -784,9 +1152,15 @@ function PLAYER(){
                 init["initPOINT"] = This.initPOINT;
             }else if(obj.id.includes("popupWindow")){
                 init["initVIDEO"] = This.initVIDEO;
+            }else if(obj.id.includes("feedback")){
+                init["initVIDEO"] = This.initVIDEO;
             }else if(obj.id.includes("videoBox")){
                 init["initVIDEO"] = This.initVIDEO;
                 SD.type = "a";
+            }else if(obj.id.includes("soundRecord")){
+                init["initRECORD"] = This.initRECORD;
+            }else if(obj.id.includes("wordBox")){
+                init["initWORD"] = This.initWORD;
             }
         });
 
@@ -795,8 +1169,7 @@ function PLAYER(){
         for(var p in init){
             init[p](SP, SD, index);
         }
-
-        SD.totalRight = SD.empty = Object.keys(jsonV2.slides[index].answer).length;
+        SD.totalRight = SD.empty = Object.keys(SP.tempAnswer).length;
     }
 
     function controlBtnView(SP, status){
@@ -834,7 +1207,6 @@ function PLAYER(){
         player.infoPopupDOM.innerHTML = '<img src="assets/img/player/info_popup.png"><div class="infoPopupCloseBtn"></div>';
 
         player.infoBtnDOM.addEventListener("click", function(e){
-            console.log("click");
             player.infoPopupDOM.style.visibility = "visible";
         });
 
@@ -842,7 +1214,7 @@ function PLAYER(){
             player.infoPopupDOM.style.visibility = "hidden";
         });
 
-        player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png"><div class="infoPopupCloseBtn"></div>';
+        player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png">';
     }
 
 
@@ -866,8 +1238,23 @@ function PLAYER(){
             player.Normal_NavListMain.style.visibility = "hidden";
         });
 
-        player.watcher_main.innerHTML = '<div class="watcher_container"><div class="watcher_head">Tamamlanmayan ekranlar var!</div><div class="watcher_footer">Tamamlanmayan ekranlara dönmek için butonlara tıklayın.</div><div class="watcher_list"></div></div>';
+        player.watcher_main.innerHTML = '<div class="watcher_container">' +
+            '<div class="watcher_head">Tamamlanmayan ekranlar var!</div>' +
+            '<div class="watcher_footer">Tamamlanmayan ekranlara dönmek için butonlara tıklayın.</div>' +
+            '<div class="watcher_list"></div>' +
+            '<div class="watcher_mainBtn">' +
+                '<div class="watcher_standart watcher_returnBtn">Geri Dön</div>' +
+                '<div class="watcher_standart watcher_endBtn">Sonlandır</div>' +
+            '</div>' +
+        '</div>';
+
         var watcherList = player.watcher_main.querySelector(".watcher_list");
+        player.watcher_head = player.watcher_main.querySelector(".watcher_head");
+        player.watcher_footer = player.watcher_main.querySelector(".watcher_footer");
+        player.watcher_mainBtn = player.watcher_main.querySelector(".watcher_mainBtn");
+        player.watcher_returnBtn = player.watcher_main.querySelector(".watcher_returnBtn");
+        player.watcher_endBtn = player.watcher_main.querySelector(".watcher_endBtn");
+
 
         SD.map(function(e, i){
             var navBox = utils.addDOM({className: "Normal_NavList_Box", textContent:(i+1)});
@@ -908,23 +1295,39 @@ function PLAYER(){
             player.Normal_NavListMain.style.visibility = "hidden";
         });
 
+        if(jsonV2.fileName.includes("HDE")){
+            player.watcher_mainBtn.style.display = 'flex';
+
+            player.watcher_returnBtn.addEventListener("click", function(){
+                player.watcher_main.style.visibility = "hidden";
+            });
+
+            player.watcher_endBtn.addEventListener("click", function(){
+                HDE_endExam();
+            });
+
+            HDE_addEvent();
+        }
+
         player.navListAllBox = player.Normal_NavListMain.querySelectorAll(".Normal_NavList_Box");
         player.watcherListAllBox = player.watcher_main.querySelectorAll(".watcher_box");
     }
 
 
     function endScreenBoxStatus(){
-        var unComplete = 0;
-        for(var x=0; x<SD.length; x++){
-            if(SD[x].complete){
-                player.watcherListAllBox[x].style.display = "none";
-            }else{
-                unComplete++;
+        if(PLX.Mode === "normal"){
+            var unComplete = 0;
+            for(var x=0; x<SD.length; x++){
+                if(SD[x].complete){
+                    player.watcherListAllBox[x].style.display = "none";
+                }else{
+                    unComplete++;
+                }
             }
-        }
 
-        if(unComplete){
-            player.watcher_main.style.visibility = "visible";
+            if(unComplete){
+                player.watcher_main.style.visibility = "visible";
+            }
         }
     }
 
@@ -954,7 +1357,6 @@ function PLAYER(){
         player.openEndedDOM.style.visibility = "hidden";
     }
 
-
     //add read-only mode
     function addReadOnlyDOM(SP, index){
         player.readOnlyDOM = utils.addDOM({className: "readOnlyDOM"});
@@ -963,7 +1365,19 @@ function PLAYER(){
     }
 
     this.showReadOnly = function(){
-        player.readOnlyDOM.style.visibility = "visible";
+        if(!jsonV2.fileName.includes("HDE")){
+            player.readOnlyDOM.style.visibility = "visible";
+            PLX.showReadOnly = true;
+            SP.map(function(sp){
+                if(sp.completeBtn){
+                    sp.completeBtn.style.opacity=0.5;
+                    sp.completeBtn.style.cursor="default";
+                    sp.completeBtn.style.pointerEvents="none";
+                }
+
+                sp.screenCloseDOM.style.display = "block";
+            });
+        }
     }
 
     //add tooltip
@@ -986,13 +1400,39 @@ function PLAYER(){
         player.notice = player.checkIconDOM.querySelector(".notice");
     }
 
+    //add check
+    function addHDEStatus(){
+        player.statusIconMain = utils.addDOM({id: "statusIconMain", className: "statusIconMain"});
+        player.mainDOM.appendChild(player.statusIconMain);
+        player.statusIconMain.innerHTML = '<img id="statusRightIcon" src="assets/img/player/status_right.png"><img id="statusWrongIcon" src="assets/img/player/status_wrong.png"><img id="statusEmptyIcon" src="assets/img/player/status_empty.png">';
+        player.statusIcon = {
+            right: player.statusIconMain.querySelector("#statusRightIcon"),
+            wrong: player.statusIconMain.querySelector("#statusWrongIcon"),
+            empty: player.statusIconMain.querySelector("#statusEmptyIcon")
+        };
+    }
+
     function checkViewFNC(SD){
         if(SD.complete){
             player.checkIconDOM.style.visibility = "visible";
             var currentWarning = SD.historyRight.length;
-            player.notice.innerHTML = currentWarning+". denemede tamamlandı.";
+            if(currentWarning){
+                player.notice.style.visibility = "visible";
+                player.notice.innerHTML = currentWarning+". denemede tamamlandı.";
+            }else{
+                player.notice.style.visibility = "hidden";
+            }
         }else{
             player.checkIconDOM.style.visibility = "hidden";
+            player.notice.style.visibility = "hidden";
+        }
+
+        if(!jsonV2.fileName.includes("HDE")){
+            if(SD.type === "e"){
+                player.infoBtnDOM.style.display = "block";
+            }else{
+                player.infoBtnDOM.style.display = "none";
+            }
         }
     }
 
@@ -1039,10 +1479,8 @@ function PLAYER(){
     This.searchTool = function(Scene, index, SP){
         var popupWindow;
         Scene.childNodes.forEach(function(obj) {
-            /*
             if(obj.id.includes("popupButon")){
                 var id = parseInt( obj.id.split("_")[1] );
-                console.log("popupButon", id);
                 if(!SP.popEx[id]){
                     SP.popEx[id] = {};
                 }
@@ -1050,13 +1488,13 @@ function PLAYER(){
                 SP.popEx[id].btn = obj;
 
                 obj.addEventListener("click", function(){
-                    if(SP.popupWindow.clicked){
+                    if(SP.popEx[id].clicked){
                         SP.popEx[id].window.style.visibility = "hidden";
-                        SP.popupWindow.clicked = false;
+                        SP.popEx[id].clicked = false;
                         This.popupVideoPlayStatus(SP, false);
                     }else{
                         SP.popEx[id].window.style.visibility = "visible";
-                        SP.popupWindow.clicked = true;
+                        SP.popEx[id].clicked = true;
                         PLX.autoSceneChange_stopQuickly();
                     }
 
@@ -1064,9 +1502,9 @@ function PLAYER(){
                 });
 
                 obj.style.cursor = "pointer";
+                obj.style.opacity = 1;
             }else if(obj.id.includes("popupWindow")){
                 var id = parseInt( obj.id.split("_")[1] );
-                console.log("popupWindow", id);
                 if(!SP.popEx[id]){
                     SP.popEx[id] = {};
                 }
@@ -1079,44 +1517,6 @@ function PLAYER(){
                 });
 
                 obj.querySelector(".popupWindowClose").style.cursor = "pointer";
-            }
-
-            console.log("/////////////////////////////");
-            */
-
-            if(obj.id.includes("popupButon")){
-                SP.popupWindow.clicked = false;
-                SP.popupWindow.btn = obj;
-                SP.popupWindow.btn.addEventListener("click", function(){
-                    if(SP.popupWindow.clicked){
-                        popupWindow.style.visibility = "hidden";
-                        SP.popupWindow.clicked = false;
-                        This.popupVideoPlayStatus(SP, false);
-                    }else{
-                        popupWindow.style.visibility = "visible";
-                        SP.popupWindow.clicked = true;
-                        PLX.autoSceneChange_stopQuickly();
-                        This.popupVideoPlayStatus(SP, true);
-                        if(SP.controlBtn){
-                            controlBtnView(SP, "disable");
-                            if(!SD[This.sceneIndex].complete){
-                                This.sceneComplete();
-                                This.scoreCalc(true);
-                            }
-                        }
-                    }
-                });
-
-                SP.popupWindow.btn.style.cursor = "pointer";
-            }else if(obj.id.includes("popupWindow")){
-                SP.popupWindow.window = obj;
-                popupWindow = obj;
-                popupWindow.querySelector(".popupWindowClose").addEventListener("click",function(){
-                    popupWindow.style.visibility = "hidden";
-                    SP.popupWindow.clicked = false;
-                    This.popupVideoPlayStatus(SP, false);
-                });
-                popupWindow.querySelector(".popupWindowClose").style.cursor = "pointer";
             }else if(obj.id.includes("control")){
                 SP.controlBtn = obj;
                 SP.controlBtn.style.cursor = "pointer";
@@ -1132,14 +1532,17 @@ function PLAYER(){
                 SP.answerBtn.style.pointerEvents = "none";
                 SP.answerBtn.addEventListener("click", function(){
                     This.answerHQ(SP, SD[index]);
+                    showFeedBack("answer", "btn", 0);
                 });
-            }else if(obj.id.includes("complete")){
-                console.log("omg >>", obj.id);
-                console.log("omg >>", SP);
+            }else if(obj.id.includes("saveBtn")){
                 SP.completeBtn = obj;
                 SP.completeBtn.addEventListener("click", function(){
+                    This.stopAllMedia();
+                    SD[index].totalRight=0;
+                    SD[index].complete=true;
                     player.openEndedDOM.style.visibility = "visible";
                     This.scoreCalc(true);
+                    checkViewFNC(SD[index]);
                     This.nextScene();
                 });
 
@@ -1191,9 +1594,318 @@ function PLAYER(){
                     SP.directive.sound.stop();
                 });
 
+            }else if(obj.id.includes("soundPlayer")){
+                var sceneID = parseInt(SP.name.slice(1, SP.name.length));
+                var id = parseInt( obj.id.split("_")[1] );
+                SP.soundPlayer[id] = {sceneID:sceneID, id:id};
+                var soundPlayer = SP.soundPlayer[id];
+
+                soundPlayer.playBtn = obj.querySelector(".play");
+                soundPlayer.pauseBtn = obj.querySelector(".pause");
+                soundPlayer.restartBtn = obj.querySelector(".restart");
+                soundPlayer.progressBarMain = obj.querySelector(".progress");
+
+                if(soundPlayer.progressBarMain){
+                    soundPlayer.progressBarBg = utils.addDOM({className: "soundBarBg"});
+                    soundPlayer.progressBarMain.appendChild(soundPlayer.progressBarBg);
+                    soundPlayer.progressBarFront = utils.addDOM({className: "soundBarFront"});
+                    soundPlayer.progressBarMain.appendChild(soundPlayer.progressBarFront);
+
+                    soundPlayer.progressBarBg.style.width = "100%";
+                    soundPlayer.progressBarBg.style.height = "100%";
+                    soundPlayer.progressBarBg.style.left = 0;
+                    soundPlayer.progressBarBg.style.top = 0;
+
+                    soundPlayer.progressBarFront.style.width = "100%";
+                    soundPlayer.progressBarFront.style.height = "100%";
+                    soundPlayer.progressBarFront.style.left = 0;
+                    soundPlayer.progressBarFront.style.top = 0;
+                    soundPlayer.progressBarFront.style.backgroundColor = soundPlayer.progressBarMain.style.backgroundColor;
+                }
+
+                This.SoundPlayerHowler(soundPlayer);
+                soundPlayer.playBtn.addEventListener("click", function(){
+                    SoundPlayerAction(soundPlayer, "play");
+                });
+
+                soundPlayer.pauseBtn.addEventListener("click", function(){
+                    SoundPlayerAction(soundPlayer, "pause");
+                });
+
+                soundPlayer.restartBtn.addEventListener("click", function(){
+                    SoundPlayerAction(soundPlayer, "play");
+                });
+            }else if(obj.id.includes("finish")){
+                obj.addEventListener("click", function(){
+                    if(PLX.mode === 'preview'){
+                        HDE_endExam();
+                    }else{
+                        HDE_ControlFNC();
+                    }
+                });
+
+                obj.style.cursor = "pointer";
+                SP.allControl = obj;
+            }
+        });
+
+        SP.elementList.map(function(el){
+            if(el.id.includes("feedback")){
+                var sceneID = parseInt(SP.name.slice(1, SP.name.length));
+                var id = parseInt( el.id.split("_")[1] );
+                if(!SP.feedBack[id]){
+                    SP.feedBack[id] = {type:"img", videoSkin: true, sceneID:sceneID, id:id, status:"right", view:"auto", sound:false, step:0};
+                }
+
+                if(el.data.status){
+                    if(el.data.status.includes("wrong")){
+                        var tempStatus = el.data.status.split("_");
+                        if(tempStatus.length){
+                            SP.feedBack[id].status = tempStatus[0];
+                            SP.feedBack[id].step = parseInt(tempStatus[1]);
+                        }
+                    }else{
+                        SP.feedBack[id].status = el.data.status;
+                    }
+                }
+
+                if(el.data.view){
+                    SP.feedBack[id].view = el.data.view;
+                }
+
+                if(el.data.videoSkin && el.data.videoSkin === "false"){
+                    SP.feedBack[id].videoSkin = false;
+                }
+
+                if(el.data.sound && el.data.sound === "true"){
+                    SP.feedBack[id].sound = true;
+                }
+
+                SP.feedBack[id].main = el.main;
+
+                var feedbackWindowClose = el.main.querySelector(".feedbackWindowClose");
+                var videoPlayer = el.main.querySelector(".videoPlayer");
+
+                if(feedbackWindowClose){
+                    feedbackWindowClose.addEventListener("click", function(){
+                        el.main.style.visibility = "hidden";
+                        This.stopAllMedia();
+                    });
+
+                    feedbackWindowClose.style.cursor = "pointer";
+                }
+
+                if(videoPlayer){
+                    SP.feedBack[id].type = "video";
+                }
+
+                if(SP.feedBack[id].sound){
+                    feedbackSound(SP, index, id);
+                }
+            }else if(el.id.includes("refresh")){
+                el.main.addEventListener('click', function(){
+                    SP.fnc.map(function(fnc){
+                        if(fnc.reset){
+                            fnc.reset();
+                        }
+                    });
+                });
+            }
+
+            /* manual zindex */
+            if(el.data){
+                if(el.data.zindex){
+                    el.main.style.zIndex = el.data.zindex;
+                }
+            }
+
+            el.kids.map(function(kid){
+                if(kid.data.fnc){
+                    var fncData = kid.data.fnc.split(",");
+                    var fncName = fncData[0];
+                    fncData.shift();
+                    try{
+                        elementActions[fncName](kid, fncData);
+                    }catch(e){}
+                }
+            });
+
+        });
+    }
+
+    var elementActions = {
+        addScroll: function(kid, fncData) {
+            var parent = document.createElement("div");
+            kid.main.parentNode.insertBefore(parent, kid.main);
+            parent.appendChild(kid.main);
+
+            var overflowX = "scroll";
+            var overflowY = "scroll";
+
+            if(fncData[2] === 'H'){
+                overflowY = 'hidden';
+            }else if(fncData[2] === 'V'){
+                overflowX = 'hidden';
+            }
+
+            Object.assign(parent.style, {
+                left: kid.main.style.left,
+                top: kid.main.style.top,
+                width: fncData[0]+"px",
+                height: fncData[1]+"px",
+                overflowX: overflowX,
+                overflowY: overflowY,
+                position: "absolute"
+            });
+
+            kid.main.style.left=0;
+            kid.main.style.top=0;
+        }
+    };
+
+    function feedbackSound(SP, sceneID, id){
+        console.log(SP, sceneID, id);
+        var feedBack = SP.feedBack[id];
+        feedBack.howl = new Howl({
+            src: [player.root +"img/feedback_"+ feedBack.sceneID +"_"+ feedBack.id +".mp3"],
+            onload: function(){
+                feedBack.load = true;
+            },
+            onloaderror: function(){},
+            onplay: function(){},
+            onpause: function(){},
+            onend: function(){}
+        })
+    }
+
+
+    function feedbackReset(){
+        SP[This.sceneIndex].feedBack.map(function(feedback){
+            feedback.main.style.visibility = "hidden";
+        });
+    }
+
+    function showFeedBack(type, view, step){
+        SP[This.sceneIndex].feedBack.map(function(feedback){
+            if(feedback.status === type && feedback.view === view && feedback.step === step){
+                PLX.autoSceneChange.HideFNC();
+                This.stopAllMedia();
+                feedbackReset();
+                feedback.main.style.visibility = "visible";
+                gsap.to(feedback.main, 0, {transformOrigin: "50% 50%",scale:0});
+                gsap.to(feedback.main, 0.5, {transformOrigin: "50% 50%", scale:1});
+                if(feedback.howl){
+                    feedbackSoundAction(feedback, "play");
+                }else if(feedback.type === "video"){
+                    if(!feedback.videoSkin){
+                        SP[This.sceneIndex].video.videoSkinHide();
+                    }
+                    SP[This.sceneIndex].video.PlayVideo();
+                }
             }
         });
     }
+
+    function feedbackSoundAction(feedback, status){
+        if(feedback.load){
+            if(status==="play" && !feedback.howl.playing()){
+                This.stopAllMedia();
+                feedback.howl.play();
+            }else if(status==="pause"){
+                feedback.howl.pause();
+            }else if(status==="seek"){}
+        }
+    }
+
+    function playBtnShow(soundPlayer){
+        soundPlayer.playBtn.style.display = "none";
+        soundPlayer.pauseBtn.style.display = "block";
+        soundPlayer.restartBtn.style.display = "none";
+    }
+
+    function pauseBtnShow(soundPlayer){
+        soundPlayer.playBtn.style.display = "block";
+        soundPlayer.pauseBtn.style.display = "none";
+        soundPlayer.restartBtn.style.display = "none";
+    }
+
+    function RestartBtnShow(soundPlayer){
+        soundPlayer.playBtn.style.display = "none";
+        soundPlayer.pauseBtn.style.display = "none";
+        soundPlayer.restartBtn.style.display = "block";
+    }
+
+    this.SoundPlayerHowler = function(soundPlayer){
+        if(!soundPlayer.Confirm){
+            soundPlayer.Confirm = true;
+            soundPlayer.howl = new Howl({
+                src: [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".mp3"],
+                onload: function(){
+                    soundPlayer.load = true;
+                },
+                onloaderror: function() {},
+                onplay: function(){
+                    playBtnShow(soundPlayer);
+                    addSPsetInterval(soundPlayer);
+                },
+                onpause: function(){
+                    pauseBtnShow(soundPlayer);
+                    delSPInterval();
+                },
+                onend: function(){
+                    RestartBtnShow(soundPlayer);
+                    progressSP(soundPlayer, true);
+                    delSPInterval();
+                }
+            })
+        }
+    }
+
+    function addSPsetInterval(soundPlayer){
+        clearInterval(PLX.spInterval);
+        PLX.spInterval = setInterval(progressSP, 400, soundPlayer, false);
+    }
+
+    function delSPInterval(){
+        clearInterval(PLX.spInterval);
+    }
+
+    function progressSP(soundPlayer, showFullBar){
+        var pos = Number(soundPlayer.howl.seek().toFixed(1));
+        var dur = Number(soundPlayer.howl.duration().toFixed(1));
+        var percent = ((pos / dur) * 100);
+        if(soundPlayer.progressBarMain){
+            if(showFullBar){
+                soundPlayer.progressBarFront.style.width = "100%";
+            }else{
+                soundPlayer.progressBarFront.style.width = percent+"%";
+            }
+        }
+    }
+
+    function SoundPlayerAction(soundPlayer, status){
+        if(soundPlayer.load){
+            if(status==="play" && !soundPlayer.howl.playing()){
+                This.stopAllMedia();
+                soundPlayer.howl.play();
+            }else if(status==="pause"){
+                soundPlayer.howl.pause();
+            }else if(status==="seek"){
+                /*
+                if(SoundPlayer[pageNumber][Option.id].Sound.playing()){
+                    CNX.SoundPlayerPlayOption({Option:{Mode:"play", ID:Option.id}});
+                }else{
+                    CNX.SoundPlayerPlayOption({Option:{Mode:"pause", ID:Option.id}});
+                }
+                var calc = (SoundPlayer[pageNumber][Option.id].Sound.duration() * Option.seek);
+                calc = Number(calc.toFixed(2));
+                SoundPlayer[pageNumber][Option.id].Sound.seek(calc);
+                progressSP();
+                */
+            }
+        }
+    }
+
 
     This.soundAllSound = function(){
         SP.map(function(e){
@@ -1217,15 +1929,41 @@ function PLAYER(){
         }
     }
 
+    this.stopAllMedia = function(){
+        /* Video */
+        SP.map(function(slide){
+            if(slide.video){
+                slide.video.StopVideo();
+            }
+        });
+
+        /* Sound Record */
+        for(var id in SP[This.sceneIndex].soundRecord){
+            SP[This.sceneIndex].soundRecord[id].stopPlayedRecord();
+            SP[This.sceneIndex].soundRecord[id].stopAudioRecordingFNC();
+        }
+        
+        /* soundPlayer */
+        SP[This.sceneIndex].soundPlayer.map(function(sound){
+            if(sound.load){
+                if(sound.howl.playing()){
+                    sound.howl.pause();
+                }
+            }
+        });
+
+        /* feedback */
+        SP[This.sceneIndex].feedBack.map(function(feedback){
+            if(feedback.howl){
+                feedback.howl.pause();
+            }
+        });
+    }
+
     /* ChangeScene */
     this.changeScene = function(index){
         if(this.allScene[index]){
-            SP.map(function(slide){
-                if(slide.video){
-                    slide.video.StopVideo();
-                }
-            })
-
+            this.stopAllMedia();
             this.sceneIndex = index;
             this.allScene.forEach(function(Scene){
                 Scene.style.display = "none";
@@ -1237,7 +1975,6 @@ function PLAYER(){
             }
 
             this.addSceneInterval();
-            SP[index].screenCloseDOM.style.display = "none";
             PLX.autoSceneChange_stopQuickly();
             This.soundAllSound();
             This.playAutoSound();
@@ -1265,6 +2002,7 @@ function PLAYER(){
             checkViewFNC(SD[index]);
             navListSelect(index);
             hideOpenEndedDOM();
+            HDE_StatusFNC();
         }
     }
 
@@ -1290,11 +2028,10 @@ function PLAYER(){
         SD[This.sceneIndex].duration++;
     }
 
-    this.sceneComplete = function (){
-        console.log("sceneComplete >>");
+    this.sceneComplete = function(save){
         clearInterval(player.screenDuration);
         SD[This.sceneIndex].complete = true;
-        This.scoreCalc(false);
+        This.scoreCalc(save);
     }
 
     this.popupVideoPlayStatus = function(SP, playVideo){
@@ -1396,12 +2133,30 @@ function PLAYER(){
     }
 
     function Preview_HTML(container, startScene){
+        var removeBtnBack = document.getElementById("Nav_Preview_BackBtn");
+        if(removeBtnBack){
+            removeBtnBack.remove();
+            document.getElementById("Nav_Preview_NextBtn").remove();
+            document.getElementById("Nav_Preview_NavInfo").remove();
+            document.getElementById("Nav_Preview_SolutionBtn").remove();
+            document.getElementById("Nav_Preview_RightAnswerBtn").remove();
+            document.getElementById("Nav_Preview_UserAnswerBtn").remove();
+        }
+
         player.backBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_BackBtn", innerHTML:"&#9664;"});
         player.nextBtn = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_NextBtn", innerHTML:"&#9654;"});
         player.infoDiv = utils.addDOM({id:"Nav_Preview_NavInfo", textContent: "0 / 0"});
+
+        player.videoSolution = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_SolutionBtn", innerHTML:"Çözüm"});
+        player.userAnswer = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_UserAnswerBtn", innerHTML:"Verdiğim Yanıt"});
+        player.rightAnswer = utils.addDOM({className:"Nav_Preview_Btn", id:"Nav_Preview_RightAnswerBtn", innerHTML:"Doğru Yanıt"});
+
         container.appendChild(player.backBtn);
         container.appendChild(player.nextBtn);
         container.appendChild(player.infoDiv);
+        container.appendChild(player.videoSolution);
+        container.appendChild(player.userAnswer);
+        container.appendChild(player.rightAnswer);
 
         player.backBtn.addEventListener("click", function(){
             This.changeScene(This.sceneIndex-1);
@@ -1412,6 +2167,7 @@ function PLAYER(){
         });
 
         This.changeScene(startScene);
+        HDE_addEvent();
     }
 
     this.playWrongAudio = function(){
@@ -1835,6 +2591,10 @@ function PLAYER(){
         return str.replace(/\s+/g, "");
     }
 
+    function valueControl(data){
+        return !(data === undefined || data === null);
+    }
+
     //dizi icindeki rakamlari siralar.
     function sortArray(arr) {
         return arr.sort(function(a,b){return a-b});
@@ -1849,11 +2609,30 @@ function PLAYER(){
         return arr.sort(function(a,b){return a[key]-b[key]});
     }
 
+    function historyExtract(SP, type){
+        var history = SP.history;
 
+        var tempBox = {};
+        if(history){
+            var lastMove = history[history.length-1];
+            for(var box in lastMove){
+                if(lastMove[box].type === type){
+                    var currentData = lastMove[box].value;
+                    if(currentData !== null && currentData !== undefined && currentData !== "" && currentData.length !== 0){
+                        var id = parseInt(box.split("box")[1]);
+                        tempBox[box] = lastMove[box];
+                        tempBox[box].id = id;
+                    }
+                }
+            }
+        }
+
+        return tempBox;
+    }
 
     /** Add CS **/
     this.initCS = function(SP, SD, index){
-        console.log("initCS");
+        console.log("init CS");
         This.convertRubrik(index);
         var answer, rubrik = {};
 
@@ -1923,10 +2702,12 @@ function PLAYER(){
                     CS.group[group].maxSelect = 1000;
                 }
 
-            }else if(element.id.includes("control")){
-                CS.controlMode = true;
             }
         });
+
+        if(SP.controlBtn || SP.completeBtn){
+            CS.controlMode = true;
+        }
 
         function getRightAnswers(){
             for(var p in answer){
@@ -1946,7 +2727,6 @@ function PLAYER(){
 
         getRightAnswers();
 
-
         function selectHqFNC(id){
             if(CS.controlMode){
                 selected(id);
@@ -1955,22 +2735,20 @@ function PLAYER(){
             }
         }
 
-        console.log(rubrik);
-        console.log(CS);
-        console.log(jsonV2);
-
-        if(SP.popupWindow.btn){
-            SP.popupWindow.btn.addEventListener("click", function(){
+        if(SP.popEx.length && PLX.isEKT){
+            SP.popEx[0].btn.addEventListener("click", function(){
                 btnEvents("none");
             });
 
-            SP.popupWindow.btn.style.pointerEvents = "none";
+            SP.popEx[0].btn.style.pointerEvents = "none";
+            SP.popEx[0].btn.style.opacity = 0.5;
         }
 
+
         function enablePopupBtnStatus(){
-            if(SP.popupWindow.btn){
-                SP.popupWindow.btn.style.opacity = 1;
-                SP.popupWindow.btn.style.pointerEvents = "auto";
+            if(SP.popEx.length && PLX.isEKT){
+                SP.popEx[0].btn.style.opacity = 1;
+                SP.popEx[0].btn.style.pointerEvents = "auto";
             }
         }
 
@@ -2060,7 +2838,7 @@ function PLAYER(){
                 var finish = groupCloseControl();
                 if(finish){
                     SD.empty=0;
-                    This.sceneComplete();
+                    This.sceneComplete(false);
                     enablePopupBtnStatus();
                     This.nextScene();
                 }
@@ -2071,13 +2849,13 @@ function PLAYER(){
                 CS.Buton[id].csWrong.style.visibility = "visible";
 
                 if(SD.wrong >= 3){
-                    if(SP.popupWindow.btn){
-                        SP.popupWindow.clicked = true;
-                        SP.popupWindow.window.style.visibility = "visible";
+                    if(SP.popEx.length && PLX.isEKT){
+                        SP.popEx[0].clicked = true;
+                        SP.popEx[0].window.style.visibility = "visible";
                     }
 
                     SD.empty=0;
-                    This.sceneComplete();
+                    This.sceneComplete(false);
                 }else{
                     enablePopupBtnStatus();
                     player.screenCloseTimer = setTimeout(function(){
@@ -2095,14 +2873,14 @@ function PLAYER(){
             CS.Buton[id].csClick.style.visibility = "hidden";
             CS.Buton[id].approved = true;
             CS.Buton[id].ignore = true;
-            SD.inputs["box"+ id].value = true;
+            inputsChange(SD, id, true);
         }
 
         function selectBtn(btnID){
             CS.Buton[btnID].csRight.style.visibility = "hidden";
             CS.Buton[btnID].csWrong.style.visibility = "hidden";
             CS.Buton[btnID].csClick.style.visibility = "visible";
-            SD.inputs["box"+ btnID].value = true;
+            inputsChange(SD, btnID, true);
 
             var group = CS.Buton[btnID].group;
             var delIndex = CS.group[group].currentList.indexOf(btnID);
@@ -2115,7 +2893,7 @@ function PLAYER(){
             CS.Buton[btnID].csRight.style.visibility = "hidden";
             CS.Buton[btnID].csWrong.style.visibility = "hidden";
             CS.Buton[btnID].csClick.style.visibility = "hidden";
-            SD.inputs["box"+ btnID].value = null;
+            inputsChange(SD, btnID, null);
 
             btnID = parseInt(btnID);
             var group = CS.Buton[btnID].group;
@@ -2140,7 +2918,7 @@ function PLAYER(){
         }
 
         function checkRightAnswer(){
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"BD"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"cs"};
 
             if(CS.evaluationMode === "count"){
                 for(var p in CS.group){
@@ -2220,12 +2998,12 @@ function PLAYER(){
             showAllWrong();
             enablePopupBtnStatus();
 
-            if(SD.wrong >= 3){
-                if(SP.popupWindow.btn){
-                    SP.popupWindow.clicked = true;
-                    SP.popupWindow.window.style.visibility = "visible";
+            if(SD.historyRight.length >= 3){
+                if(SP.popEx.length && PLX.isEKT){
+                    SP.popEx[0].clicked = true;
+                    SP.popEx[0].window.style.visibility = "visible";
                     SD.empty=0;
-                    This.sceneComplete();
+                    This.sceneComplete(false);
                     controlBtnView(SP, "disabled");
                 }else{
                     returnDefault();
@@ -2280,45 +3058,111 @@ function PLAYER(){
             clearInterval(SP.screenCloseTimer);
         }
 
-        SP.fnc.push({ control: checkRightAnswer, wrong: wrongActionFNC, right: rightActionFNC, answer: answerActionFNC });
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'cs');
+            for(var box in lastMove){
+                var id = lastMove[box].id;
+                selectBtn(id);
+            }
+        }
+
+        function reset(){
+            for(var id in CS.Buton){
+                defaultBtn(parseInt(id));
+            }
+        }
+
+        function close(){
+            for(var id in CS.Buton){
+                CS.Buton[id].main.style.pointerEvents = 'none';
+            }
+        }
+
+        SP.fnc.push({
+            control: checkRightAnswer,
+            wrong: wrongActionFNC,
+            right: rightActionFNC,
+            answer: answerActionFNC,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
 
-    /** init BD **/
+    /** init bd **/
     this.initBD = function(SP, SD, index){
-        console.log("initBD");
+        console.log("init BD");
         var allowedLetters = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57];
         var answer = jsonV2.slides[index].answer;
-        var rubrik = {};
+        var BD = {input:{}};
+        var regexList = [];
 
-        var BD = {
-            input:{}
+        for(var param in jsonV2.slides[index].scene){
+            if(param.includes('regex')){
+                var id = parseInt(param.split('_')[1]);
+                regexList[id] = jsonV2.slides[index].scene[param];
+            }
+        }
+
+        function regexKontrol(regex, text){
+            return regex.test(text);
+        }
+
+        function stringToRegex(str) {
+            var match = str.match(/^\/(.+)\/([gimuy]*)$/);
+            return match ? new RegExp(match[1], match[2]) : null;
+        }
+
+        function isRegexFNC(id){
+            return regexList[id];
         }
 
         SP.elementList.forEach(function(element){
             if(element.id.includes("inputArea")){
                 var id = parseInt(element.id.split("_")[1]);
+                var regex = isRegexFNC(id);
+                var finalRight;
+
+                if(regex){
+                    finalRight = [answer[id]];
+                }else{
+                    var bracket = ",";
+                    if(answer[id].includes("|")){
+                        bracket = "|";
+                    }
+
+                    var inputAnswer = answer[id].split(bracket);
+                    finalRight = inputAnswer.map(function(answer) {
+                        return answer.trim();
+                    });
+
+                    if(!element.data.sensitive){
+                        finalRight = finalRight.map(function(answer){
+                            return answer.toLocaleLowerCase("tr-TR");
+                        });
+                    }
+                }
+
                 BD.input[id] = {
                     main: element.main,
                     txt: element.main.querySelector(".bdText"),
                     bg: element.main.querySelector(".bdBg"),
                     count: element.data.count,
                     mode: element.data.mode,
-                    answer: element.data.answer,
+                    rightAnswer: finalRight,
                     sensitive: element.data.sensitive,
-                    events: true
+                    format: element.data.format,
+                    multiline: element.data.multiline,
+                    events: true,
+                    regex: regex
                 };
 
                 BD.input[id].bgColor = BD.input[id].bg.style.backgroundColor;
                 convertInput(id);
-                rubrik[id] = null;
             }
         });
 
         BD.inputLength = Object.keys(BD.input).length;
-
-        for(var p in rubrik){
-            rubrik[p] = answer[p];
-        }
 
         function convertInput(id){
             var textAreaCSS = {
@@ -2332,12 +3176,27 @@ function PLAYER(){
                 lineHeight: BD.input[id].txt.style.lineHeight,
                 position: "absolute",
                 padding: 0,
-                border: 0
+                border: 0,
+                resize: "none"
             };
+
+            if(BD.input[id].format){
+                textAreaCSS.textTransform = BD.input[id].format;
+            }
 
             BD.input[id].txt.remove();
 
-            var input = document.createElement("input");
+            var input;
+            if(BD.input[id].multiline){
+                input = document.createElement("textarea");
+                textAreaCSS.textAlign = "left";
+                textAreaCSS.width = (parseInt(textAreaCSS.width)-10)+"px";
+                textAreaCSS.height = (parseInt(textAreaCSS.height)-10)+"px";
+                textAreaCSS.padding = "5px";
+            }else{
+                input = document.createElement("input");
+            }
+
             input.autocomplete = "off";
 
             if(BD.input[id].count){
@@ -2355,29 +3214,31 @@ function PLAYER(){
             SD.inputs["box"+ id] = {value: null, type: "bd"};
         }
 
-        console.log(answer);
-        console.log(rubrik);
-        console.log(SD.inputs);
-
         function addEvent(input, id){
             input.addEventListener("input", function(e){
                 if(BD.input[id].mode === "number"){
                     this.value = numberLayout(input);
                 }
 
-                SD.inputs["box"+ id].value = this.value;
-                console.log( SD.inputs );
+                inputsChange(SD, id, this.value);
                 controlBtnViewCheck();
                 countCharacter(this, id);
             });
         }
 
-        function countCharacter(input, id){
-            var count = parseInt( BD.input[id].count );
+        function countCharacter(input, currentID){
+            var count = parseInt(BD.input[currentID].count);
             if(input.value.length === count){
-                var next = ++id;
-                if(next < BD.inputLength){
-                    BD.input[next].txt.focus();
+                var nextID;
+                for(var id in BD.input){
+                    id = parseInt(id);
+                    if(id  > currentID && !nextID){
+                        nextID = id;
+                    }
+                }
+
+                if(nextID){
+                    BD.input[nextID].txt.focus();
                 }
             }
         }
@@ -2430,7 +3291,7 @@ function PLAYER(){
         function showDefaultView(id){
             BD.input[id].bg.style.backgroundColor = BD.input[id].bgColor;
             BD.input[id].txt.value = "";
-            SD.inputs["box"+ id].value = "";
+            inputsChange(SD, id, "");
         }
 
         function showAllDefaultView(){
@@ -2450,25 +3311,44 @@ function PLAYER(){
         }
 
         function checkRightAnswer(){
-            btnEvents("none");
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"BD"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"bd"};
 
             function commonFNC(i){
-                var rightAnswer = rubrik[i];
+                var rightAnswer = BD.input[i].rightAnswer;
                 var userAnswer =  SD.inputs["box"+ i].value;
                 var sensitive = BD.input[i].sensitive;
                 var status = "wrong";
 
                 if(userAnswer && userAnswer.length){
-                    if(!sensitive){
-                        userAnswer = userAnswer.toLocaleLowerCase("tr-TR");
-                        rightAnswer = rightAnswer.toLocaleLowerCase("tr-TR");
-                    }
+                    if(BD.input[i].regex){
+                        userAnswer = userAnswer.trim();
+                        var regexConvert = new RegExp(BD.input[i].regex);
 
-                    if(userAnswer === rightAnswer){
-                        status = "right";
-                    }
+                        if(BD.input[i].regex.includes('/')){
+                            regexConvert = stringToRegex(BD.input[i].regex);
+                        }
 
+                        var rightRegex = regexKontrol(regexConvert, userAnswer);
+                        if(rightRegex){
+                            status = "right";
+                        }
+                    }else{
+                        var foundRight = false;
+                        userAnswer = userAnswer.trim();
+                        if(!sensitive){
+                            userAnswer = userAnswer.toLocaleLowerCase("tr-TR");
+                        }
+
+                        rightAnswer.map(function(answer){
+                            if(userAnswer === answer){
+                                foundRight = true;
+                            }
+                        });
+
+                        if(foundRight){
+                            status = "right";
+                        }
+                    }
                 }else{
                     status = "empty";
                 }
@@ -2480,13 +3360,13 @@ function PLAYER(){
                 var answer = commonFNC(i);
                 if(answer === "right"){
                     score.totalRight++;
-                    showRightView(i);
+                    BD.input[i].status = "right";
                 }else if(answer === "wrong"){
                     score.totalWrong++;
-                    showWrongView(i);
-
+                    BD.input[i].status = "wrong";
                 }else if(answer === "empty"){
                     score.totalEmpty++;
+                    BD.input[i].status = "empty";
                 }
             }
 
@@ -2494,6 +3374,16 @@ function PLAYER(){
         }
 
         function wrongActionFNC(){
+            btnEvents("none");
+            for(var i in BD.input){
+                var status = BD.input[i].status;
+                if(status === "right"){
+                    showRightView(i);
+                }else if(status === "wrong"){
+                    showWrongView(i);
+                }
+            }
+
             SP.screenCloseTimer = setTimeout(function (){
                 btnEvents("auto");
                 showAllDefaultView();
@@ -2501,22 +3391,51 @@ function PLAYER(){
             }, 1000);
         }
 
-
         function answerActionFNC(){
-            for(var answer in rubrik){
-                console.log(answer,  rubrik[answer]);
-                //BD.input[answer].bg.style.backgroundColor = "white";
-                BD.input[answer].txt.value = rubrik[answer];
-                btnEvents("none");
+            clearInterval(SP.screenCloseTimer);
+            for(var i in BD.input){
+                if(BD.input[i].events){
+                    BD.input[i].txt.value = BD.input[i].rightAnswer[0];
+                    BD.input[i].bg.style.backgroundColor = BD.input[i].bgColor;
+                    btnEvents("none");
+                }
             }
         }
 
-        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){}, answer: answerActionFNC });
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'bd');
+            for(var box in lastMove){
+                var id = lastMove[box].id;
+                BD.input[id].txt.value = lastMove[box].value;
+            }
+        }
+
+        function reset(){
+            for(var id in BD.input){
+                showDefaultView(id);
+            }
+        }
+
+        function close(){
+            for(var i in BD.input){
+                BD.input[i].txt.style.pointerEvents = 'none';
+            }
+        }
+
+        SP.fnc.push({
+            control: checkRightAnswer,
+            wrong: wrongActionFNC,
+            right: function(){},
+            answer: answerActionFNC,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
 
-    /** Add MATCH **/
+    /** Add match **/
     this.initMATCH = function(SP, SD, index){
-        console.log("initMATCH");
+        console.log("init MATCH");
         var answer = jsonV2.slides[index].answer;
         var currentID, startPos, endPos, canvasOrigin;
         var rubrik = {};
@@ -2525,6 +3444,7 @@ function PLAYER(){
         var currentLine;
         var canvas;
         var globalColor;
+        var statusArr;
         var returnColor = [];
         var borderColors = [
             "#e57373",
@@ -2618,7 +3538,6 @@ function PLAYER(){
                 currentID = id;
             });
 
-            //BOX.main.style.display = "none";
             layer.add(BOX.canvas);
         }
 
@@ -2693,6 +3612,7 @@ function PLAYER(){
                         var deleteID = drop.indexOf(deleteDragID);
                         if(deleteID > -1){
                             drop.splice(deleteID, 1);
+                            inputsChange(SD);
                         }
                         break;
                     }
@@ -2715,6 +3635,7 @@ function PLAYER(){
 
             user.push(currentDragID);
             currentLine.pair = currentPair;
+            inputsChange(SD);
             return true;
         }
 
@@ -2751,7 +3672,7 @@ function PLAYER(){
             var found = false;
             for (var i in BOX) {
                 if (!i.includes("d")) {
-                    if (SD.inputs["box" + i].value.length) {
+                    if (SD.inputs["box"+ i].value.length) {
                         found = true;
                     }
                 }
@@ -2765,10 +3686,11 @@ function PLAYER(){
         }
 
         function checkRightAnswer(){
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"MATCH"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"match"};
             returnColor = [];
+            statusArr = {};
             for(var i in rubrik){
-                var user = SD.inputs["box" + i].value;
+                var user = SD.inputs["box"+ i].value;
                 var right = true;
 
                 if(user.length === 0){
@@ -2782,56 +3704,24 @@ function PLAYER(){
 
                     if(right){
                         score.totalRight++;
-                        lineStatus(i, "right");
+                        statusArr[i] = "right";
                     }else{
                         score.totalWrong++;
-                        lineStatus(i, "wrong");
+                        statusArr[i] = "wrong";
                     }
                 }
             }
 
-            returnColorFNC();
             return score;
-        }
-
-        function lineStatus(closeDropID, status){
-            LA.map(function(line){
-                if(line.pair){
-                    var dragID = "d"+line.pair.split("-")[0];
-                    var dropID = line.pair.split("-")[1];
-
-                    if(dropID === closeDropID){
-                        if(status === "right"){
-                            BOX[dragID].canvas.off("mousedown mouseenter touchstart mouseleave");
-                            BOX[dropID].canvas.off("mousedown mouseenter touchstart mouseleave");
-                            BOX[dragID].main.style.opacity = 0.5;
-                            BOX[dropID].main.style.opacity = 0.5;
-                            BOX[dragID].status = false;
-                            BOX[dropID].status = false;
-                            line.canvas.stroke("#2e7d32").opacity(0.7);
-                        }else{
-                            returnColor.push(line);
-                            var drop = SD.inputs["box"+ dropID].value;
-                            dragID = line.pair.split("-")[0];
-                            var deleteID = drop.indexOf(dragID);
-                            if(deleteID > -1){
-                                drop.splice(deleteID, 1);
-                            }
-
-                            line.canvas.stroke("#b71c1c").opacity(0.7);
-                        }
-                    }
-                }
-            });
         }
 
         function returnColorFNC(){
             if(returnColor.length){
-                setTimeout(reset, 1000);
+                setTimeout(deleteWrongBorders, 1000);
             }
         }
 
-        function reset(){
+        function deleteWrongBorders(){
             returnColor.map(function(line){
                 line.canvas.destroy();
             });
@@ -2847,7 +3737,39 @@ function PLAYER(){
         }
 
         function wrongActionFNC(){
-            console.log("wrongActionFNC");
+            for(var closeDropID in statusArr){
+                var status = statusArr[closeDropID];
+                LA.map(function(line){
+                    if(line.pair){
+                        var dragID = "d"+line.pair.split("-")[0];
+                        var dropID = line.pair.split("-")[1];
+                        if(dropID === closeDropID){
+                            if(status === "right"){
+                                BOX[dragID].canvas.off("mousedown mouseenter touchstart mouseleave");
+                                BOX[dropID].canvas.off("mousedown mouseenter touchstart mouseleave");
+                                BOX[dragID].main.style.opacity = 0.5;
+                                BOX[dropID].main.style.opacity = 0.5;
+                                BOX[dragID].status = false;
+                                BOX[dropID].status = false;
+                                line.canvas.stroke("#2e7d32").opacity(0.7);
+                            }else{
+                                returnColor.push(line);
+                                var drop = SD.inputs["box"+ dropID].value;
+                                dragID = line.pair.split("-")[0];
+                                var deleteID = drop.indexOf(dragID);
+                                if(deleteID > -1){
+                                    drop.splice(deleteID, 1);
+                                }
+
+                                line.canvas.stroke("#b71c1c").opacity(0.7);
+                                inputsChange(SD);
+                            }
+                        }
+                    }
+                });
+            }
+
+            returnColorFNC();
         }
 
         function answerActionFNC(){
@@ -2863,21 +3785,77 @@ function PLAYER(){
                         var dropY = (drop.top - canvasOrigin.top) + (drop.height/2);
                         drag.canvas.off("mousedown mouseenter touchstart mouseleave");
                         drop.canvas.off("mousedown mouseenter touchstart mouseleave");
-                        currentCanvasLine({x:dragX, y:dragY}, {x:dropX, y:dropY}, {dash: [33, 10], stroke: "#ffd740" });
+                        currentID = "d"+rightDrag;
+                        startPos = {x:dragX, y:dragY};
+                        endPos = {x:dropX, y:dropY};
+                        currentCanvasLine(startPos, endPos, {dash: [33, 10], stroke: "#ffd740" });
+                        pairingFNC();
                     });
                 }
             }
         }
 
-        SP.fnc.push({control: checkRightAnswer, wrong: wrongActionFNC, right: function(){}, answer: answerActionFNC });
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'match');
+
+            for(var box in lastMove){
+                var id = lastMove[box].id;
+                lastMove[box].value.map(function(rightDrag){
+                    var drag = BOX["d"+rightDrag];
+                    var drop = BOX[id];
+
+                    var dragX = (drag.left - canvasOrigin.left) + (drag.width/2);
+                    var dragY = (drag.top - canvasOrigin.top) + (drag.height/2);
+                    var dropX = (drop.left - canvasOrigin.left) + (drop.width/2);
+                    var dropY = (drop.top - canvasOrigin.top) + (drop.height/2);
+
+                    currentID = "d"+rightDrag;
+                    globalColor = borderColors[utils.getRandomNumber(borderColors.length)];
+                    startPos = {x:dragX, y:dragY};
+                    endPos = {x:dropX, y:dropY};
+                    currentCanvasLine(startPos, endPos);
+                    pairingFNC();
+                });
+            }
+
+        }
+
+        function reset(){
+            LA.map(function(line){
+                line.canvas.destroy();
+            });
+
+            LA=[];
+
+            for(var i in rubrik) {
+                SD.inputs["box"+i].value = [];
+            }
+
+            addNewLine();
+        }
+
+        function close(){
+            for(var i in BOX){
+                BOX[i].canvas.off();
+            }
+        }
+
+        SP.fnc.push({
+            control: checkRightAnswer,
+            wrong: wrongActionFNC,
+            right: wrongActionFNC,
+            answer: answerActionFNC,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
 
-    /** Add SB **/
+    /** Add sb **/
     this.initSB = function(SP, SD, index){
-        console.log("initSB");
+        console.log("init SB");
         var bounds = {left:0, top:0, width:1280, height:720};
         var answer = jsonV2.slides[index].answer;
-        console.log(answer);
         var createDrag = false;
 
         if(jsonV2.slides[index].scene.createDrag){
@@ -2889,13 +3867,11 @@ function PLAYER(){
             for(var p in answer){
                 rightAnswer[p] = [];
                 var dropAnswers = stringSpaceDelete(answer[p]).split(",");
-                console.log( dropAnswers );
                 dropAnswers.map(function(answer){
                     if(answer.includes("-")){
                         var answerOption = [];
                         var id = parseInt( answer.split("-")[0] );
                         var count = parseInt( answer.split("-")[1] );
-                        console.log(id, count);
                         for(var c=0; c<count; c++){
                             answerOption.push(id);
                         }
@@ -2915,11 +3891,6 @@ function PLAYER(){
 
         rightAnswerParse();
 
-        console.log("////");
-        console.log(answer);
-        console.log(rightAnswer);
-        console.log("////");
-
         var dragCount=0;
         var dragList = {};
         var dropList = {};
@@ -2927,15 +3898,22 @@ function PLAYER(){
         var rightAnswerNone = false;
         SP.elementList.map(function(element){
             var id;
-            if(element.id.includes("boxDrag")){
-                id = parseInt(element.id.split("_")[1]);
+            if(element.id.includes("boxDrag") || element.id.includes("gs_Drag")){
+                var split = element.id.split("_");
+                if(split.length === 2){
+                    id = parseInt(split[1]);
+                }else{
+                    id = parseInt(split[2]);
+                }
 
-                dragList[id] = {
-                    drag: element.main,
-                    startLeft: parseInt(element.main.style.left),
-                    startTop: parseInt(element.main.style.top)
-                };
+                if(!dragList[id]){
+                    dragList[id] = {
+                        drag: element.main,
+                        position:[]
+                    };
+                }
 
+                dragList[id].position.push({x: element.main.style.left, y: element.main.style.top});
                 element.main.style.display = "none";
             }else if(element.id.includes("boxDrop")){
                 id = parseInt(element.id.split("_")[1]);
@@ -3003,7 +3981,17 @@ function PLAYER(){
 
             clearSlotCloneID(cloneID);
             screeCloseFNC();
-            gsap.to(cloneList[cloneID], returnTime, {x: dragList[dragID].startLeft, y: dragList[dragID].startTop});
+
+            if(dragList[dragID].position.length >= 2){
+                for(var x=0; x<dragList[dragID].position.length; x++){
+                    if(dragList[dragID].position[x].boxID.includes(cloneID)){
+                        gsap.to(cloneList[cloneID], returnTime, {x: dragList[dragID].position[x].x, y: dragList[dragID].position[x].y});
+                        break;
+                    }
+                }
+            }else{
+                gsap.to(cloneList[cloneID], returnTime, {x: dragList[dragID].position[0].x, y: dragList[dragID].position[0].y});
+            }
         }
 
         function screeCloseFNC(){
@@ -3013,8 +4001,8 @@ function PLAYER(){
             }, 200);
         }
 
-
         function addCloneDrag(dragID){
+            var currentIndex = (dragCount+1);
             var cloneDrag = dragList[dragID].drag.cloneNode(true);
             cloneDrag.style.display = "block";
             var cloneID = dragID +"_"+ dragCount;
@@ -3023,24 +4011,25 @@ function PLAYER(){
             Draggable.create(cloneDrag, {
                 type: "x,y",
                 bounds,
+                zIndexBoost: false,
+                zIndexPress: currentIndex,
+                onPress: function() {
+                    this.target.style.zIndex = (dragCount+1);
+                },
                 onDragEndParams:[dragID, cloneID],
                 onDragEnd:function(dragID, cloneID){
+                    this.target.style.zIndex = currentIndex;
                     dragControlFNC(this, dragID, cloneID);
                 }
             });
 
             setPosition(cloneDrag, 0, 0);
-            console.log("New >> Main ID:", dragID, "NewID:", cloneID, "Default Left:", dragList[dragID].startLeft, "Default Top:", dragList[dragID].startTop);
-            gsap.to(cloneDrag, 0, {x: dragList[dragID].startLeft, y: dragList[dragID].startTop});
-
-            SP.sceneDiv.append(cloneDrag);
+            gsap.to(cloneDrag, 0, {x: dragList[dragID].position[0].x, y: dragList[dragID].position[0].y});
+            dragList[dragID].drag.insertAdjacentElement("afterend", cloneDrag);
             cloneList[cloneID] = cloneDrag;
             dragCount++;
+            return cloneDrag;
         }
-
-        Object.keys(dragList).map(function(e){
-            addCloneDrag(parseInt(e));
-        });
 
         function KontrolFNC(drag, dragID, cloneID, hitDrop, aniTime){
             clearSlotCloneID(cloneID);
@@ -3049,14 +4038,11 @@ function PLAYER(){
             for(var i=0; i<dropList[hitDrop].slot.length; i++){
                 if(!dropList[hitDrop].slot[i].cloneID){
                     var position = dropList[hitDrop].slot[i];
-                    console.log(position);
-                    console.log(dropList[hitDrop].slot);
-                    console.log(cloneID);
                     gsap.to(clone, aniTime, {x: position.x, y: position.y});
                     screeCloseFNC();
                     position.cloneID = cloneID;
-                    SD.inputs["box"+ hitDrop].value[i] = dragID;
-                    console.log();
+                    SD.inputs["box"+ hitDrop].value[i] = parseInt(dragID);
+                    inputsChange(SD);
                     found = true;
                     break;
                 }
@@ -3101,11 +4087,24 @@ function PLAYER(){
                     if(e.cloneID === cloneID){
                         e.cloneID = null;
                         SD.inputs["box"+ drop].value[i] = null;
+                        inputsChange(SD);
                     }
                 });
             }
         }
 
+
+        function addQuickClone(){
+            for(var id in dragList){
+                dragList[id].position.map(function(drag){
+                    drag.box = addCloneDrag(id);
+                    drag.boxID = drag.box.id;
+                    gsap.to(drag.box, 0, {x: drag.x, y: drag.y});
+                });
+            }
+        }
+
+        addQuickClone();
 
         function cloneStatus(){
             if(createDrag){
@@ -3167,7 +4166,6 @@ function PLAYER(){
 
 
         function checkAnswer(){
-            /* User Answers */
             var userAnswers = {};
             for(var i in dropList){
                 var slot = dropList[i].slot;
@@ -3182,9 +4180,7 @@ function PLAYER(){
                 });
             }
 
-            console.log( dropList );
-
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"MATCH"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"sb"};
 
             for(var n in dropList){
                 if(rightAnswer[n]){
@@ -3209,7 +4205,7 @@ function PLAYER(){
 
                         if(grupControl){
                             score.totalRight++;
-                            dropList[n].online = false;
+                            dropList[n].generalStatus = "right";
                         }else{
                             score.totalWrong++;
                         }
@@ -3223,7 +4219,6 @@ function PLAYER(){
 
             return score;
         }
-
 
         function partialControlFNC(drop, right) {
             var limitler = {};
@@ -3306,6 +4301,10 @@ function arraysAreEqualUnordered(array1, array2) {
         function wrongActionFNC(status){
             for(var i in dropList){
                 var slot = dropList[i].slot;
+                if(dropList[i].generalStatus === "right"){
+                    dropList[i].online = false;
+                }
+
                 slot.map(function(e){
                     if(e.cloneID){
                         if(!e.status){
@@ -3356,7 +4355,7 @@ function arraysAreEqualUnordered(array1, array2) {
             return slotList.includes(cloneID);
         }
 
-        function resetDragBtn(){
+        function reset(){
             for(var id in dropList){
                 dropList[id].slot.map(function(clone){
                     if(clone.cloneID){
@@ -3369,9 +4368,26 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         function answerActionFNC(){
-            resetDragBtn();
+            reset();
+            var tempAnswerList = convertRightAnswer(rightAnswer, "");
+            var usedID=[];
+
             for(var hitDrop in dropList){
-                var allRightAnswer = rightAnswer[hitDrop][0];
+                var allRightAnswer;
+                if(createDrag){
+                    allRightAnswer = rightAnswer[hitDrop][0];
+                }else{
+                    for(var id in tempAnswerList[hitDrop]){
+                        if(!tempAnswerList[hitDrop][id].used){
+                            if(!allRightAnswer){
+                                allRightAnswer = tempAnswerList[hitDrop][id].right;
+                                usedID.push(allRightAnswer[0]);
+                                tempAnswerList = convertRightAnswer(rightAnswer, usedID.toString());
+                            }
+                        }
+                    }
+                }
+
                 allRightAnswer.map(function(rightDrag){
                     rightDrag = rightDrag.toString();
                     var foundClone = false;
@@ -3380,10 +4396,12 @@ function arraysAreEqualUnordered(array1, array2) {
                         if(rightDrag === dragID && !usedClone(cloneID) && !foundClone){
                             var drag = Draggable.get(cloneList[cloneID]);
                             KontrolFNC(drag, dragID, cloneID, hitDrop, 0);
+                            drag.target.style.zIndex = drag.vars.zIndexPress;
                             foundClone = true;
                         }
                     }
                 });
+                allRightAnswer=null;
             }
 
             for(var cid in cloneList){
@@ -3393,18 +4411,93 @@ function arraysAreEqualUnordered(array1, array2) {
             }
         }
 
-        SP.fnc.push({control: checkAnswer, wrong: wrongActionFNC, right: wrongActionFNC, answer: answerActionFNC });
+        function convertRightAnswer(arr, ids) {
+            var result = {};
+            var idArr = ids.split(",").map(function (v) {
+                return parseInt(v, 10);
+            });
+
+            for (var key in arr) {
+                if (arr.hasOwnProperty(key)) {
+                    result[key] = [];
+
+                    for (var i=0; i<arr[key].length; i++) {
+                        var rightArr = arr[key][i];
+                        var used = containsAny(rightArr, idArr);
+
+                        result[key].push({
+                            right: rightArr,
+                            used: used
+                        });
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        function containsAny(source, target) {
+            for (var i=0; i<target.length; i++) {
+                if (source.indexOf(target[i]) !== -1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'sb');
+            for(var box in lastMove){
+                var groupID = lastMove[box].id;
+                lastMove[box].value.map(function(userDragID){
+                    for(var cloneID in cloneList){
+                        var cloneDragID = parseInt(cloneID.split("_")[0]);
+                        if(userDragID === cloneDragID){
+                            var drag = Draggable.get(cloneList[cloneID]);
+                            KontrolFNC(drag, userDragID, cloneID, groupID, 0);
+                            drag.target.style.zIndex = drag.vars.zIndexPress;
+                        }
+                    }
+                });
+            }
+        }
+
+        function close(){
+            for(var id in cloneList){
+                cloneList[id].style.pointerEvents = 'none';
+            }
+        }
+
+        SP.fnc.push({
+            control: checkAnswer,
+            wrong: wrongActionFNC,
+            right: wrongActionFNC,
+            answer: answerActionFNC,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
 
-    /** Add PAINT **/
+    /** Add paint **/
     this.initPAINT = function(SP, SD, index){
-        console.log("//initPAINT Start>");
+        console.log("init PAINT");
+
         var drop = {};
-        var selectedColor = "white";
+        var selectedColor = "default";
+        var defaultColorHex = "#ffffff";
         var colorPalette = {};
         var svgDOM = SP.sceneDiv.querySelector(".svg");
+        var svgDOMLoad = false;
         var svgLink;
         var helpMode = true;
+        var countMode = false;
+        var groupMode = false;
+
+        if(jsonV2.slides[index].scene.defaultColor){
+            defaultColorHex = jsonV2.slides[index].scene.defaultColor;
+        }
 
         function addBG(){
             var bg = document.createElement("div");
@@ -3438,8 +4531,12 @@ function arraysAreEqualUnordered(array1, array2) {
                             if(svgPaths.children[x].id.includes("paintBox")){
                                 var id = parseInt(svgPaths.children[x].id.split("_")[1]);
                                 var box = svgPaths.children[x];
-                                addPaintBox(box, id);
+                                addPaintBox(box, id, "svg");
                             }
+                        }
+
+                        if(svgDOMLoad){
+                            addHistory();
                         }
                     }
                 });
@@ -3459,7 +4556,7 @@ function arraysAreEqualUnordered(array1, array2) {
                             if(style.includes("color")){
                                 var colorName = style.split("_")[1];
                                 rect.innerHTML = '<img class="paint_check" src="assets/img/player/check.svg">';
-                                colorPalette[colorName] = {box: rect, color: rect.style.backgroundColor, check: rect.querySelector(".paint_check")};
+                                colorPalette[colorName] = {box: rect, color: rect.style.backgroundColor, check: rect.querySelector(".paint_check"), limit:1000};
                                 addcolorBtn(rect, colorName);
                             }
                         });
@@ -3470,14 +4567,25 @@ function arraysAreEqualUnordered(array1, array2) {
             }else if(element.id.includes("paintBox")){
                 var id = parseInt(element.id.split("_")[1]);
                 var box = element.main.querySelector(".paintBox");
-                addPaintBox(box, id);
+                addPaintBox(box, id, "html");
             }
         });
 
-        function addPaintBox(box, id){
+        function addPaintBox(box, id, type){
             var correctAnswer = jsonV2.slides[index].answer[id];
-            var strokeColor = window.getComputedStyle(box).stroke;
-            var strokeWidth = window.getComputedStyle(box).strokeWidth;
+            var strokeColor, strokeWidth;
+
+            if(type === "svg"){
+                strokeColor = window.getComputedStyle(box).stroke;
+                strokeWidth = window.getComputedStyle(box).strokeWidth;
+            }else{
+                strokeColor = box.style.outlineColor;
+                strokeWidth = box.style.outlineWidth;
+                if(!strokeWidth || strokeWidth===""){
+                    strokeWidth = 0;
+                }
+            }
+
             drop[id] = {
                 box: box,
                 correctAnswer: correctAnswer,
@@ -3486,10 +4594,177 @@ function arraysAreEqualUnordered(array1, array2) {
                 strokeWidth: strokeWidth
             };
 
+
             addDropBoxEvent(box, id);
             SD.inputs["box" + id] = {value: null, type: "paint"};
             gsap.to(box, 0, {fill: selectedColor});
         }
+
+        /* New Code Start*/
+        var countGroup={};
+        var sameGroup=[];
+        function rightAnswerCenterFNC(){
+            for(var p in jsonV2.slides[index].scene){
+                if(p.includes("count")){
+                    var colorGroup = p.split("_")[1];
+                    if(!countGroup[colorGroup]){
+                        countGroup[colorGroup] = parseInt(jsonV2.slides[index].scene[p]);
+                    }
+                    countMode = true;
+                }else if(p.includes("mode")){
+                    groupMode = true;
+                    SP.elementList.map(function(obj, id){
+                        if(valueControl(obj.data.group)){
+                            var group = parseInt(obj.data.group);
+                            if(obj.id.includes("paintBox")){
+                                var butonID = parseInt( obj.id.split("_")[1] );
+                                if(!sameGroup[group]){
+                                    sameGroup[group] = {box:[], lockColor: '', id:id};
+                                }
+
+                                sameGroup[group].box.push(butonID);
+                            }
+                        }
+                    });
+                }
+            }
+
+            if(countMode){
+                for(var x in drop){
+                    if(drop[x].correctAnswer){
+                        delete SP.tempAnswer[x];
+                    }else{
+                        if(!countGroup.ignore){
+                            countGroup.ignore = 0;
+                        }
+
+                        countGroup.ignore++;
+                    }
+                }
+
+                for(var type in countGroup){
+                    SP.tempAnswer[type] = "auto";
+                }
+            }else if(groupMode){
+                sameGroup.map(function(group, id){
+                    SP.tempAnswer["auto"+id] = "auto";
+                });
+            }
+        }
+
+        rightAnswerCenterFNC();
+
+
+        function colorLimitAdd(){
+            for(var p in jsonV2.slides[index].scene){
+                if(p.includes("limit")){
+                    var color = p.split("_")[1];
+                    if(colorPalette[color]){
+                        colorPalette[color].limit = parseInt(jsonV2.slides[index].scene[p]);
+                    }
+                }
+            }
+        }
+        colorLimitAdd();
+
+        function colorLimitCheck(){
+            var usedColor = {};
+            for(var id in drop){
+                var userColor = SD.inputs["box"+id].value;
+                if(userColor){
+                    if(!usedColor[userColor]){
+                        usedColor[userColor] = 0
+                    }
+                    usedColor[userColor]++;
+                }
+            }
+
+            for(var color in colorPalette){
+                if(usedColor[color] >= colorPalette[color].limit){
+                    colorPalette[color].box.style.opacity = 0.3;
+                    colorPalette[color].box.style.pointerEvents = "none";
+                    if(color === selectedColor){
+                        selectedColor = null;
+                        selectColor(null);
+                        SP.sceneDiv.style.cursor = "default";
+                    }
+                }else{
+                    colorPalette[color].box.style.opacity = 1;
+                    colorPalette[color].box.style.pointerEvents = "auto";
+                }
+            }
+
+            return usedColor;
+        }
+
+
+        function countCheckAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"paint"};
+            var userCount={};
+            var absoluteRight=[];
+
+            for(var color in colorPalette){
+                userCount[color] = [];
+            }
+
+            for(var x in drop){
+                if(drop[x].correctAnswer && drop[x].correctAnswer !== "all"){
+                    absoluteRight.push(drop[x].correctAnswer);
+                }
+            }
+
+            userCount.all = [];
+            userCount.ignore = [];
+
+            for(var id in drop) {
+                var userColor = SD.inputs["box"+id].value;
+                if(userColor){
+                    if(drop[id].correctAnswer === "all"){
+                        if(countGroup[userColor] && !absoluteRight.includes(userColor)){
+                            userCount[userColor].push(id);
+                        }else if(!drop[id].correctAnswer){
+                            userCount.ignore.push(id);
+                        }else{
+                            userCount.all.push(id);
+                        }
+                    }else if(userColor === drop[id].correctAnswer){
+                        userCount[userColor].push(id);
+                    }else if(!drop[id].correctAnswer){
+                        userCount.ignore.push(id);
+                    }else{
+                        userCount[userColor].push(id);
+                    }
+                }else if(!drop[id].correctAnswer){
+                    userCount.ignore.push(id);
+                }
+            }
+
+            for(var group in countGroup) {
+                if(userCount[group].length === 0){
+                    score.totalEmpty++;
+                }else if(userCount[group].length === countGroup[group]){
+                    score.totalRight++;
+                    if(group !== "ignore"){
+                        userCount[group].map(function(id){
+                            drop[id].currentStatus = "right";
+                        });
+                    }
+                }else{
+                    if(group !== "ignore"){
+                        if(userCount[group].length < countGroup[group]){
+                            userCount[group].map(function(id){
+                                drop[id].currentStatus = "right";
+                            });
+                        }
+                    }
+                    score.totalWrong++;
+                }
+            }
+
+            return score;
+        }
+        /* New Code Finish*/
+
 
         /* Add Events */
         function addDropBoxEvent(dropBox, id){
@@ -3510,7 +4785,7 @@ function arraysAreEqualUnordered(array1, array2) {
         function addEaserBtn(easer){
             easer.addEventListener("click", function(){
                 selectColor(null);
-                selectedColor = "white";
+                selectedColor = "default";
                 SP.sceneDiv.style.cursor = `url("assets/img/cursors/eraser_cursor.png") -22 22, auto`;
             });
         }
@@ -3529,22 +4804,25 @@ function arraysAreEqualUnordered(array1, array2) {
         selectColor(null);
 
         function setColorFNC(dropBox, id){
-            if(drop[id].currentStatus !== "right"){
-                var currentColor = colorPalette[selectedColor];
-                if(currentColor){
-                    currentColor = currentColor.color;
-                }else{
-                    currentColor = selectedColor;
-                }
+            if(selectedColor){
+                if(drop[id].currentStatus !== "right"){
+                    var currentColor = colorPalette[selectedColor];
+                    if(currentColor){
+                        currentColor = currentColor.color;
+                    }else{
+                        currentColor = defaultColorHex;
+                    }
 
-                gsap.to(dropBox, 0.4, {fill: currentColor, backgroundColor: currentColor});
-                if(selectedColor === "white"){
-                    SD.inputs["box"+id].value = undefined;
-                }else{
-                    SD.inputs["box"+id].value = selectedColor;
-                }
+                    gsap.to(dropBox, 0.4, {fill: currentColor, backgroundColor: currentColor});
+                    if(selectedColor === "default"){
+                        inputsChange(SD, id, undefined);
+                    }else{
+                        inputsChange(SD, id, selectedColor);
+                    }
 
-                controlBtnViewCheck();
+                    controlBtnViewCheck();
+                    colorLimitCheck();
+                }
             }
         }
 
@@ -3583,7 +4861,6 @@ function arraysAreEqualUnordered(array1, array2) {
                 }
             }
 
-            console.log(score);
             return score;
         }
 
@@ -3603,6 +4880,7 @@ function arraysAreEqualUnordered(array1, array2) {
                         gsap.to(drop[id].box, 0, borderRight);
                     }else if(drop[id].currentStatus === "wrong"){
                         gsap.to(drop[id].box, 0, borderWrong);
+                        inputsChange(SD, id, null);
                     }
                 }
 
@@ -3623,6 +4901,8 @@ function arraysAreEqualUnordered(array1, array2) {
                     controlBtnViewCheck();
                 }
             }
+
+            colorLimitCheck();
         }
 
         function resetStroke(){
@@ -3632,9 +4912,8 @@ function arraysAreEqualUnordered(array1, array2) {
                 }else{
                     drop[id].currentStatus = "";
                     drop[id].box.style.pointerEvents = "auto";
-                    gsap.to(drop[id].box, 0, {backgroundColor:"white", fill:"white", stroke: drop[id].strokeColor, strokeWidth: drop[id].strokeWidth, outline: "red solid 0px"});
-                    /* "red solid 0px"; */
-                    SD.inputs["box"+id].value = undefined;
+                    gsap.to(drop[id].box, 0, {backgroundColor:defaultColorHex, fill:defaultColorHex, stroke: drop[id].strokeColor, strokeWidth: drop[id].strokeWidth, outlineColor: drop[id].strokeColor, outlineWidth:drop[id].strokeWidth});
+                    inputsChange(SD, id, undefined);
                 }
             }
 
@@ -3642,19 +4921,188 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         function answerActionFNC(){
+            var usedColor = colorLimitCheck();
             for(var id in drop){
                 drop[id].box.style.pointerEvents = "none";
+                selectColor(null);
+
                 var answer = drop[id].correctAnswer;
-                if(!answer){
-                    answer = "white";
+                if(answer === "all"){
+                    for(var color in colorPalette){
+                        if(!usedColor[color]){
+                            usedColor[color]=0;
+                        }
+
+                        if(usedColor[color] <= colorPalette[color].limit){
+                            answer = color;
+                            usedColor[color]++;
+                        }
+                    }
+                }else{
+                    if(!answer){
+                        answer = defaultColorHex;
+                    }
                 }
 
+                gsap.to(drop[id].box, 0, {
+                    backgroundColor: defaultColorHex,
+                    fill: defaultColorHex,
+                    stroke: drop[id].strokeColor,
+                    strokeWidth: drop[id].strokeWidth,
+                    outlineColor: drop[id].strokeColor,
+                    outlineWidth:drop[id].strokeWidth,
+                    opacity:1
+                });
+
+
                 if(svgDOM){
-                    gsap.to(drop[id].box, 0.4, {fill: answer});
+                    gsap.to(drop[id].box, 0, {fill: answer});
                 }else{
-                    gsap.to(drop[id].box, 0.4, {backgroundColor: answer});
+                    gsap.to(drop[id].box, 0, {backgroundColor: answer});
                 }
             }
+        }
+
+        function CountAnswerFNC(){
+            selectColor(null);
+            for(var id in drop){
+                drop[id].box.style.pointerEvents = "none";
+                var answer;
+                var allColor=[];
+                for(var color in colorPalette){
+                    allColor.push(color);
+                }
+
+                if(drop[id].correctAnswer === "all"){
+                    answer = allColor[Math.floor(Math.random() * allColor.length)];
+                }else{
+                    answer = drop[id].correctAnswer;
+                }
+
+                gsap.to(drop[id].box, 0, {
+                    backgroundColor: defaultColorHex,
+                    fill: defaultColorHex,
+                    stroke: drop[id].strokeColor,
+                    strokeWidth: drop[id].strokeWidth,
+                    outlineColor: drop[id].strokeColor,
+                    outlineWidth:drop[id].strokeWidth,
+                    opacity:1
+                });
+
+
+                if(svgDOM){
+                    gsap.to(drop[id].box, 0, {fill: answer});
+                }else{
+                    gsap.to(drop[id].box, 0, {backgroundColor: answer});
+                }
+            }
+        }
+
+        function sameColorControl(colorArray, rightGroup){
+            var same = 'right';
+
+            for (var i=1; i<colorArray.length; i++) {
+                if (colorArray[i] !== colorArray[0]) {
+                    same = 'wrong';
+                    break;
+                }
+            }
+
+            if(same && (colorArray.includes(null) || colorArray.includes(undefined)) ){
+                same='empty';
+            }
+
+            return same;
+        }
+
+        function colorSearch(currentList){
+            var found=false;
+            var color = currentList[0];
+            sameGroup.map(function(group){
+                if(group.lockColor === color){
+                    found=true;
+                }
+            });
+
+            return found;
+        }
+
+        function groupCheckAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"PAINT"};
+
+            sameGroup.map(function(group){
+                var currentGroup=[];
+
+                group.box.map(function(id){
+                    var currentColor = SD.inputs["box"+id].value;
+                    currentGroup.push(currentColor);
+                });
+
+                var result = sameColorControl(currentGroup);
+                if(result === 'right' && colorSearch(currentGroup) && !group.lockColor){
+                    result = 'wrong';
+                }
+
+
+                if(result === 'right'){
+                    score.totalRight++;
+                    group.box.map(function(id){
+                        drop[id].currentStatus = "right";
+                    });
+
+                    group.lockColor = currentGroup[0];
+                }else if(result === 'wrong'){
+                    score.totalWrong++;
+                }else{
+                    score.totalEmpty++;
+                }
+            });
+
+            return score;
+        }
+
+        function groupAnswerFNC(){
+            selectColor(null);
+            var allColor=[];
+            for(var color in colorPalette){
+                allColor.push(color);
+            }
+
+            for(var id in drop){
+                drop[id].box.style.pointerEvents = "none";
+                var answer=defaultColorHex;
+
+                gsap.to(drop[id].box, 0, {
+                    backgroundColor: defaultColorHex,
+                    fill: defaultColorHex,
+                    stroke: drop[id].strokeColor,
+                    strokeWidth: drop[id].strokeWidth,
+                    outlineColor: drop[id].strokeColor,
+                    outlineWidth:drop[id].strokeWidth,
+                    opacity:1
+                });
+
+                if(svgDOM){
+                    gsap.to(drop[id].box, 0, {fill: answer});
+                }else{
+                    gsap.to(drop[id].box, 0, {backgroundColor: answer});
+                }
+            }
+
+            var colorID=0;
+            sameGroup.map(function(group){
+                var answer;
+                group.box.map(function(id){
+                    answer = allColor[colorID];
+
+                    if(svgDOM){
+                        gsap.to(drop[id].box, 0, {fill: answer});
+                    }else{
+                        gsap.to(drop[id].box, 0, {backgroundColor: answer});
+                    }
+                });
+                colorID++;
+            });
         }
 
         function controlBtnViewCheck() {
@@ -3672,14 +5120,82 @@ function arraysAreEqualUnordered(array1, array2) {
             }
         }
 
+        function addHistory(){
+            if(svgDOM){
+                SD.inputs = JSON.parse(JSON.stringify(SP.history[0]));
+                if(!svgDOMLoad){
+                    svgDOMLoad = true;
+                    return true;
+                }
+            }
 
-        SP.fnc.push({control: checkAnswer, wrong: controlAfterFNC, right: controlAfterFNC, answer: answerActionFNC });
-        console.log("//<End Paint///");
+            var lastMove = historyExtract(SP, 'paint');
+            for(var box in lastMove){
+                var currentColor = lastMove[box].value;
+                if(colorPalette[currentColor]){
+                    var id = lastMove[box].id;
+                    gsap.to(drop[id].box, 0, {fill: currentColor, backgroundColor: currentColor});
+                    selectedColor = null;
+                }
+            }
+        }
+
+        function reset(){
+            selectColor(null);
+            SP.sceneDiv.style.cursor = "default";
+
+            for(var id in drop){
+                gsap.to(drop[id].box, 0, {
+                    backgroundColor: defaultColorHex,
+                    fill: defaultColorHex,
+                    stroke: drop[id].strokeColor,
+                    strokeWidth: drop[id].strokeWidth,
+                    outlineColor: drop[id].strokeColor,
+                    outlineWidth:drop[id].strokeWidth,
+                    opacity:1
+                });
+
+                inputsChange(SD, id, null);
+            }
+        }
+
+        function close(){
+            for(var id in drop){
+                drop[id].box.style.pointerEvents = 'none';
+            }
+
+            for(var i in colorPalette){
+                colorPalette[i].box.style.pointerEvents = 'none';
+            }
+
+            SP.sceneDiv.style.cursor = "default";
+        }
+
+        var fncList = {
+            history: addHistory,
+            right: controlAfterFNC,
+            wrong: controlAfterFNC,
+            reset: reset,
+            close: close
+        }
+
+        if(countMode){
+            fncList.control = countCheckAnswer;
+            fncList.answer = CountAnswerFNC;
+        } else if(groupMode){
+            fncList.control = groupCheckAnswer;
+            fncList.answer = groupAnswerFNC;
+        } else{
+            fncList.control = checkAnswer;
+            fncList.answer = answerActionFNC;
+        }
+
+        SP.fnc.push(fncList);
     }
 
-    /** Add Sort **/
+    /** Add sort **/
     this.initSORT = function(SP, SD, index){
-        console.log("initSORT");
+        console.log("init SORT");
         var SR = {};
         var activeButonID = -1;
         var answer = jsonV2.slides[index].answer;
@@ -3697,14 +5213,16 @@ function arraysAreEqualUnordered(array1, array2) {
         var firstChildrenDrag = getFirstDrag();
         var setDrop = {};
 
+        var dragCount=0;
         SP.elementList.map(function(element){
             if(element.id.includes("sortDrag")){
+                dragCount++;
                 var drag = element.main;
                 var bid = parseInt( element.id.split("_")[1] );
                 var gid = parseInt( element.data.group );
 
                 if(!SR[gid]){
-                    SR[gid] = {drag:{}, drop:{}, start:null, list:{}, allDragID:[], status:"", statusBorder:null}
+                    SR[gid] = {drag:{}, drop:{}, start:null, list:{}, reset:{}, allDragID:[], status:"", statusBorder:null}
                     setDrop[gid] = {start:null, drag:[]}
                     SD.inputs["box"+gid] = {value: [], type:"sort"};
 
@@ -3718,13 +5236,18 @@ function arraysAreEqualUnordered(array1, array2) {
                 var gsapDraggable = Draggable.create(drag, {
                     type: "x,y",
                     bounds: SR[gid].area,
+                    zIndexBoost: false,
                     onPressParams:[bid, gid],
                     onDragParams:[bid, gid, false],
                     onDragEndParams:[bid, gid, true],
+                    onPress: function() {
+                        this.target.style.zIndex = dragCount;
+                    },
                     onDrag:function(bid, gid, dragEnd){
                         dragControlFNC(this, bid, gid, dragEnd);
                     },
                     onDragEnd:function(bid, gid, dragEnd){
+                        this.target.style.zIndex = 'unset';
                         dragControlFNC(this, bid, gid, dragEnd);
                     }
                 });
@@ -3748,8 +5271,6 @@ function arraysAreEqualUnordered(array1, array2) {
                 gsap.to(drag, 0, {x: dragPos.left, y: dragPos.top});
             }
         });
-
-        console.log( SR );
 
         function addBorder(bounds){
             var border = document.createElement("div");
@@ -3855,7 +5376,7 @@ function arraysAreEqualUnordered(array1, array2) {
 
                         if(drag[0].hitTest(drop, "80%")){
                             SR[section].list[dropID] = parseInt(dragID);
-                            SD.inputs["box"+ section].value.push(parseInt(dropID));
+                            SR[section].reset[dropID] = parseInt(dragID);
                         }
                     }
                 }
@@ -3863,7 +5384,6 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         addDropArea();
-        console.log( SD.inputs );
 
         function dragControlFNC(btn, bid, gid, dragEnd){
             var dropID = -1;
@@ -3920,8 +5440,8 @@ function arraysAreEqualUnordered(array1, array2) {
                     SD.inputs["box"+gid].value.push(list[p]);
                 }
 
-                /* console.log(SD.inputs["box"+ gid].value); */
                 controlBtnView(SP, "enable");
+                inputsChange(SD);
             }
         }
 
@@ -3944,23 +5464,29 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         function checkAnswer(){
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"SORT"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"sort"};
 
             for(var section in SR){
                 var user = SD.inputs["box"+section].value;
-                var right = true;
-                SR[section].correctAnswer.map(function(correct, index){
-                    if(user[index] !== parseInt(correct)){
-                        right = false;
-                    }
-                });
 
-                if(right){
-                    score.totalRight++;
-                    SR[section].status = "right";
+                if(user.length){
+                    var right = true;
+                    SR[section].correctAnswer.map(function(correct, index){
+                        if(user[index] !== parseInt(correct)){
+                            right = false;
+                        }
+                    });
+
+                    if(right){
+                        score.totalRight++;
+                        SR[section].status = "right";
+                    }else{
+                        score.totalWrong++;
+                        SR[section].status = "wrong";
+                    }
                 }else{
-                    score.totalWrong++;
-                    SR[section].status = "wrong";
+                    score.totalEmpty++;
+                    SR[section].status = "empty";
                 }
             }
 
@@ -3974,13 +5500,11 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         function showAnwers(){
-            console.log("Show Answers");
-
             for(var section in SR){
                 SR[section].correctAnswer.map(function(dragID, index){
                     var drag = SR[section].drag[dragID].dom;
                     var id = SR[section].allDragID[index];
-                    gsap.to(drag, 0.2, {x: SR[section].drop[id].left, y: SR[section].drop[id].top, boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
+                    gsap.to(drag, 0, {x: SR[section].drop[id].left, y: SR[section].drop[id].top, boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
                     drag.style.pointerEvents = "none";
                 });
 
@@ -4014,8 +5538,44 @@ function arraysAreEqualUnordered(array1, array2) {
             }
         }
 
-        SP.fnc.push({control: checkAnswer, wrong: afterAction, right: afterAction, answer: showAnwers});
+        function addHistory(){
+            var lastMove = historyExtract(SP, "sort");
 
+            for(var box in lastMove){
+                var section = lastMove[box].id;
+                if(SR[section]){
+                    lastMove[box].value.map(function(dragID, id){
+                        id = SR[section].allDragID[id];
+                        var dragBtn = SR[section].drag[dragID].dom;
+                        var dragXpos =  SR[section].drop[id].left;
+                        var dragYpos =  SR[section].drop[id].top;
+                        gsap.to(dragBtn, 0, {x: dragXpos, y: dragYpos , boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
+                        SR[section].list[id] = dragID;
+                    });
+                }
+            }
+        }
+
+        function reset(){
+            for(var section in SR){
+                for(var dropID in SR[section].reset){
+                    var dragID = SR[section].reset[dropID];
+                    var drag = SR[section].drag[dragID].dom;
+                    var id = dropID;
+                    gsap.to(drag, 0, {x: SR[section].drop[id].left, y: SR[section].drop[id].top, boxShadow:"rgba(0,0,0,0.2) 0px 0px 0px 0px", scale: 1.0});
+                    SR[section].list[dropID] = dragID;
+                }
+            }
+        }
+
+        function close(){
+            for(var section in SR){
+                for(var did in SR[section].drag){
+                    var drag = SR[section].drag[did].dom;
+                    drag.style.pointerEvents = 'none'
+                }
+            }
+        }
 
         /*
         function controlBtnViewCheck() {
@@ -4037,51 +5597,93 @@ function arraysAreEqualUnordered(array1, array2) {
         }
         */
 
+        SP.fnc.push({
+            control: checkAnswer,
+            wrong: afterAction,
+            right: afterAction,
+            answer: showAnwers,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
 
-    /**  Add Video **/
+    /** Add Video **/
     this.initVIDEO = function(SP, SD, index){
-        console.log("initVIDEO");
-
+        console.log("init VIDEO");
         var endFNC = function(){
+            This.scoreCalc(true);
             This.nextScene();
         }
 
-        var mainDivCSS = {};
-        var videoCapture = true;
+        var watchedFNC = function(){
+            SD.complete = true;
+            This.scoreCalc(true, true);
+            checkViewFNC(SD);
+        }
 
         SP.elementList.map(function(element){
-            var videoWidth;
+            var videoProp;
             if(element.id.includes("videoBox")){
-                videoWidth = element.main.offsetWidth;
-                addPlayer(element.id, videoWidth);
+                var videoWidth = element.main.offsetWidth;
+                videoProp = {
+                    div: $("#"+element.id),
+                    divCSS: {},
+                    src: getVideoPath(),
+                    width: videoWidth,
+                    videoCapture: true,
+                    fullScreen: false,
+                    endFNC: endFNC,
+                    watchedFNC: watchedFNC,
+                    occMode: true
+                };
+                SP.video = AddPlayer(videoProp);
             }else if(element.id.includes("popupWindow")){
-                var videoRect = element.main.querySelector(".videoPlayer");
-                if(videoRect){
-                    videoWidth = videoRect.offsetWidth;
-                    var newID = "vp_s"+index+"_0";
-                    videoRect.id = newID;
-                    var pos = getPosition(videoRect);
-
-                    mainDivCSS = {
-                        left: pos.left+"px",
-                        top: pos.top+"px",
-                        position: "absolute"
-                    };
-
-                    videoCapture = false;
-                    endFNC = function(){};
-                    addPlayer(newID, videoWidth);
+                videoProp = addVideoElement(element);
+                if(videoProp){
+                    videoProp.endFNC = function(){};
+                    videoProp.watchedFNC = function(){};
+                    SP.video = AddPlayer(videoProp);
                 }
-
+            }else if(element.id.includes("feedback")){
+                videoProp = addVideoElement(element);
+                if(videoProp){
+                    videoProp.endFNC = function(){};
+                    videoProp.watchedFNC = function(){};
+                    videoProp.videoCapture = true;
+                    SP.video = AddPlayer(videoProp);
+                }
             }
         });
 
-        function watchedFNC(){
-            This.sceneComplete();
+        function addVideoElement(element){
+            var videoRect = element.main.querySelector(".videoPlayer");
+            if(videoRect){
+                var videoWidth = videoRect.offsetWidth;
+                var videoID = "vp_s"+index+"_0";
+                videoRect.id = videoID;
+                var pos = getPosition(videoRect);
+
+
+                return {
+                    div: $("#"+videoID),
+                    divCSS: {
+                        left: pos.left+"px",
+                        top: pos.top+"px",
+                        position: "absolute"
+                    },
+                    src: getVideoPath(),
+                    width: videoWidth,
+                    videoCapture: false,
+                    fullScreen: false,
+                    endFNC: null,
+                    watchedFNC: null,
+                    occMode: true
+                };
+            }
         }
 
-        function addPlayer(id, videoWidth){
+        function getVideoPath(){
             var videoPath = "undefined.m3u8";
             jsonV2.slides[index].videoPath.map(function(video){
                 if(video.active){
@@ -4090,24 +5692,14 @@ function arraysAreEqualUnordered(array1, array2) {
                 }
             });
 
-            var playerProperties = {
-                div: $("#"+id),
-                divCSS: mainDivCSS,
-                src: [videoPath],
-                width: videoWidth,
-                videoCapture: videoCapture,
-                fullScreen: false,
-                endFNC: endFNC,
-                watchedFNC: watchedFNC,
-                occMode: true
-            };
-
-            SP.video = AddPlayer(playerProperties);
+            return [videoPath];
         }
     }
 
+    /** Add line **/
     this.initLINECORRECT = function(SP, SD, index){
-        console.log("initLINECORRECT");
+        console.log("init LINECORRECT");
+
         var answer = jsonV2.slides[index].answer;
         var lineComplete = false;
         var lineContainer;
@@ -4116,6 +5708,7 @@ function arraysAreEqualUnordered(array1, array2) {
         var isDrawing = false;
         var erasing = false;
         var draw = {};
+        var allDraw = [];
         var settings = {
             brushSize: 10,
             brushColor: "#000000"
@@ -4132,6 +5725,9 @@ function arraysAreEqualUnordered(array1, array2) {
                 draw.rightRate = parseInt(answer[id]);
                 draw.lineBG = element.main.querySelector(".lineBg");
                 draw.lineBgColor = draw.lineBG.style.backgroundColor;
+                SD.inputs["box"+id] = {value: null, type: "line"};
+                allDraw[id] = draw;
+                draw.id = id;
             }else if(element.id.includes("drawNav")){
                 lineNavContainer = element.main;
                 draw.drawBox = element.main.querySelector(".drawBox");
@@ -4229,14 +5825,11 @@ function arraysAreEqualUnordered(array1, array2) {
         loadImageToCanvas(draw.rightPngLink , draw.rightCtx);
 
         draw.drawCanvas.addEventListener('mousedown', startDrawing);
-        draw.drawCanvas.addEventListener('mouseup', stopDrawing);
-        draw.drawCanvas.addEventListener('mouseleave', stopDrawing);
         draw.drawCanvas.addEventListener('mousemove', drawCanvasFNC);
-
         draw.drawCanvas.addEventListener('touchstart', startDrawing);
-        draw.drawCanvas.addEventListener('touchend', stopDrawing);
-        draw.drawCanvas.addEventListener('touchcancel', stopDrawing);
         draw.drawCanvas.addEventListener('touchmove', drawCanvasFNC);
+        SP.sceneDiv.addEventListener('mouseup', stopDrawing);
+        SP.sceneDiv.addEventListener('touchend', stopDrawing);
 
         function startDrawing(e) {
             e.preventDefault();
@@ -4252,12 +5845,17 @@ function arraysAreEqualUnordered(array1, array2) {
             drawCanvasFNC(e);
         }
 
-        function stopDrawing(e) {
+        function stopDrawing(e){
             e.preventDefault();
+            e.stopPropagation();
+
+            if(isDrawing && (e.type === 'touchend' || e.type === 'mouseup')){
+                inputsChange(SD, draw.id, draw.drawCanvas.toDataURL("image/png"));
+            }
+
             isDrawing = false;
             draw.drawCtx.beginPath();
         }
-
 
         function canvasGetPosition(e) {
             var rect = draw.drawCanvas.getBoundingClientRect();
@@ -4305,7 +5903,7 @@ function arraysAreEqualUnordered(array1, array2) {
 
 
         function checkAnswer() {
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"LINECORRECT"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"line"};
             var data1 = draw.drawCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
             var data2 = draw.rightCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
 
@@ -4326,7 +5924,7 @@ function arraysAreEqualUnordered(array1, array2) {
             console.log("overlappingPixels:", overlappingPixels, "totalPixels:", totalPixels);
             console.log("Çarpışma %:", overlapPercent, "Sonuç:", correctRate );
 
-            if(correctRate < 0){
+            if(SD.inputs["box"+ draw.id].value === null){
                 score.totalEmpty++;
             }else if(correctRate >= draw.rightRate){
                 score.totalRight++;
@@ -4342,7 +5940,6 @@ function arraysAreEqualUnordered(array1, array2) {
 
 
         function stopDraw(){
-            console.log("stopDraw");
             draw.drawCanvas.style.pointerEvents="none";
             lineNavContainer.style.display = "none";
             lineComplete = true;
@@ -4350,7 +5947,6 @@ function arraysAreEqualUnordered(array1, array2) {
 
 
         function rightFNC(){
-            console.log("Line rightFNC FNC");
             stopDraw();
         }
 
@@ -4365,44 +5961,76 @@ function arraysAreEqualUnordered(array1, array2) {
             }
         }
 
-        function wrongFNC(){
-            console.log("Line wrongFNC FNC");
-        }
+        function wrongFNC(){}
 
         function answerFNC(){
             draw.drawCtx.clearRect(0, 0, canvasWidth, canvasHeight);
             draw.drawCtx.beginPath();
             draw.rightCanvas.style.opacity = 100;
-            console.log("Line answerFNC ");
         }
-
 
         function returnWarning(){
             draw.lineBG.style.backgroundColor = draw.lineBgColor;
         }
 
-        SP.fnc.push({control: checkAnswer, wrong: wrongFNC, right: rightFNC, answer: answerFNC});
+        function addHistory(){
+            reset();
+            var lastMove = historyExtract(SP, 'line');
+            for(var box in lastMove){
+                var currentID = lastMove[box].id;
+                var base64 = lastMove[box].value;
+                var img = new Image();
 
+                img.onload = function(){
+                    allDraw[currentID].drawCtx.drawImage(img, 0, 0);
+                };
+
+                img.src = base64;
+            }
+        }
+
+        function reset(){
+            draw.rightCanvas.style.opacity = 0;
+            draw.drawCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        function close(){
+            draw.drawCanvas.style.pointerEvents = 'none';
+            SP.sceneDiv.style.cursor = 'default';
+            draw.drawBox.style.pointerEvents = 'none';
+            draw.eraserBox.style.pointerEvents = 'none';
+        }
+
+        SP.fnc.push({
+            control: checkAnswer,
+            wrong: wrongFNC,
+            right: rightFNC,
+            answer: answerFNC,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
 
-
+    /** Add point **/
     this.initPOINT = function(SP, SD, index){
+        console.log("init POINT");
         var answer = jsonV2.slides[index].answer;
-
         var rightAnswer;
         var fixedPoints=[];
         var userPoints = [];
         var allCircle = [];
         var grid=[];
         var canvas;
-        const lines = [];
-        let selectedCircle = null;
-        let mode = "draw";
+        var lines = [];
+        var selectedCircle = null;
+        var mode = "draw";
         var canvasOrigin;
         var drawBtn;
         var easeBtn;
         var time;
         var pointNav;
+        var canvasList = [];
         var set = {
             lineColor: "#0ABBBF",
             strokeWidth: 3
@@ -4439,7 +6067,10 @@ function arraysAreEqualUnordered(array1, array2) {
                 var id = parseInt(element.id.split("_")[1]);
                 rightAnswer = answer[id];
                 canvas = element;
+                canvas.cid = id;
                 canvasOrigin = getPosition(element.main);
+                SD.inputs['box'+ id] = {value: null, type: "point"};
+                canvasList[id] = canvas;
             }else if(element.id.includes("pointNav")){
                 pointNav = element.main;
             }
@@ -4617,12 +6248,18 @@ function arraysAreEqualUnordered(array1, array2) {
             }else{
                 controlBtnView(SP, "disable");
             }
+
+            SD.inputs["box"+canvas.cid].value = [];
+            userPoints.map(function(line){
+                SD.inputs["box"+canvas.cid].value.push(line.point);
+            });
+
+            inputsChange(SD);
         }
 
         // Çizgi oluşturma
         function createLine(selectedCircle, nextCircle) {
             var control = addPointControl(selectedCircle, nextCircle);
-
             var permissionList = permissionControl(selectedCircle);
             var permission = permissionList.indexOf(nextCircle.attrs.butonID);
 
@@ -4650,6 +6287,13 @@ function arraysAreEqualUnordered(array1, array2) {
                 userPoints.push(control);
                 lines.push({ line, pointsRef: [selectedCircle, nextCircle] });
                 controlBtnView(SP, "enable");
+
+                SD.inputs["box"+canvas.cid].value = [];
+                userPoints.map(function(line){
+                    SD.inputs["box"+canvas.cid].value.push(line.point);
+                });
+
+                inputsChange(SD);
             }else{
                 defaultCircle();
             }
@@ -4681,7 +6325,7 @@ function arraysAreEqualUnordered(array1, array2) {
 
 
         function checkAnswer(){
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"POINT"};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"point"};
 
             if(!userPoints.length){
                 score.totalEmpty = 1;
@@ -4756,8 +6400,672 @@ function arraysAreEqualUnordered(array1, array2) {
             });
         }
 
-        SP.fnc.push({control: checkAnswer, wrong: wrongFNC, right: rightFNC, answer: answerFNC});
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'point');
+            for(var box in lastMove){
+                var currentID = lastMove[box].id;
+                if(canvasList[currentID]){
+                    lastMove[box].value.map(function(line){
+                        var point = line.split('_');
+                        var startPoint = parseInt(point[0]);
+                        var finishPoint = parseInt(point[1]);
+                        createLine( allCircle[startPoint], allCircle[finishPoint] );
+                    });
+                }
+            }
+        }
+
+        function reset(){
+            var lastCircle;
+
+            allCircle.map(function(btn){
+                easeLines(btn);
+                lastCircle = btn;
+            });
+
+            handleDrawMode(lastCircle);
+        }
+
+        function close(){
+            allCircle.map(function(circle){
+                circle.off();
+            });
+
+            drawBtn.style.pointerEvents='none';
+            easeBtn.style.pointerEvents='none';
+            SP.sceneDiv.style.cursor = 'default';
+        }
+
+        SP.fnc.push({
+            control: checkAnswer,
+            wrong: wrongFNC,
+            right: rightFNC,
+            answer: answerFNC,
+            history: addHistory,
+            reset: reset,
+            close: close
+        });
     }
+
+    /** Add sr **/
+    this.initRECORD = function(SP, SD, index){
+        console.log("init RECORD");
+        var SR;
+        var input;
+
+        SP.elementList.forEach(function(e){
+            if(e.id.includes("soundRecord")){
+                var id = parseInt(e.id.split("_")[1]);
+                SD.inputs["box"+ id] = {value: null, type: "sr"};
+                input = SD.inputs["box"+ id];
+                SP.soundRecord[id] = {
+                    elapsedTime: null,
+                    recordInterval: null,
+                    recordStartTime: null,
+                    soundPlaying: false,
+                    base64: "",
+                    progressAnimation: true,
+                    recording:false
+                };
+
+                SR = SP.soundRecord[id];
+            }
+        });
+
+        var Scene = SP.sceneDiv;
+        var set = {recordTime:15};
+
+        var audioRecorder = {
+            audioBlobs: [],
+            mediaRecorder: null,
+            streamBeingCaptured: null,
+            start: function () {
+                if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                    return Promise.reject(new Error('mediaDevices API or getUserMedia method is not supported in this browser.'));
+                } else {
+                    return navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(function(stream){
+                            audioRecorder.streamBeingCaptured = stream;
+                            audioRecorder.mediaRecorder = new MediaRecorder(stream);
+                            audioRecorder.audioBlobs = [];
+
+                            audioRecorder.mediaRecorder.addEventListener("dataavailable", function(e) {
+                                audioRecorder.audioBlobs.push(e.data);
+                            });
+
+                            audioRecorder.mediaRecorder.addEventListener("start", function(e) {
+                                SR.recording = true;
+                            });
+
+                            audioRecorder.mediaRecorder.start();
+                        });
+                }
+            },
+
+            stop: function () {
+                return new Promise(function(resolve) {
+                    let mimeType = audioRecorder.mediaRecorder.mimeType;
+
+                    audioRecorder.mediaRecorder.addEventListener("stop", function() {
+                        let audioBlob = new Blob(audioRecorder.audioBlobs, { type: mimeType });
+                        resolve(audioBlob);
+                    });
+
+                    audioRecorder.cancel();
+                });
+            },
+
+            cancel: function () {
+                if(SR.recording){
+                    audioRecorder.mediaRecorder.stop();
+                    audioRecorder.stopStream();
+                    audioRecorder.resetRecordingProperties();
+                }
+            },
+
+            stopStream: function () {
+                audioRecorder.streamBeingCaptured.getTracks().forEach(function(track){
+                    track.stop()
+                });
+            },
+
+            resetRecordingProperties: function () {
+                audioRecorder.mediaRecorder = null;
+                audioRecorder.streamBeingCaptured = null;
+            }
+        }
+
+
+
+        SR.startAudioRecordingFNC = function(){
+            if (SR.Howl && SR.Howl.playing()) {
+                SR.Howl.stop();
+            }
+
+            audioRecorder.start()
+                .then(() => {
+                    SR.recordStartTime = new Date();
+                    console.log("SR.recordStartTime",SR.recordStartTime);
+                    SR.startViewFNC();
+                })
+                .catch(error => {
+                    console.log(error);
+                    if (error.message.includes("mediaDevices API or getUserMedia method is not supported in this browser.")) {
+                        console.log("Ses kaydetmek için Chrome ve Firefox gibi tarayıcıları kullanın.");
+                        SR.warning.style.display = "block";
+                    }
+
+                    switch (error.name) {
+                        case 'AbortError':
+                            console.log("Bir AbortError oluştu (navigator.mediaDevices.getUserMedia)");
+                            break;
+                        case 'NotAllowedError':
+                            console.log("NotAllowedError oluştu. Kullanıcı izni reddetmiş olabilir (navigator.mediaDevices.getUserMedia)");
+                            break;
+                        case 'NotFoundError':
+                            console.log("Bulunamadı Hatası oluştu (navigator.mediaDevices.getUserMedia)");
+                            break;
+                        case 'NotReadableError':
+                            console.log("NotReadableError oluştu (navigator.mediaDevices.getUserMedia)");
+                            break;
+                        case 'SecurityError':
+                            console.log("Bir Güvenlik Hatası oluştu (navigator.mediaDevices.getUserMedia yada from the MediaRecorder.start)");
+                            break;
+                        case 'TypeError':
+                            console.log("Bir TypeError oluştu (navigator.mediaDevices.getUserMedia)");
+                            break;
+                        case 'InvalidStateError':
+                            console.log("Bir InvalidStateError oluştu (MediaRecorder.start)");
+                            break;
+                        case 'UnknownError':
+                            console.log("Bilinmeyen bir hata oluştu (MediaRecorder.start)");
+                            break;
+                        default:
+                            console.log("Hata adıyla bir hata oluştu: " + error.name);
+                    }
+                });
+        }
+
+        SR.stopAudioRecordingFNC = function() {
+            console.log("Stopping Audio Recording...");
+            if(SR.recording){
+                audioRecorder.stop()
+                    .then(audioAsblob => {
+                        SR.playAudioFNC(audioAsblob);
+                        SR.stopViewFNC();
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        switch (error.name) {
+                            case 'InvalidStateError':
+                                console.log("Bir InvalidStateError oluştu.");
+                                break;
+                            default:
+                                console.log("Hata adıyla bir hata oluştu " + error.name);
+                        }
+                    });
+               /* SR.RecordRedCircle.css("animation-iteration-count", "1");*/
+            }
+        }
+
+
+        SR.cancelAudioRecordingFNC = function() {
+            console.log("Canceling audio...");
+            audioRecorder.cancel();
+            SR.stopViewFNC();
+            SR.base64 = null;
+            addB64DataFNC(SR.base64);
+        }
+
+
+        SR.playAudioFNC = function(recorderAudioAsBlob){
+            var reader = new FileReader();
+
+            function loadEnd(e){
+                SR.base64 = e.target.result;
+                SR.oldDataLoad(SR.base64, false, true);
+            }
+
+            reader.addEventListener("loadend", loadEnd);
+            reader.readAsDataURL(recorderAudioAsBlob);
+        }
+
+        SR.timeConvertSecondAndMinutes = function(elapsed){
+            var seconds = Math.floor(elapsed % 60);
+            seconds = seconds < 10 ? "0"+ seconds : seconds;
+
+            elapsed = Math.floor(elapsed / 60);
+
+            var minutes = elapsed % 60;
+            minutes = minutes < 10 ? "0"+ minutes : minutes;
+
+            return minutes +":"+ seconds;
+        }
+
+        SR.recordTimeCalcFNC = function(startTime) {
+            var endTime = new Date();
+            var timeDiff = endTime - startTime;
+            timeDiff = timeDiff / 1000;
+            return SR.timeConvertSecondAndMinutes(timeDiff);
+        }
+
+
+        SR.recordElapsedTimeFNC = function(){
+            SR.elapsedTime = SR.recordTimeCalcFNC(SR.recordStartTime);
+            SR.recordTime.innerText = SR.elapsedTime;
+
+            if(SR.maxRecordTimeControlFNC(SR.elapsedTime)){
+                SR.stopAudioRecordingFNC();
+            }
+        }
+
+        SR.maxRecordTimeControlFNC = function(elapsedTime){
+            var second = Number(elapsedTime.split(":")[1]);
+            return second >= set.recordTime;
+        }
+
+        var lang = {
+            prepare: "Lütfen Bekleyiniz.",
+            stopRecord: "Kaydı Durdur",
+            listenRecord: "Kaydı Dinle",
+            restartRecord: "Tekrar Kayıt Başlat",
+            warning: "Tarayıcı bu özelliği desteklemiyor. Lütfen Chrome tarayıcı kullanınız."
+        }
+
+        SR.startRecordBtn = Scene.querySelector(".record_off");
+        SR.stopRecordBtn = Scene.querySelector(".record_on");
+        SR.recordPrepare = Scene.querySelector(".prepareText");
+
+        SR.recordStatusMain = Scene.querySelector(".recordStatusMain");
+        SR.recordTime = utils.addDOM({className: "recordTime", innerText: "00:00"});
+        SR.recordRedCircle = utils.addDOM({className: "recordRedCircle"});
+        SR.recordStatusMain.appendChild(SR.recordRedCircle);
+        SR.recordStatusMain.appendChild(SR.recordTime);
+
+        SR.recordPlayMain = Scene.querySelector(".recordPlayMain");
+        SR.playTxt = utils.addDOM({className: "Record_Text", innerText: (lang.listenRecord+" (00:00)")});
+        SR.playProgress = utils.addDOM({className: "Record_playProgress"});
+        SR.recordPlayMain.appendChild(SR.playProgress);
+        SR.recordPlayMain.appendChild(SR.playTxt);
+        SR.recordPlayMain.style.overflow = "hidden";
+
+        SR.recordStop = Scene.querySelector(".recordStop");
+        SR.recordStopText = utils.addDOM({className: "Record_Text", innerText: lang.stopRecord});
+        SR.recordStop.appendChild(SR.recordStopText);
+
+        SR.recordRestart = Scene.querySelector(".recordRestart");
+        SR.recordRestartText = utils.addDOM({className: "Record_Text", innerText: lang.restartRecord});
+        SR.recordRestart.appendChild(SR.recordRestartText);
+
+        SR.warning = Scene.querySelector(".warningText");
+        SR.warning.innerText = lang.warning;
+
+        /* CSS */
+        SR.startRecordBtn.style.cursor = "pointer";
+        SR.stopRecordBtn.style.cursor = "pointer";
+        SR.recordPlayMain.style.cursor = "pointer";
+        SR.recordStop.style.cursor = "pointer";
+        SR.recordRestart.style.cursor = "pointer";
+        SR.recordPrepare.style.textAlign = "center";
+        SR.recordPrepare.innerText = lang.prepare;
+        SR.recordPrepare.style.fontSize = "16px";
+        SR.warning.style.fontSize = "16px";
+        SR.recordRedCircle.classList.add('recordCircleAnimate');
+        SR.recordRedCircle.classList.add('recordCircleAnimateStop');
+
+        Object.assign(SR.warning.style, {
+            fontFamily: "Nunito",
+            textAlign: "center",
+            display: "none",
+            fontSize:"16px",
+            color:"#363636"
+        });
+
+        SR.recordPrepare.style.display = "none";
+        SR.stopRecordBtn.style.display = "none";
+        SR.recordStatusMain.style.display = "none";
+        SR.recordPlayMain.style.display = "none";
+        SR.recordRestart.style.display = "none";
+        SR.recordStop.style.display = "none";
+
+
+        SR.startRecordBtn.addEventListener("click", function(){
+            SR.recordPrepare.style.display="block";
+            SR.startAudioRecordingFNC();
+        });
+
+
+        SR.stopRecordBtn.addEventListener("click", function(){
+            SR.stopAudioRecordingFNC();
+        });
+
+        SR.recordStop.addEventListener("click", function(){
+            SR.stopAudioRecordingFNC();
+        });
+
+        SR.recordPlayMain.addEventListener("click", function(){
+            if(!SR.Howl.playing()){
+                addAnimation();
+                SR.Howl.play();
+            }
+        });
+
+        SR.recordRestart.addEventListener("click", function(){
+            SR.recordPrepare.style.visibility="block";
+            SR.startAudioRecordingFNC();
+        });
+
+
+        SR.startViewFNC = function(){
+            SR.recordElapsedTimeFNC();
+            SR.recordInterval = setInterval(SR.recordElapsedTimeFNC, 1000);
+
+            SR.startRecordBtn.style.display = "none";
+            SR.stopRecordBtn.style.display = "block";
+            SR.recordStatusMain.style.display = "flex";
+            SR.recordPlayMain.style.display = "none";
+            SR.recordStop.style.display = "flex";
+            SR.recordRestart.style.display = "none";
+            SR.recordPrepare.style.display = "none";
+            SR.recordRedCircle.classList.remove('recordCircleAnimateStop');
+        }
+
+        SR.stopViewFNC = function(){
+            SR.startRecordBtn.style.display = "block";
+            SR.stopRecordBtn.style.display = "none";
+            SR.recordStatusMain.style.display = "none";
+            SR.recordPlayMain.style.display = "flex";
+            SR.recordStop.style.display = "none";
+            SR.recordRestart.style.display = "flex";
+
+            SR.playProgress.style.width = 0;
+            clearInterval(SR.recordInterval);
+            SR.recording = false;
+            SR.recordRedCircle.classList.add('recordCircleAnimateStop');
+        }
+
+        SR.oldDataLoad = function(soundData, autoPlay, showBtn){
+            SR.Howl = new Howl({
+                src: [soundData]
+            });
+
+            SR.Howl.on("load",function(){
+                soundLoadAction();
+            });
+
+            function soundLoadAction(){
+                SR.elapsedTime = SR.timeConvertSecondAndMinutes(SR.Howl.duration());
+                SR.playTxt.innerText = "Kaydı Dinle ("+ SR.elapsedTime +")";
+                if(showBtn){
+                    SR.stopViewFNC();
+                }
+
+                SR.recordPlayMain.style.display = "flex";
+
+                if(autoPlay){
+                    SR.Howl.play();
+                    addAnimation();
+                }
+
+                addB64DataFNC(soundData);
+            }
+
+            if (SR.Howl.state() === 'loaded') {
+                soundLoadAction();
+            }
+        }
+
+        function addAnimation(){
+            if(SR.Animation){
+                SR.Animation.kill();
+            }
+
+            SR.playProgress.style.width = 0;
+            SR.Animation = gsap.to(SR.playProgress, SR.Howl.duration(), {width:"100%", ease:"none"});
+        }
+
+        SR.stopPlayedRecord = function(){
+            if(SR.Howl){
+                if(SR.Howl.playing()){
+                    SR.Howl.stop();
+                }
+            }
+        }
+
+        function addB64DataFNC(soundData){
+            input.value = soundData;
+            inputsChange(SD);
+        }
+
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'sr');
+            for(var box in lastMove){
+                var currentID = lastMove[box].id;
+                if(SP.soundRecord[currentID]){
+                    SR.oldDataLoad(lastMove[box].value, false, true);
+                }
+            }
+        }
+
+        function checkRightAnswer(){
+            if(input.value === null){
+                return {totalRight:0, totalWrong:0, totalEmpty:1, Type:"sr"};
+            }else{
+                return {totalRight:1, totalWrong:0, totalEmpty:0, Type:"sr"};
+            }
+        }
+
+        function close(){
+            if(input.value){
+                SR.stopRecordBtn.style.display = "none";
+                SR.recordStop.style.display = "none";
+                SR.recordRestart.style.display = "none";
+                SR.startRecordBtn.style.pointerEvents = "none";
+            }else{
+                SR.startRecordBtn.style.pointerEvents = "none";
+            }
+        }
+
+        SP.fnc.push({
+            history: addHistory,
+            control: checkRightAnswer,
+            wrong: function(){},
+            right: function(){},
+            answer: function(){},
+            close: close
+        });
+    }
+
+    /** Add word **/
+    this.initWORD = function(SP, SD, index){
+        console.log("init WORD");
+        var answer = jsonV2.slides[index].answer;
+
+        var wordArray = [];
+        var set =  {
+            mouseEnter: "rgba(192,192,192,1)",
+            mouseLeave: "rgba(255,255,255,0.20)",
+            click: "rgba(192, 192, 192, 1)"
+        };
+
+        if(jsonV2.slides[index].scene.colorEnter){
+            set.mouseEnter = jsonV2.slides[index].scene.colorEnter;
+        }
+
+        if(jsonV2.slides[index].scene.colorLeave){
+            set.mouseLeave = jsonV2.slides[index].scene.colorLeave;
+        }
+
+        if(SP.controlBtn){
+            set.controlMode = true;
+        }
+
+        SP.elementList.forEach(function(element){
+            if(element.id.includes("wordBox")){
+                var id = parseInt(element.id.split("_")[1]);
+                var bg = element.main.querySelector(".wordTxt");
+                wordArray[id] = {id: id, main:element.main, bg:bg, status:null, clicked:false, rightAnswer:false}
+
+                element.main.addEventListener("mouseenter", function(){
+                    if(!wordArray[id].clicked){
+                        bg.style.backgroundColor = set.mouseEnter;
+                    }
+                });
+
+                element.main.addEventListener("mouseleave", function(){
+                    if(!wordArray[id].clicked){
+                        bg.style.backgroundColor = set.mouseLeave;
+                    }
+                });
+
+
+                element.main.addEventListener("click", function(){
+                    if(set.controlMode){
+                        if(wordArray[id].clicked){
+                            deActive(id);
+                        }else{
+                            btnActive(id);
+                        }
+                    }
+                });
+
+                if(bg.classList.contains("wordAddSpace")){
+                    bg.style.borderRadius = "8px";
+                    bg.style.width = "auto";
+                    bg.style.height = "auto";
+                    bg.style.padding = "3px";
+                    bg.style.left = "-3px";
+                    bg.style.top = "-3px";
+                }
+
+                bg.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+                element.main.style.cursor = "pointer";
+                SD.inputs["box" + id] = {value: null, type: "word"};
+                if(answer[id]){
+                    wordArray[id].rightAnswer = true;
+                }
+            }
+        });
+
+        function btnActive(id){
+            wordArray[id].bg.style.backgroundColor = set.mouseEnter;
+            wordArray[id].clicked = true;
+            inputsChange(SD, id, true);
+            controlBtnViewCheck();
+        }
+
+        function deActive(id){
+            wordArray[id].bg.style.backgroundColor = set.mouseLeave;
+            wordArray[id].clicked = false;
+            inputsChange(SD, id, null);
+        }
+
+        function controlBtnViewCheck() {
+            var found = false;
+            wordArray.map(function(word){
+                if(word.clicked){
+                    found = true;
+                }
+            });
+
+            if (found) {
+                controlBtnView(SP, "enable");
+            } else {
+                controlBtnView(SP, "disable");
+            }
+        }
+
+        function checkAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"word"};
+
+            wordArray.map(function(work, id){
+                if(work.clicked && work.rightAnswer){
+                    score.totalRight++;
+                    work.status = 'right';
+                }else if(work.clicked && !work.rightAnswer){
+                    score.totalWrong++;
+                    work.status = 'wrong';
+                }else if(!work.clicked && work.rightAnswer){
+                    score.totalEmpty++;
+                }
+            });
+
+            return score;
+        }
+
+        function controlAfterFNC(){
+            wordArray.map(function(work, id){
+                if(work.status === 'right'){
+                    work.bg.style.backgroundColor = '#008000';
+                }else if(work.status === 'wrong'){
+                    work.bg.style.backgroundColor = '#c62828';
+                }
+
+                work.main.style.pointerEvents='none';
+            });
+
+            setTimeout(reset, 1000);
+        }
+
+        function reset(){
+            wordArray.map(function(work){
+                if(work.status !== 'right'){
+                    work.bg.style.backgroundColor = set.mouseLeave;
+                    work.main.style.pointerEvents = 'auto';
+                    work.status = null;
+                    work.clicked = false;
+                    inputsChange(SD, work.id, null);
+                }
+            });
+
+            controlBtnViewCheck();
+        }
+
+        function answerActionFNC(){
+            wordArray.map(function(work){
+                if(work.rightAnswer){
+                    work.bg.style.backgroundColor = '#008000';
+                }
+
+                work.main.style.pointerEvents = 'none';
+                work.status = null;
+                work.clicked = false;
+                inputsChange(SD, work.id, null);
+            });
+        }
+
+        function addHistory(){
+            var lastMove = historyExtract(SP, 'word');
+            for(var box in lastMove){
+                var currentID = lastMove[box].id;
+                btnActive(currentID);
+            }
+        }
+
+        function resetFNC(){
+            wordArray.map(function(work){
+                deActive(work.id);
+            });
+        }
+
+        function close(){
+            wordArray.map(function(word){
+                word.main.style.pointerEvents='none';
+            });
+        }
+
+        SP.fnc.push({
+            control: checkAnswer,
+            wrong: controlAfterFNC,
+            right: controlAfterFNC,
+            answer: answerActionFNC,
+            history: addHistory,
+            reset: resetFNC,
+            close: close
+        });
+        //End
+    }
+
 }
 
 

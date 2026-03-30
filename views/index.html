@@ -13,7 +13,7 @@
     <script src="/assets/js/player.js"></script>
     <script src="/assets/js/gsap.min.js"></script>
     <script src="/assets/js/Draggable.min.js"></script>
-    <script src="/assets/js/hlscodecMay.js"></script>
+    <script src="/assets/js/codec111925.js"></script>
     <script src="/assets/js/hlsplayer2025.js"></script>
 
     <link rel="stylesheet" href="/assets/css/ide.css">
@@ -26,7 +26,7 @@
     </div>
 
     <div>
-        <div class="TopIconBox" id="preview_icon"><img src="assets/img/home_icon.png"></div>
+        <div class="TopIconBox" id="preview_icon"><img src="assets/img/create_change.png"></div>
     </div>
 
     <div id="main">
@@ -57,8 +57,11 @@
             <div class="TopIconBox" id="createComplete"><img src="assets/img/create_complete.png"></div>
             <div class="TopIconBox" id="createSolution" style="display: none"><img src="assets/img/create_solution.png"></div>
             <div class="TopIconBox" id="createRefresh"><img src="assets/img/create_refresh.png"></div>
+            <div class="TopIconBox" id="createFinish"><img src="assets/img/create_finish.png"></div>
+            <div class="TopIconBox" id="createSoundPlayer"><img src="assets/img/create_sound.png"></div>
 
             <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
+            <div class="TopIconBox" id="createFeedback"><img src="assets/img/create_feedback.png"></div>
             <div class="TopIconBox" id="createURL"><img src="assets/img/create_url.png"></div>
             <div class="createSpace"></div>
             <div id="createSelectBox">
@@ -72,6 +75,8 @@
                     <option value="6">Video</option>
                     <option value="7">Çizgi Doğrulama</option>
                     <option value="8">Nokta Çizim </option>
+                    <option value="9">Ses Kaydetme</option>
+                    <option value="10">Kelime</option>
                 </select>
             </div>
 
@@ -125,6 +130,14 @@
                 <div class="TopIconBox" id="createPoint"><img src="assets/img/create_select.png"></div>
                 <div class="TopIconBox" id="createPointCanvas"><img src="assets/img/create_canvas.png"></div>
                 <div class="TopIconBox" id="createPointNav"><img src="assets/img/create_drawnav.png"></div>
+            </div>
+
+            <div id="iconGroup9" class="iconGroup">
+                <div class="TopIconBox" id="createRecord"><img src="assets/img/create_record.png"></div>
+            </div>
+
+            <div id="iconGroup10" class="iconGroup">
+                <div class="TopIconBox" id="createWord"><img src="assets/img/create_word.png"></div>
             </div>
 
         </div>
@@ -314,8 +327,9 @@
 
     <div class="WorkSpaces_Group addSpace WorkSpace_Opacity">
         <div class="WorkSpaces_Header">Opacity</div>
-        <div class="font_table2">
-            <input type="range" id="opacity_slider" min="1" max="100" value="50">
+        <div class="font_table2" style="align-items: center">
+            <input type="range" id="opacity_slider" min="0" max="100" value="50" step="1">
+            <div id="opacity_value">0</div>
         </div>
     </div>
 
@@ -447,6 +461,30 @@
 </div>
 
 
+<div id="change_window">
+    <div class="change_popup">
+        <div class="change_mainDiv">
+            <select id="userTypes">
+                <option value="9244372">melike</option>
+                <option value="15432145">irem</option>
+                <option value="7729542">kamil</option>
+                <option value="2521680">demet</option>
+                <option value="12621116">goknur</option>
+                <option value="15480368">cansu</option>
+                <option value="7729545">tuncay</option>
+                <option value="15514575">basak</option>
+                <option value="20">gulcin</option>
+                <option value="15515696">bahar</option>
+                <option value="15517168">duygu</option>
+                <option value="12896817">taner</option>
+            </select>
+            <button type="button" class="change_button" id="change_action">Değiştir</button>
+            <button type="button" class="change_button" id="change_close">Kapat</button>
+        </div>
+    </div>
+</div>
+
+
 <div id="loaderMain">
     <div class="loaderMain_window">
         <div class="loaderMain_windowTitle">Please wait</div>
@@ -510,12 +548,15 @@
             createSelect: document.querySelector("#createSelect"),
             createDraw: document.querySelector("#createDraw"),
             createPopup: document.querySelector("#createPopup"),
+            createFeedback: document.querySelector("#createFeedback"),
             createControl: document.querySelector("#createControl"),
             createAnswer: document.querySelector("#createAnswer"),
 
             createComplete: document.querySelector("#createComplete"),
             createSolution: document.querySelector("#createSolution"),
             createRefresh: document.querySelector("#createRefresh"),
+            createFinish: document.querySelector("#createFinish"),
+            createSoundPlayer: document.querySelector("#createSoundPlayer"),
             createColor: document.querySelector("#createColor"),
             createPaintBox: document.querySelector("#createPaintBox"),
 
@@ -546,6 +587,8 @@
             createPoint: document.querySelector("#createPoint"),
             createPointCanvas: document.querySelector("#createPointCanvas"),
             createPointNav: document.querySelector("#createPointNav"),
+            createRecord: document.querySelector("#createRecord"),
+            createWord: document.querySelector("#createWord"),
 
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
@@ -558,6 +601,7 @@
             rect_borderInput: document.querySelector("#rect_borderInput"),
 
             opacity_slider: document.querySelector("#opacity_slider"),
+            opacity_value: document.querySelector("#opacity_value"),
 
             align_Left: document.querySelector("#align_Left"),
             align_HorizontalCenter: document.querySelector("#align_HorizontalCenter"),
@@ -623,7 +667,9 @@
             document.querySelector("#iconGroup5"),
             document.querySelector("#iconGroup6"),
             document.querySelector("#iconGroup7"),
-            document.querySelector("#iconGroup8")
+            document.querySelector("#iconGroup8"),
+            document.querySelector("#iconGroup9"),
+            document.querySelector("#iconGroup10")
         ]
     }
 
@@ -806,7 +852,7 @@
             IDE.workSpace.WorkSpace_Identity.style.display = "none";
             IDE.workSpace.WorkSpace_SceneParam.style.display = "none";
             IDE.workSpace.WorkSpace_AnswerParam.style.display = "block";
-            IDE.workSpace.WorkSpace_ColorPicker.style.display = "none";
+            IDE.workSpace.WorkSpace_ColorPicker.style.display = "block";
             IDE.workSpace.WorkSpace_Font.style.display = "none";
             IDE.workSpace.WorkSpace_Opacity.style.display = "none";
 
@@ -842,14 +888,17 @@
 
     function opacityWorkSpace(prop){
         if(IDE.selectedLayers.length === 1){
-            if(prop.opacity){
+            if(prop.opacity|| prop.opacity===0){
                 IDE.selectedLayers[0].opacity(prop.opacity);
+                IDE.workSpace.opacity_value.innerText = Math.floor(IDE.selectedLayers[0].opacity()*100);
             }else{
                 IDE.workSpace.opacity_slider.value = IDE.selectedLayers[0].opacity()*100;
+                IDE.workSpace.opacity_value.innerText = IDE.workSpace.opacity_slider.value;
             }
         }
     }
 
+    /*
     function colorPicker(prop){
         if(IDE.selectedLayers.length === 1){
             if(IDE.selectedLayers[0].Layer.type === "objectRect"){
@@ -933,6 +982,91 @@
             }
         }
     }
+    */
+
+    function colorPicker(prop){
+        IDE.selectedLayers.map(function(select){
+            if(select.Layer.type === "objectRect"){
+                if(prop.fillColor){
+                    if(!prop.fillColor.includes("#")){
+                        prop.fillColor = "#"+prop.fillColor;
+                    }
+
+                    if(utils.isHexCode(prop.fillColor)){
+                        var fillColor = select.fill();
+                        if(!fillColor){
+                            fillColor = "#000000";
+                        }
+
+                        var fillOld = utils.hexConvert(fillColor);
+                        var fillNew = utils.hexConvert({color: prop.fillColor, alpha: fillOld.alpha});
+                        IDE.workSpace.rect_fillColorPicker.value = fillNew.color;
+                        IDE.workSpace.rect_fillColorInput.value = fillNew.color;
+                        IDE.workSpace.rect_fillAlphaInput.value = fillNew.alpha;
+                        select.fill(fillNew.hex);
+                        addHistory();
+                    }
+                }else if(prop.fillAlpha){
+                    var fillColor = select.fill();
+                    if(fillColor){
+                        var fillOld = utils.hexConvert(fillColor);
+                        var fillNew = utils.hexConvert({color: fillOld.color, alpha: parseInt(prop.fillAlpha)});
+                        select.fill(fillNew.hex);
+                    }
+                }else if(prop.borderColor){
+                    if(!prop.borderColor.includes("#")){
+                        prop.borderColor = "#"+prop.borderColor;
+                    }
+
+                    if(utils.isHexCode(prop.borderColor)){
+                        var strokeColor = select.stroke();
+                        if(!strokeColor){
+                            strokeColor = "#000000";
+                        }
+
+                        var borderOld = utils.hexConvert(strokeColor);
+                        var borderNew = utils.hexConvert({color: prop.borderColor, alpha: borderOld.alpha});
+                        IDE.workSpace.rect_borderColorPicker.value = borderNew.color;
+                        IDE.workSpace.rect_borderColorInput.value = borderNew.color;
+                        IDE.workSpace.rect_borderAlphaInput.value = borderNew.alpha;
+                        select.stroke(borderNew.hex);
+                        addHistory();
+                    }
+                }else if(prop.borderAlpha){
+                    var strokeColor = select.stroke();
+                    if(strokeColor){
+                        var borderOld = utils.hexConvert(strokeColor);
+                        var borderNew = utils.hexConvert({color: borderOld.color, alpha: parseInt(prop.borderAlpha) });
+                        select.stroke(borderNew.hex);
+                    }
+                } else if(prop.radius){
+                    select.cornerRadius(parseInt(prop.radius));
+                }else if(prop.border){
+                    select.strokeWidth(parseInt(prop.border));
+                } else{
+                    var rect = utils.hexConvert( select.fill() );
+                    IDE.workSpace.rect_fillColorPicker.value = rect.color;
+                    IDE.workSpace.rect_fillColorInput.value = rect.color;
+                    IDE.workSpace.rect_fillAlphaInput.value = rect.alpha;
+
+                    var stroke = select.stroke();
+                    if(stroke){
+                        stroke = utils.hexConvert(stroke);
+                        IDE.workSpace.rect_borderColorPicker.value = stroke.color;
+                        IDE.workSpace.rect_borderColorInput.value = stroke.color;
+                        IDE.workSpace.rect_borderAlphaInput.value = stroke.alpha;
+                    }else{
+                        IDE.workSpace.rect_borderColorPicker.value = "#282828";
+                        IDE.workSpace.rect_borderColorInput.value = "";
+                        IDE.workSpace.rect_borderAlphaInput.value = "";
+                    }
+
+                    IDE.workSpace.rect_radiusInput.value = select.cornerRadius();
+                    IDE.workSpace.rect_borderInput.value = select.strokeWidth();
+                }
+            }
+        });
+    }
 
     function setFontSize(size, color, family){
         if(IDE.selectedLayers.length){
@@ -989,7 +1123,6 @@
     }
 
     function refreshTable(list, table, tdName1, tdName2){
-
         if(!tdName1){
             tdName1 = "Key";
         }
@@ -1219,7 +1352,7 @@
         IDE.sceneUnique = jsonV2.slides[sceneIndex].unique;
         document.querySelector("#"+IDE.sceneUnique).style.backgroundColor = "darkgreen";
 
-        if(!jsonV2.slides[sceneIndex].answer){
+        if(!jsonV2.slides[sceneIndex].answer || Array.isArray(jsonV2.slides[sceneIndex].answer)){
             jsonV2.slides[sceneIndex].answer = {};
         }
 
@@ -1323,7 +1456,8 @@
         tuncay:"#004d40",
         gulcin:"#37474f",
         bahar: "#01579b",
-        duygu: "#3e2723"
+        duygu: "#3e2723",
+        taner: "#000000"
     };
 
     var occUser = {
@@ -1338,7 +1472,8 @@
         user_15514575: "basak",
         user_20: "gulcin",
         user_15515696: "bahar",
-        user_15517168: "duygu"
+        user_15517168: "duygu",
+        user_12896817: "taner"
     }
 
     var occUserName = {
@@ -1352,7 +1487,8 @@
         basak: "15514575",
         gulcin: "20",
         bahar: "15515696",
-        duygu: "15517168"
+        duygu: "15517168",
+        taner: "12896817"
     }
 
     //15517168
@@ -1381,6 +1517,9 @@
                         <div id="c_${filename}" class="welcome_fileBtn_smallBtn">
                             <img class="welcome_fileBtn_icon" src="/assets/img/create_copy.png" alt="file">
                         </div>
+                        <div id="r_${filename}" class="welcome_fileBtn_smallBtn">
+                            <img class="welcome_fileBtn_icon" src="/assets/img/refresh.png" alt="file">
+                        </div>
                     </div>`;
         let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
         IDE.welcome.savedFileList.appendChild(div);
@@ -1392,6 +1531,7 @@
         var htmlBtn = document.querySelector("#p_"+ filename);
         var opticBtn = document.querySelector("#o_"+ filename);
         var copyBtn = document.querySelector("#c_"+ filename);
+        var refreshBtn = document.querySelector("#r_"+ filename);
 
         fileBtn.addEventListener("click", function(e){
             if(IDE.user.occMode){
@@ -1440,13 +1580,27 @@
             e.stopPropagation();
         });
 
+        refreshBtn.addEventListener("click", function(e){
+            console.log("refreshBtn", filename, fileUser);
+            returnData(filename, fileUser);
+            e.stopPropagation();
+        });
+
         if(fileUser !== IDE.user.appUser){
             zipBtn.classList.add("disableBtn");
             delBtn.classList.add("disableBtn");
             htmlBtn.classList.add("disableBtn");
             opticBtn.classList.add("disableBtn");
+            refreshBtn.classList.add("disableBtn");
         }
 
+        if(IDE.user.appUser === "tuncay"){
+            zipBtn.classList.remove("disableBtn");
+            delBtn.classList.remove("disableBtn");
+            htmlBtn.classList.remove("disableBtn");
+            opticBtn.classList.remove("disableBtn");
+            refreshBtn.classList.remove("disableBtn");
+        }
     }
 
     function newSceneRequest(){
@@ -1646,10 +1800,12 @@
     }
 
     function saveDataParse(data){
-        console.log("STD: kaydedildi", data);
+        console.log("local: save response", data);
         if(data.success){
-            IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
-            hideLoader();
+            if(!IDE.user.occMode){
+                IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+                hideLoader();
+            }
         }
     }
 
@@ -1800,11 +1956,14 @@
     }
 
     function occSaveFile_Parse(data){
-        if(data.success){
-            console.log("OCC kaydedildi.");
+        console.log("api/occ: save response.", data);
+        if(data.response.success){
             hideLoader();
             duplicateWindowStatus("none");
             IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+        }else{
+            hideLoader();
+            IDE.showTip({txt:"Kaydedilmedi!", color: "#cc303f", time:2000, x: 1474, y: (IDE.stage.height-10)});
         }
     }
 
@@ -1836,6 +1995,10 @@
         saveList.map(function(data){
             addSavedFileBtn(data.fileName, data.createTime, data.username);
         });
+
+        if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "kamil"){
+            document.querySelector("#preview_icon").style.display = "block";
+        }
 
         IDE.welcome.main.style.display = "flex";
         IDE.welcome.userMain.style.display = "none";
@@ -2036,12 +2199,7 @@
     }
 
 
-    function returnData(){
-        //?rescueFile=Batman&rescueUser=tuncay
-        var urlParams = new URLSearchParams(window.location.search);
-        var rescueFile = urlParams.get("rescueFile");
-        var rescueUser = urlParams.get("rescueUser");
-
+    function returnData(rescueFile, rescueUser){
         if(rescueFile && rescueUser){
             IDE.user.rescueFile = rescueFile;
             IDE.user.rescueData = {
@@ -2068,6 +2226,7 @@
         if(data.success){
             console.log(data);
             console.log("FileList Dosya Eklendi");
+            window.location.href = '/ide';
         }
     }
 

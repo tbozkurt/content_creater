@@ -153,6 +153,14 @@ function EXPORT(){
         },{
             name: "pointButon",
             type: "pointDraw"
+        },
+        {
+            name: "soundRecord",
+            type: "soundRecord"
+        },
+        {
+            name: "wordBox",
+            type: "word"
         }];
 
         allObject.map(function(e){
@@ -165,7 +173,7 @@ function EXPORT(){
             }
 
             /* video Rect Search */
-            if(e.Layer.name.includes("popupWindow")){
+            if(e.Layer.name.includes("popupWindow") || e.Layer.name.includes("feedback")){
                 e.Kids.map(function(e){
                     if(e.Layer.class === "videoPlayer" && !content.includes("video")){
                         content.push("video");

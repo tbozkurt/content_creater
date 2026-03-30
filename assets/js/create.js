@@ -184,7 +184,11 @@ function CREATE(){
         {obj: "pointButon", answer:false},
         {obj: "pointCanvas", answer:true},
         {obj: "popupWindow", answer:false},
-        {obj: "popupButon", answer:false}
+        {obj: "popupButon", answer:false},
+        {obj: "soundPlayer", answer:false},
+        {obj: "soundRecord", answer:true},
+        {obj: "feedback", answer:false},
+        {obj: "wordBox", answer:true}
     ];
 
     this.checkKontrol = function(){
@@ -283,6 +287,24 @@ function CREATE(){
             src: "img/closebtn.png",
             scale:{x:1, y:1},
             Layer: {name:"popupWindowClose.jpg", type:"objectImg", class:"popupWindowClose"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+    }
+
+    this.addFeedback = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            cornerRadius: [10, 10, 10, 10],
+            strokeWidth: 0,
+            borderPosition:"center",
+            fill: "#c5c5c5",
+            Layer:{type:"objectRect", name: "bg"}
         }];
 
         addObjects(kids, container, false);
@@ -685,7 +707,7 @@ function CREATE(){
             cornerRadius: 8,
             Layer:{type:"objectRect", name: "boxbg"}
         },{
-            text: "TAMAM",
+            text: "KAYDET",
             x: 0,
             y: 0,
             width: 176,
@@ -794,9 +816,110 @@ function CREATE(){
             fontFamily: "Nunito",
             align: "center",
             fill: "#ffffff",
-            lineHeight: 1.9,
+            lineHeight: 1.8,
             padding: 0,
             Layer:{type:"objectText", name: "text"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.newFinishFNC = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 3,
+            y: 3,
+            width: 176,
+            height: 46,
+            fill: "rgba(0,0,0,0.12)",
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "boxbg"}
+        },{
+            x: 0,
+            y: 0,
+            width: 176,
+            height: 46,
+            fill: "#c43c4a",
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "boxbg"}
+        },{
+            x: 0,
+            y: 0,
+            width: 176,
+            height: 40,
+            fill: "#e14b5b",
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "boxbg"}
+        },{
+            text: "TESTİ BİTİR",
+            x: 0,
+            y: 0,
+            width: 176,
+            height: 46,
+            fontSize: 26,
+            fontFamily: "Nunito",
+            align: "center",
+            fill: "#ffffff",
+            lineHeight: 1.8,
+            padding: 0,
+            Layer:{type:"objectText", name: "text"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.newSoundPlayerFNC = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 280,
+            height: 60,
+            fill: "#ffffff",
+            borderPosition: "center",
+            cornerRadius: 60,
+            strokeWidth: 0,
+            Layer:{type:"objectRect", name: "soundbg"}
+        }, {
+            x: 5,
+            y: 5,
+            width: 50,
+            height: 50,
+            src: "img/sp_return.png",
+            Layer: {name:"sp_return.png", type:"objectImg", class:"restart"}
+        }, {
+            x: 5,
+            y: 5,
+            width: 50,
+            height: 50,
+            src: "img/sp_pause.png",
+            Layer: {name:"sp_pause.png", type:"objectImg", class:"pause"}
+        }, {
+            x: 5,
+            y: 5,
+            width: 50,
+            height: 50,
+            src: "img/sp_play.png",
+            Layer: {name:"sp_play.png", type:"objectImg", class:"play"}
+        }, {
+            x: 60,
+            y: 21,
+            width: 210,
+            height: 18,
+            fill: "#FF8C00",
+            borderPosition: "center",
+            cornerRadius: 20,
+            strokeWidth: 0,
+            Layer:{type:"objectRect", name: "progress", class: "progress"}
         }];
 
         addObjects(kids, container, false);
@@ -1021,6 +1144,136 @@ function CREATE(){
             borderPosition: "center",
             cornerRadius: 40,
             Layer:{type:"objectRect", name: "bg", class:"bg"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.soundRecorder = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 240,
+            height: 340,
+            fill: "#c0c0c0",
+            strokeWidth: 0,
+            borderPosition: "center",
+            cornerRadius: 10,
+            Layer:{type:"objectRect", name: "bg"}
+        },
+        {
+            text: "warningText",
+            x: 10,
+            y: 285,
+            width: 220,
+            height: 54,
+            fontFamily: "Nunito",
+            fontSize:16,
+            align: "center",
+            fill: "#363636",
+            lineHeight: 1,
+            padding: 0,
+            Layer:{type:"objectText", name: "warningText", class:"warningText"}
+        },
+        {
+            x: 20,
+            y: 235,
+            width: 200,
+            height: 40,
+            fill: "#ef5350",
+            strokeWidth: 0,
+            borderPosition: "center",
+            cornerRadius: 50,
+            Layer:{type:"objectRect", name: "recordRestart", class:"recordRestart"}
+        },
+        {
+            x: 20,
+            y: 235,
+            width: 200,
+            height: 40,
+            fill: "#ef5350",
+            strokeWidth: 0,
+            borderPosition: "center",
+            cornerRadius: 50,
+            Layer:{type:"objectRect", name: "recordStop", class:"recordStop"}
+        },
+        {
+            x: 20,
+            y: 185,
+            width: 200,
+            height: 40,
+            fill: "#78909c",
+            strokeWidth: 0,
+            borderPosition: "center",
+            cornerRadius: 50,
+            Layer:{type:"objectRect", name: "recordPlayMain", class:"recordPlayMain"}
+        },
+        {
+            x: 20,
+            y: 185,
+            width: 200,
+            height: 40,
+            fill: "#c0c0c0",
+            strokeWidth: 2,
+            stroke: "#999999",
+            borderPosition: "center",
+            cornerRadius: 50,
+            Layer:{type:"objectRect", name: "recordStatusMain", class:"recordStatusMain"}
+        },
+        {
+            x: 45,
+            y: 20,
+            width: 150,
+            height: 150,
+            src: "img/record_on.png",
+            Layer: {type:"objectImg", name:"record_on", class:"record_on"}
+        },
+        {
+            x: 45,
+            y: 20,
+            width: 150,
+            height: 150,
+            src: "img/record_off.png",
+            Layer: {type:"objectImg", name:"record_off", class:"record_off"}
+        },
+        {
+            text: "prepareText",
+            x: 20,
+            y: 85,
+            width: 200,
+            height: 20,
+            fontSize:16,
+            fontFamily: "Nunito",
+            align: "center",
+            fill: "#363636",
+            lineHeight: 1,
+            padding: 0,
+            Layer:{type:"objectText", name: "prepareText", class: "prepareText"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.wordBox = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            text: "Sample",
+            x: 0,
+            y: 0,
+            width: 125,
+            height: 36,
+            fontSize:36,
+            fontFamily: "Arial",
+            fill: "#ffffff",
+            padding: 0,
+            Layer:{type:"objectText", name: "Sample", class: "wordTxt"}
         }];
 
         addObjects(kids, container, false);
