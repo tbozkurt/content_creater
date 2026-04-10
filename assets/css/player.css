@@ -849,19 +849,20 @@ body{
 #Normal_videoSolution{
     width: 80px;
     margin-right: 5px;
-    color: #343434;
-    background-color: #ffffff;
+    color: aliceblue;
+    display: none;
 }
 
 #Normal_rightAnswer {
     width: 130px;
     margin-right: 5px;
-    background-color: #548b2e;
+    color: aliceblue;
+    display: none;
 }
 
 #Normal_userAnswer {
     width: 130px;
     margin-right: 5px;
     background-color: orange;
+    display: none;
 }
-

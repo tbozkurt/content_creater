@@ -2,7 +2,7 @@ function PLAYER(){
     this.allScene = [];
     this.sceneIndex = 0;
     var unique = {};
-    var PLX = {soundConfirm: false};
+    var PLX = {soundConfirm: false, HDE_autoSoundPlay:true};
     var This = this;
     var KT={};
     var SP = [];
@@ -431,7 +431,7 @@ function PLAYER(){
 
         var state = setState();
         if(complete){
-            state.status = 'complete';
+            state.status = 'finish';
         }else{
             state.status = 'update';
         }
@@ -780,21 +780,21 @@ function PLAYER(){
                     console.log("dataJsonVersion", dataJsonVersion);
 
                     if(contentJsonVersion === dataJsonVersion){
+                        var status = BUILD.accessData.state.status;
                         var allHistory = BUILD.accessData.state.questions;
                         console.log('allHistory:', allHistory);
-
-                        for(var sceneName in allHistory){
-                            SP.map(function(scene, index) {
-                                if(sceneName === scene.name){
-                                    console.log( allHistory[sceneName] );
-                                    scene.history = allHistory[sceneName];
-                                    SD[index].inputs = allHistory[sceneName][0];
-                                    console.log('sahne', sceneName, scene.name, index, 'eklendi');
-                                }
-                            });
+                        if(status === 'update'){
+                            for(var sceneName in allHistory){
+                                SP.map(function(scene, index) {
+                                    if(sceneName === scene.name){
+                                        scene.history = allHistory[sceneName];
+                                        SD[index].inputs = allHistory[sceneName][0];
+                                        console.log('sahne', sceneName, scene.name, index, 'eklendi');
+                                    }
+                                });
+                            }
+                            addHistoryControl();
                         }
-
-                        addHistoryControl();
                     }
                 }
             }
@@ -872,16 +872,7 @@ function PLAYER(){
 
         if(player.videoSolution){
             player.videoSolution.addEventListener("click", function(){
-                var sp = SP[This.sceneIndex];
-                if(sp.popEx[0].clicked){
-                    sp.popEx[0].window.style.visibility = "hidden";
-                    sp.popEx[0].clicked = false;
-                    This.popupVideoPlayStatus(sp, false);
-                }else{
-                    sp.popEx[0].window.style.visibility = "visible";
-                    sp.popEx[0].clicked = true;
-                    PLX.autoSceneChange_stopQuickly();
-                }
+                popupWindowStatus(0);
             });
 
             player.videoSolution.style.display = 'none';
@@ -994,8 +985,12 @@ function PLAYER(){
                 rightAnswerView = 'block';
             }
 
-            if(!sp.popEx.length){
-                videoSolutionView = 'none'
+            if(sp.popEx.length){
+                if(sp.popEx[0].clicked){
+                    popupWindowStatus(0);
+                }
+            }else{
+                videoSolutionView = 'none';
             }
 
             if(player.userAnswer){
@@ -1488,16 +1483,7 @@ function PLAYER(){
                 SP.popEx[id].btn = obj;
 
                 obj.addEventListener("click", function(){
-                    if(SP.popEx[id].clicked){
-                        SP.popEx[id].window.style.visibility = "hidden";
-                        SP.popEx[id].clicked = false;
-                        This.popupVideoPlayStatus(SP, false);
-                    }else{
-                        SP.popEx[id].window.style.visibility = "visible";
-                        SP.popEx[id].clicked = true;
-                        PLX.autoSceneChange_stopQuickly();
-                    }
-
+                    popupWindowStatus(id);
                     SP.popEx[id].window.style.visibility = "visible";
                 });
 
@@ -1511,9 +1497,7 @@ function PLAYER(){
 
                 SP.popEx[id].window = obj;
                 obj.querySelector(".popupWindowClose").addEventListener("click", function(){
-                    obj.style.visibility = "hidden";
-                    SP.popEx[id].clicked = false;
-                    This.popupVideoPlayStatus(SP, false);
+                    popupWindowStatus(id);
                 });
 
                 obj.querySelector(".popupWindowClose").style.cursor = "pointer";
@@ -1763,8 +1747,26 @@ function PLAYER(){
         }
     };
 
+    function popupWindowStatus(popID){
+        var sp = SP[This.sceneIndex];
+        if(sp.popEx[popID].clicked){
+            sp.popEx[popID].window.style.visibility = "hidden";
+            sp.popEx[popID].clicked = false;
+            if(player.statusIconMain){
+                player.statusIconMain.style.display = 'block';
+            }
+            This.popupVideoPlayStatus(sp, false);
+        }else{
+            sp.popEx[popID].window.style.visibility = "visible";
+            sp.popEx[popID].clicked = true;
+            if(player.statusIconMain){
+                player.statusIconMain.style.display = 'none';
+            }
+            PLX.autoSceneChange_stopQuickly();
+        }
+    }
+
     function feedbackSound(SP, sceneID, id){
-        console.log(SP, sceneID, id);
         var feedBack = SP.feedBack[id];
         feedBack.howl = new Howl({
             src: [player.root +"img/feedback_"+ feedBack.sceneID +"_"+ feedBack.id +".mp3"],
@@ -1916,15 +1918,30 @@ function PLAYER(){
     }
 
     This.playAutoSound = function(){
-        if(!SD[This.sceneIndex].complete){
-            if(SP[This.sceneIndex].directive.sound){
-                if(PLX.soundConfirm){
-                    SP[This.sceneIndex].directive.sound.play();
+        if(jsonV2.fileName.includes("HDE")){
+            if(PLX.HDE_autoSoundPlay){
+                if(SP[This.sceneIndex].directive.sound){
+                    if(PLX.soundConfirm){
+                        SP[This.sceneIndex].directive.sound.play();
+                        PLX.HDE_autoSoundPlay = false;
+                    }else{
+                        PLX.playScreen.style.display = "block";
+                    }
                 }else{
-                    PLX.playScreen.style.display = "block";
+                    PLX.playScreen.style.display = "none";
                 }
-            }else{
-                PLX.playScreen.style.display = "none";
+            }
+        }else{
+            if(!SD[This.sceneIndex].complete){
+                if(SP[This.sceneIndex].directive.sound){
+                    if(PLX.soundConfirm){
+                        SP[This.sceneIndex].directive.sound.play();
+                    }else{
+                        PLX.playScreen.style.display = "block";
+                    }
+                }else{
+                    PLX.playScreen.style.display = "none";
+                }
             }
         }
     }
@@ -2003,6 +2020,9 @@ function PLAYER(){
             navListSelect(index);
             hideOpenEndedDOM();
             HDE_StatusFNC();
+
+            /*Screen tazeleme video icin gerekli*/
+            This.screenRatio();
         }
     }
 
@@ -2109,6 +2129,10 @@ function PLAYER(){
         player.mainDOM.style.scale = ratio;
         player.mainDOM.style.left = centerX+"px";
         /* player.mainDOM.style.top = centerY+"px"; */
+        var sp = SP[This.sceneIndex];
+        if(sp.video){
+            sp.video.resizePosition();
+        }
     }
 
     this.startPlayer = function(element){
@@ -3425,7 +3449,7 @@ function PLAYER(){
         SP.fnc.push({
             control: checkRightAnswer,
             wrong: wrongActionFNC,
-            right: function(){},
+            right: wrongActionFNC,
             answer: answerActionFNC,
             history: addHistory,
             reset: reset,
