@@ -2,7 +2,7 @@ function PLAYER(){
     this.allScene = [];
     this.sceneIndex = 0;
     var unique = {};
-    var PLX = {soundConfirm: false, HDE_autoSoundPlay:true};
+    var PLX = {soundConfirm: false, HDE_autoSoundPlay:true, HDE_access:0};
     var This = this;
     var KT={};
     var SP = [];
@@ -201,6 +201,7 @@ function PLAYER(){
         player.root = AC.Url;
         PLX.scoreUpdate = BUILD.scoreUpdate;
         PLX.HDX = BUILD.HDX;
+        PLX.endScreen = BUILD.endScreen;
         PLX.mode = BUILD.mode;
         jsonV2 = BUILD.json;
         if(BUILD.mode === "optic"){
@@ -298,10 +299,10 @@ function PLAYER(){
         HDE_Status(BUILD);
     }
 
-    this.scoreCalc = function(saveData, hideEndScreen){
-        var viewEndScreen = !hideEndScreen;
+    this.scoreCalc = function(saveData){
         var complete = true;
         var score = {
+            cmd: "update",
             right:0,
             wrong:0,
             empty:0,
@@ -361,6 +362,10 @@ function PLAYER(){
             score.access = accessTotalScene;
         }
 
+        if(complete){
+            score.cmd = "finish";
+        }
+
         var state = JSON.stringify(setState());
         if(PLX.scoreUpdate){
             PLX.scoreUpdate({
@@ -374,13 +379,12 @@ function PLAYER(){
                 State: state,
                 TotalRight: score.empty,
                 CurrentSceneType: "E",
-                Complete: complete
-            }, saveData, viewEndScreen);
+                Complete: complete,
+                Cmd: score.cmd
+            }, saveData);
         }
 
         if(PLX.scoreTable){
-            var oldScore = This.oldScoreCalc();
-            console.log("oldScore:", oldScore);
             var html =
                 `<div>
                     <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
@@ -442,7 +446,7 @@ function PLAYER(){
                 Success: successPercent,
                 Duration: totalDuration,
                 Right: accessCount,
-                Wrong: 1,
+                Wrong: PLX.HDE_access,
                 Empty: emptyCount,
                 Attempt: 0,
                 State: JSON.stringify(state),
@@ -463,272 +467,6 @@ function PLAYER(){
         });
 
         return state;
-    }
-
-    this.scoreCalc2 = function(){
-        var score = {
-            right:0,
-            wrong:0,
-            empty:0,
-            access:0,
-            success:0,
-            duration:0
-        };
-
-        var accessTotalScene=0;
-        var totalActivity=0;
-        var rates = [1, 0.7, 0.4, 0.2, 0.1];
-        var complete = true;
-
-        SD.map(function(scene){
-            if(scene.type === "e"){
-                totalActivity++;
-            }
-        });
-
-        function difference(a, b) {
-            return Math.abs(a - b);
-        }
-
-        function accessControl(scene){
-            if(scene.right || scene.wrong || scene.complete){
-                return 1;
-            }
-
-            return 0;
-        }
-
-        var singleSceneScore = 100/totalActivity;
-
-        SD.map(function(scene){
-            if(scene.totalRight){
-                var lastRight;
-                var historyLength = scene.historyRight.length;
-                if(historyLength > 1){
-                    var last = scene.historyRight[historyLength-1].right;
-                    var prev = scene.historyRight[historyLength-2].right;
-                    lastRight = difference(prev, last);
-                }else{
-                    lastRight = scene.right;
-                }
-
-                var currentRate = rates[scene.attempt];
-                if(!currentRate){currentRate = 0.1}
-                var singleQuestionScore = (singleSceneScore / scene.totalRight);
-
-                if(scene.historyRight[scene.attempt]){
-                    scene.historyRight[scene.attempt].success = (singleQuestionScore * lastRight) * currentRate;
-                }
-
-                score.wrong += scene.historyRight.length;
-            }
-
-            if(scene.type === "e"){
-                if(scene.complete){
-                    score.right++;
-
-                    var sceneSuccess=0;
-                    scene.historyRight.map(function(history){
-                        sceneSuccess += history.success;
-                    });
-                    score.success += sceneSuccess;
-
-                }else{
-                    score.empty++;
-                }
-            }
-
-            accessTotalScene += accessControl(scene);
-            if(!scene.complete){
-                complete = false;
-            }
-
-            score.duration += scene.duration;
-        });
-
-        /* Calc Access */
-        if(accessTotalScene){
-            score.access = (accessTotalScene / SD.length) * 100;
-        }else{
-            score.access = accessTotalScene;
-        }
-
-        if(PLX.scoreUpdate){
-            PLX.scoreUpdate({
-                Access: parseInt(score.access),
-                Success: parseInt(score.success),
-                Duration: score.duration,
-                Right: score.right,
-                Wrong: score.wrong,
-                Empty: score.empty,
-                TotalRight: score.empty,
-                CurrentSceneType: "E",
-                Complete: complete
-            });
-
-            console.log("--> Complete:", complete);
-        }
-
-        if(PLX.scoreTable){
-            var oldScore = This.oldScoreCalc();
-            console.log("oldScore:", oldScore);
-            var html =
-                `<div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">success:</div> <div class="scoreTableColumn2">${parseInt(score.success)}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">complete:</div> <div class="scoreTableColumn2">${score.right}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">attempt:</div> <div class="scoreTableColumn2">${score.wrong}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">remain:</div> <div class="scoreTableColumn2">${score.empty}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">right:</div> <div class="scoreTableColumn2">${oldScore.right}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">wrong:</div> <div class="scoreTableColumn2">${oldScore.wrong}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">empty:</div> <div class="scoreTableColumn2">${oldScore.empty}</div></div>
-                </div>`;
-
-            PLX.scoreTable.innerHTML = html;
-        }
-    }
-
-    this.scoreCalc2 = function(){
-        var score = {
-            right:0,
-            wrong:0,
-            empty:0,
-            access:0,
-            success:0,
-            duration:0,
-            sceneEmpty:0
-        };
-
-        var rates = [1, 0.7, 0.4, 0.2, 0.1];
-        var totalActivity=0;
-
-        SD.map(function(e){
-           if(e.type === "e"){
-               totalActivity++;
-           }
-        });
-
-        function accessControl(e){
-            if(e.right || e.wrong || e.complete){
-                return 1;
-            }
-
-            return 0;
-        }
-
-        var averageScore = 100/totalActivity;
-        var complete = true;
-        SD.map(function(e){
-            if(e.totalRight){
-                var currentRate = rates[e.attempt];
-                if(!currentRate){currentRate = 0.1}
-                var singleSuccess = ((averageScore / e.totalRight) * currentRate);
-                score.right += e.right;
-                score.wrong += e.wrong;
-                score.empty += e.empty;
-                score.duration += e.duration;
-                score.success += (singleSuccess * e.right);
-                /* score.success += (e.right / (e.right + e.wrong + e.empty)) * averageScore; */
-
-                if(e.right === 0 && e.wrong === 0 && e.empty === 0){
-                    score.success = 0;
-                }
-            }
-
-            score.access += accessControl(e);
-            if(!e.complete){
-                complete = false;
-            }
-        });
-
-        if(score.access){
-            score.access = (score.access / SD.length) * 100;
-        }else{
-            score.access = 0;
-        }
-
-        if(PLX.scoreUpdate){
-            PLX.scoreUpdate({
-                Access: parseInt(score.access),
-                Success: parseInt(score.success),
-                Duration: score.duration,
-                Right: score.right,
-                Wrong: score.wrong,
-                Empty: score.empty,
-                TotalRight: score.empty,
-                CurrentSceneType: "E",
-                Complete: complete
-            });
-        }
-
-        if(PLX.scoreTable){
-            var html =
-                `<div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">access:</div> <div class="scoreTableColumn2">${parseInt(score.access)}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">success:</div> <div class="scoreTableColumn2">${parseInt(score.success)}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">right:</div> <div class="scoreTableColumn2">${score.right}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">wrong:</div> <div class="scoreTableColumn2">${score.wrong}</div></div>
-                    <div class="scoreTableRow"><div class="scoreTableColumn1">empty:</div> <div class="scoreTableColumn2">${score.empty}</div></div>
-                </div>`;
-
-            PLX.scoreTable.innerHTML = html;
-        }
-    }
-
-    this.oldScoreCalc = function(){
-        var score = {right:0, wrong:0, empty:0, access:0, success:0, duration:0};
-        var averageScore = 100/SD.length;
-
-        function accessControl(e){
-            if(e.right || e.wrong){
-                return 1;
-            }
-
-            return 0;
-        }
-
-        var complete = true;
-        SD.map(function(e){
-            score.right += e.right;
-            score.wrong += e.wrong;
-            score.empty += e.empty;
-            score.duration += e.duration;
-            score.access += accessControl(e);
-            score.success += (e.right / (e.right + e.wrong + e.empty)) * averageScore;
-
-            if(!e.complete){
-                complete = false;
-            }
-
-            if(e.right === 0 && e.wrong === 0 && e.empty === 0){
-                score.success = 0;
-            }
-        });
-
-
-        if(score.access){
-            score.access = (score.access  / SD.length)*100;
-        }else{
-            score.access = 0;
-        }
-
-        /*
-        if(PLX.scoreUpdate){
-            PLX.scoreUpdate({
-                Access: score.access,
-                Success: parseInt(score.success),
-                Duration: score.duration,
-                Right: score.right,
-                Wrong: score.wrong,
-                Empty: score.empty,
-                TotalRight: score.empty,
-                CurrentSceneType: "E",
-                Complete: complete
-            });
-        }
-        */
-
-        return score;
     }
 
     This.convertRubrik = function(slideID){
@@ -778,6 +516,7 @@ function PLAYER(){
                     var dataJsonVersion = BUILD.accessData.state.version;
                     console.log("contentJsonVersion", contentJsonVersion);
                     console.log("dataJsonVersion", dataJsonVersion);
+                    PLX.HDE_access = parseInt(BUILD.accessData.stats.access);
 
                     if(contentJsonVersion === dataJsonVersion){
                         var status = BUILD.accessData.state.status;
@@ -1036,7 +775,8 @@ function PLAYER(){
         }
         */
 
-        This.sceneComplete(true);
+        This.sceneComplete();
+        This.scoreCalc(true);
         This.nextScene();
     }
 
@@ -1072,7 +812,7 @@ function PLAYER(){
             This.playRightAudio();
             //SD.right = totalScore.totalRight;
             //SD.empty=0;
-            This.sceneComplete(false);
+            This.sceneComplete();
             This.nextScene();
             SP.fnc.map(function(fnc){
                 fnc.right(finalStatus);
@@ -1290,18 +1030,23 @@ function PLAYER(){
             player.Normal_NavListMain.style.visibility = "hidden";
         });
 
+        player.watcher_mainBtn.style.display = 'flex';
+        player.watcher_returnBtn.addEventListener("click", function(){
+            player.watcher_main.style.visibility = "hidden";
+        });
+
         if(jsonV2.fileName.includes("HDE")){
-            player.watcher_mainBtn.style.display = 'flex';
-
-            player.watcher_returnBtn.addEventListener("click", function(){
-                player.watcher_main.style.visibility = "hidden";
-            });
-
             player.watcher_endBtn.addEventListener("click", function(){
                 HDE_endExam();
             });
 
             HDE_addEvent();
+        }else{
+            player.endBtn.style.display = "block";
+            player.watcher_endBtn.style.display = "none";
+            player.endBtn.addEventListener("click", function(){
+                endScreenBoxStatus();
+            });
         }
 
         player.navListAllBox = player.Normal_NavListMain.querySelectorAll(".Normal_NavList_Box");
@@ -1322,6 +1067,8 @@ function PLAYER(){
 
             if(unComplete){
                 player.watcher_main.style.visibility = "visible";
+            }else{
+                PLX.endScreen();
             }
         }
     }
@@ -1429,6 +1176,7 @@ function PLAYER(){
                 player.infoBtnDOM.style.display = "none";
             }
         }
+        hideWarning();
     }
 
     //add Warning settings
@@ -1467,7 +1215,7 @@ function PLAYER(){
             player.warningAnimation.kill();
         }
 
-        player.warningInterval = gsap.to(player.warningDOM, 0.3, {right:-380});
+        player.warningInterval = gsap.to(player.warningDOM, 0, {right:-380});
     }
 
     /////////////////////////////////////////////////////////
@@ -1755,12 +1503,20 @@ function PLAYER(){
             if(player.statusIconMain){
                 player.statusIconMain.style.display = 'block';
             }
+
+            if(PLX.showReadOnly){
+                player.readOnlyDOM.style.visibility = "visible";
+            }
             This.popupVideoPlayStatus(sp, false);
         }else{
             sp.popEx[popID].window.style.visibility = "visible";
             sp.popEx[popID].clicked = true;
             if(player.statusIconMain){
                 player.statusIconMain.style.display = 'none';
+            }
+
+            if(PLX.showReadOnly){
+                player.readOnlyDOM.style.visibility = "hidden";
             }
             PLX.autoSceneChange_stopQuickly();
         }
@@ -2048,10 +1804,9 @@ function PLAYER(){
         SD[This.sceneIndex].duration++;
     }
 
-    this.sceneComplete = function(save){
+    this.sceneComplete = function(){
         clearInterval(player.screenDuration);
         SD[This.sceneIndex].complete = true;
-        This.scoreCalc(save);
     }
 
     this.popupVideoPlayStatus = function(SP, playVideo){
@@ -2071,8 +1826,7 @@ function PLAYER(){
     /* NextScene */
     this.nextScene = function(){
         var start = This.sceneIndex+1;
-        var end = SD.length;
-        var next;
+        var next=null;
         for(var i=start; i<SD.length; i++){
             if(!SD[i].complete){
                 next = i;
@@ -2089,9 +1843,9 @@ function PLAYER(){
             }
         }
 
-        if(start === end){
+        if(next === null){
             setTimeout(endScreenBoxStatus, 2000);
-        } else if(next !== undefined){
+        }else{
             player.autoNext = next;
             PLX.autoSceneChange.ShowFNC();
         }
@@ -2862,7 +2616,8 @@ function PLAYER(){
                 var finish = groupCloseControl();
                 if(finish){
                     SD.empty=0;
-                    This.sceneComplete(false);
+                    This.sceneComplete();
+                    This.scoreCalc(false);
                     enablePopupBtnStatus();
                     This.nextScene();
                 }
@@ -2879,7 +2634,8 @@ function PLAYER(){
                     }
 
                     SD.empty=0;
-                    This.sceneComplete(false);
+                    This.sceneComplete();
+                    This.scoreCalc(false);
                 }else{
                     enablePopupBtnStatus();
                     player.screenCloseTimer = setTimeout(function(){
@@ -3027,7 +2783,8 @@ function PLAYER(){
                     SP.popEx[0].clicked = true;
                     SP.popEx[0].window.style.visibility = "visible";
                     SD.empty=0;
-                    This.sceneComplete(false);
+                    This.sceneComplete();
+                    This.scoreCalc(false);
                     controlBtnView(SP, "disabled");
                 }else{
                     returnDefault();
@@ -5642,7 +5399,7 @@ function arraysAreEqualUnordered(array1, array2) {
 
         var watchedFNC = function(){
             SD.complete = true;
-            This.scoreCalc(true, true);
+            This.scoreCalc(true);
             checkViewFNC(SD);
         }
 
@@ -5681,13 +5438,25 @@ function arraysAreEqualUnordered(array1, array2) {
         });
 
         function addVideoElement(element){
-            var videoRect = element.main.querySelector(".videoPlayer");
+            var videoRect;
+            var videoLink;
+            for(var kid of element.kids){
+                if(kid.className.includes("videoPlayer")){
+                    videoRect = kid.main;
+                    videoLink = kid.data.videoLink;
+                    break;
+                }
+            }
+
             if(videoRect){
                 var videoWidth = videoRect.offsetWidth;
                 var videoID = "vp_s"+index+"_0";
                 videoRect.id = videoID;
                 var pos = getPosition(videoRect);
 
+                if(!videoLink){
+                    videoLink = getVideoPath();
+                }
 
                 return {
                     div: $("#"+videoID),
@@ -5696,7 +5465,7 @@ function arraysAreEqualUnordered(array1, array2) {
                         top: pos.top+"px",
                         position: "absolute"
                     },
-                    src: getVideoPath(),
+                    src: videoLink,
                     width: videoWidth,
                     videoCapture: false,
                     fullScreen: false,
