@@ -465,7 +465,6 @@ function JWPlayerRefreshFNC(){
 		var playerContainerHeight;
 		var video = MainDIV.find("video")[0];
 		var canvas = MainDIV.find("canvas")[0];
-		console.log(canvas);
 		var hls;
 		var hlsTotalLevel=0;
 		var sliderWidth;

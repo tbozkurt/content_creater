@@ -410,18 +410,20 @@ function PLAYER(){
 
         if(complete){
             SP.map(function(sp){
-                if(sp.hdeStatus === 'right'){
-                    rightCount++;
-                }
-
                 if(sp.hdeStatus === 'empty'){
                     emptyCount++;
                 }else{
                     accessCount++;
                 }
 
-                if(sp.hdeStatus.length){
-                    totalSuccessScene++;
+                if(!sp.completeBtn){
+                    if(sp.hdeStatus === 'right'){
+                        rightCount++;
+                    }
+
+                    if(sp.hdeStatus.length){
+                        totalSuccessScene++;
+                    }
                 }
             });
 
@@ -611,6 +613,19 @@ function PLAYER(){
 
         if(player.videoSolution){
             player.videoSolution.addEventListener("click", function(){
+                /* video popup sb btnlar popup ustune cikmasin */
+                var sp = SP[This.sceneIndex];
+                var zindex;
+                sp.fnc.map(function(fnc){
+                    if(fnc.zindex){
+                        zindex = fnc.zindex();
+                    }
+                });
+
+                if(zindex){
+                    sp.popEx[0].window.style.zIndex = zindex;
+                }
+
                 popupWindowStatus(0);
             });
 
@@ -647,18 +662,14 @@ function PLAYER(){
         SP.map(function(sp){
             var totalScore = {totalRight:0, totalWrong:0, totalEmpty:0};
 
-            if(Object.keys(sp.tempAnswer).length){
-                sp.fnc.map(function(fnc, index){
-                    var currentScore = fnc.control();
-                    totalScore.totalRight += currentScore.totalRight;
-                    totalScore.totalWrong += currentScore.totalWrong;
-                    totalScore.totalEmpty += currentScore.totalEmpty;
-                    fnc.currentStatus = scoreEvalution(currentScore);
-                });
-                sp.hdeStatus = scoreEvalution(totalScore);
-            }else{
-                sp.hdeStatus = '';
-            }
+            sp.fnc.map(function(fnc){
+                var currentScore = fnc.control();
+                totalScore.totalRight += currentScore.totalRight;
+                totalScore.totalWrong += currentScore.totalWrong;
+                totalScore.totalEmpty += currentScore.totalEmpty;
+                fnc.currentStatus = scoreEvalution(currentScore);
+            });
+            sp.hdeStatus = scoreEvalution(totalScore);
         });
 
         watcherHDE();
@@ -696,7 +707,13 @@ function PLAYER(){
             var sp = SP[This.sceneIndex];
 
             var hdeStatus = sp.hdeStatus;
-            var iconDOM = player.statusIcon[hdeStatus];
+            var completeBtn = sp.completeBtn;
+            var iconDOM;
+            if(completeBtn){
+                iconDOM = null;
+            }else{
+                iconDOM = player.statusIcon[hdeStatus];
+            }
 
             if(iconDOM){
                 player.statusIconMain.style.display = "block";
@@ -713,13 +730,10 @@ function PLAYER(){
             var rightAnswerView;
             var videoSolutionView = 'block';
 
-            if(hdeStatus === 'right' && hdeStatus === 'right'){
+            if(hdeStatus === 'right' || completeBtn){
                 userAnswerView = 'none';
                 rightAnswerView = 'none';
-            }else if(!Object.keys(sp.tempAnswer).length){
-                userAnswerView = 'none';
-                rightAnswerView = 'none';
-            } else{
+            }else{
                 userAnswerView = 'none';
                 rightAnswerView = 'block';
             }
@@ -795,6 +809,7 @@ function PLAYER(){
             totalScore.totalWrong += currentScore.totalWrong;
             totalScore.totalEmpty += currentScore.totalEmpty;
             fnc.currentStatus = scoreEvalution(currentScore);
+            fnc.score = currentScore;
             finalStatus = scoreEvalution(totalScore);
         });
 
@@ -1038,6 +1053,10 @@ function PLAYER(){
         if(jsonV2.fileName.includes("HDE")){
             player.watcher_endBtn.addEventListener("click", function(){
                 HDE_endExam();
+            });
+
+            player.endBtn.addEventListener("click", function(){
+                PLX.endScreen();
             });
 
             HDE_addEvent();
@@ -1507,6 +1526,7 @@ function PLAYER(){
             if(PLX.showReadOnly){
                 player.readOnlyDOM.style.visibility = "visible";
             }
+
             This.popupVideoPlayStatus(sp, false);
         }else{
             sp.popEx[popID].window.style.visibility = "visible";
@@ -2737,20 +2757,8 @@ function PLAYER(){
                         }
                     }
                 }
-
-                if(!score.totalWrong){
-                    for(var p in rubrik){
-                        if(rubrik[p]){
-                            if(SD.inputs["box"+p].value){
-                                rightBtn(p);
-                            }
-                        }
-                    }
-                }
-
             }
 
-            groupCloseControl();
             return score;
         }
 
@@ -2771,6 +2779,22 @@ function PLAYER(){
 
         function rightActionFNC(){
             enablePopupBtnStatus();
+            partialRight();
+            groupCloseControl();
+        }
+
+        function partialRight(){
+            if(CS.evaluationMode !== "count"){
+                if(!evaluation.score.totalWrong){
+                    for(var p in rubrik){
+                        if(rubrik[p]){
+                            if(SD.inputs["box"+p].value){
+                                rightBtn(p);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         function wrongActionFNC(){
@@ -2792,6 +2816,9 @@ function PLAYER(){
             }else{
                 returnDefault();
             }
+
+            partialRight();
+            groupCloseControl();
         }
 
         function returnDefault(){
@@ -2859,7 +2886,7 @@ function PLAYER(){
             }
         }
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkRightAnswer,
             wrong: wrongActionFNC,
             right: rightActionFNC,
@@ -2867,7 +2894,9 @@ function PLAYER(){
             history: addHistory,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** init bd **/
@@ -3203,7 +3232,7 @@ function PLAYER(){
             }
         }
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkRightAnswer,
             wrong: wrongActionFNC,
             right: wrongActionFNC,
@@ -3211,7 +3240,9 @@ function PLAYER(){
             history: addHistory,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add match **/
@@ -3621,7 +3652,7 @@ function PLAYER(){
             }
         }
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkRightAnswer,
             wrong: wrongActionFNC,
             right: wrongActionFNC,
@@ -3629,7 +3660,9 @@ function PLAYER(){
             history: addHistory,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add sb **/
@@ -4060,25 +4093,6 @@ function PLAYER(){
             return true;
         }
 
-/*
-function arraysAreEqualUnordered(array1, array2) {
-    if (array1.length !== array2.length) {
-        return false;
-    }
-
-    array1.sort();
-    array2.sort();
-
-    for (var i=0; i<array1.length; i++) {
-        if (array1[i] !== array2[i]){
-            return false;
-        }
-    }
-
-    return true;
-}
-*/
-
         function wrongActionFNC(status){
             for(var i in dropList){
                 var slot = dropList[i].slot;
@@ -4250,15 +4264,22 @@ function arraysAreEqualUnordered(array1, array2) {
             }
         }
 
-        SP.fnc.push({
+        function zindex(){
+            return (dragCount+2);
+        }
+
+        var evaluation = {
             control: checkAnswer,
             wrong: wrongActionFNC,
             right: wrongActionFNC,
             answer: answerActionFNC,
             history: addHistory,
+            zindex: zindex,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add paint **/
@@ -4371,6 +4392,7 @@ function arraysAreEqualUnordered(array1, array2) {
                 box: box,
                 correctAnswer: correctAnswer,
                 currentStatus: "",
+                tempStatus:"",
                 strokeColor: strokeColor,
                 strokeWidth: strokeWidth
             };
@@ -4626,18 +4648,18 @@ function arraysAreEqualUnordered(array1, array2) {
                 if(drop[id].correctAnswer){
                     if(!SD.inputs["box"+id].value){
                         score.totalEmpty++;
-                        drop[id].currentStatus = "empty";
+                        drop[id].tempStatus = "empty";
                     }else if(SD.inputs["box"+id].value === drop[id].correctAnswer){
                         score.totalRight++;
-                        drop[id].currentStatus = "right";
+                        drop[id].tempStatus = "right";
                     }else{
                         score.totalWrong++;
-                        drop[id].currentStatus = "wrong";
+                        drop[id].tempStatus = "wrong";
                     }
                 }else{
                     if(SD.inputs["box"+id].value){
                         score.totalWrong++;
-                        drop[id].currentStatus = "wrong";
+                        drop[id].tempStatus = "wrong";
                     }
                 }
             }
@@ -4646,6 +4668,14 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         function controlAfterFNC(status){
+            /* HDE icin buton etkilesimi kapatilmasin */
+            for(var box in drop){
+                if(drop[box].tempStatus.length){
+                    drop[box].currentStatus = drop[box].tempStatus;
+                    drop[box].tempStatus="";
+                }
+            }
+
             if(helpMode){
                 for(var id in drop){
                     drop[id].box.style.pointerEvents = "none";
@@ -4952,7 +4982,7 @@ function arraysAreEqualUnordered(array1, array2) {
             SP.sceneDiv.style.cursor = "default";
         }
 
-        var fncList = {
+        var evaluation = {
             history: addHistory,
             right: controlAfterFNC,
             wrong: controlAfterFNC,
@@ -4961,17 +4991,17 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         if(countMode){
-            fncList.control = countCheckAnswer;
-            fncList.answer = CountAnswerFNC;
+            evaluation.control = countCheckAnswer;
+            evaluation.answer = CountAnswerFNC;
         } else if(groupMode){
-            fncList.control = groupCheckAnswer;
-            fncList.answer = groupAnswerFNC;
+            evaluation.control = groupCheckAnswer;
+            evaluation.answer = groupAnswerFNC;
         } else{
-            fncList.control = checkAnswer;
-            fncList.answer = answerActionFNC;
+            evaluation.control = checkAnswer;
+            evaluation.answer = answerActionFNC;
         }
 
-        SP.fnc.push(fncList);
+        SP.fnc.push(evaluation);
     }
 
     /** Add sort **/
@@ -5378,7 +5408,7 @@ function arraysAreEqualUnordered(array1, array2) {
         }
         */
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkAnswer,
             wrong: afterAction,
             right: afterAction,
@@ -5386,7 +5416,9 @@ function arraysAreEqualUnordered(array1, array2) {
             history: addHistory,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add Video **/
@@ -5726,8 +5758,6 @@ function arraysAreEqualUnordered(array1, array2) {
                 score.totalWrong++;
             }
 
-            controlBtnView(SP, "disable");
-            closeCanvas();
             return score;
         }
 
@@ -5740,21 +5770,16 @@ function arraysAreEqualUnordered(array1, array2) {
 
 
         function rightFNC(){
+            draw.lineBG.style.backgroundColor = "green";
+            controlBtnView(SP, "disable");
             stopDraw();
         }
 
-
-        function closeCanvas(){
-            if(draw.success){
-                stopDraw();
-                draw.lineBG.style.backgroundColor = "green";
-            }else{
-                draw.lineBG.style.backgroundColor = "red";
-                interval = setTimeout(returnWarning, 1000);
-            }
+        function wrongFNC(){
+            controlBtnView(SP, "disable");
+            draw.lineBG.style.backgroundColor = "red";
+            interval = setTimeout(returnWarning, 1000);
         }
-
-        function wrongFNC(){}
 
         function answerFNC(){
             draw.drawCtx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -5794,7 +5819,7 @@ function arraysAreEqualUnordered(array1, array2) {
             draw.eraserBox.style.pointerEvents = 'none';
         }
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkAnswer,
             wrong: wrongFNC,
             right: rightFNC,
@@ -5802,7 +5827,9 @@ function arraysAreEqualUnordered(array1, array2) {
             history: addHistory,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add point **/
@@ -6229,7 +6256,7 @@ function arraysAreEqualUnordered(array1, array2) {
             SP.sceneDiv.style.cursor = 'default';
         }
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkAnswer,
             wrong: wrongFNC,
             right: rightFNC,
@@ -6237,7 +6264,9 @@ function arraysAreEqualUnordered(array1, array2) {
             history: addHistory,
             reset: reset,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add sr **/
@@ -6659,14 +6688,16 @@ function arraysAreEqualUnordered(array1, array2) {
             }
         }
 
-        SP.fnc.push({
+        var evaluation = {
             history: addHistory,
             control: checkRightAnswer,
             wrong: function(){},
             right: function(){},
             answer: function(){},
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
     }
 
     /** Add word **/
@@ -6815,6 +6846,7 @@ function arraysAreEqualUnordered(array1, array2) {
         }
 
         function answerActionFNC(){
+            resetFNC();
             wordArray.map(function(work){
                 if(work.rightAnswer){
                     work.bg.style.backgroundColor = '#008000';
@@ -6847,7 +6879,7 @@ function arraysAreEqualUnordered(array1, array2) {
             });
         }
 
-        SP.fnc.push({
+        var evaluation = {
             control: checkAnswer,
             wrong: controlAfterFNC,
             right: controlAfterFNC,
@@ -6855,7 +6887,9 @@ function arraysAreEqualUnordered(array1, array2) {
             history: addHistory,
             reset: resetFNC,
             close: close
-        });
+        }
+
+        SP.fnc.push(evaluation);
         //End
     }
 
