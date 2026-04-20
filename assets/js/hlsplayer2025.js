@@ -599,8 +599,6 @@ function JWPlayerRefreshFNC(){
 			hls.autoLevelCapping = selectAutoLevelCapping(playerContainerHeight);
 			hls.attachMedia(video);
 
-			hls.startLevel = LocalBTDTotalGet();
-
 			if(videoCapture){
 				hls.startLevel = selectAutoLevelCapping(playerContainerHeight);
 			}
@@ -609,9 +607,10 @@ function JWPlayerRefreshFNC(){
 				/* LocalSaveBTD(hls.nextLoadLevel); */
 			});
 
-			hls.on(Hls.Events.MANIFEST_PARSED,function() {
+			hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
 				hlsTotalLevel = hls.levels.length;
 				LevelCreateFNC();
+				hls.startLevel = LocalBTDTotalGet();
 			});
 			
 			hls.on(Hls.Events.FRAG_LOADED,function(e) {
