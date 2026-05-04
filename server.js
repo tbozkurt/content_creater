@@ -200,6 +200,8 @@ async function createNewFileFNC(req, res){
     var copyImageK = await copyFile(path.join(__dirname, "assets/img/template/sp_return.png"), FD.files.imgFolder+"/sp_return.png");
     var copyImageL = await copyFile(path.join(__dirname, "assets/img/template/record_off.png"), FD.files.imgFolder+"/record_off.png");
     var copyImageM = await copyFile(path.join(__dirname, "assets/img/template/record_on.png"), FD.files.imgFolder+"/record_on.png");
+    var copyImageN = await copyFile(path.join(__dirname, "assets/img/template/bucket.png"), FD.files.imgFolder+"/bucket.png");
+    var copyImageP = await copyFile(path.join(__dirname, "assets/img/template/clean.png"), FD.files.imgFolder+"/clean.png");
     console.log("-- CREATE NEW FINISH--");
 }
 

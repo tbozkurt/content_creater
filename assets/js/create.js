@@ -188,6 +188,7 @@ function CREATE(){
         {obj: "soundPlayer", answer:false},
         {obj: "soundRecord", answer:true},
         {obj: "feedback", answer:false},
+        {obj: "freeDrawCanvas", answer:true},
         {obj: "wordBox", answer:true}
     ];
 
@@ -1274,6 +1275,91 @@ function CREATE(){
             fill: "#ffffff",
             padding: 0,
             Layer:{type:"objectText", name: "Sample", class: "wordTxt"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+
+    this.freeDrawCanvas = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 640,
+            height: 360,
+            fill: "#303030",
+            opacity: 1,
+            borderPosition: "center",
+            Layer:{type:"objectRect", name: "canvas", class:"canvas"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.freeDrawNav = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 275,
+            height: 80,
+            fill: "silver",
+            borderPosition: "center",
+            cornerRadius: 10,
+            Layer:{type:"objectRect", name: "bg"}
+        },
+        {
+            x: 15,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/draw_icon.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"draw_icon", class:"drawBox"}
+        },
+        {
+            x: 80,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/draw_easer.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"draw_easer", class:"eraserBox"}
+        },
+        {
+            x: 145,
+            y: 15,
+            width: 50,
+            height: 50,
+            fill: "#ff0000",
+            borderPosition: "center",
+            cornerRadius: 10,
+            Layer:{type:"objectRect", name: "color", class:"color"}
+        },
+        {
+            x: 145,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/bucket.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"bucket", class:"disableEvents"}
+        },
+        {
+            x: 210,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/clean.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"clean", class:"clean"}
         }];
 
         addObjects(kids, container, false);

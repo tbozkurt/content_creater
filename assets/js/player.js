@@ -911,6 +911,8 @@ function PLAYER(){
                 init["initRECORD"] = This.initRECORD;
             }else if(obj.id.includes("wordBox")){
                 init["initWORD"] = This.initWORD;
+            }else if(obj.id.includes("freeDrawCanvas")){
+                init["initFREEDRAW"] = This.initFREEDRAW;
             }
         });
 
@@ -972,21 +974,14 @@ function PLAYER(){
     function addNavigationDOM(){
         player.Normal_NavListMain = utils.addDOM({className: "Normal_NavListMain"});
         player.mainDOM.appendChild(player.Normal_NavListMain);
+        player.Normal_NavListMain.style.visibility = "hidden";
 
         player.Normal_NavList = utils.addDOM({className: "Normal_NavList"});
         player.Normal_NavListMain.appendChild(player.Normal_NavList);
 
-        player.Normal_NavListMain.addEventListener("click", function(){
-            player.Normal_NavListMain.style.visibility = "hidden";
-        });
-
         /* End Main */
         player.watcher_main = utils.addDOM({className: "watcher_main"});
         player.mainDOM.appendChild(player.watcher_main);
-
-        player.Normal_NavListMain.addEventListener("click", function(){
-            player.Normal_NavListMain.style.visibility = "hidden";
-        });
 
         player.watcher_main.innerHTML = '<div class="watcher_container">' +
             '<div class="watcher_head">Tamamlanmayan ekranlar var!</div>' +
@@ -1923,7 +1918,12 @@ function PLAYER(){
         });
 
         player.infoDiv.addEventListener("click", function(){
-            player.Normal_NavListMain.style.visibility = "visible";
+            var visibility = player.Normal_NavListMain.style.visibility;
+            if(visibility === "visible"){
+                player.Normal_NavListMain.style.visibility = "hidden";
+            }else{
+                player.Normal_NavListMain.style.visibility = "visible";
+            }
         });
 
         addNavigationDOM();
@@ -2477,8 +2477,8 @@ function PLAYER(){
                 CS.Buton[id] = {
                     main: element.main,
                     group: group,
-                    approved: false,
                     ignore: false,
+                    status: "empty",
                     csClick: element.main.querySelector(".csClick"),
                     csWrong: element.main.querySelector(".csWrong"),
                     csRight: element.main.querySelector(".csRight"),
@@ -2488,8 +2488,18 @@ function PLAYER(){
                 rubrik[id] = null;
                 element.main.style.cursor = "pointer";
                 if(!CS.group[group]){
-                    CS.group[group] = {approved:0, maxSelect:0, currentList:[], rightTotalCount:0}
+                    CS.group[group] = {
+                        maxSelect:0,
+                        rightTotalCount:0,
+                        currentList:[],
+                        memberList:[],
+                        currentRightList:[],
+                        currentWrongList:[],
+                        currentEmptyList:[]
+                    }
                 }
+
+                CS.group[group].memberList.push(id);
 
                 if(answer[id]){
                     CS.group[group].maxSelect++;
@@ -2556,7 +2566,7 @@ function PLAYER(){
             if(list.length > CS.group[group].maxSelect){
                 for(var i = (list.length-1); i > -1; i--){
                     var currentID = list[i];
-                    if(!CS.Buton[currentID].approved){
+                    if(CS.Buton[currentID].status !== "right"){
                         var deleteID = list.splice(i, 1);
                         defaultBtn( deleteID );
                         break;
@@ -2583,8 +2593,9 @@ function PLAYER(){
         }
 
         function allDefaultBtn(){
-            for(var id in rubrik){
-                if(!CS.Buton[id].ignore){
+            for(var id in CS.Buton){
+                var Buton = CS.Buton[id];
+                if(Buton.status !== "right"){
                     defaultBtn(id);
                 }
             }
@@ -2592,20 +2603,28 @@ function PLAYER(){
 
         function groupCloseControl(){
             var finish = true;
-
             CS.group.map(function(group){
-                group.approved=0;
+                group.currentRightList=[];
+                group.currentWrongList=[];
+                group.currentEmptyList=[];
             });
 
             for(var id in CS.Buton){
                 var Buton = CS.Buton[id];
-                if(Buton.approved){
-                    CS.group[Buton.group].approved++;
+                if(Buton.status === "right"){
+                    CS.group[Buton.group].currentRightList.push(parseInt(id));
+                }else if(Buton.status === "wrong"){
+                    CS.group[Buton.group].currentWrongList.push(parseInt(id));
+                }else if(Buton.status === "empty"){
+                    CS.group[Buton.group].currentEmptyList.push(parseInt(id));
                 }
             }
 
             CS.group.map(function(group, id){
-                if(group.approved === group.rightTotalCount){
+                var currentRight = group.currentRightList.length;
+                var currentWrong = group.currentWrongList.length;
+
+                if(currentRight === group.rightTotalCount && !currentWrong){
                     for(var i in CS.Buton){
                         var Buton = CS.Buton[i];
                         if(Buton.group === id){
@@ -2671,7 +2690,6 @@ function PLAYER(){
             CS.Buton[id].csRight.style.visibility = "visible";
             CS.Buton[id].csWrong.style.visibility = "hidden";
             CS.Buton[id].csClick.style.visibility = "hidden";
-            CS.Buton[id].approved = true;
             CS.Buton[id].ignore = true;
             inputsChange(SD, id, true);
         }
@@ -2711,7 +2729,7 @@ function PLAYER(){
 
         function showAllWrong(){
             for(var id in rubrik){
-                if(SD.inputs["box"+id].value && !CS.Buton[id].approved){
+                if(SD.inputs["box"+id].value && CS.Buton[id].status === "wrong"){
                     wrongBtn(id);
                 }
             }
@@ -2720,12 +2738,20 @@ function PLAYER(){
         function checkRightAnswer(){
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"cs"};
 
+            for(var btnID in CS.Buton){
+                if(CS.Buton[btnID].status !== "right"){
+                    CS.Buton[btnID].status = "empty";
+                }
+            }
+
             if(CS.evaluationMode === "count"){
                 for(var p in CS.group){
                     var listLength = CS.group[p].currentList.length;
                     var totalRight = CS.group[p].rightTotalCount;
 
-                    if(listLength <= totalRight){
+                    if(!CS.group[p].currentList.length){
+                        score.totalEmpty++;
+                    }else if(listLength <= totalRight){
                         if(listLength === totalRight){
                             score.totalRight++;
                         } else if(listLength < totalRight){
@@ -2734,29 +2760,50 @@ function PLAYER(){
 
                         CS.group[p].currentList.map(function(id){
                             rightBtn(id);
+                            CS.Buton[id].status = "right";
                         });
-
-                    }else if(!CS.group[p].currentList.length){
-                        score.totalEmpty++;
                     }else{
                         score.totalWrong++;
+                        CS.group[p].currentList.map(function(id){
+                            if(CS.Buton[id].status !== "right"){
+                                CS.Buton[id].status = "wrong";
+                            }
+                        });
                     }
                 }
-
             }else{
                 for(var id in rubrik){
                     if(rubrik[id]){
                         if(SD.inputs["box"+id].value){
                             score.totalRight++;
+                            CS.Buton[id].status = "right";
                         }else{
                             score.totalEmpty++;
+                            CS.Buton[id].status = "empty";
                         }
                     }else{
                         if(SD.inputs["box"+id].value){
                             score.totalWrong++;
+                            CS.Buton[id].status = "wrong";
+                        }else{
+                            CS.Buton[id].status = "empty";
                         }
                     }
                 }
+
+                for(var gid in CS.group) {
+                    var currentListCount = CS.group[gid].currentList.length;
+                    var memberListCount = CS.group[gid].memberList.length;
+                    var rightTotalCount = CS.group[gid].rightTotalCount;
+                    if(currentListCount ===  memberListCount && rightTotalCount < memberListCount){
+                        CS.group[gid].memberList.map(function(id){
+                            if(!CS.group[gid].currentRightList.includes(id)){
+                                CS.Buton[id].status = "wrong";
+                            }
+                        });
+                    }
+                }
+
             }
 
             return score;
@@ -2779,19 +2826,16 @@ function PLAYER(){
 
         function rightActionFNC(){
             enablePopupBtnStatus();
-            partialRight();
             groupCloseControl();
+            partialRight();
         }
 
         function partialRight(){
             if(CS.evaluationMode !== "count"){
-                if(!evaluation.score.totalWrong){
-                    for(var p in rubrik){
-                        if(rubrik[p]){
-                            if(SD.inputs["box"+p].value){
-                                rightBtn(p);
-                            }
-                        }
+                for(var id in CS.Buton){
+                    var Buton = CS.Buton[id];
+                    if(Buton.status === "right"){
+                        rightBtn(id);
                     }
                 }
             }
@@ -2817,14 +2861,17 @@ function PLAYER(){
                 returnDefault();
             }
 
-            partialRight();
             groupCloseControl();
+            partialRight();
         }
 
         function returnDefault(){
             SP.screenCloseTimer = setTimeout(function(){
                 btnEvents("auto");
                 allDefaultBtn();
+                if(!PLX.isEKT){
+                    controlBtnView(SP, "enable");
+                }
             }, 1000);
         }
 
@@ -3954,7 +4001,6 @@ function PLAYER(){
                 filter.map(function(mainID, index){
                     if(!mainID){
                         addCloneDrag(index);
-                        console.log(">>>>> eklendi Buton",index);
                     }
                 });
             }
@@ -6892,6 +6938,384 @@ function PLAYER(){
         SP.fnc.push(evaluation);
         //End
     }
+
+    /** Add freeDraw **/
+    this.initFREEDRAW = function(SP, SD, index){
+        console.log("initFreeDraw");
+
+        var isPaint = false;
+        var lastLine;
+        var mod = "source-over";
+        var lastPointerPos = {x: 0, y: 0};
+        var activeStageID;
+
+        var draw = {konva:[]};
+
+        var settings = {
+            /* Douglas Peucker Tolerans 0-10 */
+            dp_tolerans: 1,
+
+            /* Çizim anında yumuşaklık */
+            kv_tolerans: 0.2,
+
+            /* Sadece 3 pikselden fazla hareket varsa nokta ekle */
+            minDistance: 3,
+
+            brushSize: 4,
+            eraserSize: 32,
+            activeSize:0,
+            brushColor: "#ffffff",
+        }
+
+        for(var prop in jsonV2.slides[index].scene){
+            settings[prop] = parseInt(jsonV2.slides[index].scene[prop]);
+        }
+
+        SP.elementList.map(function(element){
+            if(element.id.includes("freeDrawCanvas")){
+                var id = parseInt(element.id.split("_")[1]);
+                var canvas = element.main.querySelector(".canvas");
+                var canvasRect = canvas.getBoundingClientRect();
+
+                draw.konva[id] = {
+                    id: id,
+                    canvasDOM: canvas,
+                    canvasWidth: canvasRect.width,
+                    canvasHeight: canvasRect.height
+                }
+
+                addCanvas(draw.konva[id]);
+                SD.inputs["box"+ id] = {value: null, type: "freeDraw"};
+            }else if(element.id.includes("freeDrawNav")){
+                draw.navMain = element.main;
+                draw.drawBox = element.main.querySelector(".drawBox");
+                draw.eraserBox = element.main.querySelector(".eraserBox");
+                draw.colorPalette = element.main.querySelector(".color");
+                draw.cleanCanvas = element.main.querySelector(".clean");
+
+                draw.drawBox.addEventListener("click",function(){
+                    mod = "source-over";
+                    mouseCursorStatus();
+                });
+
+                draw.eraserBox.addEventListener("click",function(){
+                    mod = "destination-out";
+                    mouseCursorStatus();
+                });
+
+                draw.cleanCanvas.addEventListener("click",function(){
+                    checkRightAnswer();
+                    clearStage(activeStageID);
+                });
+
+                draw.cleanCanvas.style.cursor = "pointer";
+
+                if(draw.colorPalette){
+                    const colorInput = document.createElement('input');
+                    colorInput.type = "color";
+                    colorInput.className = 'colorPalette';
+                    colorInput.value = draw.colorPalette.style.backgroundColor;
+
+                    Object.assign(colorInput.style, {
+                        left: draw.colorPalette.style.left,
+                        top: draw.colorPalette.style.top,
+                        borderRadius: draw.colorPalette.style.borderRadius,
+                        border: "none",
+                        overflow: "hidden",
+                        width: draw.colorPalette.style.width,
+                        height: draw.colorPalette.style.height,
+                        padding: 0,
+                        position: "absolute",
+                        cursor: "pointer"
+                    });
+
+                    draw.colorPalette.remove();
+                    draw.eraserBox.after(colorInput);
+                    draw.colorPalette = colorInput;
+                    settings.brushColor = draw.colorPalette.value;
+
+                    draw.colorPalette.addEventListener("input", function(){
+                        settings.brushColor = this.value;
+                    });
+
+                    draw.colorPalette.addEventListener("click", function(){
+                        mod = "source-over";
+                        mouseCursorStatus();
+                    });
+                }
+            }
+        });
+
+        /* --- DOUGLAS-PEUCKER ALGORİTMASI --- */
+        function getSqSegDist(p, p1, p2) {
+            var x = p1.x, y = p1.y, dx = p2.x - x, dy = p2.y - y;
+            if (dx !== 0 || dy !== 0) {
+                var t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+                if (t > 1) {
+                    x = p2.x;
+                    y = p2.y;
+                } else if (t > 0) {
+                    x += dx * t;
+                    y += dy * t;
+                }
+            }
+            dx = p.x - x;
+            dy = p.y - y;
+            return dx * dx + dy * dy;
+        }
+
+
+        function simplifyStep(points, first, last, sqTolerance, simplified) {
+            var maxSqDist = sqTolerance, index;
+            for (var i = first + 1; i < last; i++) {
+                var sqDist = getSqSegDist(points[i], points[first], points[last]);
+                if (sqDist > maxSqDist) {
+                    index = i;
+                    maxSqDist = sqDist;
+                }
+            }
+
+            if (maxSqDist > sqTolerance) {
+                if (index - first > 1) {
+                    simplifyStep(points, first, index, sqTolerance, simplified);
+                }
+
+                simplified.push(points[index]);
+
+                if (last - index > 1) {
+                    simplifyStep(points, index, last, sqTolerance, simplified);
+                }
+            }
+        }
+
+        function simplify(points, tolerance) {
+            if (points.length <= 2) return points;
+            var sqTolerance = tolerance !== undefined ? tolerance * tolerance : 1;
+            var simplified = [points[0]];
+            simplifyStep(points, 0, points.length - 1, sqTolerance, simplified);
+            simplified.push(points[points.length - 1]);
+            return simplified;
+        }
+
+        /* ---------------------------- */
+
+        function getDist(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+
+        function addCanvas(DX){
+            DX.stage =  new Konva.Stage({container: DX.canvasDOM, width: DX.canvasWidth, height: DX.canvasHeight});
+            DX.layer = new Konva.Layer();
+            DX.stage.add(DX.layer);
+
+            DX.emptyDataLength = DX.stage.toDataURL().length;
+            DX.stage.on('mousedown touchstart', function(e) {
+                isPaint = true;
+                activeStageID = DX.id;
+                var pos = DX.stage.getPointerPosition();
+                lastLine = new Konva.Line({
+                    stroke: settings.brushColor,
+                    strokeWidth: settings.activeSize,
+                    globalCompositeOperation: mod,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    tension: settings.kv_tolerans,
+                    points: [pos.x, pos.y],
+                    perfectDrawEnabled: false,
+                    listening: false,
+                    hitGraphEnabled: false,
+                    shadowForStrokeEnabled: false
+                });
+                DX.layer.add(lastLine);
+            });
+
+            DX.stage.on("mousemove touchmove", function (e) {
+                if (!isPaint) return;
+
+                e.evt.preventDefault();
+                var pos = DX.stage.getPointerPosition();
+
+                /* Performans Kilidi: Eğer çok az hareket ettiyse işlem yapma */
+                if (getDist(lastPointerPos, pos) < settings.minDistance) {
+                    return;
+                }
+
+                lastPointerPos = pos;
+
+                var newPoints = lastLine.points().concat([pos.x, pos.y]);
+                lastLine.points(newPoints);
+
+                /* Konva'nın en performanslı çizim metodu */
+                DX.layer.batchDraw();
+            });
+
+
+            DX.stage.on("mouseup touchend", function(e) {
+                drawEnd(DX);
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+            });
+
+        }
+
+        function drawEnd(DX){
+            if (!isPaint) {
+                return false;
+            }
+            isPaint = false;
+
+            /* Çizim bittiğinde Douglas-Peucker'ı çalıştır */
+            var rawPoints = lastLine.points();
+            var formattedPoints = [];
+            for (var i=0; i<rawPoints.length; i+=2) {
+                formattedPoints.push({x: rawPoints[i], y: rawPoints[i + 1]});
+            }
+
+            var simplifiedPoints = simplify(formattedPoints, settings.dp_tolerans);
+
+            /* Sadeleşmiş noktaları Konva formatına dönüştür */
+            var newRawPoints = [];
+            simplifiedPoints.forEach(function (p) {
+                newRawPoints.push(p.x, p.y);
+            });
+
+            lastLine.points(newRawPoints);
+
+            /* 2. Cache işlemi (Performans için kritik)
+            Çizginin etrafındaki alanı hesaplamak için getClientRect kullanılır */
+            var clientRect = lastLine.getClientRect();
+
+            /* Eğer çizgi çok küçükse veya boşsa hata vermemesi için kontrol */
+            if (clientRect.width > 0 && clientRect.height > 0) {
+                lastLine.cache({
+                    /* Kenarlarda kırpılma olmaması için pay bırakıyoruz */
+                    x: clientRect.x - 5,
+                    y: clientRect.y - 5,
+                    width: clientRect.width + 10,
+                    height: clientRect.height + 10,
+                    pixelRatio: 2
+                });
+            }
+
+            DX.layer.batchDraw();
+            getSceneBase64();
+        }
+
+
+        SP.sceneDiv.addEventListener('mouseup', function(){
+            drawEnd( draw.konva[activeStageID] );
+        });
+
+        SP.sceneDiv.addEventListener('touchend', function(){
+            drawEnd( draw.konva[activeStageID] );
+        });
+
+        /* canvas base64 get */
+        function getSceneBase64() {
+            var stage = draw.konva[activeStageID].stage;
+            var dataURL = stage.toDataURL({
+                mimeType: "image/png",
+                quality: 1,
+                pixelRatio: 2
+            });
+
+            inputsChange(SD, activeStageID, dataURL);
+            return dataURL;
+        }
+
+        function clearStage(id){
+            draw.konva[id].layer.destroyChildren();
+            /* Önceki bellek kayıtlarını temizle */
+            draw.konva[id].layer.clearCache();
+            draw.konva[id].layer.draw();
+        }
+
+        function activeBtnFNC(btn){
+            btn.style.border = "2px solid #183153";
+        }
+
+        function passiveBtnFNC(btn){
+            btn.style.border = "0px";
+        }
+
+        function mouseCursorStatus(){
+            if(mod === "source-over"){
+                SP.sceneDiv.style.cursor = "url(assets/img/player/pencilcursor.png) -22 22, auto";
+                settings.activeSize = settings.brushSize;
+                activeBtnFNC(draw.drawBox);
+                passiveBtnFNC(draw.eraserBox);
+            }else{
+                SP.sceneDiv.style.cursor = "url(assets/img/player/easercursor.png) 10 15, auto";
+                settings.activeSize = settings.eraserSize;
+                activeBtnFNC(draw.eraserBox);
+                passiveBtnFNC(draw.drawBox);
+            }
+        }
+        mouseCursorStatus();
+
+        /* canvas base64 load */
+        function addHistory() {
+            var lastMove = historyExtract(SP, 'freeDraw');
+
+            for(var box in lastMove){
+                if(lastMove[box].value){
+                    var base64 = lastMove[box].value;
+                    var id = lastMove[box].id;
+
+                    var img = new Image();
+                    img.onload = function () {
+                        var konvaImage = new Konva.Image({
+                            image: img,
+                            x: 0,
+                            y: 0,
+                            width: draw.konva[id].canvasWidth,
+                            height: draw.konva[id].canvasHeight,
+                            perfectDrawEnabled: false,
+                            listening: false
+                        });
+
+                        draw.konva[id].layer.add(konvaImage);
+                        draw.konva[id].layer.batchDraw();
+                    };
+
+                    img.src = base64;
+                }
+            }
+        }
+
+        function checkRightAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"freeDraw"};
+            draw.konva.map(function(konva){
+                var currentDataLength = konva.stage.toDataURL().length;
+                var emptyDataLength = konva.emptyDataLength;
+
+                if(currentDataLength > (emptyDataLength+50)){
+                    score.totalRight++;
+                }else{
+                    score.totalEmpty++;
+                }
+            });
+
+            return score;
+        }
+
+        function close(){
+            draw.navMain.style.display = "none";
+        }
+
+        var evaluation = {
+            history: addHistory,
+            control: checkRightAnswer,
+            wrong: function(){},
+            right: function(){},
+            answer: function(){},
+            close: close
+        }
+
+        SP.fnc.push(evaluation);
+   }
+
 
 }
 

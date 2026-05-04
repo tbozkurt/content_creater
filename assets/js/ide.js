@@ -2206,6 +2206,57 @@ IDE.workSpace.createWord.addEventListener("click", function(){
 });
 
 
+
+/* create freeDraw Canvas */
+IDE.workSpace.createFreeDrawCanvas.addEventListener("click", function(){
+    console.log("create Free Draw Canvas");
+    var obj = CREATE.freeDrawCanvas({
+        properties:{
+            x: 350,
+            y: 100,
+            width: 640,
+            height: 360,
+            draggable: true,
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "freeDrawCanvas",
+            elementID: "freeDrawCanvas",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
+/* create freeDraw navigation */
+IDE.workSpace.createFreeDrawNav.addEventListener("click", function(){
+    var obj = CREATE.freeDrawNav({
+        properties:{
+            x: 525,
+            y: 550,
+            width: 275,
+            height: 80,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "freeDrawNav",
+            elementID: "freeDrawNav",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
 IDE.welcome.loaderMain.addEventListener("click", function(){
     document.querySelector("#loaderMain_img").style.animationPlayState = "paused";
 });

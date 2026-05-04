@@ -78,6 +78,7 @@
                     <option value="8">Nokta Çizim </option>
                     <option value="9">Ses Kaydetme</option>
                     <option value="10">Kelime</option>
+                    <option value="11">Serbest Çizim</option>
                 </select>
             </div>
 
@@ -139,6 +140,11 @@
 
             <div id="iconGroup10" class="iconGroup">
                 <div class="TopIconBox" id="createWord"><img src="assets/img/create_word.png"></div>
+            </div>
+
+            <div id="iconGroup11" class="iconGroup">
+                <div class="TopIconBox" id="createFreeDrawNav"><img src="assets/img/create_drawnav.png"></div>
+                <div class="TopIconBox" id="createFreeDrawCanvas"><img src="assets/img/create_paintbox.png"></div>
             </div>
 
         </div>
@@ -591,6 +597,9 @@
             createRecord: document.querySelector("#createRecord"),
             createWord: document.querySelector("#createWord"),
 
+            createFreeDrawNav: document.querySelector("#createFreeDrawNav"),
+            createFreeDrawCanvas: document.querySelector("#createFreeDrawCanvas"),
+
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
             rect_fillColorInput: document.querySelector("#rect_fillColorInput"),
@@ -670,7 +679,8 @@
             document.querySelector("#iconGroup7"),
             document.querySelector("#iconGroup8"),
             document.querySelector("#iconGroup9"),
-            document.querySelector("#iconGroup10")
+            document.querySelector("#iconGroup10"),
+            document.querySelector("#iconGroup11")
         ]
     }
 
