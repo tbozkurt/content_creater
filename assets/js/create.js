@@ -1338,28 +1338,28 @@ function CREATE(){
             y: 15,
             width: 50,
             height: 50,
-            fill: "#ff0000",
-            borderPosition: "center",
-            cornerRadius: 10,
-            Layer:{type:"objectRect", name: "color", class:"color"}
+            src: "img/clean.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"clean", class:"clean"}
         },
         {
-            x: 145,
-            y: 15,
-            width: 50,
-            height: 50,
-            src: "img/bucket.png",
-            cornerRadius: 8,
-            Layer: {type:"objectImg", name:"bucket", class:"disableEvents"}
+            x: 212,
+            y: 17,
+            width: 46,
+            height: 46,
+            fill: "#ff0000",
+            borderPosition: "center",
+            cornerRadius: 40,
+            strokeWidth: 0,
+            Layer:{type:"objectRect", name: "color", class:"color"}
         },
         {
             x: 210,
             y: 15,
             width: 50,
             height: 50,
-            src: "img/clean.png",
-            cornerRadius: 8,
-            Layer: {type:"objectImg", name:"clean", class:"clean"}
+            src: "img/color.png",
+            Layer: {type:"objectImg", name:"color.png", class:"disableEvents"}
         }];
 
         addObjects(kids, container, false);

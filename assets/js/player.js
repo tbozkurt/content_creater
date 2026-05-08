@@ -879,6 +879,7 @@ function PLAYER(){
 
     this.actType = function(SP, SD, index){
         var init = {};
+        SP.initFNC = {};
         console.log(SP);
         console.log(SD);
         This.convertRubrik(index);
@@ -902,10 +903,13 @@ function PLAYER(){
                 init["initPOINT"] = This.initPOINT;
             }else if(obj.id.includes("popupWindow")){
                 init["initVIDEO"] = This.initVIDEO;
+                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
             }else if(obj.id.includes("feedback")){
                 init["initVIDEO"] = This.initVIDEO;
+                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
             }else if(obj.id.includes("videoBox")){
                 init["initVIDEO"] = This.initVIDEO;
+                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
                 SD.type = "a";
             }else if(obj.id.includes("soundRecord")){
                 init["initRECORD"] = This.initRECORD;
@@ -916,12 +920,23 @@ function PLAYER(){
             }
         });
 
-        console.log(init);
-
         for(var p in init){
-            init[p](SP, SD, index);
+            if(!p.includes("initVIDEO")){
+                init[p](SP, SD, index);
+            }
         }
         SD.totalRight = SD.empty = Object.keys(SP.tempAnswer).length;
+    }
+
+    function initVideoFNC(index){
+        var sp = SP[index];
+        var sd = SD[index];
+        for(var name in sp.initFNC){
+            if(!sp.initFNC[name].build){
+                sp.initFNC[name].build = true;
+                sp.initFNC[name].fnc(sp, sd, index);
+            }
+        }
     }
 
     function controlBtnView(SP, status){
@@ -1787,6 +1802,7 @@ function PLAYER(){
                 player.nextBtn.style.pointerEvents = "auto";
             }
 
+            initVideoFNC(This.sceneIndex);
             checkViewFNC(SD[index]);
             navListSelect(index);
             hideOpenEndedDOM();
