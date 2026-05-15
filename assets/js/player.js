@@ -2,7 +2,14 @@ function PLAYER(){
     this.allScene = [];
     this.sceneIndex = 0;
     var unique = {};
-    var PLX = {soundConfirm: false, HDE_autoSoundPlay:true, HDE_access:0};
+    var PLX = {
+        soundConfirm: false,
+        HDE_autoSoundPlay:true,
+        HDE_access:0,
+        maxWrongMove:5,
+        isEKT: false,
+        isBSD: false
+    };
     var This = this;
     var KT={};
     var SP = [];
@@ -18,7 +25,6 @@ function PLAYER(){
             }
         }),
         autoNext:null,
-        screenCloseTimer: null,
         dataSendTimer: null,
         screenDuration: null,
         backBtn: null,
@@ -213,6 +219,7 @@ function PLAYER(){
         player.mainDOM = utils.addDOM({id: "PlayerMain"});
         BUILD.container.appendChild(player.mainDOM);
         PLX.isEKT = jsonV2.fileName.includes("EKT");
+        PLX.isBSD = jsonV2.fileName.includes("BSD");
 
         var sceneCSS = [];
         jsonV2.slides.map(function(slide, index){
@@ -224,15 +231,16 @@ function PLAYER(){
                 type: "e",
                 duration:0,
                 wrong:0,
+                wrongCount:0,
                 right:0,
                 empty:0,
                 totalRight:0,
-                totalWrong:0,
                 inputs:{},
                 complete: false,
                 attempt: -1,
                 historyRight:[],
-                success:0
+                success: 0,
+                answerShow: false,
             }
 
             SP[index] = {
@@ -246,7 +254,8 @@ function PLAYER(){
                 soundPlayer:[],
                 feedBack:[],
                 soundRecord:{},
-                history:[]
+                history:[],
+                pageChangeDuration:4
             }
         });
 
@@ -286,6 +295,7 @@ function PLAYER(){
         addReadOnlyDOM();
         addOpenEndedDOM();
         infoSystemFNC();
+        scenePropSearch();
 
         if(BUILD.mode === "optic"){
             This.build_KT(jsonV2);
@@ -781,13 +791,6 @@ function PLAYER(){
 
         controlBtnView(SP, "disable");
         answerBtnView(SP, "disable");
-        SD.empty=0;
-
-        /*
-        if(jsonV2.fileName.indexOf("ECK") > -1){
-            SD.empty=0;
-        }
-        */
 
         This.sceneComplete();
         This.scoreCalc(true);
@@ -813,20 +816,17 @@ function PLAYER(){
             finalStatus = scoreEvalution(totalScore);
         });
 
-        SD.attempt++;
         SD.right = totalScore.totalRight;
         SD.wrong = totalScore.totalWrong;
         SD.empty = totalScore.totalEmpty;
-        SD.historyRight[SD.attempt] = {
+        SD.historyRight.push({
             right: totalScore.totalRight,
             wrong: totalScore.totalWrong,
             success: 0
-        };
+        });
 
         if(finalStatus === "right"){
             This.playRightAudio();
-            //SD.right = totalScore.totalRight;
-            //SD.empty=0;
             This.sceneComplete();
             This.nextScene();
             SP.fnc.map(function(fnc){
@@ -838,19 +838,7 @@ function PLAYER(){
             checkViewFNC(SD);
             showFeedBack("right", "auto", 0);
         }else{
-            /*
-            if(finalStatus === "partially"){
-                SD.right = totalScore.totalRight;
-                SD.empty = totalScore.totalEmpty;
-            }else{
-                SD.wrong++;
-            }
-
-            SD.right = totalScore.totalRight;
-            SD.empty = totalScore.totalEmpty;
-            SD.attempt++;
-            */
-
+            SD.wrongCount++;
             This.playWrongAudio();
             showWarning(SP, SD);
 
@@ -862,7 +850,7 @@ function PLAYER(){
                 }
             });
 
-            if(SD.attempt >= 4){
+            if(SD.wrongCount >= PLX.maxWrongMove){
                 answerBtnView(SP, "enable");
                 showFeedBack("answer", "auto", 0);
             }
@@ -874,7 +862,86 @@ function PLAYER(){
 
         This.scoreCalc(true);
         showToolTip(SP, SD);
+        specialFNC(SP, SD);
         console.log(SD);
+    }
+
+
+    function specialStartFNC(SP, SD){
+        if(PLX.isEKT) {
+            if(SP.popEx.length){
+                SP.popEx[0].btn.addEventListener("click", function(){
+                    if(!SD.complete){
+                        SD.answerShow=true;
+                        console.log("Aktif");
+                        SP.fnc.map(function(fnc){
+                            fnc.reset();
+                            fnc.close(true);
+                        });
+
+                        This.sceneComplete();
+                        This.scoreCalc(false);
+                        controlBtnView(SP, "disabled");
+                    }
+                });
+
+                SP.popEx[0].btn.style.pointerEvents = "none";
+                SP.popEx[0].btn.style.opacity = 0.5;
+            }
+        }else if(PLX.isBSD) {
+            if(SP.popEx.length){
+                SP.popEx[0].btn.style.pointerEvents = "none";
+                SP.popEx[0].btn.style.opacity = 0.5;
+            }
+        }
+    }
+
+    function specialFNC(SP, SD){
+        if(PLX.isEKT){
+            if(SD.wrongCount >= 3){
+                SD.answerShow=true;
+                This.sceneComplete();
+                This.scoreCalc(false);
+                controlBtnView(SP, "disabled");
+                SP.fnc.map(function(fnc){
+                    clearInterval( fnc.timer );
+                });
+
+                if(SP.popEx.length){
+                    SP.popEx[0].clicked = true;
+                    SP.popEx[0].window.style.visibility = "visible";
+                }
+            }else if(SP.popEx.length){
+                SP.popEx[0].btn.style.opacity = 1;
+                SP.popEx[0].btn.style.pointerEvents = "auto";
+            }
+        }else if(PLX.isBSD){
+            if(SD.wrongCount >= 3){
+                controlBtnView(SP, "disabled");
+
+                SP.fnc.map(function(fnc){
+                    clearInterval( fnc.timer );
+                    fnc.close();
+                });
+
+                if(SP.popEx.length){
+                    SP.popEx[0].clicked = true;
+                    SP.popEx[0].window.style.visibility = "visible";
+                    SP.popEx[0].btn.style.opacity = 1;
+                    SP.popEx[0].btn.style.pointerEvents = "auto";
+                }
+            }
+        }
+    }
+
+     function scenePropSearch(){
+        jsonV2.slides.map(function(page, index){
+            for(var prop in page.scene){
+                if(prop === "pageChangeDuration"){
+                    SP[index].pageChangeDuration = parseInt(page.scene[prop]);
+                }
+            }
+        });
     }
 
     this.actType = function(SP, SD, index){
@@ -926,6 +993,7 @@ function PLAYER(){
             }
         }
         SD.totalRight = SD.empty = Object.keys(SP.tempAnswer).length;
+        specialStartFNC(SP, SD);
     }
 
     function initVideoFNC(index){
@@ -1167,8 +1235,12 @@ function PLAYER(){
     function addCheckIcon(){
         player.checkIconDOM = utils.addDOM({id: "checkIconDOM", className: "checkIconDOM"});
         player.mainDOM.appendChild(player.checkIconDOM);
-        player.checkIconDOM.innerHTML = '<div class="checkIconImg"><img src="assets/img/player/check.png"></div><div class="notice"></div>';
+        player.checkIconDOM.innerHTML = '<div id="pageCheckIcon" class="pageStatusIcon"><img src="assets/img/player/check.png"></div><div id="pageAnswerIcon" class="pageStatusIcon"><img src="assets/img/player/answer.png"></div><div class="notice"></div>';
         player.notice = player.checkIconDOM.querySelector(".notice");
+        player.pageStatusIcon = {
+            check: player.checkIconDOM.querySelector("#pageCheckIcon"),
+            answer: player.checkIconDOM.querySelector("#pageAnswerIcon")
+        }
     }
 
     //add check
@@ -1187,9 +1259,23 @@ function PLAYER(){
         if(SD.complete){
             player.checkIconDOM.style.visibility = "visible";
             var currentWarning = SD.historyRight.length;
+            var bgColor = "#548b2e";
+            var noticeTxt = currentWarning +". denemede tamamlandı.";
+
+            if(SD.answerShow){
+                bgColor = "#F57F17";
+                noticeTxt = "Yanıt desteği ile tamamlandı.";
+                player.pageStatusIcon.check.style.display = "none";
+                player.pageStatusIcon.answer.style.display = "block";
+            }else{
+                player.pageStatusIcon.check.style.display = "block";
+                player.pageStatusIcon.answer.style.display = "none";
+            }
+
             if(currentWarning){
+                player.notice.style.backgroundColor = bgColor;
                 player.notice.style.visibility = "visible";
-                player.notice.innerHTML = currentWarning+". denemede tamamlandı.";
+                player.notice.innerHTML = noticeTxt;
             }else{
                 player.notice.style.visibility = "hidden";
             }
@@ -1277,6 +1363,15 @@ function PLAYER(){
                     popupWindowStatus(id);
                 });
 
+                var nextPageBtn = obj.querySelector(".nextPageBtn");
+                if(nextPageBtn){
+                    obj.querySelector(".nextPageBtn").addEventListener("click", function(){
+                        This.changeScene(This.sceneIndex+1);
+                    });
+
+                    nextPageBtn.style.cursor = "pointer";
+                }
+
                 obj.querySelector(".popupWindowClose").style.cursor = "pointer";
             }else if(obj.id.includes("control")){
                 SP.controlBtn = obj;
@@ -1292,6 +1387,8 @@ function PLAYER(){
                 SP.answerBtn.style.cursor = "pointer";
                 SP.answerBtn.style.pointerEvents = "none";
                 SP.answerBtn.addEventListener("click", function(){
+                    SD[index].answerShow=true;
+                    console.log("Aktif");
                     This.answerHQ(SP, SD[index]);
                     showFeedBack("answer", "btn", 0);
                 });
@@ -1813,17 +1910,6 @@ function PLAYER(){
         }
     }
 
-    /* Score Evalution */
-    this.scoreEvalution = function(score){
-        if (score.totalRight && !score.totalWrong && !score.totalEmpty) {
-            return "right";
-        } else if (!score.totalWrong && !score.totalRight) {
-            return "empty";
-        } else {
-            return "wrong";
-        }
-    }
-
     this.addSceneInterval = function(){
         clearInterval(player.screenDuration);
         if(!SD[This.sceneIndex].complete){
@@ -2238,18 +2324,20 @@ function PLAYER(){
         return document.querySelector("#Player_Container");
     }
 
-    function countDown(obj, animationFinish, duration){
+    function countDown(obj, animationFinish){
         obj.append(`<svg><path id="CountdownCircle"/></svg>`);
         var This = this;
         this.Svg = $("#CountdownCircle")[0];
         this.Const =  {x:15, y:15, radius: 15, start:1, end:1};
         this.Time=0;
-        this.startAnimationFNC = function(){
+        this.Duration;
+        this.startAnimationFNC = function(duration){
+            This.Duration = duration;
             if(this.Gsap){
                 this.Gsap.kill();
             }
             this.Current = Object.assign({}, this.Const);
-            this.Gsap = gsap.to(this.Current, {start:1, end:360, duration:duration, ease:'none', onUpdate:this.onTimerFNC, onComplete:this.finishFNC});
+            this.Gsap = gsap.to(this.Current, {start:1, end:360, duration:This.Duration, ease:'none', onUpdate:this.onTimerFNC, onComplete:this.finishFNC});
         };
 
         this.onTimerFNC = function(){
@@ -2311,7 +2399,7 @@ function PLAYER(){
     }
 
     PLX.autoSceneChange = {
-        AddHtmlFNC: function(animationFinish, text, duration){
+        AddHtmlFNC: function(animationFinish, text){
             var html =
                 `<div id="autoSceneChange_Main">
 				<div class="autoSceneChange_Container">
@@ -2331,14 +2419,14 @@ function PLAYER(){
             PLX.autoSceneChange.Txt = $("#autoSceneChange_Txt");
             PLX.autoSceneChange.WindowClose = $("#autoSceneChange_WindowClose");
 
-            PLX.autoSceneChange.CountDown = new countDown(PLX.autoSceneChange.Pie, animationFinish, duration);
+            PLX.autoSceneChange.CountDown = new countDown(PLX.autoSceneChange.Pie, animationFinish);
             PLX.autoSceneChange_PieResize();
         },
 
         ShowFNC: function(){
             PLX.autoSceneChange.Main.css({right:"-20%", display:"flex"});
             gsap.to(PLX.autoSceneChange.Main, 0.3, {right:"0.5%"});
-            PLX.autoSceneChange.CountDown.startAnimationFNC();
+            PLX.autoSceneChange.CountDown.startAnimationFNC(SP[This.sceneIndex].pageChangeDuration);
         },
 
         HideFNC: function(){
@@ -2349,7 +2437,7 @@ function PLAYER(){
 
     function initKACountDown(){
         PLX.SceneNavigationMain = $("#PlayerMain");
-        PLX.autoSceneChange.AddHtmlFNC(function(){ This.changeScene(player.autoNext) }, "Sonraki Ekran", 4);
+        PLX.autoSceneChange.AddHtmlFNC(function(){ This.changeScene(player.autoNext) }, "Sonraki Ekran");
         PLX.autoSceneChange.WindowClose.on("click", function(e){
             PLX.autoSceneChange.HideFNC();
             e.stopPropagation();
@@ -2559,23 +2647,6 @@ function PLAYER(){
             }
         }
 
-        if(SP.popEx.length && PLX.isEKT){
-            SP.popEx[0].btn.addEventListener("click", function(){
-                btnEvents("none");
-            });
-
-            SP.popEx[0].btn.style.pointerEvents = "none";
-            SP.popEx[0].btn.style.opacity = 0.5;
-        }
-
-
-        function enablePopupBtnStatus(){
-            if(SP.popEx.length && PLX.isEKT){
-                SP.popEx[0].btn.style.opacity = 1;
-                SP.popEx[0].btn.style.pointerEvents = "auto";
-            }
-        }
-
         function maxSelect(id){
             var group = CS.Buton[id].group;
             var list = CS.group[group].currentList;
@@ -2670,10 +2741,8 @@ function PLAYER(){
                 rightBtn(id);
                 var finish = groupCloseControl();
                 if(finish){
-                    SD.empty=0;
                     This.sceneComplete();
                     This.scoreCalc(false);
-                    enablePopupBtnStatus();
                     This.nextScene();
                 }
             }else{
@@ -2683,17 +2752,10 @@ function PLAYER(){
                 CS.Buton[id].csWrong.style.visibility = "visible";
 
                 if(SD.wrong >= 3){
-                    if(SP.popEx.length && PLX.isEKT){
-                        SP.popEx[0].clicked = true;
-                        SP.popEx[0].window.style.visibility = "visible";
-                    }
-
-                    SD.empty=0;
                     This.sceneComplete();
                     This.scoreCalc(false);
                 }else{
-                    enablePopupBtnStatus();
-                    player.screenCloseTimer = setTimeout(function(){
+                    evaluation.timer = setTimeout(function(){
                         btnEvents("auto");
                         defaultBtn(id);
                     }, 1000);
@@ -2841,7 +2903,6 @@ function PLAYER(){
         }
 
         function rightActionFNC(){
-            enablePopupBtnStatus();
             groupCloseControl();
             partialRight();
         }
@@ -2860,32 +2921,17 @@ function PLAYER(){
         function wrongActionFNC(){
             btnEvents("none");
             showAllWrong();
-            enablePopupBtnStatus();
 
-            if(SD.historyRight.length >= 3){
-                if(SP.popEx.length && PLX.isEKT){
-                    SP.popEx[0].clicked = true;
-                    SP.popEx[0].window.style.visibility = "visible";
-                    SD.empty=0;
-                    This.sceneComplete();
-                    This.scoreCalc(false);
-                    controlBtnView(SP, "disabled");
-                }else{
-                    returnDefault();
-                }
-            }else{
-                returnDefault();
-            }
-
+            returnDefault();
             groupCloseControl();
             partialRight();
         }
 
         function returnDefault(){
-            SP.screenCloseTimer = setTimeout(function(){
+            evaluation.timer = setTimeout(function(){
                 btnEvents("auto");
                 allDefaultBtn();
-                if(!PLX.isEKT){
+                if(!PLX.isEKT && !PLX.isBSD){
                     controlBtnView(SP, "enable");
                 }
             }, 1000);
@@ -2926,7 +2972,7 @@ function PLAYER(){
             }
 
             btnEvents("none");
-            clearInterval(SP.screenCloseTimer);
+            clearInterval(evaluation.timer);
         }
 
         function addHistory(){
@@ -2943,9 +2989,12 @@ function PLAYER(){
             }
         }
 
-        function close(){
+        function close(opacity){
             for(var id in CS.Buton){
-                CS.Buton[id].main.style.pointerEvents = 'none';
+                CS.Buton[id].main.style.pointerEvents = "none";
+                if(opacity){
+                    CS.Buton[id].main.style.opacity = 0.8;
+                }
             }
         }
 
@@ -3257,7 +3306,7 @@ function PLAYER(){
                 }
             }
 
-            SP.screenCloseTimer = setTimeout(function (){
+            evaluation.timer = setTimeout(function(){
                 btnEvents("auto");
                 showAllDefaultView();
                 controlBtnViewCheck();
@@ -3265,7 +3314,7 @@ function PLAYER(){
         }
 
         function answerActionFNC(){
-            clearInterval(SP.screenCloseTimer);
+            clearInterval(evaluation.timer);
             for(var i in BD.input){
                 if(BD.input[i].events){
                     BD.input[i].txt.value = BD.input[i].rightAnswer[0];

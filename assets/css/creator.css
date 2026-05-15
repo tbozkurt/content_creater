@@ -697,7 +697,7 @@ body{
 }
 
 .notice{
-    width: 232px;
+    padding: 0 10px;
     height: 42px;
     margin-top: 5px;
     border-radius: 20px;
@@ -720,12 +720,13 @@ body{
     z-index: 2000;
 }
 
-.checkIconImg{
+.pageStatusIcon{
     width: 70px;
     height: 70px;
+    display: none;
 }
 
-.checkIconImg img{
+.pageStatusIcon img{
     width:100%;
 }
 

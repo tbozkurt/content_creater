@@ -2206,10 +2206,8 @@ IDE.workSpace.createWord.addEventListener("click", function(){
 });
 
 
-
 /* create freeDraw Canvas */
 IDE.workSpace.createFreeDrawCanvas.addEventListener("click", function(){
-    console.log("create Free Draw Canvas");
     var obj = CREATE.freeDrawCanvas({
         properties:{
             x: 350,
