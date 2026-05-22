@@ -4,6 +4,7 @@ function PLAYER(){
     var unique = {};
     var PLX = {
         soundConfirm: false,
+        sendDuration: false,
         HDE_autoSoundPlay:true,
         HDE_access:0,
         maxWrongMove:5,
@@ -205,6 +206,7 @@ function PLAYER(){
         console.log(BUILD);
         AC=BUILD.activeContent;
         player.root = AC.Url;
+        PLX.sendDurationFNC = BUILD.sendDuration;
         PLX.scoreUpdate = BUILD.scoreUpdate;
         PLX.HDX = BUILD.HDX;
         PLX.endScreen = BUILD.endScreen;
@@ -255,7 +257,8 @@ function PLAYER(){
                 feedBack:[],
                 soundRecord:{},
                 history:[],
-                pageChangeDuration:4
+                pageChangeDuration:4,
+                consDuration: null
             }
         });
 
@@ -307,6 +310,7 @@ function PLAYER(){
         this.scoreCalc(false);
         PLX.Mode = BUILD.mode;
         HDE_Status(BUILD);
+        sendDuration();
     }
 
     this.scoreCalc = function(saveData){
@@ -994,6 +998,12 @@ function PLAYER(){
         }
         SD.totalRight = SD.empty = Object.keys(SP.tempAnswer).length;
         specialStartFNC(SP, SD);
+
+        if(SD.type === "a"){
+            SP.consDuration = null;
+        }else{
+            SP.consDuration = 90;
+        }
     }
 
     function initVideoFNC(index){
@@ -1003,6 +1013,27 @@ function PLAYER(){
             if(!sp.initFNC[name].build){
                 sp.initFNC[name].build = true;
                 sp.initFNC[name].fnc(sp, sd, index);
+            }
+        }
+    }
+
+    function sendDuration(){
+        if(!PLX.sendDuration){
+            var sendData = true;
+            var totalDuration=0;
+            SP.map(function(sp){
+                if(sp.consDuration){
+                    totalDuration += sp.consDuration;
+                }else{
+                    sendData = false;
+                }
+            });
+
+            if(sendData){
+                PLX.sendDuration = true;
+                if(PLX.sendDurationFNC){
+                    PLX.sendDurationFNC(totalDuration);
+                }
             }
         }
     }
@@ -1033,6 +1064,7 @@ function PLAYER(){
 
 
     //add infoBtn
+    /*
     function infoSystemFNC(){
         player.infoBtnDOM = utils.addDOM({className: "infoBtnDOM"});
         player.infoPopupDOM = utils.addDOM({className: "infoPopupDOM"});
@@ -1047,6 +1079,65 @@ function PLAYER(){
 
         player.infoPopupDOM.querySelector(".infoPopupCloseBtn").addEventListener("click", function(e){
             player.infoPopupDOM.style.visibility = "hidden";
+        });
+
+        player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png">';
+    }
+    */
+
+    function infoSystemFNC(){
+        var wrongCount = 5;
+        if(PLX.isEKT || PLX.isBSD){
+            wrongCount = 3;
+        }
+
+        player.infoBtnDOM = utils.addDOM({className: "infoBtnDOM"});
+        player.infoPopupDOM = utils.addDOM({className: "infoPop-container"});
+        player.mainDOM.appendChild(player.infoBtnDOM);
+        player.mainDOM.appendChild(player.infoPopupDOM);
+
+        player.infoPopupDOM.innerHTML = `<div class="infoPop-header">
+                <span class="infoPop-title">Bilgi</span>
+                <button class="infoPop-close-btn">✕</button>
+            </div>
+            <div class="infoPop-body">
+                <div class="infoPop-content-title">İçerik Katılım/Başarım Bilgisi:</div>
+                <p>Katılım, kaç ekranda işlem yaptığını gösterir.</p>
+                <p>Başarım ise katıldığın ekranlardaki etkileşimleri doğru yapıp yapmadığını gösterir.</p>
+                <p>Örneğin açtığın içerik 4 ekrandan oluşuyorsa;</p>
+                <ul class="infoPop-list">
+                    <li>Sadece 2 ekranda işlem yaptığında Katılım %50.</li>
+                    <li>Bu 2 ekrandaki tüm etkileşimleri doğru yaptığında Başarım %100 olur.</li>
+                </ul>
+                <p>Doğruya ulaşmak için dilediğin kadar deneme yapabilirsin. Amacın en az denemeyle doğruya ulaşmak olsun.</p>
+                <p>Ekranlarda ${wrongCount} denemeden sonra <span class="infoPop-bold-text">Cevabı Gör</span> butonu aktif olur. Dilersen doğru cevaplara bu butona tıklayarak erişebilirsin.</p>
+                <p>Cevabını gördüğünüz sorular ile açık uçlu soruların cevapları başarım hesabına eklenmez.</p>
+                <div class="infoPop-footer">
+                    <div class="infoPop-icon-container">
+                        <div class="infoPop-grid-icon">
+                            <div class="infoPop-grid-box"></div>
+                            <div class="infoPop-grid-box"></div>
+                            <div class="infoPop-grid-box"></div>
+                            <div class="infoPop-grid-box"></div>
+                            <div class="infoPop-grid-box"></div>
+                            <div class="infoPop-grid-box"></div>
+                        </div>
+                    </div>
+                    <div class="infoPop-hand-pointer">👈</div>
+        
+                    <div class="infoPop-speech-bubble">
+                        Bu ikona tıklayarak katılım/başarım bilgilerinizin detaylarına ulaşabilirsiniz.
+                    </div>
+                </div>
+            </div>`;
+
+
+        player.infoBtnDOM.addEventListener("click", function(e){
+            player.infoPopupDOM.style.display = "block";
+        });
+
+        player.infoPopupDOM.querySelector(".infoPop-close-btn").addEventListener("click", function(e){
+            player.infoPopupDOM.style.display = "none";
         });
 
         player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png">';
@@ -2931,9 +3022,7 @@ function PLAYER(){
             evaluation.timer = setTimeout(function(){
                 btnEvents("auto");
                 allDefaultBtn();
-                if(!PLX.isEKT && !PLX.isBSD){
-                    controlBtnView(SP, "enable");
-                }
+                controlBtnView(SP, "enable");
             }, 1000);
         }
 
@@ -3821,7 +3910,6 @@ function PLAYER(){
         var dragList = {};
         var dropList = {};
         var cloneList = {};
-        var rightAnswerNone = false;
         SP.elementList.map(function(element){
             var id;
             if(element.id.includes("boxDrag") || element.id.includes("gs_Drag")){
@@ -3879,9 +3967,6 @@ function PLAYER(){
             }
 
             SP.screenCloseDOM.style.zIndex = 2000;
-            if(!rightAnswer[id]){
-                rightAnswerNone = true;
-            }
         });
 
         function dragControlFNC(drag, dragID, cloneID){
@@ -4239,14 +4324,12 @@ function PLAYER(){
                 }
             }
 
-            if(rightAnswerNone){
-                if(status === "right"){
-                    for(var id in cloneList){
-                        Draggable.get( cloneList[id] ).disable();
-                    }
-                }else{
-                    setTimeout(controlBtnViewCheck, 1000);
+            if(status === "right"){
+                for(var id in cloneList){
+                    Draggable.get( cloneList[id] ).disable();
                 }
+            }else{
+                evaluation.timer = setTimeout(controlBtnViewCheck, 1000);
             }
         }
 
@@ -5546,6 +5629,11 @@ function PLAYER(){
             checkViewFNC(SD);
         }
 
+        var metaDataFNC = function(duration){
+            SP.consDuration = duration;
+            sendDuration();
+        }
+
         SP.elementList.map(function(element){
             var videoProp;
             if(element.id.includes("videoBox")){
@@ -5559,6 +5647,7 @@ function PLAYER(){
                     fullScreen: false,
                     endFNC: endFNC,
                     watchedFNC: watchedFNC,
+                    metaDataFNC: metaDataFNC,
                     occMode: true
                 };
                 SP.video = AddPlayer(videoProp);
@@ -5567,6 +5656,7 @@ function PLAYER(){
                 if(videoProp){
                     videoProp.endFNC = function(){};
                     videoProp.watchedFNC = function(){};
+                    videoProp.metaDataFNC = function(){};
                     SP.video = AddPlayer(videoProp);
                 }
             }else if(element.id.includes("feedback")){
@@ -5574,6 +5664,7 @@ function PLAYER(){
                 if(videoProp){
                     videoProp.endFNC = function(){};
                     videoProp.watchedFNC = function(){};
+                    videoProp.metaDataFNC = function(){};
                     videoProp.videoCapture = true;
                     SP.video = AddPlayer(videoProp);
                 }
@@ -7380,7 +7471,6 @@ function PLAYER(){
 
         SP.fnc.push(evaluation);
    }
-
 
 }
 

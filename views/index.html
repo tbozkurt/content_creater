@@ -1994,6 +1994,34 @@
     }
 
 
+    /* 5.OCC Copy Scene */
+    function occCopySceneAJAX(occSceneCopy){
+        var imgList=[];
+        occSceneCopy.all.map(function(item){
+            if(item.src){
+                imgList.push(`${occSceneCopy.fileName}/${item.src}`);
+            }
+        });
+
+        IDE.user.copyFiles = imgList.map(function(img){
+            return `${IDE.user.root}/${img}`;
+        });
+
+        IDE.user.copyFilesNewFolder = `${IDE.user.root}/${IDE.user.selectedFile}/img`;
+        IDE.user.occSceneCopy = JSON.stringify(occSceneCopy);
+        $.ajax({url: "/occCopyScene", data: IDE.user, success: occCopySceneAJAX_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occCopySceneAJAX_Parse(data){
+        var occSceneCopy = JSON.parse(data.occSceneCopy);
+        copiedSceneData(occSceneCopy);
+    }
+
+    function copiedSceneData(occSceneCopy){
+        var template = sceneTemplate();
+        template.all = occSceneCopy.all;
+        sceneAddNewScene(template);
+    }
 
     //Render FileList
     function importFileList(saveList){

@@ -772,46 +772,6 @@ body{
     margin: 0 10px 0 10px;
 }
 
-.infoBtnDOM{
-    left:0;
-    bottom: 0;
-    width: 70px;
-    height: 70px;
-    position: absolute;
-    cursor: pointer;
-    user-select: none;
-    display: none;
-    z-index: 2300;
-}
-
-.infoPopupDOM{
-    left: 140px;
-    top: 50px;
-    width: 600px;
-    height: 600px;
-    position: absolute;
-    visibility: hidden;
-    z-index: 2400;
-}
-
-.infoPopupDOM img{
-    width: 100%;
-}
-
-.infoPopupCloseBtn{
-    right: 0;
-    top: 0;
-    cursor: pointer;
-    width: 50px;
-    height: 50px;
-    position: absolute;
-}
-
-.infoBtnDOM img{
-    user-select: none;
-    width: 100%;
-}
-
 .progress{
     overflow:hidden;
 }
@@ -960,4 +920,160 @@ body{
     margin-right: 5px;
     background-color: orange;
     display: none;
+}
+
+
+
+
+
+
+
+
+
+/* infoPop */
+.infoPop-container {
+    left:120px;
+    top:80px;
+    background-color: #df9898;
+    border: 3px solid #b36b6b;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 650px;
+    padding: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    position: absolute;
+    z-index: 2400;
+    display: none;
+}
+
+/* Üst Başlık Alanı */
+.infoPop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 8px 10px 8px;
+    color: #4a1525;
+}
+
+.infoPop-title {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+/* Kapatma Butonu (X) */
+.infoPop-close-btn {
+    background-color: #fff;
+    border: 2px solid #b36b6b;
+    color: #b36b6b;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 30px;
+    transition: all 0.2s ease;
+}
+
+.infoPop-close-btn:hover {
+    background-color: #b36b6b;
+    color: #fff;
+}
+
+/* Beyaz İçerik Alanı */
+.infoPop-body {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    color: #2c2c2c;
+}
+
+.infoPop-content-title {
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #000;
+}
+
+.infoPop-body p {
+    margin-bottom: 12px;
+}
+
+/* Kalın Vurgular */
+.infoPop-bold-text {
+    font-weight: 700;
+}
+
+/* Alt Kısım: İkon ve Konuşma Balonu Alanı */
+.infoPop-footer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 16px;
+    padding: 0 8px;
+}
+
+/* Turuncu Grid İkonu Çerçevesi */
+.infoPop-icon-container {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* Grid İkonunun Kendisi */
+.infoPop-grid-icon {
+    display: grid;
+    grid-template-columns: repeat(3, 14px);
+    gap: 4px;
+}
+
+.infoPop-grid-box {
+    width: 14px;
+    height: 18px;
+    background-color: #f27a35;
+    border-radius: 2px;
+}
+
+/* El İkonu Animasyonu */
+.infoPop-hand-pointer {
+    font-size: 50px;
+    user-select: none;
+}
+
+/* Konuşma Balonu */
+.infoPop-speech-bubble {
+    background-color: #d8f3f5;
+    border: 1.5px solid #2b5c5f;
+    border-radius: 30px;
+    padding: 12px 24px;
+    color: #2b5c5f;
+    font-weight: 500;
+    position: relative;
+    flex-grow: 1;
+}
+
+.infoBtnDOM{
+    left:0;
+    bottom: 0;
+    width: 70px;
+    height: 70px;
+    position: absolute;
+    cursor: pointer;
+    user-select: none;
+    display: none;
+    z-index: 2300;
+}
+
+.infoBtnDOM img{
+    user-select: none;
+    width: 100%;
 }

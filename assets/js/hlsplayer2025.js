@@ -219,7 +219,7 @@ function JWPlayerRefreshFNC(){
 			width: "100%"
 		}
 		
-		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:false, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, currentMediaID:0, lang:"tr"};
+		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:false, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, metaDataFNC:undefined, currentMediaID:0, lang:"tr"};
 		var playerListMode = false;
 		var playlist = [];
 		for (var x in obj) {
@@ -1361,6 +1361,10 @@ function JWPlayerRefreshFNC(){
 			LoaderOpen();
 			clearInterval(time);
 		};
+
+		video.addEventListener("loadedmetadata", function() {
+			conf.metaDataFNC(Math.round(video.duration));
+		});
 		
 		
 		video.onplaying = function() {

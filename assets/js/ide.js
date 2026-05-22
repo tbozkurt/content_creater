@@ -1189,19 +1189,33 @@ document.addEventListener("keydown", function(e){
                 });
             }
         }else if(IDE.scope === "Scene"){
+            var json = EXPORT.convertJson();
+            var copyPrepare = {
+                all: json.slides[sceneIndex].all,
+                fileName: IDE.user.selectedFile
+            }
+            var stringData = JSON.stringify(copyPrepare);
+            if (typeof(Storage) !== "undefined"){
+                localStorage.setItem("occSceneCopy", stringData);
+            }
+
             IDE.showTip({txt:"copied Scene", color: "#01579b", time:700, x: 1427, y: (IDE.stage.height-10) });
         }
     }
 
     if(ctrlDown && (e.keyCode === vKey)){
-        console.log("Scope:", IDE.scope);
         if(IDE.scope === "Scene"){
-            var json = EXPORT.convertJson();
-            var stringData = JSON.stringify(json.slides[sceneIndex].all);
-            var jsonData = JSON.parse(stringData);
-            var template = sceneTemplate();
-            template.all = jsonData;
-            sceneAddNewScene(template);
+            var occSceneCopyData;
+            if (typeof(Storage) !== "undefined") {
+                occSceneCopyData = localStorage.getItem("occSceneCopy");
+            }
+
+            var occSceneCopy = JSON.parse(occSceneCopyData);
+            if(IDE.user.selectedFile !== occSceneCopy.fileName){
+                occCopySceneAJAX(occSceneCopy);
+            }else{
+                copiedSceneData(occSceneCopy);
+            }
         }else if(IDE.scope === "Stage"){
             if(IDE.copy.length){
                 console.log("Document catch Ctrl+V");

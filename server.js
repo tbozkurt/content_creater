@@ -742,3 +742,75 @@ async function duplicateFileFNC(req, res){
         });
     }
 }
+
+
+//Read File List
+app.post("/occCopyScene", function(req, res){
+
+    var copyFiles = req.body.copyFiles;
+    var copyFilesNewFolder = req.body.copyFilesNewFolder;
+    var occSceneCopy = req.body.occSceneCopy;
+
+    console.log(copyFiles);
+    console.log(copyFilesNewFolder);
+
+    copyFileListToFolder(copyFiles, copyFilesNewFolder).then(function(result) {
+        console.log("copied");
+        res.send({success: true, occSceneCopy});
+    });
+});
+
+//Sahneler arası dosya kopyalama
+function copyFileListToFolder(fileList, targetFolder) {
+    return new Promise(function(resolve) {
+        var results = [];
+
+        try {
+            if (!fs.existsSync(targetFolder)) {
+                fs.mkdirSync(targetFolder, { recursive: true });
+            }
+
+            var copyPromises = fileList.map(function(filePath) {
+                return new Promise(function(resolveFile) {
+                    var fileName = path.basename(filePath);
+                    var targetPath = path.join(targetFolder, fileName);
+
+                    fs.copyFile(filePath, targetPath, function(err) {
+                        if (err) {
+                            results.push({
+                                source: filePath,
+                                target: targetPath,
+                                success: false,
+                                error: err.message
+                            });
+                        } else {
+                            results.push({
+                                source: filePath,
+                                target: targetPath,
+                                success: true,
+                                error: null
+                            });
+                        }
+
+                        resolveFile();
+                    });
+                });
+            });
+
+            Promise.all(copyPromises).then(function() {
+                resolve({
+                    success: results.every(function(item) {
+                        return item.success;
+                    }),
+                    results: results
+                });
+            });
+        } catch (err) {
+            resolve({
+                success: false,
+                error: err.message,
+                results: results
+            });
+        }
+    });
+}
