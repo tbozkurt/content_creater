@@ -418,6 +418,17 @@
 
 <div id="scope_saved">Kaydedildi!</div>
 
+<!-- ... start upload percent bar ... -->
+<div id="uploadProgressMain">
+    <div id="uploadProgressWindow">
+        <div id="uploadProgressText">Yükleniyor: 0%</div>
+        <div id="uploadProgressBar">
+            <div id="uploadProgressFill"></div>
+        </div>
+    </div>
+</div>
+<!-- ... end upload percent bar ... -->
+
 <div class="WorkView WorkSpace_Scene" id="scope_Scene">
     <div class="Scene_addContainer">
         <img id="Scene_addButon" src="assets/img/plus.png" alt="">
@@ -648,6 +659,10 @@
             font_colorPicker: document.querySelector("#font_colorPicker"),
             font_fontFamily: document.querySelector("#font_fontFamily"),
             font_hexInput: document.querySelector("#font_hexInput"),
+
+            uploadProgressMain: document.querySelector("#uploadProgressMain"),
+            uploadProgressText: document.querySelector("#uploadProgressText"),
+            uploadProgressFill: document.querySelector("#uploadProgressFill"),
 
             topBanner_addObject: document.querySelector("#topBanner_addObject")
         },
@@ -1694,9 +1709,62 @@
         }
     }
 
+    /* ayni image in tekrar yuklenmeme sorununu cozer */
+    function resetUploadInputs(){
+        document.querySelectorAll('input[type="file"]').forEach(function(input){
+            input.value = "";
+        });
+    }
+
+    /* upload file bar update */
+    function setUploadProgress(percent){
+        IDE.workSpace.uploadProgressText.innerText = "Yükleniyor: " + percent + "%";
+        IDE.workSpace.uploadProgressFill.style.width = percent + "%";
+    }
+
     function uploadImageAjax(data){
+        IDE.workSpace.uploadProgressMain.style.display = "flex";
+        setUploadProgress(0);
+
         $.ajax({url: "/uploadFolderChange", data:{token: IDE.user.token}, async: false, type: "POST", error: ajaxError});
-        $.ajax({url: "/uploadImage", data, success: uploadImageParse, type:"POST", contentType: false, cache:false, processData: false, error: ajaxError});
+
+        $.ajax({
+            url: "/uploadImage",
+            data,
+            success: function(response){
+                setUploadProgress(100);
+                uploadImageParse(response);
+                resetUploadInputs();
+
+                setTimeout(function(){
+                    IDE.workSpace.uploadProgressMain.style.display = "none";
+                    setUploadProgress(0);
+                }, 500);
+            },
+            type:"POST",
+            contentType: false,
+            cache:false,
+            processData: false,
+            xhr: function(){
+                var xhr = $.ajaxSettings.xhr();
+
+                if(xhr.upload){
+                    xhr.upload.addEventListener("progress", function(e){
+                        if(e.lengthComputable){
+                            var percent = Math.round((e.loaded / e.total) * 100);
+                            setUploadProgress(percent);
+                        }
+                    }, false);
+                }
+
+                return xhr;
+            },
+            error: function(e){
+                IDE.workSpace.uploadProgressMain.style.display = "none";
+                setUploadProgress(0);
+                ajaxError(e);
+            }
+        });
     }
 
     function uploadImageParse(data){
