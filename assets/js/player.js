@@ -243,6 +243,7 @@ function PLAYER(){
                 historyRight:[],
                 success: 0,
                 answerShow: false,
+                rubrik:{}
             }
 
             SP[index] = {
@@ -259,6 +260,10 @@ function PLAYER(){
                 history:[],
                 pageChangeDuration:4,
                 consDuration: null
+            }
+
+            if(slide.rubrik){
+                SD[index].rubrik = slide.rubrik;
             }
         });
 
@@ -279,7 +284,11 @@ function PLAYER(){
 
             SP[i].elementList=[];
             SP[i].sceneDiv = sceneDiv;
-            This.addMovieClip(allObject, sceneDiv, i);
+            var get = {
+                kids: []
+            }
+            This.addMovieClip(allObject, sceneDiv, i, get);
+            SP[i].elementMainScene = {id: sceneDiv.id, main: sceneDiv, data:{}, kids: get.kids};
 
             player.mainDOM.appendChild(sceneDiv);
             This.searchTool(sceneDiv, i, SP[i]);
@@ -870,6 +879,33 @@ function PLAYER(){
         console.log(SD);
     }
 
+    this.rubrikEvalutorControlHQ = function(SP, SD){
+        console.log("--- rubrikEvalutorControlHQ ---");
+        var finalBox={};
+        for(var boxName in SD.inputs){
+            finalBox[boxName] = String(SD.inputs[boxName].value);
+        }
+
+        var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
+        showFeedBack(result, "auto", SD.historyRight.length);
+        console.log("finalBox:", finalBox);
+        console.log("resultEvalutor:", result);
+
+
+        console.log(SD);
+        if(result === "T1"){
+            This.playRightAudio();
+            This.sceneComplete();
+            This.nextScene();
+            SP.fnc.map(function(fnc){
+                fnc.close(true);
+            });
+
+            controlBtnView(SP, "disable");
+            answerBtnView(SP, "disable");
+            checkViewFNC(SD);
+        }
+    }
 
     function specialStartFNC(SP, SD){
         if(PLX.isEKT) {
@@ -877,10 +913,10 @@ function PLAYER(){
                 SP.popEx[0].btn.addEventListener("click", function(){
                     if(!SD.complete){
                         SD.answerShow=true;
-                        console.log("Aktif");
                         SP.fnc.map(function(fnc){
                             fnc.reset();
                             fnc.close(true);
+                            clearInterval(fnc.timer);
                         });
 
                         This.sceneComplete();
@@ -956,44 +992,69 @@ function PLAYER(){
         This.convertRubrik(index);
         SP.tempAnswer = JSON.parse(JSON.stringify(jsonV2.slides[index].answer));
         SP.elementList.map(function(obj){
+            var initFound = false;
             if(obj.id.includes("selectButon")){
-                init["initCS"] = This.initCS;
+                init["initCS"] = {name:"çoktan seçmeli", fnc: This.initCS};
+                initFound=true;
             }else if(obj.id.includes("inputArea")){
-                init["initBD"] = This.initBD;
+                init["initBD"] = {name:"boşluk doldurma", fnc: This.initBD};
+                initFound=true;
             }else if(obj.id.includes("matchDrag")){
-                init["initMATCH"] = This.initMATCH;
+                init["initMATCH"] = {name:"eşleştirme", fnc: This.initMATCH};
+                initFound=true;
             }else if(obj.id.includes("boxDrop")){
-                init["initSB"] = This.initSB;
+                init["initSB"] = {name:"sürükle bırak", fnc: This.initSB};
+                initFound=true;
             }else if(obj.id.includes("colorBox")){
-                init["initPAINT"] = This.initPAINT;
+                init["initPAINT"] = {name:"boyama", fnc: This.initPAINT};
+                initFound=true;
             }else if(obj.id.includes("sortDrag")){
-                init["initSORT"] = This.initSORT;
+                init["initSORT"] = {name:"sıralama", fnc: This.initSORT};
+                initFound=true;
             }else if(obj.id.includes("drawCanvas")){
-                init["initLINECORRECT"] = This.initLINECORRECT;
+                init["initLINECORRECT"] = {name:"çizgi doğrulama", fnc: This.initLINECORRECT};
+                initFound=true;
             }else if(obj.id.includes("pointButon")){
-                init["initPOINT"] = This.initPOINT;
+                init["initPOINT"] = {name:"nokta birleştirme", fnc: This.initPOINT};
+                initFound=true;
             }else if(obj.id.includes("popupWindow")){
-                init["initVIDEO"] = This.initVIDEO;
-                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
+                init["initVIDEO"] = {name:"video", fnc: This.initVIDEO};
+                initFound=true;
             }else if(obj.id.includes("feedback")){
-                init["initVIDEO"] = This.initVIDEO;
-                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
+                init["initVIDEO"] = {name:"video", fnc: This.initVIDEO};
+                initFound=true;
             }else if(obj.id.includes("videoBox")){
-                init["initVIDEO"] = This.initVIDEO;
-                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
+                init["initVIDEO"] = {name:"video", fnc: This.initVIDEO};
+                initFound=true;
                 SD.type = "a";
             }else if(obj.id.includes("soundRecord")){
-                init["initRECORD"] = This.initRECORD;
+                init["initRECORD"] = {name:"ses kayıt", fnc: This.initRECORD};
+                initFound=true;
             }else if(obj.id.includes("wordBox")){
-                init["initWORD"] = This.initWORD;
+                init["initWORD"] = {name:"kelime", fnc: This.initWORD};
+                initFound=true;
             }else if(obj.id.includes("freeDrawCanvas")){
-                init["initFREEDRAW"] = This.initFREEDRAW;
+                init["initFREEDRAW"] = {name:"serbest çizim", fnc: This.initFREEDRAW};
+                initFound=true;
+            }
+
+            if(initFound){
+                SP.initFNC["initVIDEO"] = {fnc:This.initVIDEO, build: false};
             }
         });
 
         for(var p in init){
             if(!p.includes("initVIDEO")){
-                init[p](SP, SD, index);
+                try{
+                    init[p].fnc(SP, SD, index);
+                }catch(e){
+                    if(PLX.mode === "preview"){
+                        alert(index +". sahnede > "+ init[p].name + " etkinliğinde sorun var.");
+                    }else{
+                        console.error(index +". sahnede > "+ init[p].name + " etkinliğinde sorun var.");
+                    }
+
+                }
             }
         }
         SD.totalRight = SD.empty = Object.keys(SP.tempAnswer).length;
@@ -1062,28 +1123,6 @@ function PLAYER(){
         }
     }
 
-
-    //add infoBtn
-    /*
-    function infoSystemFNC(){
-        player.infoBtnDOM = utils.addDOM({className: "infoBtnDOM"});
-        player.infoPopupDOM = utils.addDOM({className: "infoPopupDOM"});
-        player.mainDOM.appendChild(player.infoBtnDOM);
-        player.mainDOM.appendChild(player.infoPopupDOM);
-
-        player.infoPopupDOM.innerHTML = '<img src="assets/img/player/info_popup.png"><div class="infoPopupCloseBtn"></div>';
-
-        player.infoBtnDOM.addEventListener("click", function(e){
-            player.infoPopupDOM.style.visibility = "visible";
-        });
-
-        player.infoPopupDOM.querySelector(".infoPopupCloseBtn").addEventListener("click", function(e){
-            player.infoPopupDOM.style.visibility = "hidden";
-        });
-
-        player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png">';
-    }
-    */
 
     function infoSystemFNC(){
         var wrongCount = 5;
@@ -1469,7 +1508,15 @@ function PLAYER(){
                 SP.controlBtn.style.cursor = "pointer";
                 SP.controlBtn.style.pointerEvents = "none";
                 SP.controlBtn.addEventListener("click", function(){
-                    This.controlHQ(SP, SD[index]);
+                    var rubrik = SD[index].rubrik;
+                    
+                    if(rubrik && rubrik.groups && rubrik.groups.length){
+                        if(SD[index].rubrik.groups.length){
+                            This.rubrikEvalutorControlHQ(SP, SD[index]);
+                        }
+                    }else{
+                        This.controlHQ(SP, SD[index]);
+                    }
                 });
 
                 addToolTip(SP, index);
@@ -1479,7 +1526,6 @@ function PLAYER(){
                 SP.answerBtn.style.pointerEvents = "none";
                 SP.answerBtn.addEventListener("click", function(){
                     SD[index].answerShow=true;
-                    console.log("Aktif");
                     This.answerHQ(SP, SD[index]);
                     showFeedBack("answer", "btn", 0);
                 });
@@ -1497,19 +1543,6 @@ function PLAYER(){
 
                 SP.completeBtn.style.opacity = 1;
                 SP.completeBtn.style.cursor = "pointer";
-            }else if(obj.id.includes("goUrl")){
-                var url = "";
-                if(AC.player){
-                    url = AC.player.RUrl;
-                }
-                /* unique[obj.getAttribute("ccid")].goUrl */
-
-                obj.addEventListener("click", function(){
-                    var newwindow = window.open(url, "versiyon", "width=1280,height=720");
-                    if (window.focus) {newwindow.focus()}
-                    return false;
-                });
-                obj.style.cursor = "pointer";
             }else if(obj.id.includes("directive")){
                 var soundID = SP.name.slice(1, SP.name.length);
 
@@ -1603,34 +1636,43 @@ function PLAYER(){
                 var sceneID = parseInt(SP.name.slice(1, SP.name.length));
                 var id = parseInt( el.id.split("_")[1] );
                 if(!SP.feedBack[id]){
-                    SP.feedBack[id] = {type:"img", videoSkin: true, sceneID:sceneID, id:id, status:"right", view:"auto", sound:false, step:0};
+                    SP.feedBack[id] = {
+                        type:"img",
+                        videoSkin:true,
+                        sceneID:sceneID,
+                        id:id,
+                        status:"right",
+                        view:"auto",
+                        sound:false,
+                        step:0,
+                        statusSound: null
+                    };
                 }
 
-                if(el.data.status){
-                    if(el.data.status.includes("wrong")){
-                        var tempStatus = el.data.status.split("_");
+                var feedbackObj = SP.feedBack[id];
+                for(var prop in el.data){
+                    var valueData = el.data[prop];
+                    if(valueData === "true"){
+                        valueData = true;
+                    }else if(valueData === "false"){
+                        valueData = false;
+                    }
+
+                    feedbackObj[prop] = valueData;
+                }
+
+
+                if(feedbackObj.status){
+                    if(feedbackObj.status.includes("wrong")){
+                        var tempStatus = feedbackObj.status.split("_");
                         if(tempStatus.length){
-                            SP.feedBack[id].status = tempStatus[0];
-                            SP.feedBack[id].step = parseInt(tempStatus[1]);
+                            feedbackObj.status = tempStatus[0];
+                            feedbackObj.step = parseInt(tempStatus[1]);
                         }
-                    }else{
-                        SP.feedBack[id].status = el.data.status;
                     }
                 }
 
-                if(el.data.view){
-                    SP.feedBack[id].view = el.data.view;
-                }
-
-                if(el.data.videoSkin && el.data.videoSkin === "false"){
-                    SP.feedBack[id].videoSkin = false;
-                }
-
-                if(el.data.sound && el.data.sound === "true"){
-                    SP.feedBack[id].sound = true;
-                }
-
-                SP.feedBack[id].main = el.main;
+                feedbackObj.main = el.main;
 
                 var feedbackWindowClose = el.main.querySelector(".feedbackWindowClose");
                 var videoPlayer = el.main.querySelector(".videoPlayer");
@@ -1645,10 +1687,10 @@ function PLAYER(){
                 }
 
                 if(videoPlayer){
-                    SP.feedBack[id].type = "video";
+                    feedbackObj.type = "video";
                 }
 
-                if(SP.feedBack[id].sound){
+                if(feedbackObj.sound){
                     feedbackSound(SP, index, id);
                 }
             }else if(el.id.includes("refresh")){
@@ -1659,6 +1701,28 @@ function PLAYER(){
                         }
                     });
                 });
+            }else if(el.id.includes("goUrl")){
+                var url = "";
+                if(AC.player){
+                    url = AC.player.RUrl;
+                }
+
+                if(el.data.goUrl && el.data.goUrl === "insidePDF"){
+                    var cid="0000";
+                    if(AC.ID){
+                        cid = AC.ID.split("-")[1];
+                    }
+
+                    url = "/viewer/pdf-viewer?cmd=yem&content_id="+ cid +"&type=bsd";
+                }
+
+                el.main.addEventListener("click", function(){
+                    var newwindow = window.open(url, "versiyon", "width=1280,height=720");
+                    if (window.focus) {newwindow.focus()}
+                    return false;
+                });
+
+                el.main.style.cursor = "pointer";
             }
 
             /* manual zindex */
@@ -1777,6 +1841,12 @@ function PLAYER(){
                         SP[This.sceneIndex].video.videoSkinHide();
                     }
                     SP[This.sceneIndex].video.PlayVideo();
+                }
+
+                if(feedback.statusSound === "right"){
+                    This.playRightAudio();
+                }else if(feedback.statusSound === "wrong"){
+                    This.playWrongAudio();
                 }
             }
         });
@@ -2994,11 +3064,14 @@ function PLAYER(){
         }
 
         function rightActionFNC(){
+            console.log("rightActionFNC");
             groupCloseControl();
             partialRight();
         }
 
         function partialRight(){
+            console.log(CS.evaluationMode);
+            console.log(CS.Buton);
             if(CS.evaluationMode !== "count"){
                 for(var id in CS.Buton){
                     var Buton = CS.Buton[id];
@@ -3022,7 +3095,9 @@ function PLAYER(){
             evaluation.timer = setTimeout(function(){
                 btnEvents("auto");
                 allDefaultBtn();
-                controlBtnView(SP, "enable");
+                if(!PLX.isEKT) {
+                    controlBtnView(SP, "enable");
+                }
             }, 1000);
         }
 
@@ -3079,6 +3154,7 @@ function PLAYER(){
         }
 
         function close(opacity){
+            console.log("close");
             for(var id in CS.Buton){
                 CS.Buton[id].main.style.pointerEvents = "none";
                 if(opacity){
@@ -4890,7 +4966,7 @@ function PLAYER(){
                 }
 
                 if(status !== "right"){
-                    setTimeout(resetStroke, 1000);
+                    evaluation.timer = setTimeout(resetStroke, 1000);
                 }
 
             }else{
@@ -5670,6 +5746,19 @@ function PLAYER(){
                 }
             }
         });
+
+        function searchMainScene(){
+            var videoProp = addVideoElement(SP.elementMainScene);
+            if(videoProp){
+                videoProp.endFNC = function(){};
+                videoProp.watchedFNC = function(){};
+                videoProp.metaDataFNC = function(){};
+                videoProp.videoCapture = true;
+                SP.video = AddPlayer(videoProp);
+            }
+        }
+
+        searchMainScene();
 
         function addVideoElement(element){
             var videoRect;

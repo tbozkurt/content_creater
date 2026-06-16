@@ -995,11 +995,11 @@ IDE.workSpace.align_ScaleAuto.addEventListener("click", function(){
 IDE.welcome.newFileBtn.addEventListener("click", function(e){
     var fileName = IDE.welcome.addFileInput.value;
     if(fileName.length){
-        if(fileName.includes(" ")){
-            IDE.showTip({txt:"Dosya adında boşluk kullanmayınız.", color: "#b71c1c", time:5000, x: 190, y: (IDE.stage.height-10)});
-            return false;
-        }else{
+        if(utils.fileNameControl(fileName)){
             jsonV2.fileName = fileName;
+        }else{
+            IDE.showTip({txt:"Geçerli dosya adı giriniz.", color: "#b71c1c", time:5000, x: 190, y: (IDE.stage.height-10)});
+            return false;
         }
     }else{
         jsonV2.fileName = "untitled_"+ utils.addTimeStamp("standart");
@@ -2289,6 +2289,56 @@ document.querySelector("#duplicate_action").addEventListener("click", function()
     }else{
         alert("Boş olmamalı");
     }
+});
+
+document.querySelector(".goRubrik").addEventListener("click", function(){
+    var totalBox = CREATE.checkKontrol();
+
+    console.log(totalBox);
+    var rubrik = { boxes:[] };
+    for(var i=0; i<=totalBox; i++){
+        rubrik.boxes.push("box"+i);
+    }
+
+    console.log("rubrik.boxes:", rubrik.boxes);
+
+    var rubrikData = {
+        user: IDE.user,
+        rubrik: jsonV2.slides[sceneIndex].rubrik,
+        scene: {
+            id: sceneIndex,
+            name: jsonV2.slides[sceneIndex].name
+        },
+        boxes: rubrik
+    }
+
+    if (typeof(Storage) !== "undefined"){
+        localStorage.setItem("occSceneRubrikData", JSON.stringify(rubrikData));
+    }
+
+    console.log("boxList:", rubrik.boxes);
+    window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220");
+});
+
+
+window.addEventListener("focus", function(){
+    function getLocalData(){
+        if (typeof(Storage) !== "undefined") {
+            var occSceneRubrikSave = localStorage.getItem("occSceneRubrikSave");
+            if(occSceneRubrikSave){
+                var rubrik = JSON.parse(occSceneRubrikSave);
+                if(IDE.user.selectedFile === rubrik.user.selectedFile){
+                    console.log( rubrik );
+                    console.log( occSceneRubrikSave );
+                    jsonV2.slides[sceneIndex].rubrik = rubrik.payload;
+                    rubrikParse();
+                    localStorage.removeItem("occSceneRubrikSave");
+                }
+            }
+        }
+    }
+
+    getLocalData();
 });
 
 document.querySelector("#duplicate_close").addEventListener("click", function(){

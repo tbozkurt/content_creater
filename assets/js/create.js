@@ -179,7 +179,7 @@ function CREATE(){
         {obj: "boxDrag", answer:false},
         {obj: "boxDrop", answer:true},
         {obj: "paintBox", answer:true},
-        {obj: "sortDrag", answer:false},
+        {obj: "sortDrag", answer:false, secretAnswer:true},
         {obj: "drawCanvas", answer:true},
         {obj: "pointButon", answer:false},
         {obj: "pointCanvas", answer:true},
@@ -222,7 +222,23 @@ function CREATE(){
             if(e.answer){
                 globalCount = currentCount;
             }
+
+            try{
+                if(e.secretAnswer){
+                    var totalGroup=[];
+                    currentList.map(function(e){
+                        if(e.Layer.params){
+                            if(e.Layer.params.group !== null && e.Layer.params.group !== undefined){
+                                totalGroup = [];
+                            }
+                        }
+                    });
+                }
+            }catch(e){}
+
         });
+
+        return globalCount;
     }
 
     this.getSceneName = function(){

@@ -404,6 +404,7 @@ select{
 
         .welcome_fileIcon{
             margin-left: 5px;
+            height: 100%;
         }
 
         .welcome_fileBtn_Part{
@@ -1107,7 +1108,7 @@ tr{
 
 .iconMain{
     display: flex;
-    width: 720px;
+    width: 780px;
     background-color: #323232;
 }
 
@@ -1265,4 +1266,34 @@ tr{
     #userTypes:focus{
         border: 1px solid silver;
         outline: none;
+    }
+
+
+    /* rubrik arayüz ayarlamalari */
+
+    .rubrikGroup{
+        width: 171px;
+        margin-left: 5px;
+    }
+
+    .rubrikLabel{
+        background-color: #01579b;
+        padding: 3px;
+        border-radius: 4px;
+        display: inline-block;
+        border: 1px solid #9d9d9d;
+        margin: 2px;
+    }
+
+    .goRubrik{
+        background-color: #01579b;
+        border-radius: 4px;
+        margin: 5px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer
+    }
+
+    .goRubrik:hover{
+        background-color: #0460a8;
     }

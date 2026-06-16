@@ -177,6 +177,11 @@ function utils(){
         return str;
     }
 
+    this.fileNameControl = function(text){
+        var regex = /^[A-Za-z0-9_]+$/;
+        return regex.test(text);
+    }
+
     /*
     console.log(this.rgbaToHex(255, 99, 71, 0.5));
     console.log(this.rgbaToHex(0, 0, 0, 1));

@@ -1,13 +1,11 @@
 var express = require("express");
 var multer  = require('multer');
 var axios = require('axios');
-var bodyParser = require('body-parser');
 var path = require("path");
 var fs = require('node:fs');
 var app = express();
 var archiver = require("archiver");
 var Users={};
-var currentUploadFolder;
 var token;
 var service = "www";
 
@@ -30,21 +28,57 @@ var occUser = {
     user_20: "gulcin",
     user_15515696: "bahar",
     user_15517168: "duygu",
-    user_12896817: "taner"
+    user_12896817: "taner",
+    user_15944889: "deniz"
+
 }
 /////////////////////////
+
+/* Sabit dosyaları kopyalama */
+var templateImages = [
+    "butonback.png",
+    "closebtn.png",
+    "directiveplay.png",
+    "directivestop.png",
+    "paint_easer.png",
+    "draw_icon.png",
+    "draw_easer.png",
+    "sp_pause.png",
+    "sp_play.png",
+    "sp_return.png",
+    "record_off.png",
+    "record_on.png",
+    "color.png",
+    "clean.png"
+];
+
+async function copyTemplateImages(imgFolder) {
+    await Promise.all(templateImages.map(function(fileName) {
+        return copyFile(
+            path.join(__dirname, "assets/img/template", fileName),
+            path.join(imgFolder, fileName)
+        );
+    }));
+}
 
 // Klasörlerin erşim izinleri verildi..
 app.use("/libs", express.static(__dirname + "/node_modules"));
 app.use('/files', express.static('files'));
 app.use('/assets', express.static('assets'));
 
-app.use(bodyParser.json({ limit: '11mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '11mb' }));
+app.use(express.json({ limit: '11mb' }));
+app.use(express.urlencoded({ extended: true, limit: '11mb' }));
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, currentUploadFolder);
+        var token = req.query.token || req.body.token;
+        var FD = Users[token];
+
+        if (!FD || !FD.files || !FD.files.imgFolder) {
+            return cb(new Error("Upload klasörü bulunamadı."));
+        }
+
+        cb(null, FD.files.imgFolder);
     },
     filename: function (req, file, cb) {
         cb(null, file.originalname);
@@ -75,7 +109,7 @@ function getZip(filename, folder, token){
         });
 
         archive.on("error", function(err){
-            throw err;
+            reject(err);
         });
 
         archive.pipe(output);
@@ -94,7 +128,8 @@ function addFolder(target){
 
             resolve(target);
         }catch(err){
-            console.error(err);
+            console.error("Klasör oluşturma hatası:", err);
+            reject(err);
         }
     })
 }
@@ -137,7 +172,8 @@ function createJson(json, data, flag){
     return  new Promise(function(resolve, reject){
         fs.writeFile(json, JSON.stringify(data), flag, function(err){
             if (err) {
-                resolve(false);
+                console.error("JSON yazma hatası:", err);
+                reject(err);
             } else {
                 resolve({data:data, path:json});
             }
@@ -148,11 +184,24 @@ function createJson(json, data, flag){
 function readFileList(json){
     return new Promise(function(resolve, reject){
         fs.readFile(json, "utf8", function (err, data) {
-            //if(err){throw err}
-            if(data){
+            if (err) {
+                if (err.code === "ENOENT") {
+                    return resolve(false);
+                }
+
+                console.error("Dosya okuma hatası:", err);
+                return reject(err);
+            }
+
+            if(!data){
+                return resolve(false);
+            }
+
+            try {
                 resolve(JSON.parse(data));
-            }else{
-                resolve(false);
+            } catch (parseError) {
+                console.error("fileList.json parse hatası:", parseError);
+                reject(parseError);
             }
         });
     })
@@ -188,20 +237,7 @@ async function createNewFileFNC(req, res){
     FD.files.mainJson = await createJson( path.join(FD.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
     FD.fileList = await createJson( FD.fileList.path, addList, {encoding:"utf8", flag:"w"});
     res.send(FD);
-    var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
-    var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
-    var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
-    var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
-    var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
-    var copyImageF = await copyFile(path.join(__dirname, "assets/img/template/draw_icon.png"), FD.files.imgFolder+"/draw_icon.png");
-    var copyImageG = await copyFile(path.join(__dirname, "assets/img/template/draw_easer.png"), FD.files.imgFolder+"/draw_easer.png");
-    var copyImageH = await copyFile(path.join(__dirname, "assets/img/template/sp_pause.png"), FD.files.imgFolder+"/sp_pause.png");
-    var copyImageJ = await copyFile(path.join(__dirname, "assets/img/template/sp_play.png"), FD.files.imgFolder+"/sp_play.png");
-    var copyImageK = await copyFile(path.join(__dirname, "assets/img/template/sp_return.png"), FD.files.imgFolder+"/sp_return.png");
-    var copyImageL = await copyFile(path.join(__dirname, "assets/img/template/record_off.png"), FD.files.imgFolder+"/record_off.png");
-    var copyImageM = await copyFile(path.join(__dirname, "assets/img/template/record_on.png"), FD.files.imgFolder+"/record_on.png");
-    var copyImageN = await copyFile(path.join(__dirname, "assets/img/template/color.png"), FD.files.imgFolder+"/color.png");
-    var copyImageP = await copyFile(path.join(__dirname, "assets/img/template/clean.png"), FD.files.imgFolder+"/clean.png");
+    await copyTemplateImages(FD.files.imgFolder);
     console.log("-- CREATE NEW FINISH--");
 }
 
@@ -253,20 +289,7 @@ async function selectFileFNC(req, res){
     if(FD.fileList.data[selectedFile]){
         FD.files = FD.fileList.data[selectedFile].files;
         FD.files.data = await readFileList(FD.files.mainJson.path);
-        var copyImageA = await copyFile(path.join(__dirname, "assets/img/template/butonback.png"), FD.files.imgFolder+"/butonback.png");
-        var copyImageB = await copyFile(path.join(__dirname, "assets/img/template/closebtn.png"), FD.files.imgFolder+"/closebtn.png");
-        var copyImageC = await copyFile(path.join(__dirname, "assets/img/template/directiveplay.png"), FD.files.imgFolder+"/directiveplay.png");
-        var copyImageD = await copyFile(path.join(__dirname, "assets/img/template/directivestop.png"), FD.files.imgFolder+"/directivestop.png");
-        var copyImageE = await copyFile(path.join(__dirname, "assets/img/template/paint_easer.png"), FD.files.imgFolder+"/paint_easer.png");
-        var copyImageF = await copyFile(path.join(__dirname, "assets/img/template/draw_icon.png"), FD.files.imgFolder+"/draw_icon.png");
-        var copyImageG = await copyFile(path.join(__dirname, "assets/img/template/draw_easer.png"), FD.files.imgFolder+"/draw_easer.png");
-        var copyImageH = await copyFile(path.join(__dirname, "assets/img/template/sp_pause.png"), FD.files.imgFolder+"/sp_pause.png");
-        var copyImageJ = await copyFile(path.join(__dirname, "assets/img/template/sp_play.png"), FD.files.imgFolder+"/sp_play.png");
-        var copyImageK = await copyFile(path.join(__dirname, "assets/img/template/sp_return.png"), FD.files.imgFolder+"/sp_return.png");
-        var copyImageL = await copyFile(path.join(__dirname, "assets/img/template/record_off.png"), FD.files.imgFolder+"/record_off.png");
-        var copyImageM = await copyFile(path.join(__dirname, "assets/img/template/record_on.png"), FD.files.imgFolder+"/record_on.png");
-        var copyImageN = await copyFile(path.join(__dirname, "assets/img/template/color.png"), FD.files.imgFolder+"/color.png");
-        var copyImageP = await copyFile(path.join(__dirname, "assets/img/template/clean.png"), FD.files.imgFolder+"/clean.png");
+        await copyTemplateImages(FD.files.imgFolder);
         res.send({success: true, FILE: FD});
     }else{
         res.send({success: false});
@@ -395,7 +418,7 @@ app.post('/uploadImage', function (req, res) {
                 return res.status(400).send({ success: false, message: "Dosya boyutu limiti aşıldı" });
             }
         } else if (err) {
-            return res.status(500).send({ success: false, message: "Yükleme hatası" });
+            return res.status(450).send({ success: false, message: "Yükleme hatası" });
         }
         res.send(req.files);
     });
@@ -413,6 +436,7 @@ var userList = {
     bahar:{password:"1q2w3e"},
     duygu:{password:"1q2w3e"},
     taner:{password:"1q2w3e"},
+    deniz:{password:"1q2w3e"}
 };
 
 //Read File List
@@ -440,14 +464,21 @@ app.post("/getFileList", function(req, res){
 });
 
 //Read File List
-app.post("/prepare", function(req, res){
-    initApp(req, res);
-});
+app.post("/prepare", async function(req, res){
+    try {
+        await initApp(req, res);
+    } catch (err) {
+        console.error("/prepare hatası:", err);
 
-app.post("/uploadFolderChange", function(req, res){
-    var FD = Users[req.body.token];
-    currentUploadFolder = FD.files.imgFolder;
-    res.send({success:true});
+        if (!res.headersSent) {
+            res.status(500).send({
+                success: false,
+                systemReady: false,
+                message: "Prepare işlemi sırasında sunucu hatası oluştu.",
+                error: err.message
+            });
+        }
+    }
 });
 
 
@@ -455,6 +486,9 @@ app.use("/player", function(req, res) {
     res.sendFile(path.join(__dirname, "views/","player.html"));
 });
 
+app.use("/rubrik", function(req, res) {
+    res.sendFile(path.join(__dirname, "views/","rubrik.html"));
+});
 
 //Index Page
 app.use("/ide", function(req, res) {
@@ -473,15 +507,6 @@ async function initApp(req, res){
     console.log('\033[2J');
     console.log("///////START APP/////////");
 
-    //service
-/*
-    if(req.body.service){
-        console.log("service var");
-        service = req.body.service;
-    }
-*/
-
-
     Users[token] = {};
     var FD = Users[token];
 
@@ -490,21 +515,27 @@ async function initApp(req, res){
 
     //2."files" dosyası varsa okunur. Yoksa oluşturulur...
     FD.fileList = {path: path.join(FD.root, "fileList.json")};
-    FD.fileList.data = await readFileList(FD.fileList.path);
+
+    try {
+        FD.fileList.data = await readFileList(FD.fileList.path);
+    } catch (err) {
+        console.error("fileList.json okunamadı, yeni liste oluşturulacak:", err.message);
+        FD.fileList.data = false;
+    }
+
     if(!FD.fileList.data){
         FD.fileList = await createJson(FD.fileList.path, {}, {encoding:"utf8", flag:"w"});
     }
 
     FD.token = token;
     FD.systemReady = true;
+    FD.success = true;
 
     res.send(FD);
 }
 
 
 function copyFile(source, target){
-    console.log(source);
-    console.log(target);
     return new Promise(function(resolve, reject){
         fs.copyFile(source, target, (err) => {
             if (err){
@@ -583,6 +614,12 @@ app.post("/occSelectFile", function(req, res){
 
     axios.get(`https://${service}.okulistik.com/api/occ/${selectedFile}`, config).then(response => {
         res.send({success: true, response: response.data});
+    }).catch(err => {
+        console.log("error in request", err);
+        res.status(502).send({
+            success: false,
+            message: "OCC dosya seçme isteği başarısız oldu."
+        });
     });
 });
 
@@ -605,6 +642,10 @@ app.post("/occSaveFile", function(req, res){
         res.send({response: response.data, domain:service});
     }).catch(err => {
         console.log("error in request", err);
+        res.status(502).send({
+            success: false,
+            message: "OCC kayıt isteği başarısız oldu."
+        });
     });
 
 });
@@ -625,6 +666,10 @@ app.post("/occDeleteFile", function(req, res){
         res.send({success: true, response: response.data});
     }).catch(err => {
         console.log("error in request", err);
+        res.status(502).send({
+            success: false,
+            message: "OCC silme isteği başarısız oldu."
+        });
     });
 
 });
@@ -739,6 +784,12 @@ async function duplicateFileFNC(req, res){
         axios.get(`https://${service}.okulistik.com/api/occ/${req.body.duplicate_curName}`, config).then(response => {
             FD.files = { mainJson:{ path: newFolder+"/"+req.body.duplicate_newName+".json" } };
             res.send({success: true, response: response.data, clone: req.body, FD});
+        }).catch(err => {
+            console.log("error in request", err);
+            res.status(502).send({
+                success: false,
+                message: "OCC duplicate isteği başarısız oldu."
+            });
         });
     }
 }
@@ -751,11 +802,7 @@ app.post("/occCopyScene", function(req, res){
     var copyFilesNewFolder = req.body.copyFilesNewFolder;
     var occSceneCopy = req.body.occSceneCopy;
 
-    console.log(copyFiles);
-    console.log(copyFilesNewFolder);
-
     copyFileListToFolder(copyFiles, copyFilesNewFolder).then(function(result) {
-        console.log("copied");
         res.send({success: true, occSceneCopy});
     });
 });

@@ -15,6 +15,7 @@
     <script src="/assets/js/Draggable.min.js"></script>
     <script src="/assets/js/codec111925.js"></script>
     <script src="/assets/js/hlsplayer2025.js"></script>
+    <script src="/assets/js/evaluator_engine.js"></script>
 
     <link rel="stylesheet" href="/assets/css/ide.css">
     <link rel="stylesheet" href="/assets/css/player.css">
@@ -340,6 +341,12 @@
         </div>
     </div>
 
+    <div class="WorkSpaces_Group addSpace WorkSpace_Rubrik">
+        <div class="WorkSpaces_Header">Rubrik</div>
+        <div class="rubrikGroup"></div>
+        <div class="goRubrik">Rubrik Create/Edit</div>
+    </div>
+
     <div class="WorkSpaces_Group addSpace WorkSpace_SceneParam">
         <div class="WorkSpaces_Header">Add Scene </div>
         <div class="tableScroll">
@@ -495,6 +502,7 @@
                 <option value="15515696">bahar</option>
                 <option value="15517168">duygu</option>
                 <option value="12896817">taner</option>
+                <option value="15944889">deniz</option>
             </select>
             <button type="button" class="change_button" id="change_action">Değiştir</button>
             <button type="button" class="change_button" id="change_close">Kapat</button>
@@ -796,6 +804,7 @@
             rightAnswer: null,
             scene: {},
             all: [],
+            rubrik:{}
         }
     }
 
@@ -1362,6 +1371,19 @@
         });
     }
 
+    function rubrikParse(){
+        var mainLabel = document.querySelector(".rubrikGroup");
+        var rubrik = jsonV2.slides[sceneIndex].rubrik;
+        mainLabel.innerHTML="";
+        if(rubrik && rubrik.groups){
+            rubrik.groups.map(function(group){
+                var label = document.createElement('div');
+                label.className = "rubrikLabel";
+                label.innerText = group.name;
+                mainLabel.appendChild(label);
+            });
+        }
+    }
 
     /* Sahne Seçme */
     function sceneSelect(request){
@@ -1385,6 +1407,7 @@
         importTypeSettings();
         refreshTable(jsonV2.slides[sceneIndex].answer, document.querySelector("#answer_table"), "ID", "Answer");
         refreshTable(jsonV2.slides[sceneIndex].scene, document.querySelector("#scene_table"));
+        rubrikParse();
     }
 
     function autoSceneSave(){
@@ -1483,7 +1506,8 @@
         gulcin:"#37474f",
         bahar: "#01579b",
         duygu: "#3e2723",
-        taner: "#000000"
+        taner: "#000000",
+        deniz: "#d81b60"
     };
 
     var occUser = {
@@ -1499,7 +1523,8 @@
         user_20: "gulcin",
         user_15515696: "bahar",
         user_15517168: "duygu",
-        user_12896817: "taner"
+        user_12896817: "taner",
+        user_15944889: "deniz"
     }
 
     var occUserName = {
@@ -1514,7 +1539,8 @@
         gulcin: "20",
         bahar: "15515696",
         duygu: "15517168",
-        taner: "12896817"
+        taner: "12896817",
+        deniz: "15944889"
     }
 
     //15517168
@@ -1726,10 +1752,8 @@
         IDE.workSpace.uploadProgressMain.style.display = "flex";
         setUploadProgress(0);
 
-        $.ajax({url: "/uploadFolderChange", data:{token: IDE.user.token}, async: false, type: "POST", error: ajaxError});
-
         $.ajax({
-            url: "/uploadImage",
+            url: "/uploadImage?token="+IDE.user.token,
             data,
             success: function(response){
                 setUploadProgress(100);
@@ -1799,7 +1823,15 @@
         });
     }
 
-    function ajaxError(e){console.log(e)}
+    function ajaxError(e){
+        console.log(e);
+        if(e.status === 450){
+            IDE.showTip({txt:"Dosya yüklenemedi", color: "#d80000", time:3000, x: 1381, y: (IDE.stage.height-10) });
+        }else if(e.status === 502){
+            hideLoader();
+            IDE.showTip({txt:"failed!", color: "#cc303f", time:2500, x: 1420, y: (IDE.stage.height-10)});
+        }
+    }
 
 
     function addStageBG(){
@@ -2086,6 +2118,7 @@
     }
 
     function copiedSceneData(occSceneCopy){
+        EXPORT.convertJson();
         var template = sceneTemplate();
         template.all = occSceneCopy.all;
         sceneAddNewScene(template);
