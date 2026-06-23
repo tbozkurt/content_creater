@@ -2220,6 +2220,57 @@ IDE.workSpace.createWord.addEventListener("click", function(){
 });
 
 
+/* Create Puzzle Button */
+IDE.workSpace.createPuzzle.addEventListener("click", function(){
+    var obj = CREATE.puzzleBox({
+        properties:{
+            x: 500,
+            y: 180,
+            width: 64,
+            height: 64,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "puzzleBox",
+            elementID: "puzzleBox",
+            type: "objectMovieClip",
+            class: "",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* Create Puzzle Undo Button */
+IDE.workSpace.createPuzzleUndo.addEventListener("click", function(){
+    var obj = CREATE.puzzleUndo({
+        properties:{
+            x: 450,
+            y: 646,
+            width: 180,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "puzzleUndo",
+            elementID: "puzzleUndo",
+            type: "objectMovieClip",
+            class: "semiopacity",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+
 /* create freeDraw Canvas */
 IDE.workSpace.createFreeDrawCanvas.addEventListener("click", function(){
     var obj = CREATE.freeDrawCanvas({
@@ -2293,14 +2344,14 @@ document.querySelector("#duplicate_action").addEventListener("click", function()
 
 document.querySelector(".goRubrik").addEventListener("click", function(){
     var totalBox = CREATE.checkKontrol();
-
     console.log(totalBox);
-    var rubrik = { boxes:[] };
+    jsonV2.slides[sceneIndex].rubrik.boxes={};
+
     for(var i=0; i<=totalBox; i++){
-        rubrik.boxes.push("box"+i);
+        jsonV2.slides[sceneIndex].rubrik.boxes["box"+i] = null;
     }
 
-    console.log("rubrik.boxes:", rubrik.boxes);
+    console.log( jsonV2.slides[sceneIndex].rubrik.boxes );
 
     var rubrikData = {
         user: IDE.user,
@@ -2308,15 +2359,15 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
         scene: {
             id: sceneIndex,
             name: jsonV2.slides[sceneIndex].name
-        },
-        boxes: rubrik
+        }
     }
+
+    console.log(rubrikData);
 
     if (typeof(Storage) !== "undefined"){
         localStorage.setItem("occSceneRubrikData", JSON.stringify(rubrikData));
     }
 
-    console.log("boxList:", rubrik.boxes);
     window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220");
 });
 
@@ -2327,8 +2378,9 @@ window.addEventListener("focus", function(){
             var occSceneRubrikSave = localStorage.getItem("occSceneRubrikSave");
             if(occSceneRubrikSave){
                 var rubrik = JSON.parse(occSceneRubrikSave);
+                console.log(rubrik);
                 if(IDE.user.selectedFile === rubrik.user.selectedFile){
-                    console.log( rubrik );
+                    console.log("rubriks", rubrik);
                     console.log( occSceneRubrikSave );
                     jsonV2.slides[sceneIndex].rubrik = rubrik.payload;
                     rubrikParse();

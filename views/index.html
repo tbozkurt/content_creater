@@ -80,6 +80,7 @@
                     <option value="9">Ses Kaydetme</option>
                     <option value="10">Kelime</option>
                     <option value="11">Serbest Çizim</option>
+                    <option value="12">Bulmaca</option>
                 </select>
             </div>
 
@@ -146,6 +147,11 @@
             <div id="iconGroup11" class="iconGroup">
                 <div class="TopIconBox" id="createFreeDrawNav"><img src="assets/img/create_drawnav.png"></div>
                 <div class="TopIconBox" id="createFreeDrawCanvas"><img src="assets/img/create_paintbox.png"></div>
+            </div>
+
+            <div id="iconGroup12" class="iconGroup">
+                <div class="TopIconBox" id="createPuzzle"><img src="assets/img/create_word.png"></div>
+                <div class="TopIconBox" id="createPuzzleUndo"><img src="assets/img/create_refresh.png"></div>
             </div>
 
         </div>
@@ -618,6 +624,8 @@
 
             createFreeDrawNav: document.querySelector("#createFreeDrawNav"),
             createFreeDrawCanvas: document.querySelector("#createFreeDrawCanvas"),
+            createPuzzle: document.querySelector("#createPuzzle"),
+            createPuzzleUndo: document.querySelector("#createPuzzleUndo"),
 
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
@@ -703,7 +711,8 @@
             document.querySelector("#iconGroup8"),
             document.querySelector("#iconGroup9"),
             document.querySelector("#iconGroup10"),
-            document.querySelector("#iconGroup11")
+            document.querySelector("#iconGroup11"),
+            document.querySelector("#iconGroup12")
         ]
     }
 
@@ -804,7 +813,7 @@
             rightAnswer: null,
             scene: {},
             all: [],
-            rubrik:{}
+            rubrik: {boxes:{}, groups:[]}
         }
     }
 

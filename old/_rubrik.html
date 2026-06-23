@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCC Modüler Mantık Paneli ve Değerlendirici</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #4a90e2;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --border: #e1e4e6;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        h2 { margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; color: #34495e; }
+        h3 { margin-top: 0; color: #2980b9; font-size: 1.1rem; }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .row label { width: 60px; font-weight: bold; }
+        input[type="text"], input[type="number"], select {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            outline: none;
+        }
+        input[type="text"] { flex: 1; }
+
+        .group-controls {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f9fbfd;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e6effa;
+        }
+
+        .meta-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+        }
+
+        .meta-item { display: flex; align-items: center; gap: 5px; }
+        .meta-item input[type="number"] { width: 60px; }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #357abd; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-warning { background: var(--warning); color: #2c3e50; }
+        .btn-warning:hover { background: #d4ac0d; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        .group-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            border-left: 4px solid var(--primary);
+        }
+        .group-list-item:hover { background: #edf2f7; }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            background: #edf2f7;
+            border: 1px solid var(--border);
+        }
+        .matched { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .default-match { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .empty-match { background: #e2e3e5; color: #383d41; border-color: #d6d8db; }
+
+        .info-note {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            background: #fcfcfc;
+            padding: 8px;
+            border-left: 3px solid var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .info-panel {
+            background: #ebf5fb;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+        .info-card {
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #d4e6f1;
+        }
+        .info-card strong { color: #2c3e50; display: inline-block; margin-bottom: 3px; }
+        .info-card code { background: #f1f1f1; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div>
+        <div class="card">
+            <h2>Kutu Kural Giriş Alanı</h2>
+            <div class="info-note">
+                Kayıtlı bir gruba tıkladığınızda, o grupta olmayan kutular temizlenir. "Kaydet" çıktısını koddaki <code>initialState</code> değişkenine aktararak kaldığınız yerden devam edebilirsiniz.
+            </div>
+            <div id="boxes-container"></div>
+
+            <div class="group-controls">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="group-name-input" placeholder="Grup Adı (Örn: T1, K1, Y1, Y2)">
+                    <button id="btn-save-group" class="btn-primary">Grubu Kaydet</button>
+                    <button id="btn-cancel-edit" class="btn-danger" style="display:none; color:white;">İptal</button>
+                </div>
+
+                <div class="meta-options">
+                    <div class="meta-item">
+                        <input type="checkbox" id="chk-truecount">
+                        <label for="chk-truecount">truecount:</label>
+                        <input type="number" id="num-truecount" value="0" min="0" disabled>
+                    </div>
+                    <div class="meta-item">
+                        <input type="checkbox" id="chk-falsecount">
+                        <label for="chk-falsecount">falsecount:</label>
+                        <input type="number" id="num-falsecount" value="0" min="0" disabled>
+                    </div>
+                    <div class="meta-item">
+                        <input type="checkbox" id="chk-nullcount">
+                        <label for="chk-nullcount">nullcount:</label>
+                        <input type="number" id="num-nullcount" value="0" min="0" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Kayıtlı Gruplar</h2>
+            <div id="groups-container">Kayıtlı grup bulunmuyor.</div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card" style="display: flex; flex-direction: column; height: calc(100% - 40px); justify-content: space-between; margin-bottom: 0;">
+            <div>
+                <h2>Değerlendirici Panel (Engine Test)</h2>
+                <p style="font-size: 0.85rem; color: #7f8c8d; margin-bottom: 15px;">
+                    Kutulara test değerlerini girin. Bağımsız değerlendirme motoru bu değerleri kurallarınızla kıyaslar.
+                </p>
+                <div id="evaluator-container"></div>
+                <button id="btn-evaluate" class="btn-success" style="width: 100%; margin-top: 15px;">Değerleri Sına (Evaluate)</button>
+                <div id="evaluation-result" class="result-box">Sonuç bekleniyor...</div>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 2px dashed var(--border); padding-top: 15px;">
+                <button id="Kaydet" class="btn-warning" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: bold;">
+                    💾 Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card info-panel">
+    <h3>Mantıksal Operatörler ve Fonksiyon Kontrolleri Kılavuzu</h3>
+    <div class="info-grid">
+        <div class="info-card">
+            <strong>=== , == , &lt;= , &gt;= , &lt; , &gt;</strong><br>
+            Klasik mantıksal kıyaslamalar yapar. Sayısal değerler otomatik tespit edilerek numerik karşılaştırma gerçekleştirilir.
+        </div>
+        <div class="info-card">
+            <strong>regex</strong><br>
+            Yazılan input değerini regex kalıbı ile test eder.<br>
+            <code>Örn: /^\s*tuncay\.?\s*$/i</code> (Boşlukları esnek tutarak uyuşma arar).
+        </div>
+        <div class="info-card">
+            <strong>accuracy80</strong><br>
+            Girdiyi Levenshtein algoritmasıyla test eder ve hedef değerle en az <code>%80</code> oranında metinsel benzerlik arar.
+        </div>
+        <div class="info-card">
+            <strong>inarray</strong><br>
+            Virgülle ayrılmış elemanların sırasına bakılmaksızın tümünün hedef girdi kümesinde yer alıp almadığını doğrular.<br>
+            <code>Örn: 20, 10, tuncay</code> kuralı, <code>tuncay, 10, 20</code> girdisiyle eşleşir.
+        </div>
+        <div class="info-card">
+            <strong>array</strong><br>
+            Virgülle ayrılmış değerlerin hem içerik hem de birebir aynı indeks sırasıyla tam olarak eşleşip eşleşmediğini kontrol eder.<br>
+            <code>Örn: 10, 20, tuncay</code> sıralamasını tam eşleşme ile arar.
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/evaluator_engine.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

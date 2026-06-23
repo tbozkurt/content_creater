@@ -161,6 +161,10 @@ function EXPORT(){
         {
             name: "wordBox",
             type: "word"
+        },
+        {
+            name: "puzzleBox",
+            type: "puzzle"
         }];
 
         allObject.map(function(e){

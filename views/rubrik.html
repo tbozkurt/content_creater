@@ -3,263 +3,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCC Modüler Mantık Paneli ve Değerlendirici</title>
+    <title>Gelişmiş Mantık Kurgulayıcı Paneli</title>
     <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --primary: #4a90e2;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --warning: #f1c40f;
-            --border: #e1e4e6;
-            --text: #2c3e50;
-        }
-
+        @import url("https://cdn.okulistik.com/mobileplayer/contentplayer/assets/font/nunito/nunito.css");
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
+            font-family: Nunito;
+            background-color: #000000;
             margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1450px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 1024px) {
-            .container { grid-template-columns: 1fr; }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-        }
-
-        h2 { margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; color: #34495e; }
-        h3 { margin-top: 0; color: #2980b9; font-size: 1.1rem; }
-
-        .row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            border-bottom: 1px dashed var(--border);
-        }
-
-        .row label { width: 60px; font-weight: bold; }
-        input[type="text"], input[type="number"], select {
-            padding: 6px 10px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            outline: none;
-        }
-        input[type="text"] { flex: 1; }
-
-        .group-controls {
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background: #f9fbfd;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #e6effa;
-        }
-
-        .meta-options {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            font-size: 0.9rem;
-        }
-
-        .meta-item { display: flex; align-items: center; gap: 5px; }
-        .meta-item input[type="number"] { width: 60px; }
-
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s, transform 0.1s;
-        }
-        button:active { transform: scale(0.98); }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #357abd; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #27ae60; }
-        .btn-warning { background: var(--warning); color: #2c3e50; }
-        .btn-warning:hover { background: #d4ac0d; }
-        .btn-danger { background: var(--danger); color: white; }
-
-        .group-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             padding: 10px;
-            background: #f8f9fa;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            border-left: 4px solid var(--primary);
+            color: #bababa;
         }
-        .group-list-item:hover { background: #edf2f7; }
 
-        .result-box {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 6px;
-            font-weight: bold;
-            text-align: center;
-            background: #edf2f7;
-            border: 1px solid var(--border);
-        }
-        .matched { background: #d4edda; color: #155724; border-color: #c3e6cb; }
-        .default-match { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-        .empty-match { background: #e2e3e5; color: #383d41; border-color: #d6d8db; }
-
-        .info-note {
-            font-size: 0.8rem;
-            color: #7f8c8d;
-            background: #fcfcfc;
-            padding: 8px;
-            border-left: 3px solid var(--primary);
+        .app-layout {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-bottom: 10px;
         }
 
-        .info-panel {
-            background: #ebf5fb;
-            border-left: 5px solid var(--primary);
-            padding: 15px;
+        /* Tüm pencerelerin stilleri tamamen eşitlendi */
+        .panel-card {
+            background: #252525;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 1px solid #323232;
+            box-sizing: border-box;
+        }
+
+        .main-panel {
+            flex: 2;
+            min-width: 300px;
+        }
+
+        .side-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        h2, h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #bababa;
+            border-bottom: 2px solid #323232;
+            padding-bottom: 4px;
+        }
+
+        .box-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 6px;
+            background: #323232;
+            border: 1px solid #252525;
             border-radius: 4px;
-            margin-top: 20px;
         }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
-            font-size: 0.85rem;
+        .box-row label { font-weight: bold; min-width: 45px; color: #bababa; font-size: 13px; }
+
+        input[type="text"], select, input[type="number"] {
+            padding: 5px 8px;
+            background-color: #252525;
+            border: 1px solid #323232;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #bababa;
         }
-        .info-card {
-            background: #ffffff;
+        input[type="text"]:focus, select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #bababa;
+        }
+        .box-input { flex: 1; }
+
+        .group-section {
+            margin-top: 12px;
+            background: #323232;
             padding: 10px;
             border-radius: 4px;
-            border: 1px solid #d4e6f1;
+            border: 1px solid #252525;
         }
-        .info-card strong { color: #2c3e50; display: inline-block; margin-bottom: 3px; }
-        .info-card code { background: #f1f1f1; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+
+        .field-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #bababa;
+            margin-right: 4px;
+            display: inline-block;
+        }
+
+        .form-inline-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .extra-options { display: flex; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+        .extra-field { display: flex; align-items: center; gap: 4px; color: #bababa; font-size: 13px; }
+        .extra-field input[type="number"] { width: 50px; padding: 3px; }
+
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s; }
+        .btn-success { background: #006400; color: #ffffff; border: 1px solid #252525; }
+        .btn-success:hover { background: #008000; }
+        .btn-danger { background: #323232; color: #ef4444; border: 1px solid #252525; }
+        .btn-danger:hover { background: #ef4444; color: #000000; }
+        .btn-primary { background: #bababa; color: #000000; }
+        .btn-primary:hover { background: #ffffff; }
+
+        /* Renkli Grup Öğeleri Kart Yapısı */
+        .group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: opacity 0.2s, transform 0.1s;
+            border-left: 5px solid #bababa;
+        }
+        .group-item:hover { opacity: 0.9; transform: translateX(2px); }
+        .group-item.editing { border-left-color: #f59e0b !important; background: #443e2a !important; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin-top: 6px; background: #323232; }
+        .info-table th, .info-table td { border: 1px solid #252525; padding: 6px; text-align: left; font-size: 12px; }
+        .info-table th { background: #252525; color: #ffffff; }
+        .info-table td { color: #bababa; }
+
+        /* Dinamik Renk Alacak Değerlendirici Sonuç Kutusu */
+        .result-box {
+            font-size: 26px;
+            font-weight: bold;
+            text-align: center;
+            margin: 8px 0;
+            padding: 6px;
+            border: 2px dashed #bababa;
+            background: #252525;
+            color: #bababa;
+            border-radius: 4px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        @media (max-width: 900px) {
+            .app-layout {
+                flex-direction: column;
+            }
+            .main-panel, .side-panel {
+                flex: 1 1 100%;
+                width: 100%;
+            }
+        }
+
+        button{
+            font-family: Nunito;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="app-layout">
+    <div class="main-panel panel-card">
+        <h3 id="infoDiv">File: ?</h3>
+        <div id="boxesContainer"></div>
 
-    <div>
-        <div class="card">
-            <h2>Kutu Kural Giriş Alanı</h2>
-            <div class="info-note">
-                Kayıtlı bir gruba tıkladığınızda, o grupta olmayan kutular temizlenir. "Kaydet" çıktısını koddaki <code>initialState</code> değişkenine aktararak kaldığınız yerden devam edebilirsiniz.
-            </div>
-            <div id="boxes-container"></div>
+        <div class="group-section">
+            <h3 id="formTitle" style="font-size:14px; border:none; margin-bottom:6px;">Yeni Grup Oluştur</h3>
 
-            <div class="group-controls">
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="group-name-input" placeholder="Grup Adı (Örn: T1, K1, Y1, Y2)">
-                    <button id="btn-save-group" class="btn-primary">Grubu Kaydet</button>
-                    <button id="btn-cancel-edit" class="btn-danger" style="display:none; color:white;">İptal</button>
+            <div class="form-inline-group">
+                <div>
+                    <label class="field-label" for="groupNameInput">Grup Adı:</label>
+                    <input type="text" id="groupNameInput" placeholder="Örn: T1, K1" style="width: 120px;">
                 </div>
-
-                <div class="meta-options">
-                    <div class="meta-item">
-                        <input type="checkbox" id="chk-truecount">
-                        <label for="chk-truecount">truecount:</label>
-                        <input type="number" id="num-truecount" value="0" min="0" disabled>
-                    </div>
-                    <div class="meta-item">
-                        <input type="checkbox" id="chk-falsecount">
-                        <label for="chk-falsecount">falsecount:</label>
-                        <input type="number" id="num-falsecount" value="0" min="0" disabled>
-                    </div>
-                    <div class="meta-item">
-                        <input type="checkbox" id="chk-nullcount">
-                        <label for="chk-nullcount">nullcount:</label>
-                        <input type="number" id="num-nullcount" value="0" min="0" disabled>
-                    </div>
+                <div>
+                    <label class="field-label" for="groupScoreInput">Grup Puanı:</label>
+                    <input type="number" id="groupScoreInput" placeholder="Puan" style="width: 70px;" value="0">
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button id="saveGroupBtn" class="btn-success">Grubu Kaydet</button>
+                    <button id="cancelEditBtn" style="display:none;" class="btn-danger">İptal</button>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <h2>Kayıtlı Gruplar</h2>
-            <div id="groups-container">Kayıtlı grup bulunmuyor.</div>
-        </div>
-    </div>
-
-    <div>
-        <div class="card" style="display: flex; flex-direction: column; height: calc(100% - 40px); justify-content: space-between; margin-bottom: 0;">
-            <div>
-                <h2>Değerlendirici Panel (Engine Test)</h2>
-                <p style="font-size: 0.85rem; color: #7f8c8d; margin-bottom: 15px;">
-                    Kutulara test değerlerini girin. Bağımsız değerlendirme motoru bu değerleri kurallarınızla kıyaslar.
-                </p>
-                <div id="evaluator-container"></div>
-                <button id="btn-evaluate" class="btn-success" style="width: 100%; margin-top: 15px;">Değerleri Sına (Evaluate)</button>
-                <div id="evaluation-result" class="result-box">Sonuç bekleniyor...</div>
-            </div>
-
-            <div style="margin-top: 30px; border-top: 2px dashed var(--border); padding-top: 15px;">
-                <button id="Kaydet" class="btn-warning" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: bold;">
-                    💾 Kaydet
-                </button>
+            <div class="extra-options">
+                <div class="extra-field">
+                    <input type="checkbox" id="chkTrueCount">
+                    <label for="chkTrueCount">truecount:</label>
+                    <input type="number" id="numTrueCount" value="0" disabled>
+                </div>
+                <div class="extra-field">
+                    <input type="checkbox" id="chkFalseCount">
+                    <label for="chkFalseCount">falsecount:</label>
+                    <input type="number" id="numFalseCount" value="0" disabled>
+                </div>
+                <div class="extra-field">
+                    <input type="checkbox" id="chkNullCount">
+                    <label for="chkNullCount">nullcount:</label>
+                    <input type="number" id="numNullCount" value="0" disabled>
+                </div>
             </div>
         </div>
     </div>
 
+    <div class="side-panel">
+        <div class="panel-card">
+            <h3>Kayıtlı Gruplar</h3>
+            <div id="groupsList">Henüz grup oluşturulmadı.</div>
+        </div>
+
+        <div class="panel-card">
+            <h3>Değerlendirici Paneli</h3>
+            <p style="font-size:11px; color:#bababa; margin-top:0; margin-bottom:8px;">Girdiğiniz değerlerin eşleştiği grup sonucu:</p>
+            <div id="evaluatorInputs"></div>
+            <div class="result-box" id="evaluationResult">-</div>
+            <button id="btnFinalSave" class="btn-primary" style="width:100%;">Kaydet</button>
+        </div>
+    </div>
 </div>
 
-<div class="card info-panel">
-    <h3>Mantıksal Operatörler ve Fonksiyon Kontrolleri Kılavuzu</h3>
-    <div class="info-grid">
-        <div class="info-card">
-            <strong>=== , == , &lt;= , &gt;= , &lt; , &gt;</strong><br>
-            Klasik mantıksal kıyaslamalar yapar. Sayısal değerler otomatik tespit edilerek numerik karşılaştırma gerçekleştirilir.
-        </div>
-        <div class="info-card">
-            <strong>regex</strong><br>
-            Yazılan input değerini regex kalıbı ile test eder.<br>
-            <code>Örn: /^\s*tuncay\.?\s*$/i</code> (Boşlukları esnek tutarak uyuşma arar).
-        </div>
-        <div class="info-card">
-            <strong>accuracy80</strong><br>
-            Girdiyi Levenshtein algoritmasıyla test eder ve hedef değerle en az <code>%80</code> oranında metinsel benzerlik arar.
-        </div>
-        <div class="info-card">
-            <strong>inarray</strong><br>
-            Virgülle ayrılmış elemanların sırasına bakılmaksızın tümünün hedef girdi kümesinde yer alıp almadığını doğrular.<br>
-            <code>Örn: 20, 10, tuncay</code> kuralı, <code>tuncay, 10, 20</code> girdisiyle eşleşir.
-        </div>
-        <div class="info-card">
-            <strong>array</strong><br>
-            Virgülle ayrılmış değerlerin hem içerik hem de birebir aynı indeks sırasıyla tam olarak eşleşip eşleşmediğini kontrol eder.<br>
-            <code>Örn: 10, 20, tuncay</code> sıralamasını tam eşleşme ile arar.
-        </div>
-    </div>
+<div class="panel-card">
+    <h3>Mantıksal Operatörler ve Gelişmiş Fonksiyon Açıklamaları</h3>
+    <table class="info-table">
+        <thead>
+        <tr><th>Operatör / Fonksiyon</th><th>İşlev Açıklaması</th><th>Örnek Girdi Kullanımı</th></tr>
+        </thead>
+        <tbody>
+        <tr><td><strong>=== , ==</strong></td><td>Değerlerin tam veya tip dönüşümlü eşitliğini kontrol eder.</td><td><code>tuncay</code> veya <code>10</code></td></tr>
+        <tr><td><strong>&lt;=, &gt;=, &lt;, &gt;</strong></td><td>Sayısal büyüklük/küçüklük karşılaştırmalarını gerçekleştirir.</td><td><code>20</code></td></tr>
+        <tr><td><strong>regex</strong></td><td>Yazılan input değerini girilen Düzenli İfade kalıbıyla karşılaştırır.</td><td><code>/^\s*tuncay\.?\s*$/i</code></td></tr>
+        <tr><td><strong>accuracy80</strong></td><td>Hedef metni harf hatalarına karşı en az %80 doğruluk toleransıyla inceler.</td><td><code>tuncay</code></td></tr>
+        <tr><td><strong>array</strong></td><td>Virgülle ayrılmış elemanların tam olarak aynı sırada ve değerde olmasını bekler.</td><td><code>10, 20, tuncay</code></td></tr>
+        <tr><td><strong>inarray</strong></td><td>Virgüllü değerlerin sırasına bakılmaksızın küme olarak birbiri içinde olup olmadığını arar.</td><td><code>20, 10, tuncay</code></td></tr>
+        <tr><td><strong>review</strong></td><td>Test alanındaki girdinin dolu olup olmadığını denetler. Doluysa <code>true</code>, boşsa <code>false</code> döner.</td><td>İçerik varlığı zorunludur.</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <script src="assets/js/evaluator_engine.js"></script>
-<script src="assets/js/app.js"></script>
+<script>
+    // KALDIĞIN YERDEN DEVAM ETMEK İÇİN BU DEĞİŞKENE DATA BAĞLAYABİLİRSİNİZ
+    let initialAppState = {
+        boxes: {},
+        groups: []
+    };
+
+
+    var rubrikData;
+    function getLocalData(){
+        if (typeof(Storage) !== "undefined") {
+            var occSceneRubrikData = localStorage.getItem("occSceneRubrikData");
+
+            if(occSceneRubrikData){
+                rubrikData = JSON.parse(occSceneRubrikData);
+                initialAppState = rubrikData.rubrik;
+                document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${rubrikData.user.selectedFile} > Scene: ${rubrikData.scene.name}</span>`;
+                localStorage.removeItem("occSceneRubrikData");
+            }
+        }
+    }
+
+    getLocalData();
+
+    const appState = JSON.parse(JSON.stringify(initialAppState));
+    let editingGroupId = null;
+
+    // Uyumlu Gelişmiş Renk Teması Havuzu
+    const themeColors = [
+        { border: "#006400", bg: "#142c14", text: "#ffffff" }, // Koyu Yeşil
+        { border: "#f59e0b", bg: "#36270f", text: "#f59e0b" }, // Kehribar / Turuncu
+        { border: "#3b82f6", bg: "#162238", text: "#60a5fa" }, // Mavi
+        { border: "#a855f7", bg: "#291a3a", text: "#c084fc" }, // Mor
+        { border: "#ec4899", bg: "#3a1929", text: "#f472b6" }, // Pembe
+        { border: "#10b981", bg: "#112e24", text: "#34d399" }  // Zümrüt Yeşili
+    ];
+
+    // Sabit Durum Renkleri
+    const neutralTheme = { border: "#323232", bg: "#252525", text: "#bababa" }; // Boş Durum (-)
+    const dangerTheme = { border: "#ef4444", bg: "#3a1c1c", text: "#ef4444" };   // Hata / Uyuşmazlık (Y1)
+
+    const boxesContainer = document.getElementById('boxesContainer');
+    const groupNameInput = document.getElementById('groupNameInput');
+    const groupScoreInput = document.getElementById('groupScoreInput');
+    const saveGroupBtn = document.getElementById('saveGroupBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const groupsList = document.getElementById('groupsList');
+    const formTitle = document.getElementById('formTitle');
+    const evaluatorInputs = document.getElementById('evaluatorInputs');
+    const evaluationResult = document.getElementById('evaluationResult');
+    const btnFinalSave = document.getElementById('btnFinalSave');
+
+    const extraOptions = {
+        truecount: { chk: document.getElementById('chkTrueCount'), num: document.getElementById('numTrueCount') },
+        falsecount: { chk: document.getElementById('chkFalseCount'), num: document.getElementById('numFalseCount') },
+        nullcount: { chk: document.getElementById('chkNullCount'), num: document.getElementById('numNullCount') }
+    };
+
+    Object.keys(extraOptions).forEach(key => {
+        extraOptions[key].chk.addEventListener('change', (e) => {
+            extraOptions[key].num.disabled = !e.target.checked;
+            triggerEvaluation();
+        });
+        extraOptions[key].num.addEventListener('input', triggerEvaluation);
+    });
+
+    function renderConfigurator() {
+        boxesContainer.innerHTML = '';
+        Object.keys(appState.boxes).forEach(boxKey => {
+            const row = document.createElement('div');
+            row.className = 'box-row';
+            row.dataset.box = boxKey;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'box-select';
+
+            const label = document.createElement('label');
+            label.textContent = boxKey;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'box-input';
+            input.value = appState.boxes[boxKey];
+
+            input.addEventListener('input', (e) => {
+                appState.boxes[boxKey] = e.target.value === '' ? 'null' : e.target.value;
+                triggerEvaluation();
+            });
+
+            const select = document.createElement('select');
+            select.className = 'box-operator';
+            ['===', '==', '<=', '>=', '<', '>', 'regex', 'accuracy80', 'array', 'inarray', 'review'].forEach(op => {
+                const opt = document.createElement('option');
+                opt.value = op; opt.textContent = op;
+                select.appendChild(opt);
+            });
+
+            row.appendChild(checkbox);
+            row.appendChild(label);
+            row.appendChild(input);
+            row.appendChild(select);
+            boxesContainer.appendChild(row);
+        });
+    }
+
+    function renderEvaluatorTestingPanel() {
+        evaluatorInputs.innerHTML = '';
+        Object.keys(appState.boxes).forEach(boxKey => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '6px';
+            div.style.marginBottom = '4px';
+
+            const lbl = document.createElement('label');
+            lbl.textContent = boxKey + ': ';
+            lbl.style.width = '45px';
+            lbl.style.fontSize = '13px';
+
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'eval-test-input';
+            inp.dataset.box = boxKey;
+            inp.placeholder = 'Değer...';
+            inp.style.flex = '1';
+            inp.style.backgroundColor = '#323232';
+            inp.addEventListener('input', triggerEvaluation);
+
+            div.appendChild(lbl);
+            div.appendChild(inp);
+            evaluatorInputs.appendChild(div);
+        });
+    }
+
+    // Canlı değerlendirme ve sonuç kutusu renk uyumunun yönetilmesi
+    function triggerEvaluation() {
+        const testInputs = {};
+        document.querySelectorAll('.eval-test-input').forEach(inp => {
+            testInputs[inp.dataset.box] = inp.value === '' ? null : inp.value;
+        });
+
+        const cleanState = {
+            boxes: appState.boxes,
+            groups: appState.groups.map(({ id, ...clean }) => clean)
+        };
+
+        if (typeof EvaluatorEngine !== 'undefined') {
+            const evalData = EvaluatorEngine.evaluate(cleanState, testInputs);
+            evaluationResult.textContent = evalData.result;
+
+            // Sonuç kutusunun stilini eşleşen grup temasıyla uyumlu hale getirme
+            if (evalData.matchedGroupIndex >= 0) {
+                const theme = themeColors[evalData.matchedGroupIndex % themeColors.length];
+                applyResultBoxTheme(theme);
+            } else if (evalData.matchedGroupIndex === -1) {
+                applyResultBoxTheme(neutralTheme); // Tüm alanlar boş (-)
+            } else {
+                applyResultBoxTheme(dangerTheme); // Uyuşmazlık veya Hata (Y1)
+            }
+        }
+    }
+
+    function applyResultBoxTheme(theme) {
+        evaluationResult.style.borderLeftColor = theme.border;
+        evaluationResult.style.borderRightColor = theme.border;
+        evaluationResult.style.borderTopColor = theme.border;
+        evaluationResult.style.borderBottomColor = theme.border;
+        evaluationResult.style.backgroundColor = theme.bg;
+        evaluationResult.style.color = theme.text;
+    }
+
+    saveGroupBtn.addEventListener('click', () => {
+        const groupName = groupNameInput.value.trim();
+        const groupScore = parseFloat(groupScoreInput.value) || 0;
+
+        if (!groupName) {
+            alert('Lütfen bir grup adı belirleyin!');
+            return;
+        }
+
+        const selectedBoxes = [];
+        document.querySelectorAll('.box-row').forEach(row => {
+            if (row.querySelector('.box-select').checked) {
+                selectedBoxes.push({
+                    boxId: row.dataset.box,
+                    value: row.querySelector('.box-input').value || 'null',
+                    operator: row.querySelector('.box-operator').value
+                });
+            }
+        });
+
+        if (selectedBoxes.length === 0) {
+            alert('Lütfen bu gruba dahil etmek için en az bir kutuyu işaretleyin.');
+            return;
+        }
+
+        const extras = {};
+        Object.keys(extraOptions).forEach(key => {
+            if (extraOptions[key].chk.checked) {
+                extras[key] = parseInt(extraOptions[key].num.value) || 0;
+            }
+        });
+
+        if (editingGroupId !== null) {
+            const idx = appState.groups.findIndex(g => g.id === editingGroupId);
+            if (idx !== -1) {
+                appState.groups[idx].name = groupName;
+                appState.groups[idx].score = groupScore;
+                appState.groups[idx].boxes = selectedBoxes;
+                appState.groups[idx].extras = extras;
+            }
+            setFormMode(null);
+        } else {
+            appState.groups.push({
+                id: 'g_' + Date.now(),
+                name: groupName,
+                score: groupScore,
+                boxes: selectedBoxes,
+                extras: extras
+            });
+        }
+
+        resetGroupForm();
+        renderGroupsList();
+        triggerEvaluation();
+    });
+
+    function setFormMode(groupId) {
+        editingGroupId = groupId;
+        if (groupId !== null) {
+            formTitle.textContent = "Grubu Düzenle ve Tekrar Kaydet";
+            saveGroupBtn.textContent = "Değişiklikleri Güncelle";
+            cancelEditBtn.style.display = "inline-block";
+        } else {
+            formTitle.textContent = "Yeni Grup Oluştur";
+            saveGroupBtn.textContent = "Grubu Kaydet";
+            cancelEditBtn.style.display = "none";
+        }
+    }
+
+    cancelEditBtn.addEventListener('click', () => {
+        setFormMode(null);
+        resetGroupForm();
+        renderGroupsList();
+    });
+
+    function resetGroupForm() {
+        groupNameInput.value = '';
+        groupScoreInput.value = '0';
+        document.querySelectorAll('.box-select').forEach(chk => chk.checked = false);
+        document.querySelectorAll('.box-input').forEach(inp => inp.value = 'null');
+        document.querySelectorAll('.box-operator').forEach(sel => sel.value = '===');
+        Object.keys(appState.boxes).forEach(k => appState.boxes[k] = 'null');
+        Object.keys(extraOptions).forEach(k => {
+            extraOptions[k].chk.checked = false;
+            extraOptions[k].num.value = 0;
+            extraOptions[k].num.disabled = true;
+        });
+    }
+
+    function renderGroupsList() {
+        if (appState.groups.length === 0) {
+            groupsList.innerHTML = 'Henüz grup oluşturulmadı.';
+            return;
+        }
+        groupsList.innerHTML = '';
+        appState.groups.forEach((group, index) => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+
+            const theme = themeColors[index % themeColors.length];
+            item.style.borderLeftColor = theme.border;
+            item.style.backgroundColor = theme.bg;
+
+            if (editingGroupId === group.id) item.classList.add('editing');
+
+            const count = appState.groups.slice(0, index + 1).filter(g => g.name === group.name).length;
+            const info = document.createElement('span');
+            info.innerHTML = `<strong style="color: ${theme.text};">${group.name} (#${count})</strong> [Puan: ${group.score || 0}] - ${group.boxes.length} Kural`;
+
+            const del = document.createElement('button');
+            del.textContent = 'Sil';
+            del.className = 'btn-danger';
+            del.style.padding = '2px 6px';
+            del.style.fontSize = '11px';
+            del.addEventListener('click', (e) => {
+                e.stopPropagation();
+                appState.groups = appState.groups.filter(g => g.id !== group.id);
+                if (editingGroupId === group.id) setFormMode(null);
+                resetGroupForm();
+                renderGroupsList();
+                triggerEvaluation();
+            });
+
+            item.appendChild(info);
+            item.appendChild(del);
+
+            item.addEventListener('click', () => {
+                setFormMode(group.id);
+                renderGroupsList();
+
+                groupNameInput.value = group.name;
+                groupScoreInput.value = group.score || 0;
+
+                document.querySelectorAll('.box-row').forEach(row => {
+                    const bk = row.dataset.box;
+                    row.querySelector('.box-select').checked = false;
+                    row.querySelector('.box-input').value = 'null';
+                    row.querySelector('.box-operator').value = '===';
+                    appState.boxes[bk] = 'null';
+                });
+
+                group.boxes.forEach(gBox => {
+                    const row = document.querySelector(`.box-row[data-box="${gBox.boxId}"]`);
+                    if (row) {
+                        row.querySelector('.box-select').checked = true;
+                        row.querySelector('.box-operator').value = gBox.operator;
+                        row.querySelector('.box-input').value = gBox.value;
+                        appState.boxes[gBox.boxId] = gBox.value;
+                    }
+                });
+
+                Object.keys(extraOptions).forEach(key => {
+                    if (group.extras && group.extras.hasOwnProperty(key)) {
+                        extraOptions[key].chk.checked = true;
+                        extraOptions[key].num.value = group.extras[key];
+                        extraOptions[key].num.disabled = false;
+                    } else {
+                        extraOptions[key].chk.checked = false;
+                        extraOptions[key].num.value = 0;
+                        extraOptions[key].num.disabled = true;
+                    }
+                });
+                triggerEvaluation();
+            });
+
+            groupsList.appendChild(item);
+        });
+    }
+
+    btnFinalSave.addEventListener('click', () => {
+        const cleanState = {
+            boxes: appState.boxes,
+            groups: appState.groups.map(({ id, ...clean }) => clean)
+        };
+
+        console.log("=== KONSOL JSON ÇIKTISI ===");
+        console.log(JSON.stringify(cleanState, null, 2));
+
+        if (typeof(Storage) !== "undefined"){
+            var occSceneRubrikSave = {user: rubrikData.user, payload:cleanState};
+            localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
+            window.close();
+        }
+
+        console.log("=======================================");
+    });
+
+    if (initialAppState && initialAppState.groups.length > 0) {
+        Object.assign(appState.boxes, initialAppState.boxes);
+        appState.groups = JSON.parse(JSON.stringify(initialAppState.groups));
+        renderConfigurator();
+        renderGroupsList();
+    } else {
+        renderConfigurator();
+    }
+
+    renderEvaluatorTestingPanel();
+    triggerEvaluation();
+</script>
 </body>
 </html>

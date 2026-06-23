@@ -189,7 +189,9 @@ function CREATE(){
         {obj: "soundRecord", answer:true},
         {obj: "feedback", answer:false},
         {obj: "freeDrawCanvas", answer:true},
-        {obj: "wordBox", answer:true}
+        {obj: "wordBox", answer:true},
+        {obj: "puzzleBox", answer:true},
+        {obj: "puzzleUndo", answer:false}
     ];
 
     this.checkKontrol = function(){
@@ -219,23 +221,24 @@ function CREATE(){
                 }
             }
 
+
+
             if(e.answer){
                 globalCount = currentCount;
-            }
-
-            try{
-                if(e.secretAnswer){
-                    var totalGroup=[];
-                    currentList.map(function(e){
-                        if(e.Layer.params){
-                            if(e.Layer.params.group !== null && e.Layer.params.group !== undefined){
-                                totalGroup = [];
-                            }
+            }else if(e.secretAnswer){
+                var totalGroup={};
+                currentList.map(function(e){
+                    var params = e.Layer.params;
+                    if(params){
+                        if(params.group !== null && params.group !== undefined){
+                            totalGroup[params.group] = params.group;
                         }
-                    });
-                }
-            }catch(e){}
+                    }
+                });
 
+                var answerArea = Object.keys(totalGroup).length;
+                globalCount += answerArea;
+            }
         });
 
         return globalCount;
@@ -1291,6 +1294,86 @@ function CREATE(){
             fill: "#ffffff",
             padding: 0,
             Layer:{type:"objectText", name: "Sample", class: "wordTxt"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.puzzleBox = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 64,
+            height: 64,
+            fill: "#ffffff",
+            stroke: "#363636",
+            strokeWidth: 2,
+            borderPosition: "center",
+            cornerRadius: 4,
+            Layer:{type:"objectRect", name: "puzzleBg", class: "puzzleBg"}
+        }, {
+            text: "A",
+            x: 0,
+            y: 0,
+            width: 64,
+            height: 64,
+            fontSize:36,
+            fontFamily: "Arial",
+            fontStyle: "bold",
+            align: "center",
+            verticalAlign: "middle",
+            fill: "#363636",
+            lineHeight: 1.75,
+            padding: 0,
+            Layer:{type:"objectText", name: "puzzleTxt", class: "wordTxt puzzleTxt"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.puzzleUndo = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 3,
+            y: 3,
+            width: 176,
+            height: 46,
+            fill: "#1e40af",
+            stroke: "#1e3a8a",
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "puzzleUndoBg", class: "puzzleUndoBg"}
+        },{
+            x: 0,
+            y: 0,
+            width: 176,
+            height: 46,
+            fill: "#3b82f6",
+            stroke: "#60a5fa",
+            strokeWidth: 2,
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "puzzleUndoBg", class: "puzzleUndoBg"}
+        }, {
+            text: "GERİ AL",
+            x: 0,
+            y: 0,
+            width: 176,
+            height: 46,
+            fontSize: 25,
+            fontFamily: "Nunito",
+            align: "center",
+            fill: "#ffffff",
+            lineHeight: 1.9,
+            padding: 0,
+            Layer:{type:"objectText", name: "puzzleUndoTxt", class: "puzzleUndoTxt"}
         }];
 
         addObjects(kids, container, false);

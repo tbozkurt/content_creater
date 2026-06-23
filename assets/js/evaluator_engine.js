@@ -1,192 +1,131 @@
 /**
- * Bağımsız Değerlendirme Motoru (Evaluator Engine)
- * ES5 Yapısına Uygun Prototip Tabanlı Nesne Yapısı
+ * Bağımsız Değerlendirme Motoru Modülü
  */
-var EvaluatorEngine = {
+const EvaluatorEngine = {
+    // Levenshtein algoritması ile %80 metin benzerliği doğrulaması
+    checkAccuracy80: function(str1, str2) {
+        str1 = String(str1).toLowerCase().trim();
+        str2 = String(str2).toLowerCase().trim();
+        if (str1 === str2) return true;
 
-    // %80 Benzerlik Oranı için Levenshtein Algoritması (accuracy80)
-    getSimilarity: function(str1, str2) {
-        var track = Array(str2.length + 1);
-        for (var r = 0; r < track.length; r++) {
-            track[r] = Array(str1.length + 1).fill(null);
-        }
+        const track = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+        for (let i = 0; i <= str1.length; i += 1) track[0][i] = i;
+        for (let j = 0; j <= str2.length; j += 1) track[j][0] = j;
 
-        for (var i = 0; i <= str1.length; i += 1) track[0][i] = i;
-        for (var j = 0; j <= str2.length; j += 1) track[j][0] = j;
-
-        for (var j = 1; j <= str2.length; j += 1) {
-            for (var i = 1; i <= str1.length; i += 1) {
-                var indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        for (let j = 1; j <= str2.length; j += 1) {
+            for (let i = 1; i <= str1.length; i += 1) {
+                const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
                 track[j][i] = Math.min(
-                    track[j][i - 1] + 1,
-                    track[j - 1][i] + 1,
-                    track[j - 1][i - 1] + indicator
+                    track[j][i - 1] + 1, // silme
+                    track[j - 1][i] + 1, // ekleme
+                    track[j - 1][i - 1] + indicator // yer değiştirme
                 );
             }
         }
-        var distance = track[str2.length][str1.length];
-        var maxLength = Math.max(str1.length, str2.length);
-        if (maxLength === 0) return 1.0;
-        return (maxLength - distance) / maxLength;
+        const distance = track[str2.length][str1.length];
+        const maxLength = Math.max(str1.length, str2.length);
+        if (maxLength === 0) return true;
+        return ((maxLength - distance) / maxLength) >= 0.8;
     },
 
-    // Virgüllü girdileri temiz bir diziye dönüştürür
-    parseToArray: function(inputStr) {
-        var items = inputStr.split(',');
-        var cleanItems = [];
-        for (var i = 0; i < items.length; i++) {
-            var item = items[i].replace(/["']/g, '').trim().toLowerCase();
-            if (item !== "") {
-                cleanItems.push(item);
-            }
+    // Virgülle ayrılmış metni temiz bir diziye dönüştürür
+    parseArrayString: function(str) {
+        return String(str).split(',').map(item => item.replace(/['"]+/g, '').trim());
+    },
+
+    // Tekil koşul kontrol mekanizması
+    evaluateCondition: function(userValue, operator, targetValue) {
+        const isUserNull = userValue === null || userValue === undefined || String(userValue).trim() === "" || String(userValue).trim().toLowerCase() === "null";
+        const isTargetNull = targetValue === null || targetValue === undefined || String(targetValue).trim() === "" || String(targetValue).trim().toLowerCase() === "null";
+
+        if (operator === 'review') {
+            return !isUserNull ? "true" : "false";
         }
-        return cleanItems;
+
+        if (isUserNull && isTargetNull) return "null";
+        if (isUserNull) return "null";
+
+        switch (operator) {
+            case '===': return (String(userValue) === String(targetValue)) ? "true" : "false";
+            case '==': return (String(userValue) == String(targetValue)) ? "true" : "false";
+            case '<=': return (Number(userValue) <= Number(targetValue)) ? "true" : "false";
+            case '>=': return (Number(userValue) >= Number(targetValue)) ? "true" : "false";
+            case '<': return (Number(userValue) < Number(targetValue)) ? "true" : "false";
+            case '>': return (Number(userValue) > Number(targetValue)) ? "true" : "false";
+
+            case 'regex':
+                try {
+                    const match = targetValue.match(/^\/(.+)\/([gimy]*)$/);
+                    const regex = match ? new RegExp(match[1], match[2]) : new RegExp(targetValue);
+                    return regex.test(String(userValue)) ? "true" : "false";
+                } catch(e) { return "false"; }
+
+            case 'accuracy80':
+                return this.checkAccuracy80(userValue, targetValue) ? "true" : "false";
+
+            case 'array': {
+                const arrUser = this.parseArrayString(userValue);
+                const arrTarget = this.parseArrayString(targetValue);
+                if (arrUser.length !== arrTarget.length) return "false";
+                return arrUser.every((v, i) => v === arrTarget[i]) ? "true" : "false";
+            }
+
+            case 'inarray': {
+                const arrUser = this.parseArrayString(userValue);
+                const arrTarget = this.parseArrayString(targetValue);
+                return arrTarget.every(val => arrUser.includes(val)) ? "true" : "false";
+            }
+            default: return "false";
+        }
     },
 
-    /**
-     * Tüm kuralları ve girdileri işleyen ana karar mekanizması
-     */
-    evaluate: function(configPayload, currentInputs) {
-        var self = this;
-        if (!configPayload || !configPayload.groups) return "Y1";
-
-        // Kontrol 1: Tüm box alanlarının değeri boş ise sonuç doğrudan "-" üretir.
-        var allBoxesEmpty = true;
-        Object.keys(currentInputs).forEach(function(box) {
-            if (currentInputs[box] !== null && currentInputs[box] !== "") {
-                allBoxesEmpty = false;
-            }
+    // JSON şeması ve girdileri harmanlayarak grup sonucunu bulan ana metot
+    evaluate: function(jsonData, testInputs) {
+        // Kural 1: Tüm box alanlarının değeri boş ise sonuç "-" üretir
+        const allEmpty = Object.keys(jsonData.boxes).every(key => {
+            const val = testInputs[key];
+            return val === null || val === undefined || String(val).trim() === "" || String(val).trim().toLowerCase() === "null";
         });
+        if (allEmpty) return { result: "-", matchedGroupIndex: -1 };
 
-        if (allBoxesEmpty) {
-            return "-";
-        }
+        // Kayıtlı grupları sırayla kontrol et
+        for (let i = 0; i < jsonData.groups.length; i++) {
+            let group = jsonData.groups[i];
+            let trueCount = 0;
+            let falseCount = 0;
+            let nullCount = 0;
+            let totalCheckedBoxes = group.boxes.length;
 
-        var matchedGroups = [];
+            group.boxes.forEach(bConfig => {
+                const uVal = testInputs[bConfig.boxId] !== undefined ? testInputs[bConfig.boxId] : null;
+                const res = this.evaluateCondition(uVal, bConfig.operator, bConfig.value);
 
-        // Tanımlanmış her bir grubu sırayla analiz et
-        configPayload.groups.forEach(function(group) {
-            var groupPassed = true;
-            var actualTrueCount = 0;
-            var actualFalseCount = 0;
-            var actualNullCount = 0;
-            var strictAllTrue = true;
-
-            Object.keys(group.rules).forEach(function(boxName) {
-                var rule = group.rules[boxName];
-                var liveValue = currentInputs[boxName];
-                var ruleResult = false;
-
-                // Değer boş (null) ise durumları kontrol et
-                if (liveValue === null || liveValue === "") {
-                    actualNullCount++;
-                    if (rule.operator === '===' && rule.value === 'null') {
-                        ruleResult = true;
-                        actualTrueCount++;
-                    } else {
-                        ruleResult = false;
-                        strictAllTrue = false;
-                    }
-                } else {
-                    // 1. Regex Fonksiyon Kontrolü
-                    if (rule.operator === 'regex') {
-                        try {
-                            var pattern = rule.value;
-                            var flags = '';
-                            if (pattern.indexOf('/') === 0 && pattern.lastIndexOf('/') > 0) {
-                                flags = pattern.substring(pattern.lastIndexOf('/') + 1);
-                                pattern = pattern.substring(1, pattern.lastIndexOf('/'));
-                            }
-                            var regex = new RegExp(pattern, flags);
-                            ruleResult = regex.test(String(liveValue));
-                        } catch (e) {
-                            ruleResult = false;
-                        }
-                    }
-                    // 2. Accuracy80 Fonksiyon Kontrolü
-                    else if (rule.operator === 'accuracy80') {
-                        var similarity = self.getSimilarity(String(liveValue).toLowerCase(), String(rule.value).toLowerCase());
-                        ruleResult = (similarity >= 0.80);
-                    }
-                    // 3. Inarray Fonksiyon Kontrolü
-                    else if (rule.operator === 'inarray') {
-                        var ruleArr = self.parseToArray(rule.value);
-                        var liveArr = self.parseToArray(String(liveValue));
-
-                        if (ruleArr.length === liveArr.length && ruleArr.length > 0) {
-                            var allMatch = ruleArr.every(function(item) {
-                                return liveArr.indexOf(item) !== -1;
-                            }) && liveArr.every(function(item) {
-                                return ruleArr.indexOf(item) !== -1;
-                            });
-                            ruleResult = allMatch;
-                        } else {
-                            ruleResult = false;
-                        }
-                    }
-                    // 4. Array Fonksiyon Kontrolü
-                    else if (rule.operator === 'array') {
-                        var ruleArr = self.parseToArray(rule.value);
-                        var liveArr = self.parseToArray(String(liveValue));
-
-                        if (ruleArr.length === liveArr.length && ruleArr.length > 0) {
-                            ruleResult = ruleArr.every(function(val, idx) {
-                                return val === liveArr[idx];
-                            });
-                        } else {
-                            ruleResult = false;
-                        }
-                    }
-                    // 5. Standart Mantıksal Karşılaştırma Operatörleri
-                    else {
-                        var numLive = isNaN(liveValue) ? liveValue : Number(liveValue);
-                        var targetValue = (isNaN(rule.value) || rule.value === "") ? rule.value : Number(rule.value);
-
-                        switch (rule.operator) {
-                            case '===': ruleResult = (numLive === targetValue); break;
-                            case '==':  ruleResult = (numLive == targetValue); break;
-                            case '<=':  ruleResult = (numLive <= targetValue); break;
-                            case '>=':  ruleResult = (numLive >= targetValue); break;
-                            case '<':   ruleResult = (numLive < targetValue); break;
-                            case '>':   ruleResult = (numLive > targetValue); break;
-                        }
-                    }
-
-                    if (ruleResult === true) {
-                        actualTrueCount++;
-                    } else {
-                        actualFalseCount++;
-                        strictAllTrue = false;
-                    }
-                }
+                if (res === "true") trueCount++;
+                else if (res === "false") falseCount++;
+                else if (res === "null") nullCount++;
             });
 
-            var isAnyCountOptionActive = (group.meta.truecount !== null || group.meta.falsecount !== null || group.meta.nullcount !== null);
+            const hasExtraConfig = group.extras && (
+                group.extras.hasOwnProperty('truecount') ||
+                group.extras.hasOwnProperty('falsecount') ||
+                group.extras.hasOwnProperty('nullcount')
+            );
 
-            if (isAnyCountOptionActive) {
-                if (group.meta.truecount !== null && group.meta.truecount !== actualTrueCount) groupPassed = false;
-                if (group.meta.falsecount !== null && group.meta.falsecount !== actualFalseCount) groupPassed = false;
-                if (group.meta.nullcount !== null && group.meta.nullcount !== actualNullCount) groupPassed = false;
+            if (hasExtraConfig) {
+                let match = true;
+                if (group.extras.hasOwnProperty('truecount') && group.extras.truecount !== trueCount) match = false;
+                if (group.extras.hasOwnProperty('falsecount') && group.extras.falsecount !== falseCount) match = false;
+                if (group.extras.hasOwnProperty('nullcount') && group.extras.nullcount !== nullCount) match = false;
+
+                if (match) return { result: group.name, matchedGroupIndex: i };
             } else {
-                if (!strictAllTrue) groupPassed = false;
-            }
-
-            if (groupPassed) {
-                matchedGroups.push(group.name);
-            }
-        });
-
-        // Kontrol 2: En az bir kutu doluysa ve uyuşmuyorsa "Y1" üretilir.
-        if (matchedGroups.length > 0) {
-            var uniqueGroups = [];
-            matchedGroups.forEach(function(item) {
-                if (uniqueGroups.indexOf(item) === -1) {
-                    uniqueGroups.push(item);
+                if (trueCount === totalCheckedBoxes) {
+                    return { result: group.name, matchedGroupIndex: i };
                 }
-            });
-            return uniqueGroups.join(', ');
-        } else {
-            return "Y1";
+            }
         }
+
+        // Kural 2: Box alanlarından herhangi biri hatalıysa veya uyuşmuyorsa sonuç "Y1" üretir
+        return { result: "Y1", matchedGroupIndex: -2 };
     }
 };

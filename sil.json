@@ -1,0 +1,61 @@
+{
+	"user": {
+		"occMode": false,
+		"token": "User_7554_g_6598",
+		"root": "/Users/tb/work/content_creater/files",
+		"username": "tuncay",
+		"password": "1b9d8s4d",
+		"appUser": "tuncay",
+		"selectedFile": "MMM_BSD_1000",
+		"fileUser": "tuncay"
+	},
+	"rubrik": {
+		"boxes": {
+			"box0": "tuncay",
+			"box1": "/^\\s*tuncay\\.?\\s*$/i",
+			"box2": "tuncay",
+			"box3": "t,u,n,c,a,y"
+		},
+		"groups": [
+			{
+				"name": "T1",
+				"score": 0,
+				"boxes": [
+					{
+						"boxId": "box0",
+						"value": "tuncay",
+						"operator": "==="
+					},
+					{
+						"boxId": "box1",
+						"value": "/^\\s*tuncay\\.?\\s*$/i",
+						"operator": "regex"
+					},
+					{
+						"boxId": "box2",
+						"value": "tuncay",
+						"operator": "accuracy80"
+					},
+					{
+						"boxId": "box3",
+						"value": "t,u,n,c,a,y",
+						"operator": "array"
+					}
+				],
+				"extras": {}
+			}
+		]
+	},
+	"scene": {
+		"id": 0,
+		"name": "e0"
+	},
+	"boxes": {
+		"boxes": [
+			"box0",
+			"box1",
+			"box2",
+			"box3"
+		]
+	}
+}
