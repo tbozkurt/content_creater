@@ -9164,8 +9164,10 @@ function PLAYER(){
         var mod = "source-over";
         var lastPointerPos = {x: 0, y: 0};
         var activeStageID;
+        var defaultTextValue = "Lorem ipsum";
+        var closeActiveTextEditor = null;
 
-        var draw = {konva:[]};
+        var draw = {konva:[], textNodes:[], selectedText: null};
 
         var settings = {
             /* Douglas Peucker Tolerans 0-10 */
@@ -9181,6 +9183,7 @@ function PLAYER(){
             eraserSize: 32,
             activeSize:0,
             brushColor: "#ffffff",
+            textFontSize: 24
         }
 
         for(var prop in jsonV2.slides[index].scene){
@@ -9197,7 +9200,8 @@ function PLAYER(){
                     id: id,
                     canvasDOM: canvas,
                     canvasWidth: canvasRect.width,
-                    canvasHeight: canvasRect.height
+                    canvasHeight: canvasRect.height,
+                    textAddCount: 0
                 }
 
                 addCanvas(draw.konva[id]);
@@ -9206,18 +9210,52 @@ function PLAYER(){
                 draw.navMain = element.main;
                 draw.drawBox = element.main.querySelector(".drawBox");
                 draw.eraserBox = element.main.querySelector(".eraserBox");
+                draw.textBox = element.main.querySelector(".textBox");
+                draw.dragBox = element.main.querySelector(".dragBox");
+                draw.dragBoxLabel = element.main.querySelector(".dragBoxLabel");
+                draw.fontSizeBox = element.main.querySelector(".fontSizeBox");
                 draw.colorPalette = element.main.querySelector(".color");
                 draw.cleanCanvas = element.main.querySelector(".clean");
 
+                if(element.data && element.data.textFontSize){
+                    settings.textFontSize = normalizeTextFontSize(element.data.textFontSize);
+                }
+
                 draw.drawBox.addEventListener("click",function(){
                     mod = "source-over";
+                    setTextDragMode(false);
                     mouseCursorStatus();
                 });
 
                 draw.eraserBox.addEventListener("click",function(){
                     mod = "destination-out";
+                    setTextDragMode(false);
                     mouseCursorStatus();
                 });
+
+                if(draw.textBox){
+                    draw.textBox.addEventListener("click",function(){
+                        mod = "textDrag";
+                        addText(getActiveDrawCanvas());
+                        setTextDragMode(true);
+                        mouseCursorStatus();
+                    });
+
+                    draw.textBox.style.cursor = "pointer";
+                }
+
+                if(draw.dragBox){
+                    draw.dragBox.style.display = "none";
+                }
+
+                if(draw.dragBoxLabel){
+                    draw.dragBoxLabel.style.display = "none";
+                }
+
+                if(draw.fontSizeBox){
+                    draw.fontSizeInput = createTextFontSizeInput(draw.fontSizeBox, settings.textFontSize);
+                    draw.fontSizeBox.remove();
+                }
 
                 draw.cleanCanvas.addEventListener("click",function(){
                     checkRightAnswer();
@@ -9251,18 +9289,30 @@ function PLAYER(){
                     settings.brushColor = draw.colorPalette.value;
 
                     draw.colorPalette.addEventListener("input", function(){
-                        settings.brushColor = this.value;
+                        changeDrawColor(this.value);
+                    });
+
+                    draw.colorPalette.addEventListener("change", function(){
+                        changeDrawColor(this.value);
                     });
 
                     draw.colorPalette.addEventListener("click", function(){
                         mod = "source-over";
+                        setTextDragMode(false);
                         mouseCursorStatus();
                     });
                 }
             }
         });
+        function changeDrawColor(color){
+            settings.brushColor = color;
+            if(draw.selectedText && draw.selectedText.getStage()){
+                draw.selectedText.fill(color);
+                updateTextSelection();
+                getSceneBase64();
+            }
+        }
 
-        /* --- DOUGLAS-PEUCKER ALGORİTMASI --- */
         function getSqSegDist(p, p1, p2) {
             var x = p1.x, y = p1.y, dx = p2.x - x, dy = p2.y - y;
             if (dx !== 0 || dy !== 0) {
@@ -9324,12 +9374,44 @@ function PLAYER(){
             DX.stage =  new Konva.Stage({container: DX.canvasDOM, width: DX.canvasWidth, height: DX.canvasHeight});
             DX.layer = new Konva.Layer();
             DX.stage.add(DX.layer);
+            DX.pointerInside = false;
+
+            DX.stage.container().addEventListener("mouseenter", function(){
+                DX.pointerInside = true;
+                activeStageID = DX.id;
+                applyFreeDrawCursor();
+            });
+
+            DX.stage.container().addEventListener("mouseleave", function(){
+                DX.pointerInside = false;
+                DX.stage.container().style.cursor = "default";
+            });
 
             DX.emptyDataLength = DX.stage.toDataURL().length;
             DX.stage.on('mousedown touchstart', function(e) {
-                isPaint = true;
                 activeStageID = DX.id;
+                if(e.target !== DX.stage){
+                    isPaint = false;
+                    return;
+                }
+
+                clearTextSelection();
+
                 var pos = DX.stage.getPointerPosition();
+
+                if(mod === "text"){
+                    if(closeActiveTextEditor){
+                        closeActiveTextEditor(true);
+                    }
+
+                    if(e.evt){
+                        e.evt.preventDefault();
+                        e.evt.stopPropagation();
+                    }
+                    return;
+                }
+
+                isPaint = true;
                 lastLine = new Konva.Line({
                     stroke: settings.brushColor,
                     strokeWidth: settings.activeSize,
@@ -9373,6 +9455,605 @@ function PLAYER(){
                 e.evt.stopPropagation();
             });
 
+        }
+
+        function getActiveDrawCanvas(){
+            if(activeStageID !== undefined && draw.konva[activeStageID]){
+                return draw.konva[activeStageID];
+            }
+
+            for(var i=0; i<draw.konva.length; i++){
+                if(draw.konva[i]){
+                    activeStageID = draw.konva[i].id;
+                    return draw.konva[i];
+                }
+            }
+        }
+
+        function setTextDragMode(enabled){
+            draw.textNodes.map(function(text){
+                text.draggable(false);
+            });
+        }
+
+        function getTextCanvas(text){
+            var stage = text.getStage();
+            for(var i=0; i<draw.konva.length; i++){
+                if(draw.konva[i] && draw.konva[i].stage === stage){
+                    return draw.konva[i];
+                }
+            }
+        }
+
+        function getSelectionBox(DX){
+            if(!DX.selectionBox){
+                DX.selectionBox = new Konva.Rect({
+                    stroke: "blue",
+                    strokeWidth: 1,
+                    listening: false,
+                    perfectDrawEnabled: false,
+                    visible: false
+                });
+                DX.layer.add(DX.selectionBox);
+            }
+
+            return DX.selectionBox;
+        }
+
+        function clearTextSelection(){
+            draw.selectedText = null;
+            setFontSizeInputStatus(false);
+            draw.konva.map(function(konva){
+                if(konva && konva.selectionBox){
+                    konva.selectionBox.hide();
+                    konva.layer.batchDraw();
+                }
+            });
+        }
+
+        function updateTextSelection(){
+            var text = draw.selectedText;
+            if(!text || !text.getStage()){
+                clearTextSelection();
+                return;
+            }
+
+            var DX = getTextCanvas(text);
+            if(!DX){
+                return;
+            }
+
+            var scale = text.getAbsoluteScale();
+            var selectionBox = getSelectionBox(DX);
+            selectionBox.setAttrs({
+                x: text.x(),
+                y: text.y(),
+                width: text.width() * scale.x,
+                height: text.height() * scale.y
+            });
+            selectionBox.show();
+            selectionBox.moveToTop();
+            DX.layer.batchDraw();
+        }
+
+        function setFontSizeInputStatus(enabled){
+            if(!draw.fontSizeInput){
+                return;
+            }
+
+            draw.fontSizeInput.disabled = !enabled;
+            draw.fontSizeInput.style.opacity = enabled ? 1 : 0.45;
+            draw.fontSizeInput.style.cursor = enabled ? "text" : "default";
+        }
+
+        function selectTextNode(DX, text){
+            draw.selectedText = text;
+            activeStageID = DX.id;
+            if(draw.fontSizeInput){
+                draw.fontSizeInput.value = normalizeTextFontSize(text.fontSize());
+                setFontSizeInputStatus(true);
+            }
+            updateTextSelection();
+        }
+
+        function withSelectionHidden(callback){
+            var visibleBoxes = [];
+            draw.konva.map(function(konva){
+                if(konva && konva.selectionBox && konva.selectionBox.visible()){
+                    visibleBoxes.push(konva);
+                    konva.selectionBox.hide();
+                    konva.layer.batchDraw();
+                }
+            });
+
+            var result = callback();
+
+            visibleBoxes.map(function(konva){
+                konva.selectionBox.show();
+                konva.selectionBox.moveToTop();
+                konva.layer.batchDraw();
+            });
+
+            return result;
+        }
+
+        function normalizeTextFontSize(value){
+            var size = parseInt(value, 10);
+            if(isNaN(size)){
+                return 24;
+            }
+
+            return Math.min(Math.max(size, 8), 96);
+        }
+
+        function createTextFontSizeInput(sourceBox, value){
+            var label = draw.navMain.querySelector(".fontSizeBoxLabel");
+            var input = document.createElement("input");
+            input.type = "number";
+            input.min = "8";
+            input.max = "96";
+            input.step = "1";
+            input.value = normalizeTextFontSize(value);
+            input.className = "fontSizeInput";
+            input.disabled = true;
+
+            Object.assign(input.style, {
+                left: sourceBox.style.left,
+                top: sourceBox.style.top,
+                borderRadius: sourceBox.style.borderRadius,
+                border: "none",
+                width: sourceBox.style.width,
+                height: sourceBox.style.height,
+                padding: 0,
+                position: "absolute",
+                boxSizing: "border-box",
+                textAlign: "center",
+                fontFamily: "Nunito, Arial, sans-serif",
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "#183153",
+                background: "#ffffff",
+                cursor: "text",
+                appearance: "textfield",
+                WebkitAppearance: "textfield",
+                MozAppearance: "textfield"
+            });
+            input.style.opacity = 0.45;
+            input.style.cursor = "default";
+            if(!document.getElementById("fontSizeInputStyle")){
+                var style = document.createElement("style");
+                style.id = "fontSizeInputStyle";
+                style.textContent = `
+                .fontSizeInput::-webkit-outer-spin-button,
+                .fontSizeInput::-webkit-inner-spin-button{
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+    
+                .fontSizeInput{
+                    appearance: textfield;
+                    -webkit-appearance: textfield;
+                    -moz-appearance: textfield;
+                }
+            `;
+                document.head.appendChild(style);
+            }
+            function updateFontSize(){
+                settings.textFontSize = normalizeTextFontSize(input.value);
+                input.value = settings.textFontSize;
+                if(draw.selectedText && draw.selectedText.getStage()){
+                    draw.selectedText.fontSize(settings.textFontSize);
+                    updateTextSelection();
+                    getSceneBase64();
+                }
+            }
+
+            input.addEventListener("input", function(){
+                if(this.value === ""){
+                    return;
+                }
+
+                settings.textFontSize = normalizeTextFontSize(this.value);
+                if(draw.selectedText && draw.selectedText.getStage()){
+                    draw.selectedText.fontSize(settings.textFontSize);
+                    updateTextSelection();
+                    getSceneBase64();
+                }
+            });
+
+            input.addEventListener("change", updateFontSize);
+            input.addEventListener("click", function(e){
+                e.stopPropagation();
+            });
+            input.addEventListener("mousedown", function(e){
+                e.stopPropagation();
+            });
+            input.addEventListener("touchstart", function(e){
+                e.stopPropagation();
+            });
+
+            if(label){
+                label.remove();
+            }
+
+            draw.navMain.appendChild(input);
+            return input;
+        }
+
+        function getNextTextPosition(DX){
+            var positions = [
+                {x: 0, y: 0},
+                {x: 90, y: 45},
+                {x: -90, y: 45},
+                {x: 90, y: -45},
+                {x: -90, y: -45},
+                {x: 0, y: 90},
+                {x: 0, y: -90},
+                {x: 140, y: 0},
+                {x: -140, y: 0}
+            ];
+            var index = DX.textAddCount || 0;
+            var offset = positions[index % positions.length];
+            var cycle = Math.floor(index / positions.length);
+            var centerX = (DX.stage.width() / 2) - 70;
+            var centerY = (DX.stage.height() / 2) - 16;
+            var x = centerX + offset.x + (cycle * 18);
+            var y = centerY + offset.y + (cycle * 18);
+
+            DX.textAddCount = index + 1;
+
+            return {
+                x: Math.min(Math.max(x, 0), Math.max(DX.stage.width() - 150, 0)),
+                y: Math.min(Math.max(y, 0), Math.max(DX.stage.height() - 40, 0))
+            };
+        }
+
+        function addText(DX, pos){
+            if(!DX){
+                return false;
+            }
+
+            activeStageID = DX.id;
+            if(!pos){
+                pos = getNextTextPosition(DX);
+            }
+
+            var text = new Konva.Text({
+                text: defaultTextValue,
+                x: pos.x,
+                y: pos.y,
+                fontSize: settings.textFontSize,
+                fontFamily: "Nunito",
+                fontStyle: "bold",
+                fill: settings.brushColor,
+                lineHeight: 1.2,
+                draggable: false,
+                listening: true
+            });
+
+            var textEditing = false;
+            var textIsDragging = false;
+            var textDragReleaseBound = false;
+            var textPressBound = false;
+            var textPressStart = null;
+            var textDragStartDistance = 4;
+
+            function getPointerClientPosition(evt){
+                if(evt.touches && evt.touches.length){
+                    return {x: evt.touches[0].clientX, y: evt.touches[0].clientY};
+                }
+
+                if(evt.changedTouches && evt.changedTouches.length){
+                    return {x: evt.changedTouches[0].clientX, y: evt.changedTouches[0].clientY};
+                }
+
+                return {x: evt.clientX, y: evt.clientY};
+            }
+
+            function bindTextPress(){
+                if(textPressBound){
+                    return;
+                }
+
+                textPressBound = true;
+                window.addEventListener("mousemove", checkTextDragStart, true);
+                window.addEventListener("touchmove", checkTextDragStart, true);
+                window.addEventListener("pointermove", checkTextDragStart, true);
+            }
+
+            function unbindTextPress(){
+                if(!textPressBound){
+                    return;
+                }
+
+                textPressBound = false;
+                window.removeEventListener("mousemove", checkTextDragStart, true);
+                window.removeEventListener("touchmove", checkTextDragStart, true);
+                window.removeEventListener("pointermove", checkTextDragStart, true);
+            }
+
+            function checkTextDragStart(evt){
+                if(textEditing || textIsDragging || !textPressStart){
+                    return;
+                }
+
+                var pos = getPointerClientPosition(evt);
+                var dx = pos.x - textPressStart.x;
+                var dy = pos.y - textPressStart.y;
+                if(Math.sqrt((dx * dx) + (dy * dy)) < textDragStartDistance){
+                    return;
+                }
+
+                if(evt.cancelable){
+                    evt.preventDefault();
+                }
+
+                unbindTextPress();
+                text.draggable(true);
+                text.startDrag();
+            }
+
+            function bindTextDragRelease(){
+                if(textDragReleaseBound){
+                    return;
+                }
+
+                textDragReleaseBound = true;
+                window.addEventListener("mouseup", finishTextDrag, true);
+                window.addEventListener("touchend", finishTextDrag, true);
+                window.addEventListener("pointerup", finishTextDrag, true);
+                window.addEventListener("touchcancel", cancelTextDrag, true);
+                window.addEventListener("pointercancel", cancelTextDrag, true);
+                window.addEventListener("blur", cancelTextDrag, true);
+            }
+
+            function unbindTextDragRelease(){
+                if(!textDragReleaseBound){
+                    return;
+                }
+
+                textDragReleaseBound = false;
+                window.removeEventListener("mouseup", finishTextDrag, true);
+                window.removeEventListener("touchend", finishTextDrag, true);
+                window.removeEventListener("pointerup", finishTextDrag, true);
+                window.removeEventListener("touchcancel", cancelTextDrag, true);
+                window.removeEventListener("pointercancel", cancelTextDrag, true);
+                window.removeEventListener("blur", cancelTextDrag, true);
+            }
+
+            function resetTextDragCursor(){
+                DX.stage.container().style.cursor = "";
+                mouseCursorStatus();
+                DX.layer.batchDraw();
+            }
+
+            function finishTextDrag(){
+                if(!textIsDragging){
+                    textPressStart = null;
+                    unbindTextPress();
+                    unbindTextDragRelease();
+                    text.draggable(false);
+                    selectTextNode(DX, text);
+                    resetTextDragCursor();
+                    return;
+                }
+
+                textIsDragging = false;
+                activeStageID = DX.id;
+                textPressStart = null;
+                unbindTextPress();
+                unbindTextDragRelease();
+                text.stopDrag();
+                text.draggable(false);
+                selectTextNode(DX, text);
+                updateTextSelection();
+                resetTextDragCursor();
+                getSceneBase64();
+            }
+
+            function cancelTextDrag(){
+                if(!textIsDragging){
+                    textPressStart = null;
+                    unbindTextPress();
+                    unbindTextDragRelease();
+                    text.draggable(false);
+                    return;
+                }
+
+                textIsDragging = false;
+                activeStageID = DX.id;
+                textPressStart = null;
+                unbindTextPress();
+                unbindTextDragRelease();
+                text.stopDrag();
+                text.draggable(false);
+                selectTextNode(DX, text);
+                updateTextSelection();
+                resetTextDragCursor();
+            }
+
+            text.on("mousedown touchstart", function(e){
+                if(textEditing){
+                    return;
+                }
+
+                activeStageID = DX.id;
+                isPaint = false;
+                selectTextNode(DX, text);
+                text.draggable(false);
+                if(e.evt){
+                    textPressStart = getPointerClientPosition(e.evt);
+                    bindTextPress();
+                    bindTextDragRelease();
+                }
+
+                if(e.evt){
+                    e.evt.preventDefault();
+                    e.evt.stopPropagation();
+                }
+            });
+
+            text.on("dblclick dbltap", function(e){
+                activeStageID = DX.id;
+                isPaint = false;
+                textEditing = true;
+                textPressStart = null;
+                unbindTextPress();
+                clearTextSelection();
+                text.stopDrag();
+                text.draggable(false);
+                openCanvasTextEditor(DX, text, function(){
+                    textEditing = false;
+                    setTextDragMode(mod === "textDrag");
+                    if(text.getStage()){
+                        selectTextNode(DX, text);
+                    }else{
+                        clearTextSelection();
+                    }
+                });
+
+                if(e.evt){
+                    e.evt.preventDefault();
+                    e.evt.stopPropagation();
+                }
+            });
+
+            text.on("dragstart", function(){
+                activeStageID = DX.id;
+                isPaint = false;
+                textIsDragging = true;
+                selectTextNode(DX, text);
+                DX.stage.container().style.cursor = "grabbing";
+            });
+
+            text.on("dragmove", function(){
+                updateTextSelection();
+            });
+
+            text.on("dragend", function(){
+                finishTextDrag();
+            });
+
+            text.on("mouseover", function(){
+                if(mod === "textDrag"){
+                    DX.stage.container().style.cursor = "grab";
+                }
+            });
+
+            text.on("mouseout", function(){
+                DX.stage.container().style.cursor = "";
+                mouseCursorStatus();
+            });
+
+            draw.textNodes.push(text);
+            text.draggable(false);
+            DX.layer.add(text);
+            selectTextNode(DX, text);
+            DX.layer.batchDraw();
+            getSceneBase64();
+        }
+
+        function openCanvasTextEditor(DX, text, closeCallback){
+            var stageBox = DX.stage.container().getBoundingClientRect();
+            var scaleX = stageBox.width / DX.stage.width();
+            var scaleY = stageBox.height / DX.stage.height();
+            var textPosition = text.absolutePosition();
+            var originalText = text.text();
+            var textarea = document.createElement("textarea");
+            var closed = false;
+            var minEditorWidth = Math.max(text.width() * scaleX, 160);
+            var editorLineHeight = text.fontSize() * text.lineHeight() * scaleY;
+
+            textarea.value = originalText;
+            textarea.wrap = "off";
+            Object.assign(textarea.style, {
+                position: "absolute",
+                left: (stageBox.left + window.scrollX + (textPosition.x * scaleX)) + "px",
+                top: (stageBox.top + window.scrollY + (textPosition.y * scaleY)) + "px",
+                width: minEditorWidth + "px",
+                minHeight: editorLineHeight + "px",
+                fontSize: (text.fontSize() * scaleY) + "px",
+                fontFamily: text.fontFamily(),
+                fontWeight: text.fontStyle(),
+                lineHeight: text.lineHeight(),
+                color: text.fill(),
+                background: "transparent",
+                border: "1px solid blue",
+                outline: "none",
+                resize: "none",
+                overflow: "hidden",
+                whiteSpace: "pre",
+                padding: 0,
+                zIndex: 10000
+            });
+
+            function resizeEditor(){
+                textarea.style.width = minEditorWidth + "px";
+                textarea.style.height = editorLineHeight + "px";
+                textarea.style.width = Math.max(textarea.scrollWidth + 4, minEditorWidth) + "px";
+                textarea.style.height = Math.max(textarea.scrollHeight, editorLineHeight) + "px";
+            }
+
+            function closeEditor(save){
+                if(closed){
+                    return;
+                }
+
+                closed = true;
+                closeActiveTextEditor = null;
+                if(save){
+                    if(textarea.value.trim() === ""){
+                        text.destroy();
+                        draw.textNodes = draw.textNodes.filter(function(textNode){
+                            return textNode !== text && textNode.getStage();
+                        });
+                    }else{
+                        text.text(textarea.value);
+                        text.show();
+                    }
+                }else{
+                    text.text(originalText);
+                    text.show();
+                }
+
+                textarea.remove();
+                DX.layer.batchDraw();
+                updateTextSelection();
+                getSceneBase64();
+                if(closeCallback){
+                    closeCallback();
+                }
+            }
+
+            closeActiveTextEditor = closeEditor;
+
+            textarea.addEventListener("mousedown", function(e){
+                e.stopPropagation();
+            });
+
+            textarea.addEventListener("touchstart", function(e){
+                e.stopPropagation();
+            });
+
+            textarea.addEventListener("input", resizeEditor);
+
+            textarea.addEventListener("keydown", function(e){
+                if(e.key === "Escape"){
+                    e.preventDefault();
+                    closeEditor(false);
+                }
+            });
+
+            textarea.addEventListener("blur", function(){
+                closeEditor(true);
+            });
+
+            document.body.appendChild(textarea);
+            text.hide();
+            DX.layer.batchDraw();
+            textarea.focus();
+            textarea.select();
+            resizeEditor();
         }
 
         function drawEnd(DX){
@@ -9430,10 +10111,12 @@ function PLAYER(){
         /* canvas base64 get */
         function getSceneBase64() {
             var stage = draw.konva[activeStageID].stage;
-            var dataURL = stage.toDataURL({
-                mimeType: "image/png",
-                quality: 1,
-                pixelRatio: 2
+            var dataURL = withSelectionHidden(function(){
+                return stage.toDataURL({
+                    mimeType: "image/png",
+                    quality: 1,
+                    pixelRatio: 2
+                });
             });
 
             inputsChange(SD, activeStageID, "value", dataURL);
@@ -9442,6 +10125,14 @@ function PLAYER(){
 
         function clearStage(id){
             draw.konva[id].layer.destroyChildren();
+            draw.konva[id].textAddCount = 0;
+            draw.textNodes = draw.textNodes.filter(function(text){
+                return text.getStage();
+            });
+            draw.konva[id].selectionBox = null;
+            if(draw.selectedText && !draw.selectedText.getStage()){
+                draw.selectedText = null;
+            }
             /* Önceki bellek kayıtlarını temizle */
             draw.konva[id].layer.clearCache();
             draw.konva[id].layer.draw();
@@ -9455,18 +10146,68 @@ function PLAYER(){
             btn.style.border = "0px";
         }
 
+        function getFreeDrawCursor(){
+            if(mod === "source-over"){
+                return "url(assets/img/player/pencilcursor.png) -22 22, auto";
+            }else if(mod === "destination-out"){
+                return "url(assets/img/player/easercursor.png) 10 15, auto";
+            }else if(mod === "text"){
+                return "text";
+            }else if(mod === "textDrag"){
+                return "grab";
+            }
+
+            return "default";
+        }
+
+        function applyFreeDrawCursor(){
+            SP.sceneDiv.style.cursor = "default";
+            draw.konva.map(function(konva){
+                if(konva && konva.stage){
+                    konva.stage.container().style.cursor = konva.pointerInside ? getFreeDrawCursor() : "default";
+                }
+            });
+        }
+
         function mouseCursorStatus(){
             if(mod === "source-over"){
-                SP.sceneDiv.style.cursor = "url(assets/img/player/pencilcursor.png) -22 22, auto";
                 settings.activeSize = settings.brushSize;
                 activeBtnFNC(draw.drawBox);
                 passiveBtnFNC(draw.eraserBox);
-            }else{
-                SP.sceneDiv.style.cursor = "url(assets/img/player/easercursor.png) 10 15, auto";
+                if(draw.textBox){
+                    passiveBtnFNC(draw.textBox);
+                }
+                if(draw.dragBox){
+                    passiveBtnFNC(draw.dragBox);
+                }
+            }else if(mod === "destination-out"){
                 settings.activeSize = settings.eraserSize;
                 activeBtnFNC(draw.eraserBox);
                 passiveBtnFNC(draw.drawBox);
+                if(draw.textBox){
+                    passiveBtnFNC(draw.textBox);
+                }
+                if(draw.dragBox){
+                    passiveBtnFNC(draw.dragBox);
+                }
+            }else if(mod === "text"){
+                settings.activeSize = 0;
+                activeBtnFNC(draw.textBox);
+                passiveBtnFNC(draw.drawBox);
+                passiveBtnFNC(draw.eraserBox);
+                if(draw.dragBox){
+                    passiveBtnFNC(draw.dragBox);
+                }
+            }else if(mod === "textDrag"){
+                settings.activeSize = 0;
+                passiveBtnFNC(draw.drawBox);
+                passiveBtnFNC(draw.eraserBox);
+                if(draw.textBox){
+                    activeBtnFNC(draw.textBox);
+                }
             }
+
+            applyFreeDrawCursor();
         }
         mouseCursorStatus();
 
@@ -9503,7 +10244,9 @@ function PLAYER(){
         function checkRightAnswer(){
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"freeDraw"};
             draw.konva.map(function(konva){
-                var currentDataLength = konva.stage.toDataURL().length;
+                var currentDataLength = withSelectionHidden(function(){
+                    return konva.stage.toDataURL().length;
+                });
                 var emptyDataLength = konva.emptyDataLength;
 
                 if(currentDataLength > (emptyDataLength+50)){
@@ -9530,6 +10273,6 @@ function PLAYER(){
         }
 
         SP.fnc.push(evaluation);
-   }
+    }
 
 }

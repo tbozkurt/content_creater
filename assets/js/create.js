@@ -1461,7 +1461,7 @@ function CREATE(){
         var kids = [{
             x: 0,
             y: 0,
-            width: 275,
+            width: 405,
             height: 80,
             fill: "silver",
             borderPosition: "center",
@@ -1496,7 +1496,63 @@ function CREATE(){
             Layer: {type:"objectImg", name:"clean", class:"clean"}
         },
         {
-            x: 212,
+            x: 210,
+            y: 15,
+            width: 50,
+            height: 50,
+            fill: "#ffffff",
+            stroke: "#183153",
+            strokeWidth: 0,
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "textBox", class:"textBox"}
+        },
+        {
+            text: "T",
+            x: 210,
+            y: 15,
+            width: 50,
+            height: 50,
+            fontSize: 32,
+            fontFamily: "Nunito",
+            fontStyle: "bold",
+            fill: "#183153",
+            lineHeight: 1.55,
+            padding: 0,
+            align: "center",
+            verticalAlign: "middle",
+            Layer:{type:"objectText", name: "textBoxLabel", class:"disableEvents"}
+        },
+        {
+            x: 275,
+            y: 15,
+            width: 50,
+            height: 50,
+            fill: "#ffffff",
+            stroke: "#183153",
+            strokeWidth: 0,
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "fontSizeBox", class:"fontSizeBox"}
+        },
+        {
+            text: "24",
+            x: 275,
+            y: 15,
+            width: 50,
+            height: 50,
+            fontSize: 18,
+            fontFamily: "Nunito",
+            fontStyle: "bold",
+            fill: "#183153",
+            lineHeight: 2.7,
+            padding: 0,
+            align: "center",
+            verticalAlign: "middle",
+            Layer:{type:"objectText", name: "fontSizeBoxLabel", class:"fontSizeBoxLabel disableEvents"}
+        },
+        {
+            x: 342,
             y: 17,
             width: 46,
             height: 46,
@@ -1507,7 +1563,7 @@ function CREATE(){
             Layer:{type:"objectRect", name: "color", class:"color"}
         },
         {
-            x: 210,
+            x: 340,
             y: 15,
             width: 50,
             height: 50,
