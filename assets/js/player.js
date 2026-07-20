@@ -252,6 +252,7 @@ function PLAYER(){
                 fnc:[],
                 popupWindow: {},
                 popEx: [],
+                video:[],
                 screenCloseDOM:null,
                 directive:{},
                 soundPlayer:[],
@@ -513,12 +514,10 @@ function PLAYER(){
             if(jsonV2.fileName.includes("HDE")){
                 clearInterval(player.dataSendTimer);
                 player.dataSendTimer = setTimeout(function(){
-                    console.log(SD.inputs);
                     HDE_ScoreCalc(false);
                 }, 1000);
             }
         }
-        console.log(SD.inputs);
     }
 
     function HDE_virtualControlBtn(){
@@ -883,7 +882,6 @@ function PLAYER(){
     this.rubrikEvalutorControlHQ = function(SP, SD){
         console.log("--- rubrikEvalutorControlHQ ---");
         var finalBox={};
-
         for(var boxName in SD.inputs){
             if(SD.inputs[boxName].base64){
                 SP.fnc.map(function(fnc){
@@ -894,6 +892,7 @@ function PLAYER(){
             finalBox[boxName] = String(SD.inputs[boxName].value);
         }
 
+        console.log(SD.rubrik);
         var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
         showFeedBack(result.result, "auto", SD.historyRight.length);
         console.log("finalBox:", finalBox);
@@ -909,6 +908,16 @@ function PLAYER(){
             answerBtnView(SP, "disable");
             checkViewFNC(SD);
         }
+
+        var currentHistory = JSON.parse(JSON.stringify(SD.inputs));
+        var xx = ({
+            rubrik: result,
+            duration: SD.duration,
+            inputs: currentHistory
+        });
+
+        console.log(xx);
+        console.log(SD);
     }
 
     function specialStartFNC(SP, SD){
@@ -1794,8 +1803,6 @@ function PLAYER(){
             if(PLX.showReadOnly){
                 player.readOnlyDOM.style.visibility = "visible";
             }
-
-            This.popupVideoPlayStatus(sp, false);
         }else{
             sp.popEx[popID].window.style.visibility = "visible";
             sp.popEx[popID].clicked = true;
@@ -1808,6 +1815,8 @@ function PLAYER(){
             }
             PLX.autoSceneChange_stopQuickly();
         }
+
+        This.popupVideoPlayStatus(sp, false);
     }
 
     function feedbackSound(SP, sceneID, id){
@@ -1843,10 +1852,14 @@ function PLAYER(){
                 if(feedback.howl){
                     feedbackSoundAction(feedback, "play");
                 }else if(feedback.type === "video"){
-                    if(!feedback.videoSkin){
-                        SP[This.sceneIndex].video.videoSkinHide();
-                    }
-                    SP[This.sceneIndex].video.PlayVideo();
+                    SP[This.sceneIndex].video.map(function(video){
+                        if(video.type === "feedback" && video.feedbackID === feedback.id){
+                            if(!feedback.videoSkin){
+                                video.videoSkinHide();
+                            }
+                            video.PlayVideo();
+                        }
+                    });
                 }
 
                 if(feedback.statusSound === "right"){
@@ -1999,9 +2012,9 @@ function PLAYER(){
     this.stopAllMedia = function(){
         /* Video */
         SP.map(function(slide){
-            if(slide.video){
-                slide.video.StopVideo();
-            }
+            slide.video.map(function(video){
+                video.StopVideo();
+            });
         });
 
         /* Sound Record */
@@ -2094,16 +2107,18 @@ function PLAYER(){
     }
 
     this.popupVideoPlayStatus = function(SP, playVideo){
-        if(SP.video){
-            if(playVideo){
-                if(SP.video.firstPlay){
-                    SP.video.PlayVideo();
-                }else{
-                    SP.video.FullScreenPlay();
-                }
+        if(playVideo){
+            /*
+            if(SP.video.firstPlay){
+                SP.video.PlayVideo();
             }else{
-                SP.video.StopVideo();
+                SP.video.FullScreenPlay();
             }
+            */
+        }else{
+            SP.video.map(function(video){
+                video.StopVideo();
+            });
         }
     }
 
@@ -2168,8 +2183,10 @@ function PLAYER(){
         player.mainDOM.style.left = centerX+"px";
         /* player.mainDOM.style.top = centerY+"px"; */
         var sp = SP[This.sceneIndex];
-        if(sp.video){
-            sp.video.resizePosition();
+        if(sp.video.length){
+            sp.video.map(function(video){
+                video.resizePosition();
+            });
         }
     }
 
@@ -5728,14 +5745,20 @@ function PLAYER(){
                     metaDataFNC: metaDataFNC,
                     occMode: true
                 };
-                SP.video = AddPlayer(videoProp);
+
+                var tempVideo = AddPlayer(videoProp);
+                tempVideo.type = "a_video";
+                SP.video.push(tempVideo);
             }else if(element.id.includes("popupWindow")){
                 videoProp = addVideoElement(element);
                 if(videoProp){
                     videoProp.endFNC = function(){};
                     videoProp.watchedFNC = function(){};
                     videoProp.metaDataFNC = function(){};
-                    SP.video = AddPlayer(videoProp);
+
+                    var tempVideo = AddPlayer(videoProp);
+                    tempVideo.type = "popup";
+                    SP.video.push(tempVideo);
                 }
             }else if(element.id.includes("feedback")){
                 videoProp = addVideoElement(element);
@@ -5744,7 +5767,10 @@ function PLAYER(){
                     videoProp.watchedFNC = function(){};
                     videoProp.metaDataFNC = function(){};
                     videoProp.videoCapture = true;
-                    SP.video = AddPlayer(videoProp);
+                    var tempVideo = AddPlayer(videoProp);
+                    SP.video.push(tempVideo);
+                    tempVideo.type = "feedback";
+                    tempVideo.feedbackID = parseInt(element.id.split("_")[1]);
                 }
             }
         });
@@ -5756,7 +5782,9 @@ function PLAYER(){
                 videoProp.watchedFNC = function(){};
                 videoProp.metaDataFNC = function(){};
                 videoProp.videoCapture = true;
-                SP.video = AddPlayer(videoProp);
+                var tempVideo = AddPlayer(videoProp);
+                tempVideo.type = "e_video";
+                SP.video.push(tempVideo);
             }
         }
 
@@ -6043,8 +6071,6 @@ function PLAYER(){
             console.log("Çarpışma %:", overlapPercent, "Sonuç:", correctRate );
             SD.inputs["box"+ draw.id].value = correctRate;
 
-            console.log(correctRate, draw.rightRate);
-
             if(SD.inputs["box"+ draw.id].base64 === null){
                 score.totalEmpty++;
             }else if(correctRate >= draw.rightRate){
@@ -6090,7 +6116,6 @@ function PLAYER(){
         function addHistory(){
             reset();
             var lastMove = historyExtract(SP, 'line');
-            console.log(lastMove);
             for(var box in lastMove){
                 var currentID = lastMove[box].id;
                 var base64 = lastMove[box].base64;
@@ -6229,7 +6254,6 @@ function PLAYER(){
         if(rightAnswer){
             rightAnswer = rightAnswer.replace(/\s+/g, "");
             rightAnswer = rightAnswer.split(",");
-            console.log(rightAnswer);
             for(var i=0; i<rightAnswer.length; i++){
                 var editAnswer;
                 if(rightAnswer[i].includes("-")){
@@ -6448,7 +6472,6 @@ function PLAYER(){
 
         function checkAnswer(){
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"point"};
-            console.log(userPoints, rightAnswer);
 
             if(!userPoints.length){
                 score.totalEmpty = 1;
@@ -6578,6 +6601,15 @@ function PLAYER(){
         var SR;
         var input;
 
+        var lang = {
+            prepare: "Lütfen Bekleyiniz.",
+            stopRecordText: "Kaydı Durdur",
+            listenRecordText: "Kaydı Dinle",
+            restartRecordText: "Tekrar Kayıt Başlat",
+            warning: "Tarayıcı bu özelliği desteklemiyor. Lütfen Chrome tarayıcı kullanınız.",
+            showProgressBar: "true"
+        }
+
         SP.elementList.forEach(function(e){
             if(e.id.includes("soundRecord")){
                 var id = parseInt(e.id.split("_")[1]);
@@ -6594,6 +6626,10 @@ function PLAYER(){
                 };
 
                 SR = SP.soundRecord[id];
+
+                for(var param in e.data){
+                    lang[param] = e.data[param];
+                }
             }
         });
 
@@ -6789,14 +6825,6 @@ function PLAYER(){
             return second >= set.recordTime;
         }
 
-        var lang = {
-            prepare: "Lütfen Bekleyiniz.",
-            stopRecord: "Kaydı Durdur",
-            listenRecord: "Kaydı Dinle",
-            restartRecord: "Tekrar Kayıt Başlat",
-            warning: "Tarayıcı bu özelliği desteklemiyor. Lütfen Chrome tarayıcı kullanınız."
-        }
-
         SR.startRecordBtn = Scene.querySelector(".record_off");
         SR.stopRecordBtn = Scene.querySelector(".record_on");
         SR.recordPrepare = Scene.querySelector(".prepareText");
@@ -6808,22 +6836,56 @@ function PLAYER(){
         SR.recordStatusMain.appendChild(SR.recordTime);
 
         SR.recordPlayMain = Scene.querySelector(".recordPlayMain");
-        SR.playTxt = utils.addDOM({className: "Record_Text", innerText: (lang.listenRecord+" (00:00)")});
+        SR.playTxt = utils.addDOM({className: "Record_Text", innerText: (lang.listenRecordText+" (00:00)")});
         SR.playProgress = utils.addDOM({className: "Record_playProgress"});
         SR.recordPlayMain.appendChild(SR.playProgress);
         SR.recordPlayMain.appendChild(SR.playTxt);
         SR.recordPlayMain.style.overflow = "hidden";
 
         SR.recordStop = Scene.querySelector(".recordStop");
-        SR.recordStopText = utils.addDOM({className: "Record_Text", innerText: lang.stopRecord});
+        SR.recordStopText = utils.addDOM({className: "Record_Text", innerText: lang.stopRecordText});
         SR.recordStop.appendChild(SR.recordStopText);
 
         SR.recordRestart = Scene.querySelector(".recordRestart");
-        SR.recordRestartText = utils.addDOM({className: "Record_Text", innerText: lang.restartRecord});
+        SR.recordRestartText = utils.addDOM({className: "Record_Text", innerText: lang.restartRecordText});
         SR.recordRestart.appendChild(SR.recordRestartText);
 
         SR.warning = Scene.querySelector(".warningText");
         SR.warning.innerText = lang.warning;
+        SR.soundPlayBtn = Scene.querySelector(".soundPlayBtn");
+        SR.soundStopBtn = Scene.querySelector(".soundStopBtn");
+
+        if(SR.soundPlayBtn){
+            SR.soundPlayBtn.addEventListener("click", function(){
+                if(SR.soundPause){
+                    SR.Howl.play();
+                    SR.Animation.play();
+                    SR.soundPause = false;
+                }else{
+                    addAnimation();
+                    SR.Howl.play();
+                }
+            });
+        }
+
+        if(SR.soundStopBtn){
+            SR.soundStopBtn.addEventListener("click", function(){
+                if(SR.Howl.playing()){
+                    SR.Animation.pause();
+                    SR.Howl.pause();
+                }
+            });
+        }
+
+        function extraSoundIconStatus(play, stop){
+            if(SR.soundPlayBtn){
+                SR.soundPlayBtn.style.visibility = play;
+            }
+
+            if(SR.soundStopBtn){
+                SR.soundStopBtn.style.visibility = stop;
+            }
+        }
 
         /* CSS */
         SR.startRecordBtn.style.cursor = "pointer";
@@ -6852,7 +6914,7 @@ function PLAYER(){
         SR.recordPlayMain.style.display = "none";
         SR.recordRestart.style.display = "none";
         SR.recordStop.style.display = "none";
-
+        extraSoundIconStatus("hidden", "hidden");
 
         SR.startRecordBtn.addEventListener("click", function(){
             SR.recordPrepare.style.display="block";
@@ -6871,6 +6933,7 @@ function PLAYER(){
         SR.recordPlayMain.addEventListener("click", function(){
             if(!SR.Howl.playing()){
                 addAnimation();
+                SR.Howl.seek(0);
                 SR.Howl.play();
             }
         });
@@ -6879,7 +6942,6 @@ function PLAYER(){
             SR.recordPrepare.style.visibility="block";
             SR.startAudioRecordingFNC();
         });
-
 
         SR.startViewFNC = function(){
             SR.recordElapsedTimeFNC();
@@ -6893,6 +6955,7 @@ function PLAYER(){
             SR.recordRestart.style.display = "none";
             SR.recordPrepare.style.display = "none";
             SR.recordRedCircle.classList.remove('recordCircleAnimateStop');
+            extraSoundIconStatus("hidden", "hidden");
         }
 
         SR.stopViewFNC = function(){
@@ -6916,11 +6979,26 @@ function PLAYER(){
 
             SR.Howl.on("load",function(){
                 soundLoadAction();
+                SR.soundPause = false;
+                extraSoundIconStatus("visible", "hidden");
+            });
+
+            SR.Howl.on("end",function(){
+                extraSoundIconStatus("visible", "hidden");
+            });
+
+            SR.Howl.on("pause",function(){
+                SR.soundPause = true;
+                extraSoundIconStatus("visible", "hidden");
+            });
+
+            SR.Howl.on("play",function(){
+                extraSoundIconStatus("hidden", "visible");
             });
 
             function soundLoadAction(){
                 SR.elapsedTime = SR.timeConvertSecondAndMinutes(SR.Howl.duration());
-                SR.playTxt.innerText = "Kaydı Dinle ("+ SR.elapsedTime +")";
+                SR.playTxt.innerText = lang.listenRecordText+" ("+ SR.elapsedTime +")";
                 if(showBtn){
                     SR.stopViewFNC();
                 }
@@ -7204,11 +7282,22 @@ function PLAYER(){
         var puzzleBoxes = [];
         var groupSelections = {};
         var solvedGroups = {};
+        var lockedGroups = {};
+        var candidateWordList = [];
+        var pendingCandidateSelection = [];
+        var lockedCandidateSelections = [];
         var isDragging = false;
         var dragBorderBoxes = {};
         var dragPressColor = jsonV2.slides[index].scene.selectedColor;
         var dragBorderColor = jsonV2.slides[index].scene.selectedBorderColor;
         var puzzleUndoBtn = null;
+        var puzzleLockBtn = null;
+        var puzzleCandidatePanels = [];
+        var cumulativeWrongTotal = SD.wrong || 0;
+
+        for(var answerGroup in answer){
+            groupSelections[String(answerGroup)] = [];
+        }
 
         function normalizeText(text){
             return String(text === undefined || text === null ? "" : text).trim().toLocaleUpperCase("tr-TR");
@@ -7256,30 +7345,20 @@ function PLAYER(){
             });
         }
 
-        function isPuzzleAnswerOrdered(){
-            var scene = jsonV2.slides[index].scene || {};
+        function idListContains(list, id){
+            id = parseInt(id);
 
-            return scene.puzzleAnswerOrdered !== false
-                && scene.answerOrdered !== false
-                && scene.orderImportant !== false;
+            return (list || []).some(function(value){
+                return parseInt(value) === id;
+            });
         }
 
-        function compareIDLists(selected, right){
+        function idListsMatch(selected, right){
             selected = selected || [];
             right = right || [];
 
             if(selected.length !== right.length){
                 return false;
-            }
-
-            if(isPuzzleAnswerOrdered()){
-                for(var i=0; i<right.length; i++){
-                    if(parseInt(selected[i]) !== parseInt(right[i])){
-                        return false;
-                    }
-                }
-
-                return true;
             }
 
             var selectedCount = {};
@@ -7304,30 +7383,607 @@ function PLAYER(){
             return true;
         }
 
+        function normalizeIDList(list){
+            return (list || []).map(function(id){
+                return parseInt(id);
+            }).filter(function(id){
+                return !isNaN(id);
+            }).sort(function(a, b){
+                return a - b;
+            });
+        }
+
+        function isExactAnswerCandidate(groupID, selectedIDs){
+            var selected = normalizeIDList(getEffectiveSelectedIDs(groupID, selectedIDs));
+            var right = normalizeIDList(normalizeAnswerIDs(answer[groupID]));
+
+            if(selected.length !== right.length){
+                return false;
+            }
+
+            for(var i=0; i<right.length; i++){
+                if(selected[i] !== right[i]){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function idListsEqualOrdered(first, second){
+            first = first || [];
+            second = second || [];
+
+            if(first.length !== second.length){
+                return false;
+            }
+
+            for(var i=0; i<first.length; i++){
+                if(parseInt(first[i]) !== parseInt(second[i])){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function getEffectiveSelectedIDs(groupID, selectedIDs){
+            var effectiveSelectedIDs = (selectedIDs || []).slice();
+            var rightAnswerIDs = normalizeAnswerIDs(answer[groupID]);
+
+            for(var i=0; i<rightAnswerIDs.length; i++){
+                var rightID = rightAnswerIDs[i];
+                if(
+                    !idListContains(effectiveSelectedIDs, rightID)
+                    && (
+                        isAutoReflectedSharedBox(groupID, rightID)
+                        || isLockedCandidateBoxForGroup(groupID, rightID)
+                    )
+                ){
+                    effectiveSelectedIDs.push(rightID);
+                }
+            }
+
+            return effectiveSelectedIDs;
+        }
+
+        function getCandidateAnswerGroup(selectedIDs){
+            for(var group in answer){
+                if(solvedGroups[group] || !isPuzzleGroup(group)){
+                    continue;
+                }
+
+                if(isExactAnswerCandidate(group, selectedIDs)){
+                    return String(group);
+                }
+            }
+
+            return null;
+        }
+
+        function getCandidateDisplayIDs(selectedIDs){
+            for(var group in answer){
+                if(!isPuzzleGroup(group)){
+                    continue;
+                }
+
+                var effectiveSelectedIDs = getDisplayEffectiveSelectedIDs(group, selectedIDs);
+                if(idListsMatch(effectiveSelectedIDs, normalizeAnswerIDs(answer[group]))){
+                    return normalizeAnswerIDs(answer[group]).filter(function(id){
+                        return idListContains(effectiveSelectedIDs, id);
+                    });
+                }
+            }
+
+            return selectedIDs || [];
+        }
+
+        function getDisplayEffectiveSelectedIDs(groupID, selectedIDs){
+            var effectiveSelectedIDs = (selectedIDs || []).slice();
+            var rightAnswerIDs = normalizeAnswerIDs(answer[groupID]);
+
+            for(var i=0; i<rightAnswerIDs.length; i++){
+                var rightID = rightAnswerIDs[i];
+                if(
+                    !idListContains(effectiveSelectedIDs, rightID)
+                    && (
+                        isDisplayReflectedSharedBox(groupID, rightID, selectedIDs)
+                        || isLockedCandidateBoxForGroup(groupID, rightID)
+                    )
+                ){
+                    effectiveSelectedIDs.push(rightID);
+                }
+            }
+
+            return effectiveSelectedIDs;
+        }
+
+        function isDisplayReflectedSharedBox(groupID, id, selectedIDs){
+            groupID = String(groupID);
+            id = parseInt(id);
+
+            var box = puzzleBoxes[id];
+            if(!box || !hasGroup(box, groupID) || !hasExplicitGroup(box, groupID)){
+                return false;
+            }
+
+            var groups = box.explicitGroups || [];
+            if(groups.length < 2){
+                return false;
+            }
+
+            for(var i=0; i<groups.length; i++){
+                var otherGroup = String(groups[i]);
+
+                if(otherGroup === groupID){
+                    continue;
+                }
+
+                if((solvedGroups[otherGroup] || lockedGroups[otherGroup]) && idListContains(groupSelections[otherGroup], id)){
+                    return true;
+                }
+
+                for(var c=0; c<candidateWordList.length; c++){
+                    var candidateIDs = candidateWordList[c];
+                    if(
+                        candidateIDs !== selectedIDs
+                        && idListContains(candidateIDs, id)
+                        && isExactAnswerCandidate(otherGroup, candidateIDs)
+                    ){
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function isSolvedAnswerCandidate(selectedIDs){
+            for(var group in answer){
+                if(!solvedGroups[group] || !isPuzzleGroup(group)){
+                    continue;
+                }
+
+                if(isExactAnswerCandidate(group, selectedIDs)){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function setCandidateWrong(selectedIDs){
+            (selectedIDs || []).map(function(id){
+                var box = puzzleBoxes[parseInt(id)];
+                if(!box){
+                    return;
+                }
+
+                var groups = box.selectedGroups && box.selectedGroups.length
+                    ? box.selectedGroups
+                    : box.explicitGroups || [];
+
+                groups.map(function(group){
+                    if(!solvedGroups[group]){
+                        setGroupStatus(box, group, "wrong");
+                    }
+                });
+
+                refreshBoxView(box);
+            });
+        }
+
+        function setCandidateRight(groupID, selectedIDs){
+            selectedIDs = (selectedIDs || []).slice();
+            var effectiveSelectedIDs = getEffectiveSelectedIDs(groupID, selectedIDs);
+            var storedSelectedIDs = effectiveSelectedIDs.slice();
+            var previousSelected = groupSelections[groupID] || [];
+
+            previousSelected.map(function(id){
+                var box = puzzleBoxes[id];
+                if(box && !idListContains(storedSelectedIDs, id)){
+                    removeSelectedGroup(box, groupID);
+                    setGroupStatus(box, groupID, null);
+                    refreshBoxView(box);
+                }
+            });
+
+            solvedGroups[groupID] = true;
+            lockedGroups[groupID] = true;
+            groupSelections[groupID] = storedSelectedIDs.slice();
+
+            storedSelectedIDs.map(function(id){
+                var box = puzzleBoxes[id];
+                if(box){
+                    addSelectedGroup(box, groupID);
+                    setGroupStatus(box, groupID, "right");
+                    refreshBoxView(box);
+                }
+            });
+
+            updateInput(groupID, true);
+            updateCandidateWordsView();
+        }
+
+        function saveCandidateWord(selectedIDs){
+            selectedIDs = (selectedIDs || []).slice();
+
+            if(!selectedIDs.length){
+                return;
+            }
+
+            var duplicate = candidateWordList.some(function(candidate){
+                return idListsEqualOrdered(candidate, selectedIDs);
+            });
+
+            if(duplicate){
+                return;
+            }
+
+            candidateWordList.push(selectedIDs);
+
+            updateCandidateWordsView();
+        }
+
+        function getCandidateWordText(selectedIDs){
+            var letters = [];
+            var displayIDs = getCandidateDisplayIDs(selectedIDs);
+
+            displayIDs.map(function(id){
+                var box = puzzleBoxes[parseInt(id)];
+                if(box){
+                    letters.push(box.letter);
+                }
+            });
+
+            if(letters.length){
+                return letters.join("");
+            }
+
+            return displayIDs.join(",");
+        }
+
+        function getCandidateWordRows(){
+            var rows = [];
+
+            candidateWordList.map(function(selectedIDs){
+                var text = getCandidateWordText(selectedIDs);
+                if(text){
+                    rows.push(text);
+                }
+            });
+
+            return rows;
+        }
+
+        function selectionMatchesCandidate(selectedIDs, candidateIDs){
+            if(idListsEqualOrdered(selectedIDs, candidateIDs)){
+                return true;
+            }
+
+            var selected = normalizeIDList(selectedIDs);
+            var candidate = normalizeIDList(candidateIDs);
+
+            if(selected.length !== candidate.length){
+                return false;
+            }
+
+            for(var i=0; i<selected.length; i++){
+                if(selected[i] !== candidate[i]){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function selectionIsCandidatePart(selectedIDs, candidateIDs){
+            selectedIDs = selectedIDs || [];
+            candidateIDs = candidateIDs || [];
+
+            if(!selectedIDs.length){
+                return false;
+            }
+
+            for(var i=0; i<selectedIDs.length; i++){
+                if(!idListContains(candidateIDs, selectedIDs[i])){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function shouldClearCandidateGroup(group, selectedIDs){
+            var groupSelected = groupSelections[group] || [];
+
+            if(selectionMatchesCandidate(groupSelected, selectedIDs)){
+                return true;
+            }
+
+            return !solvedGroups[group] && selectionIsCandidatePart(groupSelected, selectedIDs);
+        }
+
+        function syncRemovedCandidateBoxes(selectedIDs){
+            (selectedIDs || []).map(function(id){
+                var box = puzzleBoxes[parseInt(id)];
+
+                if(!box){
+                    return;
+                }
+
+                (box.selectedGroups || []).slice().map(function(group){
+                    if(!groupSelections[group] || !idListContains(groupSelections[group], box.id)){
+                        removeSelectedGroup(box, group);
+                        setGroupStatus(box, group, null);
+                    }
+                });
+
+                if(box.selectedGroups.length === 0){
+                    box.selected = false;
+                    box.status = null;
+                }
+                refreshBoxView(box);
+            });
+        }
+
+        function clearCandidateSelection(selectedIDs){
+            selectedIDs = selectedIDs || [];
+            lockedCandidateSelections = lockedCandidateSelections.filter(function(candidateIDs){
+                return !selectionMatchesCandidate(candidateIDs, selectedIDs);
+            });
+
+            for(var group in groupSelections){
+                if(!shouldClearCandidateGroup(group, selectedIDs)){
+                    continue;
+                }
+
+                (groupSelections[group] || []).map(function(id){
+                    var box = puzzleBoxes[id];
+                    if(box){
+                        removeSelectedGroup(box, group);
+                        setGroupStatus(box, group, null);
+                        refreshBoxView(box);
+                    }
+                });
+
+                groupSelections[group] = [];
+                delete solvedGroups[group];
+                delete lockedGroups[group];
+                updateInput(group, true);
+            }
+
+            syncRemovedCandidateBoxes(selectedIDs);
+
+            pendingCandidateSelection = pendingCandidateSelection.filter(function(id){
+                return !idListContains(selectedIDs, id);
+            });
+
+            controlBtnViewCheck();
+            undoBtnViewCheck();
+            lockBtnViewCheck();
+        }
+
+        function removeCandidateWord(index){
+            index = parseInt(index);
+
+            if(isNaN(index) || !candidateWordList[index]){
+                return;
+            }
+
+            var removed = candidateWordList.splice(index, 1)[0];
+            clearCandidateSelection(removed);
+            updateCandidateWordsView();
+        }
+
+        function updateCandidateWordsView(){
+            if(!puzzleCandidatePanels.length){
+                return;
+            }
+
+            var rows = getCandidateWordRows();
+
+            puzzleCandidatePanels.map(function(panel){
+                if(panel && panel.text){
+                    panel.text.innerText = "";
+                    panel.text.textContent = "";
+
+                    while(panel.text.firstChild){
+                        panel.text.removeChild(panel.text.firstChild);
+                    }
+
+                    rows.map(function(row, index){
+                        var rowEl = document.createElement("div");
+                        var removeEl = document.createElement("button");
+                        var textEl = document.createElement("span");
+
+                        rowEl.style.display = "flex";
+                        rowEl.style.alignItems = "center";
+                        rowEl.style.gap = "8px";
+                        rowEl.style.marginBottom = "4px";
+                        rowEl.style.overflow = "visible";
+
+                        textEl.textContent = row;
+                        textEl.style.flex = "0 0 auto";
+                        textEl.style.minWidth = "auto";
+                        textEl.style.overflow = "visible";
+                        textEl.style.textOverflow = "clip";
+                        textEl.style.whiteSpace = "nowrap";
+
+                        removeEl.type = "button";
+                        removeEl.dataset.candidateIndex = index;
+
+                        removeEl.style.display = "flex";
+                        removeEl.style.alignItems = "center";
+                        removeEl.style.justifyContent = "center";
+                        removeEl.style.padding = "0";
+                        removeEl.style.border = "1px solid #94a3b8";
+                        removeEl.style.borderRadius = "4px";
+                        removeEl.style.backgroundColor = "#ffffff";
+                        removeEl.style.color = "#0f172a";
+                        removeEl.style.cursor = "pointer";
+                        removeEl.style.flexShrink = "0";
+
+                        removeEl.innerHTML = `
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14H6L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4h6v2"></path>
+                    </svg>
+                `;
+
+                        removeEl.addEventListener("click", function(event){
+                            event.preventDefault();
+                            event.stopPropagation();
+                            removeCandidateWord(this.dataset.candidateIndex);
+                        });
+
+                        rowEl.appendChild(textEl);
+                        rowEl.appendChild(removeEl);
+
+                        panel.text.appendChild(rowEl);
+
+                        var textHeight = Math.ceil(
+                            textEl.getBoundingClientRect().height * 1.15
+                        );
+
+                        removeEl.style.width = textHeight + "px";
+                        removeEl.style.height = textHeight + "px";
+
+                        var svg = removeEl.querySelector("svg");
+
+                        if(svg){
+                            var iconSize = Math.floor(textHeight * 0.65);
+
+                            svg.setAttribute("width", iconSize);
+                            svg.setAttribute("height", iconSize);
+                        }
+                    });
+                }
+            });
+        }
+
+        function isAutoReflectedSharedBox(groupID, id){
+            groupID = String(groupID);
+            id = parseInt(id);
+
+            var box = puzzleBoxes[id];
+            if(!box || !hasGroup(box, groupID) || !hasExplicitGroup(box, groupID)){
+                return false;
+            }
+
+            var groups = box.explicitGroups || [];
+            if(groups.length < 2){
+                return false;
+            }
+
+            for(var i=0; i<groups.length; i++){
+                var otherGroup = String(groups[i]);
+
+                if(otherGroup === groupID || !solvedGroups[otherGroup]){
+                    continue;
+                }
+
+                if(idListContains(groupSelections[otherGroup], id)){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function isLockedCandidateBoxForGroup(groupID, id){
+            groupID = String(groupID);
+            id = parseInt(id);
+
+            var box = puzzleBoxes[id];
+            if(!box || !hasExplicitGroup(box, groupID)){
+                return false;
+            }
+
+            for(var i=0; i<lockedCandidateSelections.length; i++){
+                if(idListContains(lockedCandidateSelections[i], id)){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function validateGroupSelection(groupID, selectedIDs){
+            selectedIDs = selectedIDs || [];
+            var rightAnswerIDs = normalizeAnswerIDs(answer[groupID]);
+            var effectiveSelectedIDs = getEffectiveSelectedIDs(groupID, selectedIDs);
+
+            if(!selectedIDs.length || !rightAnswerIDs.length){
+                return false;
+            }
+
+            for(var i=0; i<selectedIDs.length; i++){
+                if(!idListContains(rightAnswerIDs, selectedIDs[i])){
+                    return false;
+                }
+            }
+
+            if(idListsMatch(effectiveSelectedIDs, rightAnswerIDs)){
+                return true;
+            }
+
+            return false;
+        }
+
         function updateInput(group, updateSolved){
             if(group === undefined || group === null){
                 return;
             }
 
             group = String(group);
-            var selected = groupSelections[group] || [];
-            var key = getInputKey(group);
+            if(!isAnswerGroup(group)){
+                var nonAnswerKey = getInputKey(group);
+                var legacyNonAnswerKey = getLegacyInputKey(group);
+                var removed = false;
 
-            if(!selected.length){
-                delete SD.inputs[key];
-                inputsChange(SD);
+                if(SD.inputs[nonAnswerKey] && SD.inputs[nonAnswerKey].type === "puzzle"){
+                    delete SD.inputs[nonAnswerKey];
+                    removed = true;
+                }
+
+                if(SD.inputs[legacyNonAnswerKey] && SD.inputs[legacyNonAnswerKey].type === "puzzle"){
+                    delete SD.inputs[legacyNonAnswerKey];
+                    removed = true;
+                }
+
+                if(removed){
+                    inputsChange(SD);
+                }
+
                 return;
             }
 
+            var selected = groupSelections[group] || [];
             var input = ensurePuzzleInput(group);
-            input.value = selected.slice();
+            input.value = selected.length ? selected.slice() : null;
             input.type = "puzzle";
-            if(updateSolved){
+            input.locked = selected.length ? !!lockedGroups[group] : false;
+            if(!selected.length){
+                input.solved = false;
+            }else if(updateSolved){
                 input.solved = !!solvedGroups[group];
             }else if(input.solved !== true){
                 input.solved = false;
             }
 
+            /* console.log("SD.inputs", JSON.parse(JSON.stringify(SD.inputs))); */
             inputsChange(SD);
         }
 
@@ -7363,6 +8019,16 @@ function PLAYER(){
             return Object.prototype.hasOwnProperty.call(groupSelections, String(group));
         }
 
+        function allPuzzleAnswerGroupsSolved(){
+            for(var group in answer){
+                if(isPuzzleGroup(group) && !solvedGroups[group]){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         function getInputKey(group){
             return "box" + group;
         }
@@ -7388,21 +8054,38 @@ function PLAYER(){
         }
 
         function ensurePuzzleInput(group){
+            group = String(group);
+            if(!isAnswerGroup(group)){
+                return null;
+            }
+
             var key = getInputKey(group);
             var legacyKey = getLegacyInputKey(group);
+
+            if(!groupSelections[group]){
+                groupSelections[group] = [];
+            }
 
             if(!SD.inputs[key]){
                 if(SD.inputs[legacyKey] && SD.inputs[legacyKey].type === "puzzle"){
                     SD.inputs[key] = SD.inputs[legacyKey];
                     delete SD.inputs[legacyKey];
                 }else{
-                    SD.inputs[key] = {value: null, type: "puzzle", solved: false};
+                    SD.inputs[key] = {value: null, type: "puzzle", solved: false, locked: false};
                 }
             }
 
             SD.inputs[key].type = "puzzle";
+            if(!groupSelections[group].length){
+                SD.inputs[key].value = null;
+            }else if(SD.inputs[key].value === undefined){
+                SD.inputs[key].value = null;
+            }
             if(SD.inputs[key].solved === undefined){
                 SD.inputs[key].solved = !!solvedGroups[group];
+            }
+            if(SD.inputs[key].locked === undefined){
+                SD.inputs[key].locked = !!lockedGroups[group];
             }
 
             return SD.inputs[key];
@@ -7413,6 +8096,11 @@ function PLAYER(){
                 var input = SD.inputs[key];
                 var groupID = getPuzzleInputGroup(key, input);
                 if(groupID === null){
+                    continue;
+                }
+
+                if(!isAnswerGroup(groupID)){
+                    delete SD.inputs[key];
                     continue;
                 }
 
@@ -7430,8 +8118,21 @@ function PLAYER(){
                 var selected = groupSelections[groupID] || [];
                 var hasValue = input && (Array.isArray(input.value) ? input.value.length : input.value !== undefined && input.value !== null && input.value !== "");
                 if(input && input.type === "puzzle" && !selected.length && !hasValue){
-                    delete SD.inputs[currentKey];
+                    input.value = null;
+                    input.solved = false;
+                    input.locked = false;
+                }else if(input && input.type === "puzzle"){
+                    if(input.solved === undefined){
+                        input.solved = false;
+                    }
+                    if(input.locked === undefined){
+                        input.locked = false;
+                    }
                 }
+            }
+
+            for(var answerGroup in answer){
+                ensurePuzzleInput(answerGroup);
             }
         }
 
@@ -7492,6 +8193,15 @@ function PLAYER(){
         function refreshBoxView(box){
             if(hasAnyRightStatus(box)){
                 boxColor(box, "#008000");
+            }else if(hasLockedSelection(box) || hasLockedCandidateBox(box)){
+                boxColor(box, "#64748b");
+            }else if(hasUnlockedSelectedGroup(box) || hasPendingCandidateBox(box)){
+                boxColor(
+                    box,
+                    hasDragPressColor()
+                        ? dragPressColor
+                        : "rgba(192, 192, 192, 1)"
+                );
             }else if(box.selectedGroups.length){
                 boxColor(
                     box,
@@ -7557,6 +8267,11 @@ function PLAYER(){
                     return;
                 }
 
+                if(lockedGroups[group]){
+                    keepSelected.push(id);
+                    return;
+                }
+
                 removeSelectedGroup(box, group);
                 setGroupStatus(box, group, null);
                 refreshBoxView(box);
@@ -7581,6 +8296,11 @@ function PLAYER(){
                     return;
                 }
 
+                if(lockedGroups[group]){
+                    keepSelected.push(id);
+                    return;
+                }
+
                 removeSelectedGroup(box, group);
                 setGroupStatus(box, group, null);
                 refreshBoxView(box);
@@ -7600,6 +8320,68 @@ function PLAYER(){
             });
         }
 
+        function isBoxFullyClosed(box){
+            if(!box || !box.explicitGroups || !box.explicitGroups.length){
+                return false;
+            }
+
+            for(var i=0; i<box.explicitGroups.length; i++){
+                var group = box.explicitGroups[i];
+                if(!solvedGroups[group]){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function hasUnlockedSelectedGroup(box){
+            if(!box || !box.selectedGroups){
+                return false;
+            }
+
+            for(var i=0; i<box.selectedGroups.length; i++){
+                var group = box.selectedGroups[i];
+                if(!solvedGroups[group]){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function hasLockedSelection(box){
+            if(!box || !box.selectedGroups){
+                return false;
+            }
+
+            for(var i=0; i<box.selectedGroups.length; i++){
+                if(lockedGroups[box.selectedGroups[i]]){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function hasPendingCandidateBox(box){
+            return box && idListContains(pendingCandidateSelection, box.id);
+        }
+
+        function hasLockedCandidateBox(box){
+            if(!box){
+                return false;
+            }
+
+            for(var i=0; i<lockedCandidateSelections.length; i++){
+                if(idListContains(lockedCandidateSelections[i], box.id)){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         function addBox(box){
             if(!box){
                 return;
@@ -7614,23 +8396,14 @@ function PLAYER(){
                 return;
             }
 
-            targetGroups.map(function(group){
-                if(!groupSelections[group]){
-                    groupSelections[group] = [];
-                }
-
-                if(groupSelections[group].includes(box.id)){
-                    return;
-                }
-
-                groupSelections[group].push(box.id);
-                addSelectedGroup(box, group);
-                updateInput(group);
-            });
+            if(!pendingCandidateSelection.includes(box.id)){
+                pendingCandidateSelection.push(box.id);
+            }
 
             refreshBoxView(box);
             controlBtnViewCheck();
             undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function boxFromPoint(clientX, clientY){
@@ -7683,9 +8456,10 @@ function PLAYER(){
                 box.dragging = false;
                 refreshBoxView(box);
             });
-            console.log("sdInputs:",SD.inputs)
+
             controlBtnViewCheck();
             undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function undoBtnView(status){
@@ -7712,7 +8486,7 @@ function PLAYER(){
         }
 
         function undoBtnViewCheck(){
-            var found = false;
+            var found = pendingCandidateSelection.length || candidateWordList.length;
 
             for(var group in groupSelections){
                 var hasOpenSelection = groupSelections[group].some(function(id){
@@ -7726,6 +8500,129 @@ function PLAYER(){
             }
 
             undoBtnView(found ? "enable" : "disable");
+        }
+
+        function lockBtnView(status){
+            if(!puzzleLockBtn){
+                return;
+            }
+
+            var enabled = status === "enable";
+            var bg = puzzleLockBtn.querySelector(".puzzleLockBg");
+            var txt = puzzleLockBtn.querySelector(".puzzleLockTxt");
+
+            puzzleLockBtn.style.opacity = enabled ? 1 : 0.55;
+            puzzleLockBtn.style.cursor = enabled ? "pointer" : "default";
+            puzzleLockBtn.style.pointerEvents = enabled ? "auto" : "none";
+
+            if(bg){
+                bg.style.backgroundColor = enabled ? "#22c55e" : "#eef2f7";
+                bg.style.outlineColor = enabled ? "#15803d" : "#94a3b8";
+            }
+
+            if(txt){
+                txt.style.color = enabled ? "#ffffff" : "#475569";
+            }
+        }
+
+        function lockBtnViewCheck(){
+            lockBtnView(hasLockableSelectionGroup() ? "enable" : "disable");
+        }
+
+        function hasLockedSelectionGroup(){
+            for(var group in lockedGroups){
+                if(!solvedGroups[group] && lockedGroups[group] && groupSelections[group] && groupSelections[group].length){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function hasLockableSelectionGroup(){
+            if(pendingCandidateSelection.length){
+                return true;
+            }
+
+            for(var group in groupSelections){
+                if(!solvedGroups[group] && !lockedGroups[group] && groupSelections[group] && groupSelections[group].length){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function getLockableSelectionGroups(){
+            var groups = [];
+
+            for(var group in groupSelections){
+                if(shouldLockSelectionGroup(group)){
+                    groups.push(group);
+                }
+            }
+
+            return groups;
+        }
+
+        function isSharedSelectionReflectedFromAnotherGroup(groupID, id){
+            var box = puzzleBoxes[parseInt(id)];
+            groupID = String(groupID);
+
+            if(!box || !box.explicitGroups || box.explicitGroups.length < 2){
+                return false;
+            }
+
+            if(!hasExplicitGroup(box, groupID)){
+                return false;
+            }
+
+            for(var i=0; i<box.explicitGroups.length; i++){
+                var otherGroup = String(box.explicitGroups[i]);
+
+                if(otherGroup === groupID){
+                    continue;
+                }
+
+                if(groupSelections[otherGroup] && groupSelections[otherGroup].includes(box.id)){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function hasOwnSelection(groupID){
+            var selectedIDs = groupSelections[groupID] || [];
+
+            for(var i=0; i<selectedIDs.length; i++){
+                if(!isSharedSelectionReflectedFromAnotherGroup(groupID, selectedIDs[i])){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function shouldLockSelectionGroup(groupID){
+            var selectedIDs = groupSelections[groupID] || [];
+
+            if(!selectedIDs.length || lockedGroups[groupID]){
+                return false;
+            }
+
+            if(!hasOwnSelection(groupID)){
+                return false;
+            }
+
+            if(
+                isAnswerGroup(groupID)
+                && validateGroupSelection(groupID, selectedIDs)
+            ){
+                return true;
+            }
+
+            return true;
         }
 
         ensurePuzzleInputs();
@@ -7783,6 +8680,30 @@ function PLAYER(){
                 });
 
                 undoBtnView("disable");
+            }else if(element.id.includes("puzzleLock")){
+                puzzleLockBtn = element.main;
+                element.main.style.userSelect = "none";
+
+                element.main.addEventListener("click", function(event){
+                    event.preventDefault();
+                    lockSelectionFNC();
+                });
+
+                lockBtnView("disable");
+            }else if(element.id.includes("puzzleCandidates")){
+                var candidateText = element.main.querySelector(".puzzleCandidatesText");
+                if(candidateText){
+                    candidateText.style.whiteSpace = "pre-line";
+                    candidateText.style.overflowX = "hidden";
+                    candidateText.style.overflowY = "auto";
+                }
+
+                puzzleCandidatePanels.push({
+                    main: element.main,
+                    text: candidateText
+                });
+
+                updateCandidateWordsView();
             }
         });
 
@@ -7790,80 +8711,65 @@ function PLAYER(){
         document.addEventListener("pointerup", endDrag);
 
         function controlBtnViewCheck(){
-            var found = false;
-            for(var group in groupSelections){
-                var hasOpenSelection = groupSelections[group].some(function(id){
-                    return puzzleBoxes[id] && puzzleBoxes[id].groupStatus[group] !== "right";
-                });
-
-                if(hasOpenSelection){
-                    found = true;
-                }
-            }
-
-            controlBtnView(SP, found ? "enable" : "disable");
+            controlBtnView(SP, candidateWordList.length || hasLockedSelectionGroup() ? "enable" : "disable");
         }
 
         function checkAnswer(){
             clearDragBorders();
 
-            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"puzzle"};
-            var checkedGroups = {};
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"puzzle", complete:false};
+            var currentWrongCount = 0;
+
+            candidateWordList.map(function(candidateIDs){
+                var selectedIDs = (candidateIDs || []).slice();
+                if(!selectedIDs.length){
+                    return;
+                }
+
+                var rightGroup = getCandidateAnswerGroup(selectedIDs);
+                if(rightGroup !== null){
+                    setCandidateRight(rightGroup, selectedIDs);
+                }else if(isSolvedAnswerCandidate(selectedIDs)){
+                    return;
+                }else{
+                    currentWrongCount++;
+                    setCandidateWrong(selectedIDs);
+                }
+            });
 
             for(var group in answer){
                 if(!isPuzzleGroup(group)){
                     continue;
                 }
 
-                checkedGroups[group] = true;
-
                 if(solvedGroups[group]){
-                    preserveSolvedGroup(group);
-                    updateInput(group, true);
                     score.totalRight++;
-                    continue;
-                }
-
-                var selectedIDs = (groupSelections[group] || []).slice();
-                var rightAnswerIDs = normalizeAnswerIDs(answer[group]);
-
-                if(!selectedIDs.length){
-                    score.totalEmpty++;
-                    updateInput(group, true);
-                }else if(compareIDLists(selectedIDs, rightAnswerIDs)){
-                    score.totalRight++;
-                    solvedGroups[group] = true;
-                    (groupSelections[group] || []).map(function(id){
-                        setGroupStatus(puzzleBoxes[id], group, "right");
-                    });
-                    updateInput(group, true);
                 }else{
-                    score.totalWrong++;
-                    (groupSelections[group] || []).map(function(id){
-                        setGroupStatus(puzzleBoxes[id], group, "wrong");
-                    });
-                    updateInput(group, true);
+                    score.totalEmpty++;
                 }
             }
 
-            for(var selectedGroup in groupSelections){
-                if(!checkedGroups[selectedGroup] && groupSelections[selectedGroup].length){
-                    score.totalWrong++;
-                    groupSelections[selectedGroup].map(function(id){
-                        setGroupStatus(puzzleBoxes[id], selectedGroup, "wrong");
-                    });
-                    updateInput(selectedGroup, true);
-                }
-            }
+            cumulativeWrongTotal = (SD.wrong || 0) + currentWrongCount;
+            score.totalWrong = cumulativeWrongTotal;
 
-            if(!Object.keys(answer).length){
-                score.totalEmpty = 1;
+            score.complete = allPuzzleAnswerGroupsSolved();
+            if(score.complete){
+                score.totalWrong = 0;
+                score.totalEmpty = 0;
             }
 
             return score;
         }
 
         function controlAfterFNC(){
+            if(allPuzzleAnswerGroupsSolved() && cumulativeWrongTotal){
+                SD.wrong = cumulativeWrongTotal;
+
+                if(SD.historyRight.length){
+                    SD.historyRight[SD.historyRight.length - 1].wrong = cumulativeWrongTotal;
+                }
+            }
+
             puzzleBoxes.map(function(box){
                 if(!box){
                     return;
@@ -7881,6 +8787,10 @@ function PLAYER(){
 
         function resetWrong(){
             for(var group in groupSelections){
+                if(solvedGroups[group]){
+                    continue;
+                }
+
                 var keepSelected = [];
                 groupSelections[group].map(function(id){
                     var box = puzzleBoxes[id];
@@ -7898,11 +8808,30 @@ function PLAYER(){
                 });
 
                 groupSelections[group] = keepSelected;
+                delete lockedGroups[group];
                 updateInput(group);
             }
 
+            pendingCandidateSelection = [];
+            lockedCandidateSelections = [];
+            candidateWordList = [];
+            updateCandidateWordsView();
+            puzzleBoxes.map(function(box){
+                if(!box){
+                    return;
+                }
+
+                Object.keys(box.groupStatus).map(function(group){
+                    if(box.groupStatus[group] !== "right"){
+                        setGroupStatus(box, group, null);
+                    }
+                });
+
+                refreshBoxView(box);
+            });
             controlBtnViewCheck();
             undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function undoSelectionFNC(){
@@ -7926,12 +8855,74 @@ function PLAYER(){
                 });
 
                 groupSelections[group] = keepSelected;
+                delete lockedGroups[group];
                 updateInput(group);
             }
 
             isDragging = false;
+            pendingCandidateSelection = [];
+            lockedCandidateSelections = [];
+            candidateWordList = [];
+            updateCandidateWordsView();
+            puzzleBoxes.map(function(box){
+                if(box){
+                    refreshBoxView(box);
+                }
+            });
             controlBtnViewCheck();
             undoBtnViewCheck();
+            lockBtnViewCheck();
+        }
+
+        function lockSelectionFNC(){
+            clearDragBorders();
+            var lockableGroups = getLockableSelectionGroups();
+            var candidateSelection = pendingCandidateSelection.slice();
+
+            if(!candidateSelection.length){
+                lockableGroups.map(function(group){
+                    (groupSelections[group] || []).map(function(id){
+                        if(!candidateSelection.includes(id)){
+                            candidateSelection.push(id);
+                        }
+                    });
+                });
+            }
+
+            saveCandidateWord(candidateSelection);
+            var candidateGroup = getCandidateAnswerGroup(candidateSelection);
+            if(candidateGroup){
+                groupSelections[candidateGroup] = candidateSelection.slice();
+
+                updateInput(candidateGroup);
+            }
+            if(candidateSelection.length){
+                lockedCandidateSelections.push(candidateSelection.slice());
+            }
+
+            lockableGroups.map(function(group){
+                var selectedIDs = groupSelections[group] || [];
+
+                lockedGroups[group] = true;
+                updateInput(group);
+                selectedIDs.map(function(id){
+                    var box = puzzleBoxes[id];
+                    if(box){
+                        refreshBoxView(box);
+                    }
+                });
+            });
+
+            isDragging = false;
+            pendingCandidateSelection = [];
+            puzzleBoxes.map(function(box){
+                if(box){
+                    refreshBoxView(box);
+                }
+            });
+            controlBtnViewCheck();
+            undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function answerActionFNC(){
@@ -7963,11 +8954,13 @@ function PLAYER(){
 
                 groupSelections[group] = selected;
                 solvedGroups[group] = true;
+                lockedGroups[group] = true;
                 updateInput(group, true);
             }
 
             controlBtnView(SP, "disable");
             undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function addBoxToGroupSelection(groupID, box){
@@ -8048,11 +9041,13 @@ function PLAYER(){
         }
 
         function addHistory(){
+            var historyInputs = historyExtract(SP, "puzzle");
+            historyInputs = JSON.parse(JSON.stringify(historyInputs));
+
             clearDragBorders();
             ensurePuzzleInputs();
-            var historyInputs = SD.inputs;
-            if(!hasPuzzleHistoryValue(historyInputs) && SP.history && SP.history[0] && hasPuzzleHistoryValue(SP.history[0])){
-                historyInputs = SP.history[0];
+            if(!hasPuzzleHistoryValue(historyInputs)){
+                historyInputs = SD.inputs;
             }
 
             for(var group in historyInputs){
@@ -8064,9 +9059,11 @@ function PLAYER(){
 
                 var value = input.value;
                 var solved = input.solved === true;
+                var locked = input.locked === true;
                 clearGroupState(groupID);
                 if(value === undefined || value === null || value === ""){
                     delete solvedGroups[groupID];
+                    delete lockedGroups[groupID];
                     updateInput(groupID);
                     continue;
                 }
@@ -8077,6 +9074,7 @@ function PLAYER(){
 
                 if(solved){
                     solvedGroups[groupID] = true;
+                    lockedGroups[groupID] = true;
                     (groupSelections[groupID] || []).map(function(id){
                         var box = puzzleBoxes[id];
                         if(box){
@@ -8086,6 +9084,11 @@ function PLAYER(){
                     });
                 }else{
                     delete solvedGroups[groupID];
+                    if(locked){
+                        lockedGroups[groupID] = true;
+                    }else{
+                        delete lockedGroups[groupID];
+                    }
                 }
 
                 updateInput(groupID, solved);
@@ -8093,11 +9096,19 @@ function PLAYER(){
 
             ensurePuzzleInputs();
             controlBtnViewCheck();
+            undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function resetFNC(){
+            console.log("resetFNC");
             clearDragBorders();
             solvedGroups = {};
+            lockedGroups = {};
+            candidateWordList = [];
+            pendingCandidateSelection = [];
+            lockedCandidateSelections = [];
+            updateCandidateWordsView();
 
             puzzleBoxes.map(function(box){
                 if(box){
@@ -8119,6 +9130,8 @@ function PLAYER(){
             }
 
             controlBtnViewCheck();
+            undoBtnViewCheck();
+            lockBtnViewCheck();
         }
 
         function close(){

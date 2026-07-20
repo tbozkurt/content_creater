@@ -2222,10 +2222,11 @@ IDE.workSpace.createWord.addEventListener("click", function(){
 
 /* Create Puzzle Button */
 IDE.workSpace.createPuzzle.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
     var obj = CREATE.puzzleBox({
         properties:{
-            x: 500,
-            y: 180,
+            x: position.x,
+            y: position.y,
             width: 64,
             height: 64,
             draggable: true
@@ -2234,6 +2235,60 @@ IDE.workSpace.createPuzzle.addEventListener("click", function(){
         layer: {
             name: "puzzleBox",
             elementID: "puzzleBox",
+            type: "objectMovieClip",
+            class: "",
+            params:{
+                group: 0
+            }
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* Create Puzzle Lock Button */
+IDE.workSpace.createPuzzleLock.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.puzzleLock({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 180,
+            height: 50,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "puzzleLock",
+            elementID: "puzzleLock",
+            type: "objectMovieClip",
+            class: "semiopacity",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* Create Puzzle Candidates Button */
+IDE.workSpace.createPuzzleCandidates.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.puzzleCandidates({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 260,
+            height: 180,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "puzzleCandidates",
+            elementID: "puzzleCandidates",
             type: "objectMovieClip",
             class: "",
             params:{}
@@ -2245,30 +2300,6 @@ IDE.workSpace.createPuzzle.addEventListener("click", function(){
     selectItem({shiftKey: false, layer: obj});
 });
 
-/* Create Puzzle Undo Button */
-IDE.workSpace.createPuzzleUndo.addEventListener("click", function(){
-    var obj = CREATE.puzzleUndo({
-        properties:{
-            x: 450,
-            y: 646,
-            width: 180,
-            height: 50,
-            draggable: true
-        },
-        container: IDE.activeLayer,
-        layer: {
-            name: "puzzleUndo",
-            elementID: "puzzleUndo",
-            type: "objectMovieClip",
-            class: "semiopacity",
-            params:{}
-        }
-    });
-
-    CREATE.checkKontrol();
-    addHistory();
-    selectItem({shiftKey: false, layer: obj});
-});
 
 
 /* create freeDraw Canvas */
@@ -2348,7 +2379,7 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
     jsonV2.slides[sceneIndex].rubrik.boxes={};
 
     for(var i=0; i<=totalBox; i++){
-        jsonV2.slides[sceneIndex].rubrik.boxes["box"+i] = null;
+        jsonV2.slides[sceneIndex].rubrik.boxes["box"+i] = "null";
     }
 
     console.log( jsonV2.slides[sceneIndex].rubrik.boxes );
@@ -2368,7 +2399,11 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
         localStorage.setItem("occSceneRubrikData", JSON.stringify(rubrikData));
     }
 
-    window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220");
+    if(IDE.popupWindow){
+        IDE.popupWindow.close();
+    }
+
+    IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220");
 });
 
 

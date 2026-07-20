@@ -151,7 +151,8 @@
 
             <div id="iconGroup12" class="iconGroup">
                 <div class="TopIconBox" id="createPuzzle"><img src="assets/img/create_word.png"></div>
-                <div class="TopIconBox" id="createPuzzleUndo"><img src="assets/img/create_refresh.png"></div>
+                <div class="TopIconBox" id="createPuzzleLock"><img src="assets/img/create_add.png"></div>
+                <div class="TopIconBox" id="createPuzzleCandidates"><img src="assets/img/create_list.png"></div>
             </div>
 
         </div>
@@ -625,7 +626,8 @@
             createFreeDrawNav: document.querySelector("#createFreeDrawNav"),
             createFreeDrawCanvas: document.querySelector("#createFreeDrawCanvas"),
             createPuzzle: document.querySelector("#createPuzzle"),
-            createPuzzleUndo: document.querySelector("#createPuzzleUndo"),
+            createPuzzleLock: document.querySelector("#createPuzzleLock"),
+            createPuzzleCandidates: document.querySelector("#createPuzzleCandidates"),
 
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
@@ -2400,14 +2402,14 @@
 
     function occDuplicate_Parse(data){
         if(data.success){
-            console.log(data);
-            console.log(data.response.list);
-            console.log("fileName:", data.response.list.fileName );
-
             var json = data.response.list;
             json.fileName = data.clone.duplicate_newName;
             json.uid = data.clone.uid;
             json.createTime = utils.addTimeStamp("server");
+
+            data.response.list.slides.map(function(slide){
+                slide.unique = utils.getRandomName();
+            })
 
             saveDataAjax(json);
             occSaveFile(json);

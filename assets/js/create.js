@@ -190,8 +190,10 @@ function CREATE(){
         {obj: "feedback", answer:false},
         {obj: "freeDrawCanvas", answer:true},
         {obj: "wordBox", answer:true},
-        {obj: "puzzleBox", answer:true},
-        {obj: "puzzleUndo", answer:false}
+        {obj: "puzzleBox", answer:false},
+        {obj: "puzzleUndo", answer:false},
+        {obj: "puzzleLock", answer:false},
+        {obj: "puzzleCandidates", answer:false}
     ];
 
     this.checkKontrol = function(){
@@ -220,8 +222,6 @@ function CREATE(){
                     }
                 }
             }
-
-
 
             if(e.answer){
                 globalCount = currentCount;
@@ -1338,34 +1338,40 @@ function CREATE(){
         return container;
     }
 
-    this.puzzleUndo = function(O){
+    this.puzzleLock = function(O){
         var container = this.movieClipFNC(O);
         var kids = [{
             x: 3,
             y: 3,
-            width: 176,
+            width: 100,
             height: 46,
-            fill: "#1e40af",
-            stroke: "#1e3a8a",
+            fill: "rgba(0,0,0,0.12)",
             borderPosition: "center",
             cornerRadius: 8,
-            Layer:{type:"objectRect", name: "puzzleUndoBg", class: "puzzleUndoBg"}
+            Layer:{type:"objectRect", name: "boxbg"}
         },{
             x: 0,
             y: 0,
-            width: 176,
+            width: 100,
             height: 46,
-            fill: "#3b82f6",
-            stroke: "#60a5fa",
-            strokeWidth: 2,
+            fill: "#455A64",
             borderPosition: "center",
             cornerRadius: 8,
-            Layer:{type:"objectRect", name: "puzzleUndoBg", class: "puzzleUndoBg"}
-        }, {
-            text: "GERİ AL",
+            Layer:{type:"objectRect", name: "boxbg"}
+        },{
             x: 0,
             y: 0,
-            width: 176,
+            width: 100,
+            height: 40,
+            fill: "#546E7A",
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "boxbg"}
+        },{
+            text: "+ Ekle",
+            x: 0,
+            y: 0,
+            width: 100,
             height: 46,
             fontSize: 25,
             fontFamily: "Nunito",
@@ -1373,7 +1379,55 @@ function CREATE(){
             fill: "#ffffff",
             lineHeight: 1.9,
             padding: 0,
-            Layer:{type:"objectText", name: "puzzleUndoTxt", class: "puzzleUndoTxt"}
+            Layer:{type:"objectText", name: "puzzleLockTxt", class: "puzzleLockTxt"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.puzzleCandidates = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 260,
+            height: 180,
+            fill: "#f8fafc",
+            stroke: "#546E7A",
+            strokeWidth: 2,
+            borderPosition: "center",
+            cornerRadius: 8,
+            Layer:{type:"objectRect", name: "puzzleCandidatesBg", class: "puzzleCandidatesBg"}
+        }, {
+            text: "Seçilenler",
+            x: 14,
+            y: 10,
+            width: 232,
+            height: 28,
+            fontSize: 25,
+            fontFamily: "Nunito",
+            fontStyle: "bold",
+            align: "left",
+            fill: "#363636",
+            lineHeight: 1.4,
+            padding: 0,
+            Layer:{type:"objectText", name: "puzzleCandidatesTitle", class: "puzzleCandidatesTitle"}
+        }, {
+            text: "",
+            x: 14,
+            y: 48,
+            width: 232,
+            height: 118,
+            fontSize: 20,
+            fontFamily: "Nunito",
+            align: "left",
+            fill: "#334155",
+            lineHeight: 1.35,
+            padding: 0,
+            Layer:{type:"objectText", name: "puzzleCandidatesText", class: "puzzleCandidatesText"}
         }];
 
         addObjects(kids, container, false);

@@ -35,8 +35,8 @@ const EvaluatorEngine = {
 
     // Tekil koşul kontrol mekanizması
     evaluateCondition: function(userValue, operator, targetValue) {
-        const isUserNull = userValue === null || userValue === undefined || String(userValue).trim() === "" || String(userValue).trim().toLowerCase() === "null";
-        const isTargetNull = targetValue === null || targetValue === undefined || String(targetValue).trim() === "" || String(targetValue).trim().toLowerCase() === "null";
+        const isUserNull = userValue === null || userValue === undefined || String(userValue).trim() === "" /*|| String(userValue).trim().toLowerCase() === "null"*/;
+        const isTargetNull = targetValue === null || targetValue === undefined || String(targetValue).trim() === "" /*|| String(targetValue).trim().toLowerCase() === "null"*/;
 
         if (operator === 'review') {
             return !isUserNull ? "true" : "false";
@@ -45,6 +45,7 @@ const EvaluatorEngine = {
         if (isUserNull && isTargetNull) return "null";
         if (isUserNull) return "null";
 
+        console.log(String(userValue), String(targetValue));
         switch (operator) {
             case '===': return (String(userValue) === String(targetValue)) ? "true" : "false";
             case '==': return (String(userValue) == String(targetValue)) ? "true" : "false";
