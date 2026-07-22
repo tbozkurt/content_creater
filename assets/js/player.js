@@ -3684,8 +3684,14 @@ function PLAYER(){
                         if(endPos.x >= BOX[i].x && endPos.x <= BOX[i].widthEnd && endPos.y >= BOX[i].canvas.y() && endPos.y <= BOX[i].heightEnd){
                             if(BOX[currentID].type !== BOX[i].type && BOX[i].status){
                                 var temp = [];
-                                temp[currentID.length-1] = currentID;
-                                temp[i.length-1] = i;
+                                if(currentID.includes("d")){
+                                    temp[0] = i;
+                                    temp[1] = currentID;
+                                }else{
+                                    temp[0] = currentID;
+                                    temp[1] = i;
+                                }
+
                                 found = pairControl(temp);
                                 break;
                             }

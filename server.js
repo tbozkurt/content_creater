@@ -583,7 +583,7 @@ app.post("/occLogin", function(req, res){
             headers: {Authorization: "Bearer "+jwt}
         }
 
-        axios.get(`https://${service}.okulistik.com/api/occ`, config).then(response => {
+        axios.get(`https://${service}.okulistik.com/api/occ?limit=4000`, config).then(response => {
             res.send({success: true, response: response.data, user: resp.data});
         }).catch(function (error) {
             res.send({success: false, err:error});
@@ -683,7 +683,7 @@ app.post("/occRefreshList", function(req, res){
         headers: {Authorization: "Bearer "+jwt}
     }
 
-    axios.get(`https://${service}.okulistik.com/api/occ`, config).then(response => {
+    axios.get(`https://${service}.okulistik.com/api/occ?limit=4000`, config).then(response => {
         res.send({success: true, response: response.data});
     }).catch(function (error) {
         console.log(error);

@@ -2375,14 +2375,18 @@ document.querySelector("#duplicate_action").addEventListener("click", function()
 
 document.querySelector(".goRubrik").addEventListener("click", function(){
     var totalBox = CREATE.checkKontrol();
-    console.log(totalBox);
-    jsonV2.slides[sceneIndex].rubrik.boxes={};
+    if(!jsonV2.slides[sceneIndex].rubrik){
+        jsonV2.slides[sceneIndex].rubrik = {boxes:{}, groups:[]};
+    }
 
+    if(!jsonV2.slides[sceneIndex].rubrik.groups){
+        jsonV2.slides[sceneIndex].rubrik.groups = [];
+    }
+
+    jsonV2.slides[sceneIndex].rubrik.boxes={};
     for(var i=0; i<=totalBox; i++){
         jsonV2.slides[sceneIndex].rubrik.boxes["box"+i] = "null";
     }
-
-    console.log( jsonV2.slides[sceneIndex].rubrik.boxes );
 
     var rubrikData = {
         user: IDE.user,
@@ -2392,8 +2396,6 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
             name: jsonV2.slides[sceneIndex].name
         }
     }
-
-    console.log(rubrikData);
 
     if (typeof(Storage) !== "undefined"){
         localStorage.setItem("occSceneRubrikData", JSON.stringify(rubrikData));
