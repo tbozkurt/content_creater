@@ -1618,6 +1618,11 @@ function PLAYER(){
                     soundPlayer.progressBarFront.style.left = 0;
                     soundPlayer.progressBarFront.style.top = 0;
                     soundPlayer.progressBarFront.style.backgroundColor = soundPlayer.progressBarMain.style.backgroundColor;
+
+                    soundPlayer.progressBarMain.style.cursor = "pointer";
+                    soundPlayer.progressBarMain.addEventListener("click", function(e){
+                        SoundPlayerAction(soundPlayer, "seek", getSoundPlayerSeekPercent(e, soundPlayer.progressBarMain));
+                    });
                 }
 
                 This.SoundPlayerHowler(soundPlayer);
@@ -1948,7 +1953,31 @@ function PLAYER(){
         }
     }
 
-    function SoundPlayerAction(soundPlayer, status){
+    function getSoundPlayerSeekPercent(e, progressBar){
+        var clientX;
+
+        if(e.touches && e.touches.length){
+            clientX = e.touches[0].clientX;
+        }else if(e.changedTouches && e.changedTouches.length){
+            clientX = e.changedTouches[0].clientX;
+        }else{
+            clientX = e.clientX;
+        }
+
+        var rect = progressBar.getBoundingClientRect();
+        var localX = clientX - rect.left;
+        var percent = localX / rect.width;
+
+        if(percent < 0){
+            percent = 0;
+        }else if(percent > 1){
+            percent = 1;
+        }
+
+        return percent;
+    }
+
+    function SoundPlayerAction(soundPlayer, status, seekPercent){
         if(soundPlayer.load){
             if(status==="play" && !soundPlayer.howl.playing()){
                 This.stopAllMedia();
@@ -1956,17 +1985,17 @@ function PLAYER(){
             }else if(status==="pause"){
                 soundPlayer.howl.pause();
             }else if(status==="seek"){
-                /*
-                if(SoundPlayer[pageNumber][Option.id].Sound.playing()){
-                    CNX.SoundPlayerPlayOption({Option:{Mode:"play", ID:Option.id}});
-                }else{
-                    CNX.SoundPlayerPlayOption({Option:{Mode:"pause", ID:Option.id}});
+                var duration = soundPlayer.howl.duration();
+                if(duration){
+                    var seekTime = Number((duration * seekPercent).toFixed(2));
+                    soundPlayer.howl.seek(seekTime);
+                    progressSP(soundPlayer, false);
+
+                    if(soundPlayer.howl.playing()){
+                        addSPsetInterval(soundPlayer);
+                    }
                 }
-                var calc = (SoundPlayer[pageNumber][Option.id].Sound.duration() * Option.seek);
-                calc = Number(calc.toFixed(2));
-                SoundPlayer[pageNumber][Option.id].Sound.seek(calc);
-                progressSP();
-                */
+
             }
         }
     }
@@ -6628,7 +6657,9 @@ function PLAYER(){
                     soundPlaying: false,
                     base64: "",
                     progressAnimation: true,
-                    recording:false
+                    recording: false,
+                    pausedSeconds: 0,
+                    isPaused: false
                 };
 
                 SR = SP.soundRecord[id];
@@ -6669,6 +6700,18 @@ function PLAYER(){
                 }
             },
 
+            pause: function() {
+                if (audioRecorder.mediaRecorder && audioRecorder.mediaRecorder.state === "recording") {
+                    audioRecorder.mediaRecorder.pause();
+                }
+            },
+
+            resume: function() {
+                if (audioRecorder.mediaRecorder && audioRecorder.mediaRecorder.state === "paused") {
+                    audioRecorder.mediaRecorder.resume();
+                }
+            },
+
             stop: function () {
                 return new Promise(function(resolve) {
                     let mimeType = audioRecorder.mediaRecorder.mimeType;
@@ -6701,7 +6744,6 @@ function PLAYER(){
                 audioRecorder.streamBeingCaptured = null;
             }
         }
-
 
 
         SR.startAudioRecordingFNC = function(){
@@ -6753,6 +6795,35 @@ function PLAYER(){
                 });
         }
 
+        SR.pauseAudioRecordingFNC = function() {
+            if (SR.recording && !SR.isPaused) {
+                audioRecorder.pause();
+                SR.isPaused = true;
+
+                clearInterval(SR.recordInterval);
+                var timeData = SR.recordTimeCalcFNC(SR.recordStartTime);
+                SR.pausedSeconds = timeData.totalSeconds;
+
+                SR.recordRedCircle.classList.add('recordCircleAnimateStop');
+
+                extraRecordIconStatus("hidden", "visible");
+            }
+        }
+
+        SR.resumeAudioRecordingFNC = function() {
+            if (SR.recording && SR.isPaused) {
+                audioRecorder.resume();
+                SR.isPaused = false;
+
+                SR.recordStartTime = new Date();
+                SR.recordInterval = setInterval(SR.recordElapsedTimeFNC, 1000);
+
+                SR.recordRedCircle.classList.remove('recordCircleAnimateStop');
+
+                extraRecordIconStatus("visible", "hidden");
+            }
+        }
+
         SR.stopAudioRecordingFNC = function() {
             console.log("Stopping Audio Recording...");
             if(SR.recording){
@@ -6771,7 +6842,6 @@ function PLAYER(){
                                 console.log("Hata adıyla bir hata oluştu " + error.name);
                         }
                     });
-               /* SR.RecordRedCircle.css("animation-iteration-count", "1");*/
             }
         }
 
@@ -6811,24 +6881,24 @@ function PLAYER(){
 
         SR.recordTimeCalcFNC = function(startTime) {
             var endTime = new Date();
-            var timeDiff = endTime - startTime;
-            timeDiff = timeDiff / 1000;
-            return SR.timeConvertSecondAndMinutes(timeDiff);
+            var timeDiff = ((endTime - startTime) / 1000) + SR.pausedSeconds;
+            return {
+                formatted: SR.timeConvertSecondAndMinutes(timeDiff),
+                totalSeconds: timeDiff
+            };
         }
 
 
         SR.recordElapsedTimeFNC = function(){
-            SR.elapsedTime = SR.recordTimeCalcFNC(SR.recordStartTime);
+            if (SR.isPaused) return;
+
+            var timeData = SR.recordTimeCalcFNC(SR.recordStartTime);
+            SR.elapsedTime = timeData.formatted;
             SR.recordTime.innerText = SR.elapsedTime;
 
-            if(SR.maxRecordTimeControlFNC(SR.elapsedTime)){
+            if (timeData.totalSeconds >= set.recordTime) {
                 SR.stopAudioRecordingFNC();
             }
-        }
-
-        SR.maxRecordTimeControlFNC = function(elapsedTime){
-            var second = Number(elapsedTime.split(":")[1]);
-            return second >= set.recordTime;
         }
 
         SR.startRecordBtn = Scene.querySelector(".record_off");
@@ -6849,6 +6919,8 @@ function PLAYER(){
         SR.recordPlayMain.style.overflow = "hidden";
 
         SR.recordStop = Scene.querySelector(".recordStop");
+        SR.recordPause = Scene.querySelector(".recordPause");
+        SR.recordContinue = Scene.querySelector(".recordContinue");
         SR.recordStopText = utils.addDOM({className: "Record_Text", innerText: lang.stopRecordText});
         SR.recordStop.appendChild(SR.recordStopText);
 
@@ -6883,6 +6955,24 @@ function PLAYER(){
             });
         }
 
+        if(SR.recordPause){
+            SR.recordPause.addEventListener("click", function(){
+                SR.pauseAudioRecordingFNC();
+            });
+
+            SR.recordPause.style.visibility = "hidden";
+            SR.recordPause.style.cursor = "pointer";
+        }
+
+        if(SR.recordContinue){
+            SR.recordContinue.addEventListener("click", function(){
+                SR.resumeAudioRecordingFNC();
+            });
+
+            SR.recordContinue.style.visibility = "hidden";
+            SR.recordContinue.style.cursor = "pointer";
+        }
+
         function extraSoundIconStatus(play, stop){
             if(SR.soundPlayBtn){
                 SR.soundPlayBtn.style.visibility = play;
@@ -6893,28 +6983,44 @@ function PLAYER(){
             }
         }
 
+        function extraRecordIconStatus(recordPause, recordContinue){
+            if(SR.recordPause){
+                SR.recordPause.style.visibility = recordPause;
+            }
+
+            if(SR.recordContinue){
+                SR.recordContinue.style.visibility = recordContinue;
+            }
+        }
+
         /* CSS */
         SR.startRecordBtn.style.cursor = "pointer";
         SR.stopRecordBtn.style.cursor = "pointer";
         SR.recordPlayMain.style.cursor = "pointer";
         SR.recordStop.style.cursor = "pointer";
         SR.recordRestart.style.cursor = "pointer";
-        SR.recordPrepare.style.textAlign = "center";
-        SR.recordPrepare.innerText = lang.prepare;
-        SR.recordPrepare.style.fontSize = "16px";
-        SR.warning.style.fontSize = "16px";
+
+        if(SR.recordPrepare){
+            SR.recordPrepare.style.textAlign = "center";
+            SR.recordPrepare.innerText = lang.prepare;
+            SR.recordPrepare.style.fontSize = "16px";
+            SR.recordPrepare.style.display = "none";
+        }
+
+        if(SR.warning){
+            SR.warning.style.fontSize = "16px";
+            Object.assign(SR.warning.style, {
+                fontFamily: "Nunito",
+                textAlign: "center",
+                display: "none",
+                fontSize:"16px",
+                color:"#363636"
+            });
+        }
+
         SR.recordRedCircle.classList.add('recordCircleAnimate');
         SR.recordRedCircle.classList.add('recordCircleAnimateStop');
 
-        Object.assign(SR.warning.style, {
-            fontFamily: "Nunito",
-            textAlign: "center",
-            display: "none",
-            fontSize:"16px",
-            color:"#363636"
-        });
-
-        SR.recordPrepare.style.display = "none";
         SR.stopRecordBtn.style.display = "none";
         SR.recordStatusMain.style.display = "none";
         SR.recordPlayMain.style.display = "none";
@@ -6950,6 +7056,9 @@ function PLAYER(){
         });
 
         SR.startViewFNC = function(){
+            SR.pausedSeconds = 0;
+            SR.isPaused = false;
+
             SR.recordElapsedTimeFNC();
             SR.recordInterval = setInterval(SR.recordElapsedTimeFNC, 1000);
 
@@ -6962,15 +7071,20 @@ function PLAYER(){
             SR.recordPrepare.style.display = "none";
             SR.recordRedCircle.classList.remove('recordCircleAnimateStop');
             extraSoundIconStatus("hidden", "hidden");
+            extraRecordIconStatus("visible", "hidden");
         }
 
         SR.stopViewFNC = function(){
+            SR.pausedSeconds = 0;
+            SR.isPaused = false;
+
             SR.startRecordBtn.style.display = "block";
             SR.stopRecordBtn.style.display = "none";
             SR.recordStatusMain.style.display = "none";
             SR.recordPlayMain.style.display = "flex";
             SR.recordStop.style.display = "none";
             SR.recordRestart.style.display = "flex";
+            extraRecordIconStatus("hidden", "hidden");
 
             SR.playProgress.style.width = 0;
             clearInterval(SR.recordInterval);
