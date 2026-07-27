@@ -2375,6 +2375,7 @@ document.querySelector("#duplicate_action").addEventListener("click", function()
 
 document.querySelector(".goRubrik").addEventListener("click", function(){
     var totalBox = CREATE.checkKontrol();
+    syncRubrikMetaData();
     if(!jsonV2.slides[sceneIndex].rubrik){
         jsonV2.slides[sceneIndex].rubrik = {boxes:{}, groups:[]};
     }
@@ -2419,7 +2420,16 @@ window.addEventListener("focus", function(){
                 if(IDE.user.selectedFile === rubrik.user.selectedFile){
                     console.log("rubriks", rubrik);
                     console.log( occSceneRubrikSave );
-                    jsonV2.slides[sceneIndex].rubrik = rubrik.payload;
+                    if(rubrik.payload && rubrik.payload.rubrik){
+                        jsonV2.slides[sceneIndex].rubrik = rubrik.payload.rubrik;
+                        if(rubrik.payload.rubrikAI){
+                            jsonV2.slides[sceneIndex].rubrik.rubrikAI = rubrik.payload.rubrikAI;
+                        }
+                    }else{
+                        console.log("B Save");
+                        jsonV2.slides[sceneIndex].rubrik = rubrik.payload;
+                    }
+                    syncRubrikMetaData();
                     rubrikParse();
                     localStorage.removeItem("occSceneRubrikSave");
                 }

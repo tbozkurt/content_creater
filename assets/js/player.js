@@ -243,7 +243,15 @@ function PLAYER(){
                 historyRight:[],
                 success: 0,
                 answerShow: false,
-                rubrik:{boxes:{}, groups:[]}
+                rubrik:{
+                    boxes:{},
+                    groups:[],
+                    rubrikAI: {
+                        instructions: {type: "string", instructions: ""},
+                        question: {type: "string", question: ""},
+                        alias: {}
+                    }
+                }
             }
 
             SP[index] = {
@@ -879,6 +887,7 @@ function PLAYER(){
         console.log(SD);
     }
 
+    /*
     this.rubrikEvalutorControlHQ = function(SP, SD){
         console.log("--- rubrikEvalutorControlHQ ---");
         var finalBox={};
@@ -919,6 +928,186 @@ function PLAYER(){
         console.log(xx);
         console.log(SD);
     }
+    */
+
+    this.rubrikEvalutorControlHQ = function(SP, SD){
+        console.log("--- rubrikEvalutorControlHQ ---");
+        var finalBox={};
+        function getRubrikTeacherAnswer(boxes){
+            var keys = Object.keys(boxes);
+            var alias = SD.rubrikAI && SD.rubrikAI.alias ? SD.rubrikAI.alias : {};
+            if(keys.length === 1){
+                return (alias[keys[0]] || keys[0]) + "=" + String(boxes[keys[0]]);
+            }
+
+            return keys.map(function(key){
+                return (alias[key] || key) + "=" + String(boxes[key]);
+            }).join("\n");
+        }
+
+        console.log(SD);
+        function createRubrikTeacherJson(){
+            var rubriks = [];
+            console.log("SD.rubrikAI", SD);
+            console.log("SD.rubrikAI", SD.rubrikAI);
+            var rubrikAI = SD.rubrik.rubrikAI || {
+                instructions: {type: "string", instructions: ""},
+                question: {type: "string", question: ""},
+                alias: {}
+            };
+
+            if(SD.rubrik && SD.rubrik.groups){
+                SD.rubrik.groups.map(function(group){
+                    if(group.boxes && group.boxes.length){
+                        group.boxes.map(function(box){
+                            if(box.operator === "review"){
+                                rubriks.push({
+                                    value: group.name,
+                                    "btd-teacher-condition": box.value,
+                                    weight: group.score
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            console.log( rubrikAI );
+            console.log( getRubrikTeacherAnswer(finalBox) );
+
+            return {
+                id: typeof SD.id === "number" ? SD.id + 1 : 1,
+                type: "BTD-TEACHER",
+                instructions: rubrikAI.instructions,
+                question: rubrikAI.question,
+                rubriks: rubriks,
+                answer: {
+                    type: "string",
+                    answer: getRubrikTeacherAnswer(finalBox)
+                }
+            };
+        }
+
+        console.log("finalBox:", finalBox);
+
+        for(var boxName in SD.inputs){
+            if(SD.inputs[boxName].base64){
+                SP.fnc.map(function(fnc){
+                    fnc.control();
+                });
+            }
+
+            finalBox[boxName] = String(SD.inputs[boxName].value);
+        }
+
+        var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
+        showFeedBack(result.result, "auto", SD.historyRight.length);
+        console.log("finalBox:", finalBox);
+        var formatData = createRubrikTeacherJson();
+        console.log("BTD-TEACHER JSON:", formatData);
+        console.log("resultEvalutor:", result.result);
+        console.log(formatData);
+
+        /*
+        if(result.result === "T1"){
+            This.sceneComplete();
+            This.nextScene();
+            SP.fnc.map(function(fnc){
+                fnc.close(true);
+            });
+
+            controlBtnView(SP, "disable");
+            answerBtnView(SP, "disable");
+            checkViewFNC(SD);
+        }
+
+        var currentHistory = JSON.parse(JSON.stringify(SD.inputs));
+        var xx = ({
+            rubrik: result,
+            duration: SD.duration,
+            inputs: currentHistory
+        });
+
+        console.log(xx);
+        console.log(SD);
+        */
+
+        sendDataAI(formatData);
+    }
+
+    function sendDataAI(formatData){
+/*        var format = {
+            "id": 1,
+            "type": "BTD-TEACHER",
+
+            "instructions": {
+                "type": "string",
+                "instructions": "Amerikalı matematikçi ve meteorolog Edward N. Lorenz (Edvırd N. Lorens), 1961 yılında hava tahmini üzerine çalışmalar yürütüyordu. Atmosferin bağlı olduğu fizik kurallarını bilgisayara aktarıyor, sıcaklık ve rüzgâr gibi değişkenlerin denklemlerini yazıyordu. Bu denklemlere sayısal değerler vererek hesaplamalar yapıyor, elde ettiği sonuçları grafikler üzerinden yorumluyordu.\nBu çalışmalar sırasında Lorenz, önceden elde ettiği bir grafiği yeniden incelemek istedi. Simülasyonu baştan çalıştırmak yerine yazıcının kâğıda bastığı ara sonuçları başlangıç noktası yaptı. Ancak bilgisayar sayıları hafızasında altı haneyle tutuyor, yazıcı ise kâğıda basarken üç haneye yuvarlıyordu. Bu yüzden Lorenz, farkında olmadan 0,506127 yerine 0,506 değerini girdi. İkisi arasındaki fark binde birden küçüktü. Ancak bilgisayar her hesaplamayı bir öncekinin üzerine kurduğundan bu küçük fark, her adımda biraz daha büyüdü. Bir süre sonra ekranda oluşan grafik ilk grafikten tamamen farklıydı: İlk grafik sakin bir havayı gösterirken ikinci grafik fırtınalı bir havaya işaret ediyordu.\nLorenz bu durumu, \"Amazon Ormanları'nda bir kelebeğin kanat çırpması, dünyanın öbür ucunda fırtınaya yol açabilir mi?\" sorusuyla özetledi. Böylece \"kelebek etkisi\" kavramı doğdu.\nLorenz'in fark ettiği durum, insanın gelişimi için de düşündürücüdür. Çünkü küçük alışkanlıklar, dikkatle alınan kararlar ve sabırla sürdürülen çabalar zamanla büyük sonuçlar doğurabilir. Geleceği planlarken ayrıntıları önemsemek de bu yüzden değerlidir. Lorenz, keşfini özetlemek için pek çok varlık arasından kelebeği seçmiş ve şu soruyu sormuştur:\nAmazon Ormanları'nda bir kelebeğin kanat çırpması, dünyanın öbür ucunda fırtınaya yol açabilir mi?"
+            },
+            "question": {
+                "type": "string",
+                "question": "Lorenz bu soruyu neden başka bir varlık değil de kelebek üzerinden kurmuş olabilir?"
+            },
+            "rubriks": [
+                {
+                    "value": "T1",
+                    "btd-teacher-condition": "Kelebek çok küçük ve güçsüz bir canlıdır. Bu seçim, önemsiz görünen küçük bir eylemin bile büyük sonuçlara yol açabileceği düşüncesini güçlü biçimde aktarmaktadır.",
+                    "weight": 1
+                },
+                {
+                    "value": "K1",
+                    "btd-teacher-condition": "Kelebek küçük bir hayvandır. Küçük şeylerin de büyük etkiler yaratabileceğini göstermek için seçilmiştir.",
+                    "weight": 0.5
+                },
+                {
+                    "value": "K2",
+                    "btd-teacher-condition": "Çünkü kelebeğin kanat çırpması çok küçük bir harekettir.",
+                    "weight": 0.3
+                },
+                {
+                    "value": "K3",
+                    "btd-teacher-condition": "Çünkü Amazon Ormanları'nda kelebek yaşar.",
+                    "weight": 0.2
+                },
+                {
+                    "value": "Y1",
+                    "btd-teacher-condition": "Lorenz kelebekleri sevdiği için. / Kelebek güzel bir hayvandır. / Kelebek uçabilir.",
+                    "weight": 0
+                },
+                {
+                    "value": "-",
+                    "btd-teacher-condition": "Soruyu boş bırakır.",
+                    "weight": 0
+                }
+            ],
+            "answer": {
+                "type": "string",
+                "answer": "Çünkü Amazon Ormanları'nda kelebekler yaşayabilir."
+            }
+        }*/
+
+
+        $.ajax({
+            url: "https://oktest.okulistik.com/api/evaluation/ai-evaluate",
+            headers: {
+                "Authorization": 'eyJ0eXAiOiJKV1QiLCJqdGkiOiJmOTkwNzc4MWJiYTVlYjFiMmVhYjliYzMxOTRkOTNkMyIsImFsZyI6IlJTMjU2In0.eyJleHAiOjE3ODQ5NzIwMzEsIm5iZiI6MTc4NDg4NTYzMSwiaWF0IjoxNzg0ODg1NjMxLCJzdWIiOiIxMjI4OTMxNSIsIm1haWwiOiIiLCJuYW1lIjoiTXVoYW1tZWQiLCJsYXN0bmFtZSI6IkfDvGx0ZWtpbiIsInVUeXBlIjoiVEVBQ0hFUiIsImF1ZCI6ImFuYXNheWZhX2NvZGUiLCJqdGkiOiJmOTkwNzc4MWJiYTVlYjFiMmVhYjliYzMxOTRkOTNkMyIsInNjb3BlcyI6WyJhdXRoLmJhc2ljIiwibWFya2V0LmJhc2ljIiwiYXV0aC50ZWFjaGVyIiwiYXV0aC50ZWFjaGVyQWN0aXZlIl0sInRhcmdldCI6Ii90ZWF4LyIsImZ1bGxOYW1lIjoiTXVoYW1tZWQgR8O8bHRla2luIiwiZGF0YSI6eyJwb3NpdGlvbiI6Ik3DvGTDvHIgWWFyZMSxbWPEsXPEsSIsInN1YmplY3QiOiJZb2sifX0.fe1tF4nskIOjCmDmbS_tlPIu9RCNuS0niZzs-LmPRbZUhW3BLGmUxVgLSv0TLRDWiwSAaZlotaweriHpzcY-2BIbtjrm6sPTRMq_KFyq5VGN7mA3MvRDYgXimRhBxOwtp4SHP8iNoyxz3ALAgIqeQld2G2oWgwOzIpqwNj30fBZpQKp6ug8U6576dCUixgkpyL0nn5r7h6qS9QFPyiXOMtYHnvuuWq66bQgAytqeS-syB1XA8pKKTLCXzbCow8Wf4eH-c_a6QPUTf_3o-xGH7Gq6bb_BK5U5F5rxiuD_sOkV5setGfHGFMuPkL8tp2IB6GPEiVKpWExmQwx6tneS1g',
+                "Accept-Language": 'tr-TR'
+            },
+            dataType: "json",
+            type: "POST",
+            contentType: 'application/json; charset=utf-8', // Raw verinin türü (JSON)
+            processData: false,
+            data: JSON.stringify(formatData),
+            success: function(response){
+                console.log('Başarılı Yanıt:', response);
+            },
+            error: function(xhr, status, error) {
+                console.error('Hata Oluştu:', status, error);
+                console.log('Hata Detayı:', xhr.responseText);
+            }
+        });
+    }
+
 
     function specialStartFNC(SP, SD){
         if(PLX.isEKT) {

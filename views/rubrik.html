@@ -164,6 +164,37 @@
         button{
             font-family: Nunito;
         }
+
+        .rubrik-ai-panel {
+            display: none;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .rubrik-ai-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .rubrik-ai-field textarea {
+            min-height: 86px;
+            resize: vertical;
+            padding: 6px 8px;
+            background-color: #252525;
+            border: 1px solid #323232;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #bababa;
+            font-family: Nunito;
+            box-sizing: border-box;
+        }
+
+        .box-alias-input {
+            width: 120px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -171,6 +202,16 @@
 <div class="app-layout">
     <div class="main-panel panel-card">
         <h3 id="infoDiv">File: ?</h3>
+        <div class="rubrik-ai-panel">
+            <div class="rubrik-ai-field">
+                <label class="field-label" for="rubrikAIInstructions">Instructions</label>
+                <textarea id="rubrikAIInstructions" placeholder="Instructions..."></textarea>
+            </div>
+            <div class="rubrik-ai-field">
+                <label class="field-label" for="rubrikAIQuestion">Question</label>
+                <textarea id="rubrikAIQuestion" placeholder="Question..."></textarea>
+            </div>
+        </div>
         <div id="boxesContainer"></div>
 
         <div class="group-section">
@@ -250,7 +291,18 @@
     // KALDIĞIN YERDEN DEVAM ETMEK İÇİN BU DEĞİŞKENE DATA BAĞLAYABİLİRSİNİZ
     let initialAppState = {
         boxes: {},
-        groups: []
+        groups: [],
+        rubrikAI: {
+            instructions: {type: "string", instructions: ""},
+            question: {type: "string", question: ""},
+            alias: {}
+        }
+    };
+
+    let initialRubrikAIState = {
+        instructions: {type: "string", instructions: ""},
+        question: {type: "string", question: ""},
+        alias: {}
     };
 
 
@@ -262,6 +314,9 @@
             if(occSceneRubrikData){
                 rubrikData = JSON.parse(occSceneRubrikData);
                 initialAppState = rubrikData.rubrik;
+                initialRubrikAIState = normalizeRubrikAI(
+                    initialAppState.rubrikAI || rubrikData.rubrikAI
+                );
                 document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${rubrikData.user.selectedFile} > Scene: ${rubrikData.scene.name}</span>`;
                 localStorage.removeItem("occSceneRubrikData");
             }
@@ -270,7 +325,20 @@
 
     getLocalData();
 
+    function ensureRuntimeGroupIds(groups) {
+        return groups.map((group, index) => {
+            if (group.id) return group;
+
+            return {
+                ...group,
+                id: 'g_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 8)
+            };
+        });
+    }
+
     const appState = JSON.parse(JSON.stringify(initialAppState));
+    appState.groups = ensureRuntimeGroupIds(appState.groups);
+    const rubrikAIState = normalizeRubrikAI(initialRubrikAIState);
     let editingGroupId = null;
 
     // Uyumlu Gelişmiş Renk Teması Havuzu
@@ -297,6 +365,9 @@
     const evaluatorInputs = document.getElementById('evaluatorInputs');
     const evaluationResult = document.getElementById('evaluationResult');
     const btnFinalSave = document.getElementById('btnFinalSave');
+    const rubrikAIPanel = document.querySelector('.rubrik-ai-panel');
+    const rubrikAIInstructions = document.getElementById('rubrikAIInstructions');
+    const rubrikAIQuestion = document.getElementById('rubrikAIQuestion');
 
     const extraOptions = {
         truecount: { chk: document.getElementById('chkTrueCount'), num: document.getElementById('numTrueCount') },
@@ -312,9 +383,60 @@
         extraOptions[key].num.addEventListener('input', triggerEvaluation);
     });
 
+    function normalizeRubrikAI(rubrikAI){
+        const data = rubrikAI && typeof rubrikAI === "object" ? rubrikAI : {};
+
+        if(!data.instructions || typeof data.instructions !== "object"){
+            data.instructions = {type: "string", instructions: ""};
+        }
+
+        if(typeof data.instructions.instructions !== "string"){
+            data.instructions.instructions = "";
+        }
+
+        if(!data.question || typeof data.question !== "object"){
+            data.question = {type: "string", question: ""};
+        }
+
+        if(typeof data.question.question !== "string"){
+            data.question.question = "";
+        }
+
+        if(!data.alias || typeof data.alias !== "object" || Array.isArray(data.alias)){
+            data.alias = {};
+        }
+
+        return data;
+    }
+
+    function syncRubrikAIFields(){
+        rubrikAIState.instructions.instructions = rubrikAIInstructions.value;
+        rubrikAIState.question.question = rubrikAIQuestion.value;
+    }
+
+    rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
+    rubrikAIQuestion.value = rubrikAIState.question.question;
+    rubrikAIInstructions.addEventListener('input', syncRubrikAIFields);
+    rubrikAIQuestion.addEventListener('input', syncRubrikAIFields);
+
+    function syncAliasVisibility(row){
+        const select = row.querySelector('.box-operator');
+        const aliasInput = row.querySelector('.box-alias-input');
+        aliasInput.style.display = select.value === 'review' ? 'block' : 'none';
+    }
+
+    function syncRubrikAIVisibility(){
+        const hasReview = Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review');
+        rubrikAIPanel.style.display = hasReview ? 'flex' : 'none';
+    }
+
     function renderConfigurator() {
         boxesContainer.innerHTML = '';
         Object.keys(appState.boxes).forEach(boxKey => {
+            if(typeof rubrikAIState.alias[boxKey] !== "string"){
+                rubrikAIState.alias[boxKey] = "";
+            }
+
             const row = document.createElement('div');
             row.className = 'box-row';
             row.dataset.box = boxKey;
@@ -344,12 +466,29 @@
                 select.appendChild(opt);
             });
 
+            select.addEventListener('change', () => {
+                syncAliasVisibility(row);
+                syncRubrikAIVisibility();
+            });
+
+            const aliasInput = document.createElement('input');
+            aliasInput.type = 'text';
+            aliasInput.className = 'box-alias-input';
+            aliasInput.placeholder = 'Alias';
+            aliasInput.value = rubrikAIState.alias[boxKey] || '';
+            aliasInput.addEventListener('input', (e) => {
+                rubrikAIState.alias[boxKey] = e.target.value;
+            });
+
             row.appendChild(checkbox);
             row.appendChild(label);
+            row.appendChild(aliasInput);
             row.appendChild(input);
             row.appendChild(select);
             boxesContainer.appendChild(row);
+            syncAliasVisibility(row);
         });
+        syncRubrikAIVisibility();
     }
 
     function renderEvaluatorTestingPanel() {
@@ -499,6 +638,8 @@
         document.querySelectorAll('.box-select').forEach(chk => chk.checked = false);
         document.querySelectorAll('.box-input').forEach(inp => inp.value = 'null');
         document.querySelectorAll('.box-operator').forEach(sel => sel.value = '===');
+        document.querySelectorAll('.box-row').forEach(syncAliasVisibility);
+        syncRubrikAIVisibility();
         Object.keys(appState.boxes).forEach(k => appState.boxes[k] = 'null');
         Object.keys(extraOptions).forEach(k => {
             extraOptions[k].chk.checked = false;
@@ -557,6 +698,7 @@
                     row.querySelector('.box-input').value = 'null';
                     row.querySelector('.box-operator').value = '===';
                     appState.boxes[bk] = 'null';
+                    syncAliasVisibility(row);
                 });
 
                 group.boxes.forEach(gBox => {
@@ -566,8 +708,10 @@
                         row.querySelector('.box-operator').value = gBox.operator;
                         row.querySelector('.box-input').value = gBox.value;
                         appState.boxes[gBox.boxId] = gBox.value;
+                        syncAliasVisibility(row);
                     }
                 });
+                syncRubrikAIVisibility();
 
                 Object.keys(extraOptions).forEach(key => {
                     if (group.extras && group.extras.hasOwnProperty(key)) {
@@ -588,16 +732,21 @@
     }
 
     btnFinalSave.addEventListener('click', () => {
+        syncRubrikAIFields();
         const cleanState = {
             boxes: appState.boxes,
-            groups: appState.groups.map(({ id, ...clean }) => clean)
+            groups: appState.groups.map(({ id, ...clean }) => clean),
+            rubrikAI: rubrikAIState
         };
 
         console.log("=== KONSOL JSON ÇIKTISI ===");
         console.log(JSON.stringify(cleanState, null, 2));
 
         if (typeof(Storage) !== "undefined"){
-            var occSceneRubrikSave = {user: rubrikData.user, payload:cleanState};
+            var occSceneRubrikSave = {
+                user: rubrikData.user,
+                payload: cleanState
+            };
             localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
             window.close();
         }
@@ -607,7 +756,7 @@
 
     if (initialAppState && initialAppState.groups.length > 0) {
         Object.assign(appState.boxes, initialAppState.boxes);
-        appState.groups = JSON.parse(JSON.stringify(initialAppState.groups));
+        appState.groups = ensureRuntimeGroupIds(JSON.parse(JSON.stringify(initialAppState.groups)));
         renderConfigurator();
         renderGroupsList();
     } else {

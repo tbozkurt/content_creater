@@ -815,7 +815,15 @@
             rightAnswer: null,
             scene: {},
             all: [],
-            rubrik: {boxes:{}, groups:[]}
+            rubrik: {
+                boxes:{},
+                groups:[],
+                rubrikAI: {
+                    instructions: {type: "string", instructions: ""},
+                    question: {type: "string", question: ""},
+                    alias: {}
+                }
+            }
         }
     }
 
@@ -2442,6 +2450,61 @@
         $.ajax({url: "/return", data: IDE.user, success: returnData_Parse, type: "POST", error: ajaxError});
     }
 
+
+    /* Rubrik Functions */
+    function ensureRubrikMeta(slide){
+        if(!slide.rubrik || typeof slide.rubrik !== "object"){
+            slide.rubrik = {boxes:{}, groups:[]};
+        }
+
+        if(!slide.rubrik.boxes || typeof slide.rubrik.boxes !== "object" || Array.isArray(slide.rubrik.boxes)){
+            slide.rubrik.boxes = {};
+        }
+
+        if(!Array.isArray(slide.rubrik.groups)){
+            slide.rubrik.groups = [];
+        }
+
+        if(!slide.rubrik.rubrikAI || typeof slide.rubrik.rubrikAI !== "object"){
+            slide.rubrik.rubrikAI = slide.rubrikAI && typeof slide.rubrikAI === "object" ? slide.rubrikAI : {};
+        }
+
+        if(!slide.rubrik.rubrikAI.instructions || typeof slide.rubrik.rubrikAI.instructions !== "object"){
+            slide.rubrik.rubrikAI.instructions = slide.instructions && typeof slide.instructions === "object" ? slide.instructions : {type: "string", instructions: ""};
+        }
+
+        if(typeof slide.rubrik.rubrikAI.instructions.instructions !== "string"){
+            slide.rubrik.rubrikAI.instructions.instructions = "";
+        }
+
+        if(!slide.rubrik.rubrikAI.question || typeof slide.rubrik.rubrikAI.question !== "object"){
+            slide.rubrik.rubrikAI.question = slide.question && typeof slide.question === "object" ? slide.question : {type: "string", question: ""};
+        }
+
+        if(typeof slide.rubrik.rubrikAI.question.question !== "string"){
+            slide.rubrik.rubrikAI.question.question = "";
+        }
+
+        if(!slide.rubrik.rubrikAI.alias || typeof slide.rubrik.rubrikAI.alias !== "object" || Array.isArray(slide.rubrik.rubrikAI.alias)){
+            slide.rubrik.rubrikAI.alias = {};
+        }
+
+        delete slide.rubrikAI;
+        delete slide.instructions;
+        delete slide.question;
+    }
+
+    function syncRubrikMetaData(){
+        if(!jsonV2.slides){
+            return;
+        }
+
+        jsonV2.slides.map(function(slide){
+            ensureRubrikMeta(slide);
+        });
+    }
+
+    window.syncRubrikMetaData = syncRubrikMetaData;
 
 
 /*
