@@ -193,7 +193,8 @@ function CREATE(){
         {obj: "puzzleBox", answer:false},
         {obj: "puzzleUndo", answer:false},
         {obj: "puzzleLock", answer:false},
-        {obj: "puzzleCandidates", answer:false}
+        {obj: "puzzleCandidates", answer:false},
+        {obj: "dropdown", answer:true}
     ];
 
     this.checkKontrol = function(){
@@ -1568,6 +1569,45 @@ function CREATE(){
             width: 50,
             height: 50,
             src: "img/color.png",
+            Layer: {type:"objectImg", name:"color.png", class:"disableEvents"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.dropdownBlank = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 180,
+            height: 44,
+            fill: "#ffffff",
+            stroke: "#333333",
+            strokeWidth: 1,
+            borderPosition: "center",
+            cornerRadius: 4,
+            Layer:{type:"objectRect", name: "dropdownBg", class: "dropdownBg"}
+        },{
+            text: "Seçiniz",
+            x: 10,
+            y: 14,
+            width: 140,
+            height: 20,
+            fontSize: 18,
+            fontFamily: "Nunito",
+            fill: "#333333",
+            padding: 0,
+            Layer:{type:"objectText", name: "dropdownText", class: "dropdownText"}
+        },{
+            x: 150,
+            y: 8,
+            width: 30,
+            height: 30,
+            src: "img/arrow.png",
             Layer: {type:"objectImg", name:"color.png", class:"disableEvents"}
         }];
 

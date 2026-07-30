@@ -984,3 +984,56 @@ body{
     user-select: none;
     width: 100%;
 }
+
+
+/* loader AI */
+.ai-loader {
+    top: 50%;
+    left: 50%;
+    display: flex;
+    gap: 8px;
+    position: absolute;
+}
+
+.ai-circle{
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+}
+
+.addAnimation{
+    animation: geminiPulse 1.4s infinite ease-in-out both;
+}
+
+#ai_circle1{
+    background: linear-gradient(135deg, #fdd835, #f9a825);
+}
+
+#ai_circle2{
+    background: linear-gradient(135deg, #fb8c00, #ef6c00);
+}
+
+#ai_circle3{
+    background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+}
+
+.ai-loader div:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.ai-loader div:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes geminiPulse {
+    0%, 80%, 100% {
+        transform: scale(0.4);
+        opacity: 0.3;
+    }
+
+    40% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}

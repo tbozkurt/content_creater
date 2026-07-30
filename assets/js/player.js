@@ -930,37 +930,44 @@ function PLAYER(){
     }
     */
 
-    this.rubrikEvalutorControlHQ = function(SP, SD){
+    this.rubrikEvalutorControlHQ = function (SP, SD) {
         console.log("--- rubrikEvalutorControlHQ ---");
-        var finalBox={};
-        function getRubrikTeacherAnswer(boxes){
+        var finalBox = {};
+
+        function getRubrikTeacherAnswer(boxes) {
             var keys = Object.keys(boxes);
             var alias = SD.rubrikAI && SD.rubrikAI.alias ? SD.rubrikAI.alias : {};
-            if(keys.length === 1){
-                return (alias[keys[0]] || keys[0]) + "=" + String(boxes[keys[0]]);
+
+            function formatAnswer(key) {
+                var aliasValue = typeof alias[key] === "string" ? alias[key].trim() : "";
+                var answerValue = String(boxes[key]);
+                return aliasValue ? aliasValue + "=" + answerValue : answerValue;
             }
 
-            return keys.map(function(key){
-                return (alias[key] || key) + "=" + String(boxes[key]);
+            if (keys.length === 1) {
+                return formatAnswer(keys[0]);
+            }
+
+            return keys.map(function (key) {
+                return formatAnswer(key);
             }).join("\n");
         }
 
         console.log(SD);
-        function createRubrikTeacherJson(){
+
+        function createRubrikTeacherJson() {
             var rubriks = [];
-            console.log("SD.rubrikAI", SD);
-            console.log("SD.rubrikAI", SD.rubrikAI);
             var rubrikAI = SD.rubrik.rubrikAI || {
                 instructions: {type: "string", instructions: ""},
                 question: {type: "string", question: ""},
                 alias: {}
             };
 
-            if(SD.rubrik && SD.rubrik.groups){
-                SD.rubrik.groups.map(function(group){
-                    if(group.boxes && group.boxes.length){
-                        group.boxes.map(function(box){
-                            if(box.operator === "review"){
+            if (SD.rubrik && SD.rubrik.groups) {
+                SD.rubrik.groups.map(function (group) {
+                    if (group.boxes && group.boxes.length) {
+                        group.boxes.map(function (box) {
+                            if (box.operator === "review") {
                                 rubriks.push({
                                     value: group.name,
                                     "btd-teacher-condition": box.value,
@@ -971,9 +978,6 @@ function PLAYER(){
                     }
                 });
             }
-
-            console.log( rubrikAI );
-            console.log( getRubrikTeacherAnswer(finalBox) );
 
             return {
                 id: typeof SD.id === "number" ? SD.id + 1 : 1,
@@ -988,11 +992,9 @@ function PLAYER(){
             };
         }
 
-        console.log("finalBox:", finalBox);
-
-        for(var boxName in SD.inputs){
-            if(SD.inputs[boxName].base64){
-                SP.fnc.map(function(fnc){
+        for (var boxName in SD.inputs) {
+            if (SD.inputs[boxName].base64) {
+                SP.fnc.map(function (fnc) {
                     fnc.control();
                 });
             }
@@ -1000,14 +1002,22 @@ function PLAYER(){
             finalBox[boxName] = String(SD.inputs[boxName].value);
         }
 
-        var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
-        showFeedBack(result.result, "auto", SD.historyRight.length);
+        console.log("SD.rubrik:", SD.rubrik);
         console.log("finalBox:", finalBox);
-        var formatData = createRubrikTeacherJson();
-        console.log("BTD-TEACHER JSON:", formatData);
-        console.log("resultEvalutor:", result.result);
-        console.log(formatData);
 
+        if (SD.rubrik.rubrikAI.question && SD.rubrik.rubrikAI.question.question.length > 0) {
+            console.log(SD.rubrik.rubrikAI);
+            var formatData = createRubrikTeacherJson();
+            console.log("formatData", formatData);
+            rubrikLoaderAnimation("show");
+            sendDataAI(formatData);
+        } else {
+            var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
+            showFeedBack(result.result, "auto", SD.historyRight.length);
+            console.log("resultEvalutor:", result.result);
+        }
+
+        console.log(SP);
         /*
         if(result.result === "T1"){
             This.sceneComplete();
@@ -1032,11 +1042,56 @@ function PLAYER(){
         console.log(SD);
         */
 
-        sendDataAI(formatData);
+        /*
+        SP.feedBack.map(function (feedback) {
+            if (feedback.status === "AI") {
+                feedback.main.style.visibility = "visible";
+                console.log(feedback.main.querySelector(".feedbackAI"));
+                feedback.main.querySelector(".feedbackAI").innerHTML = "Sample";
+            }
+        });
+        */
     }
 
-    function sendDataAI(formatData){
-/*        var format = {
+    function feedbackAI(response) {
+        console.log('Başarılı Yanıt:', response);
+        if (response.success) {
+            var result = response.data.evaluation.rubric_code;
+            var feedbackStr = response.data.feedback;
+            SP[This.sceneIndex].feedBack.map(function (feedback) {
+                if (feedback.status === "AI") {
+                    feedback.main.style.visibility = "visible";
+                    console.log(feedback.main.querySelector(".feedbackAI"));
+                    feedback.main.querySelector(".feedbackAI").innerHTML = feedbackStr;
+                    gsap.to(feedback.main, 0, {transformOrigin: "50% 50%", scale: 0});
+                    gsap.to(feedback.main, 0.5, {transformOrigin: "50% 50%", scale: 1});
+                }
+            });
+            console.log(result);
+        }
+    }
+
+    function rubrikLoaderAnimation(view){
+        var sp = SP[This.sceneIndex];
+        if(view === "show"){
+            controlBtnView(sp, "disable");
+            sp.screenCloseDOM.style.display = "block";
+            sp.screenCloseDOM.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+            sp.screenCloseDOM.querySelector("#ai_circle1").classList.add("addAnimation");
+            sp.screenCloseDOM.querySelector("#ai_circle2").classList.add("addAnimation");
+            sp.screenCloseDOM.querySelector("#ai_circle3").classList.add("addAnimation");
+        }else{
+            controlBtnView(sp, "enable");
+            sp.screenCloseDOM.style.display = "none";
+            sp.screenCloseDOM.style.backgroundColor = "rgba(0, 0, 0, 0)";
+            sp.screenCloseDOM.querySelector("#ai_circle1").classList.remove("addAnimation");
+            sp.screenCloseDOM.querySelector("#ai_circle2").classList.remove("addAnimation");
+            sp.screenCloseDOM.querySelector("#ai_circle3").classList.remove("addAnimation");
+        }
+    }
+
+    function sendDataAI(formatData) {
+        /*        var format = {
             "id": 1,
             "type": "BTD-TEACHER",
 
@@ -1090,7 +1145,7 @@ function PLAYER(){
         $.ajax({
             url: "https://oktest.okulistik.com/api/evaluation/ai-evaluate",
             headers: {
-                "Authorization": 'eyJ0eXAiOiJKV1QiLCJqdGkiOiJmOTkwNzc4MWJiYTVlYjFiMmVhYjliYzMxOTRkOTNkMyIsImFsZyI6IlJTMjU2In0.eyJleHAiOjE3ODQ5NzIwMzEsIm5iZiI6MTc4NDg4NTYzMSwiaWF0IjoxNzg0ODg1NjMxLCJzdWIiOiIxMjI4OTMxNSIsIm1haWwiOiIiLCJuYW1lIjoiTXVoYW1tZWQiLCJsYXN0bmFtZSI6IkfDvGx0ZWtpbiIsInVUeXBlIjoiVEVBQ0hFUiIsImF1ZCI6ImFuYXNheWZhX2NvZGUiLCJqdGkiOiJmOTkwNzc4MWJiYTVlYjFiMmVhYjliYzMxOTRkOTNkMyIsInNjb3BlcyI6WyJhdXRoLmJhc2ljIiwibWFya2V0LmJhc2ljIiwiYXV0aC50ZWFjaGVyIiwiYXV0aC50ZWFjaGVyQWN0aXZlIl0sInRhcmdldCI6Ii90ZWF4LyIsImZ1bGxOYW1lIjoiTXVoYW1tZWQgR8O8bHRla2luIiwiZGF0YSI6eyJwb3NpdGlvbiI6Ik3DvGTDvHIgWWFyZMSxbWPEsXPEsSIsInN1YmplY3QiOiJZb2sifX0.fe1tF4nskIOjCmDmbS_tlPIu9RCNuS0niZzs-LmPRbZUhW3BLGmUxVgLSv0TLRDWiwSAaZlotaweriHpzcY-2BIbtjrm6sPTRMq_KFyq5VGN7mA3MvRDYgXimRhBxOwtp4SHP8iNoyxz3ALAgIqeQld2G2oWgwOzIpqwNj30fBZpQKp6ug8U6576dCUixgkpyL0nn5r7h6qS9QFPyiXOMtYHnvuuWq66bQgAytqeS-syB1XA8pKKTLCXzbCow8Wf4eH-c_a6QPUTf_3o-xGH7Gq6bb_BK5U5F5rxiuD_sOkV5setGfHGFMuPkL8tp2IB6GPEiVKpWExmQwx6tneS1g',
+                "Authorization": 'eyJhbGciOiJSUzI1NiIsImp0aSI6IjdjYWRkNzY1MTA0ZTYzNzdmYjg1ZmZiMDhmMjkxOWI1IiwidHlwIjoiSldUIn0.eyJpYXQiOjE3ODUzOTkxOTAsImZ1bGxOYW1lIjoiQWxpIMOWbWVyIFnEsWxhbmPEsSIsInVUeXBlIjoiU1RVREVOVCIsInRhcmdldCI6Ii9zdHUvaGlnaHNjaG9vbC9pbmRleC5waHAiLCJleHAiOjE3ODU0ODU1OTAsImRhdGEiOnsicmVsYXRlZFVJRCI6IjEyMjkxMzUzIiwic3RSZWFsU3RhdHVzIjoiMyIsImdyYWRlIjo5LCJzdFN0YXR1cyI6IjMifSwianRpIjoiN2NhZGQ3NjUxMDRlNjM3N2ZiODVmZmIwOGYyOTE5YjUiLCJuYmYiOjE3ODUzOTkxOTAsIm1haWwiOiJkZmdkZmdkZkBnc2RzZ2YuY29tIiwibmFtZSI6IkFsaSDDlm1lciIsInN1YiI6IjEyMjkxMzUzIiwiYXVkIjoiYW5hc2F5ZmFfY29kZSIsImxhc3RuYW1lIjoiWcSxbGFuY8SxIiwic2NvcGVzIjpbImF1dGguYmFzaWMiLCJtYXJrZXQuYmFzaWMiLCJhdXRoLnN0dWRlbnQiLCJhdXRoLnN0dWRlbnRBY3RpdmUiXX0.B9IZfym4btb4x_qjDSS7jz8ainmCb22Pfoe_gQlXLZ2QStMngIJ82kpU-nLlwfS0NTt1modAyug7WpiCFHpRZq-ioDxt5v-yF7oK-FcZkt4Dtk2gyhatmZ3DXyQ-9ol-DyAmsYb3fdY66mqqES6Fv4MbCqBNtKoE1ADXjJsmdjrBl58Q0jLba71lNa1fPoEmNSf_nRqNefxD8vTOD48oyBjj0sL8CWFc400nV0lvnzcQAf16wCeCLimbZUPDa1TODbE-B6TeJ-D4IVMpwlxrbgkBpaSqvxPhWUADcbXJC_PWFupDSF54_hnB6ZlkSXCNgt_DEu29pORviKbmhZ_jVw',
                 "Accept-Language": 'tr-TR'
             },
             dataType: "json",
@@ -1098,12 +1153,14 @@ function PLAYER(){
             contentType: 'application/json; charset=utf-8', // Raw verinin türü (JSON)
             processData: false,
             data: JSON.stringify(formatData),
-            success: function(response){
-                console.log('Başarılı Yanıt:', response);
+            success: function (response) {
+                feedbackAI(response);
+                rubrikLoaderAnimation("hide");
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('Hata Oluştu:', status, error);
                 console.log('Hata Detayı:', xhr.responseText);
+                rubrikLoaderAnimation("hide");
             }
         });
     }
@@ -1240,6 +1297,9 @@ function PLAYER(){
                 initFound=true;
             }else if(obj.id.includes("freeDrawCanvas")){
                 init["initFREEDRAW"] = {name:"serbest çizim", fnc: This.initFREEDRAW};
+                initFound=true;
+            }else if(obj.id.includes("dropdown")){
+                init["initDROPDOWN"] = {name:"dropdown boşluk doldurma", fnc: This.initDROPDOWN};
                 initFound=true;
             }
 
@@ -2376,8 +2436,8 @@ function PLAYER(){
         This.screenRatio();
     }
 
-    this.addScreenClose = function(Scene, index){
-        SP[index].screenCloseDOM = utils.addDOM({className: "screenClose"});
+    this.addScreenClose = function (Scene, index) {
+        SP[index].screenCloseDOM = utils.addDOM({className: "screenClose", innerHTML: '<div class="ai-loader"><div class="ai-circle" id="ai_circle1"></div><div class="ai-circle" id="ai_circle2"></div><div class="ai-circle" id="ai_circle3"></div></div>'});
         Scene.appendChild(SP[index].screenCloseDOM);
     }
 
@@ -10578,6 +10638,418 @@ function PLAYER(){
             wrong: function(){},
             right: function(){},
             answer: function(){},
+            close: close
+        }
+
+        SP.fnc.push(evaluation);
+    }
+
+    /** init dropdown blank **/
+    this.initDROPDOWN = function(SP, SD, index){
+        console.log("init DROPDOWN");
+        var answer = jsonV2.slides[index].answer || {};
+        var scene = jsonV2.slides[index].scene || {};
+        var DD = {input:{}};
+        var defaultOptionBackground = "transparent";
+        var defaultOptionHover = "#eaf4ff";
+        var optionBackground = scene.optionBg || defaultOptionBackground;
+        var optionHover = scene.optionHover || defaultOptionHover;
+        var optionTextColor = scene.optionTextColor || null;
+        var cumulativeWrongTotal = SD.wrong || 0;
+
+        function getExpectedOptionIndex(id){
+            var value = answer[id];
+            if(value === undefined){
+                value = answer[String(id)];
+            }
+
+            if(value === undefined || value === null){
+                return null;
+            }
+
+            value = String(value).trim();
+            if(value.indexOf("option_") === 0){
+                value = value.split("option_")[1];
+            }
+
+            return value;
+        }
+
+        function getOptions(params){
+            var options = [];
+            params = params || {};
+
+            for(var key in params){
+                if(key.indexOf("option_") === 0){
+                    var optionIndex = parseInt(key.split("option_")[1], 10);
+                    if(!isNaN(optionIndex)){
+                        options.push({
+                            id: String(optionIndex),
+                            text: params[key]
+                        });
+                    }
+                }
+            }
+
+            options.sort(function(a, b){
+                return parseInt(a.id, 10) - parseInt(b.id, 10);
+            });
+
+            return options;
+        }
+
+        function getStyleValue(node, key, fallback){
+            if(!node){
+                return fallback;
+            }
+
+            return node.style[key] || fallback;
+        }
+
+        SP.elementList.forEach(function(element){
+            if(element.id.includes("dropdown")){
+                var id = parseInt(element.id.split("_")[1], 10);
+                var options = getOptions(element.data);
+                var bg = element.main.querySelector(".dropdownBg");
+                var text = element.main.querySelector(".dropdownText");
+                var arrow = element.main.querySelector(".dropdownArrow");
+                var select = document.createElement("select");
+                var selectedBox = document.createElement("div");
+                var optionPanel = document.createElement("div");
+                var boxStyle = {
+                    width: element.main.style.width,
+                    height: element.main.style.height,
+                    fontSize: text ? text.style.fontSize : "18px",
+                    fontFamily: text ? text.style.fontFamily : "Nunito",
+                    color: text ? text.style.color : "#333333",
+                    backgroundColor: getStyleValue(bg, "backgroundColor", "#ffffff"),
+                    borderRadius: getStyleValue(bg, "borderRadius", "4px"),
+                    outline: getStyleValue(bg, "outline", "1px solid #333333"),
+                    outlineOffset: getStyleValue(bg, "outlineOffset", "-1px"),
+                    boxSizing: "border-box"
+                };
+                var selectCSS = {
+                    width: "1px",
+                    height: "1px",
+                    opacity: 0,
+                    pointerEvents: "none",
+                    position: "absolute",
+                    left: "-9999px",
+                    top: "-9999px"
+                };
+                var selectedBoxCSS = Object.assign({}, boxStyle, {
+                    backgroundColor: "rgba(0,0,0,0)",
+                    border: 0,
+                    outline: 0,
+                    padding: "0 34px 0 10px",
+                    position: "absolute",
+                    left: "0px",
+                    top: "0px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    zIndex: 2
+                });
+                var optionPanelCSS = {
+                    width: element.main.style.width,
+                    position: "absolute",
+                    left: "0px",
+                    top: (parseFloat(element.main.style.height)) + "px",
+                    display: "none",
+                    flexDirection: "column",
+                    zIndex: 2500,
+
+                    backgroundColor: scene.optionBg ? optionBackground : "#fff",
+                    border: boxStyle.outline,
+                    borderRadius: boxStyle.borderRadius,
+                    overflow: "hidden",
+                    boxSizing: "border-box"
+                };
+
+                select.appendChild(new Option("", ""));
+                options.map(function(option, optionIndex){
+                    select.appendChild(new Option(option.text, option.id));
+                });
+
+                if(text){
+                    selectedBox.innerText = text.innerText || text.textContent || "Seçiniz";
+                    text.remove();
+                }else{
+                    selectedBox.innerText = "Seçiniz";
+                }
+
+                if(arrow){
+                    arrow.style.pointerEvents = "none";
+                    arrow.style.zIndex = 3;
+                }
+
+                element.main.appendChild(select);
+                element.main.appendChild(selectedBox);
+                element.main.appendChild(optionPanel);
+                Object.assign(select.style, selectCSS);
+                Object.assign(selectedBox.style, selectedBoxCSS);
+                Object.assign(optionPanel.style, optionPanelCSS);
+
+                options.map(function(option, optionIndex){
+                    var optionBox = document.createElement("div");
+                    optionBox.innerText = option.text;
+                    optionBox.dataset.value = option.id;
+                    Object.assign(optionBox.style, {
+                        height: element.main.style.height,
+                        padding: "0 10px",
+                        cursor: "pointer",
+
+                        display: "flex",
+                        alignItems: "center",
+
+                        backgroundColor: optionBackground,
+                        color: optionTextColor || boxStyle.color,
+                        fontSize: boxStyle.fontSize,
+                        fontFamily: boxStyle.fontFamily,
+
+                        borderBottom: optionIndex === options.length - 1
+                            ? "none"
+                            : "1px solid #dcdcdc",
+
+                        boxSizing: "border-box",
+                        userSelect: "none"
+                    });
+                    optionBox.addEventListener("mouseenter", function () {
+                        optionBox.style.backgroundColor = optionHover;
+                    });
+
+                    optionBox.addEventListener("mouseleave", function () {
+                        optionBox.style.backgroundColor = optionBackground;
+                    });
+                    optionBox.addEventListener("click", function(e){
+                        e.stopPropagation();
+                        setSelectedValue(id, option.id);
+                        closeOptionPanels();
+                        controlBtnViewCheck();
+                    });
+
+                    optionPanel.appendChild(optionBox);
+                });
+
+                DD.input[id] = {
+                    main: element.main,
+                    bg: bg,
+                    select: select,
+                    selectedBox: selectedBox,
+                    optionPanel: optionPanel,
+                    options: options,
+                    zIndex: element.main.style.zIndex,
+                    rightAnswer: getExpectedOptionIndex(id),
+                    bgColor: bg ? bg.style.backgroundColor : ""
+                };
+
+                SD.inputs["box"+ id] = {value: null, type: "dropdown", solved: false};
+
+                selectedBox.addEventListener("click", function(e){
+                    e.stopPropagation();
+                    toggleOptionPanel(id);
+                });
+            }
+        });
+
+        function getOptionText(id, value){
+            var input = DD.input[id];
+
+            for(var i=0; i<input.options.length; i++){
+                if(String(input.options[i].id) === String(value)){
+                    return input.options[i].text;
+                }
+            }
+
+            return "Seçiniz";
+        }
+
+        function setSelectedValue(id, value){
+            DD.input[id].select.value = value || "";
+            DD.input[id].selectedBox.innerText = value ? getOptionText(id, value) : "Seçiniz";
+            inputsChange(SD, id, "value", value || null);
+        }
+
+        function closeOptionPanels(openId){
+            for(var id in DD.input){
+                if(openId === undefined || String(id) !== String(openId)){
+                    DD.input[id].optionPanel.style.display = "none";
+                    DD.input[id].main.style.zIndex = DD.input[id].zIndex || "";
+                }
+            }
+        }
+
+        function toggleOptionPanel(id){
+            var input = DD.input[id];
+            var panel = DD.input[id].optionPanel;
+            var isOpen = panel.style.display === "flex";
+
+            closeOptionPanels(id);
+            if(isOpen){
+                panel.style.display = "none";
+                input.main.style.zIndex = input.zIndex || "";
+            }else{
+                input.main.style.zIndex = 9999;
+                panel.style.zIndex = 10000;
+                panel.style.display = "flex";
+            }
+        }
+
+        document.addEventListener("click", function(){
+            closeOptionPanels();
+        });
+
+        function controlBtnViewCheck(){
+            var found = false;
+
+            for(var id in DD.input){
+                if(SD.inputs["box"+ id].value){
+                    found = true;
+                }
+            }
+
+            if(found){
+                controlBtnView(SP, "enable");
+            }else{
+                controlBtnView(SP, "disable");
+            }
+            console.log("SD-İNPUTS",SD.inputs)
+        }
+
+        function showRightView(id){
+            if(DD.input[id].bg){
+                DD.input[id].bg.style.backgroundColor = "green";
+            }
+            DD.input[id].events = false;
+        }
+
+        function showWrongView(id){
+            if(DD.input[id].bg){
+                DD.input[id].bg.style.backgroundColor = "red";
+            }
+        }
+
+        function showDefaultView(id){
+            if(DD.input[id].bg){
+                DD.input[id].bg.style.backgroundColor = DD.input[id].bgColor;
+            }
+            setSelectedValue(id, null);
+        }
+
+        function btnEvents(status){
+            for(var id in DD.input){
+                DD.input[id].selectedBox.style.pointerEvents = status;
+                if(status === "none"){
+                    DD.input[id].optionPanel.style.display = "none";
+                }
+            }
+        }
+
+        function checkRightAnswer(){
+            var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"dropdown"};
+            var currentWrongCount = 0;
+
+            for(var id in DD.input){
+                var userAnswer = SD.inputs["box"+ id].value;
+                var rightAnswer = DD.input[id].rightAnswer;
+
+                score.totalEmpty++;
+                if(!userAnswer){
+                    DD.input[id].status = "empty";
+                    SD.inputs["box"+ id].solved = false;
+                }else if(rightAnswer !== null && String(userAnswer) === String(rightAnswer)){
+                    score.totalRight++;
+                    score.totalEmpty--;
+                    DD.input[id].status = "right";
+                    SD.inputs["box"+ id].solved = true;
+                }else{
+                    currentWrongCount++;
+                    DD.input[id].status = "wrong";
+                    SD.inputs["box"+ id].solved = false;
+                }
+            }
+
+            if(currentWrongCount){
+                cumulativeWrongTotal = (SD.wrong || cumulativeWrongTotal || 0) + currentWrongCount;
+                score.totalWrong = cumulativeWrongTotal;
+            }else if(cumulativeWrongTotal && score.totalEmpty){
+                score.totalWrong = cumulativeWrongTotal;
+            }
+
+            console.log("SCORE-DROPDOWN",score)
+            return score;
+        }
+
+        function wrongActionFNC(){
+            btnEvents("none");
+            for(var id in DD.input){
+                if(DD.input[id].status === "right"){
+                    showRightView(id);
+                }else if(DD.input[id].status === "wrong"){
+                    showWrongView(id);
+                }
+            }
+
+            evaluation.timer = setTimeout(function(){
+                btnEvents("auto");
+                for(var id in DD.input){
+                    if(DD.input[id].status !== "right"){
+                        showDefaultView(id);
+                    }
+                }
+                controlBtnViewCheck();
+            }, 1000);
+        }
+
+        function answerActionFNC(){
+            clearInterval(evaluation.timer);
+            for(var id in DD.input){
+                if(DD.input[id].rightAnswer !== null){
+                    setSelectedValue(id, DD.input[id].rightAnswer);
+                }
+            }
+            btnEvents("none");
+        }
+
+        function rightActionFNC(){
+            if(cumulativeWrongTotal){
+                SD.wrong = cumulativeWrongTotal;
+                if(SD.historyRight.length){
+                    SD.historyRight[SD.historyRight.length - 1].wrong = cumulativeWrongTotal;
+                }
+            }
+
+            wrongActionFNC();
+        }
+
+        function addHistory(){
+            var lastMove = historyExtract(SP, "dropdown");
+            for(var box in lastMove){
+                var id = lastMove[box].id;
+                setSelectedValue(id, lastMove[box].value);
+            }
+        }
+
+        function reset(){
+            for(var id in DD.input){
+                showDefaultView(id);
+            }
+        }
+
+        function close(){
+            btnEvents("none");
+        }
+
+        var evaluation = {
+            control: checkRightAnswer,
+            wrong: wrongActionFNC,
+            right: rightActionFNC,
+            answer: answerActionFNC,
+            history: addHistory,
+            reset: reset,
             close: close
         }
 

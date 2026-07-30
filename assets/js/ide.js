@@ -2350,6 +2350,31 @@ IDE.workSpace.createFreeDrawNav.addEventListener("click", function(){
     selectItem({shiftKey: false, layer: obj});
 });
 
+IDE.workSpace.createDropdown.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 180);
+    var obj = CREATE.dropdownBlank({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 180,
+            height: 44,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "dropdown",
+            elementID: "dropdown",
+            type: "objectMovieClip",
+            class: "",
+            params:{}
+        }
+    });
+
+    CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
 
 IDE.welcome.loaderMain.addEventListener("click", function(){
     document.querySelector("#loaderMain_img").style.animationPlayState = "paused";

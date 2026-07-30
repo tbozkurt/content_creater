@@ -81,6 +81,7 @@
                     <option value="10">Kelime</option>
                     <option value="11">Serbest Çizim</option>
                     <option value="12">Bulmaca</option>
+                    <option value="13">Dropdown</option>
                 </select>
             </div>
 
@@ -153,6 +154,10 @@
                 <div class="TopIconBox" id="createPuzzle"><img src="assets/img/create_word.png"></div>
                 <div class="TopIconBox" id="createPuzzleLock"><img src="assets/img/create_add.png"></div>
                 <div class="TopIconBox" id="createPuzzleCandidates"><img src="assets/img/create_list.png"></div>
+            </div>
+
+            <div id="iconGroup13" class="iconGroup">
+                <div class="TopIconBox" id="createDropdown" title="Dropdown"><img src="assets/img/create_dropdown.png"></div>
             </div>
 
         </div>
@@ -628,6 +633,7 @@
             createPuzzle: document.querySelector("#createPuzzle"),
             createPuzzleLock: document.querySelector("#createPuzzleLock"),
             createPuzzleCandidates: document.querySelector("#createPuzzleCandidates"),
+            createDropdown: document.querySelector("#createDropdown"),
 
             /* Rect */
             rect_fillColorPicker: document.querySelector("#rect_fillColorPicker"),
@@ -714,7 +720,8 @@
             document.querySelector("#iconGroup9"),
             document.querySelector("#iconGroup10"),
             document.querySelector("#iconGroup11"),
-            document.querySelector("#iconGroup12")
+            document.querySelector("#iconGroup12"),
+            document.querySelector("#iconGroup13")
         ]
     }
 

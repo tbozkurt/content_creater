@@ -153,18 +153,18 @@ function EXPORT(){
         },{
             name: "pointButon",
             type: "pointDraw"
-        },
-        {
+        },{
             name: "soundRecord",
             type: "soundRecord"
-        },
-        {
+        },{
             name: "wordBox",
             type: "word"
-        },
-        {
+        },{
             name: "puzzleBox",
             type: "puzzle"
+        },{
+            name: "dropdown",
+            type: "dropdownFillBlank"
         }];
 
         allObject.map(function(e){

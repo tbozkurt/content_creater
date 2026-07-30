@@ -49,7 +49,8 @@ var templateImages = [
     "record_off.png",
     "record_on.png",
     "color.png",
-    "clean.png"
+    "clean.png",
+    "arrow.png"
 ];
 
 async function copyTemplateImages(imgFolder) {
