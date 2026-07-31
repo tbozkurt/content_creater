@@ -70,6 +70,36 @@ app.use('/assets', express.static('assets'));
 app.use(express.json({ limit: '11mb' }));
 app.use(express.urlencoded({ extended: true, limit: '11mb' }));
 
+function getOccJwt(req){
+    var authHeader = req.headers.authorization || "";
+    if(authHeader.indexOf("Bearer ") === 0){
+        return authHeader.substring(7);
+    }
+
+    return "";
+}
+
+function getOccAuthHeaders(jwt){
+    var headers = {
+        "x-accept-version": 1
+    };
+
+    if(jwt){
+        headers.Authorization = "Bearer " + jwt;
+    }
+
+    return headers;
+}
+
+require("./serverRubrik")(app, {
+    axios: axios,
+    getService: function(){
+        return service;
+    },
+    getOccJwt: getOccJwt,
+    getOccAuthHeaders: getOccAuthHeaders
+});
+
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
         var token = req.query.token || req.body.token;
@@ -139,12 +169,6 @@ function copyFolder(source, target){
     console.log("source:", source);
     console.log("target:", target);
     return new Promise(function(resolve, reject){
-/*        try{
-            deleteFolder(target);
-            console.log("mevcut klasörü silme: OK");
-        }catch(e){
-            console.log("mevcut klasörü silme: FAIL");
-        }*/
 
         fs.cp(source, target, {recursive: true}, (err) => {
             if (err) {
@@ -398,13 +422,6 @@ async function downloadFNC(req, res){
         FD.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance, req.body.token);
         await deleteFolder(entrance);
 
-        //info = [entrance, mainFolder , step10 , PublisherCopy , req.body.file];
-/*        info[1] = entrance;
-        info[2] = mainFolder;
-        info[3] = step10;
-        info[4] = PublisherCopy;
-        info[5] = req.body.file;*/
-
         res.send({success: true, content: FD.fileList.data[req.body.file], info, FD, file});
     }catch (e){
         res.send({success: false, content: FD.fileList.data[req.body.file], info, FD, file});
@@ -575,7 +592,9 @@ app.post("/occLogin", function(req, res){
         var user = occUser["user_"+resp.data.uid];
         if(user){
             var FD = Users[token];
-            FD.user = user;
+            if(FD){
+                FD.user = user;
+            }
         }
 
         var jwt = resp.data.jwt;
@@ -598,19 +617,17 @@ app.post("/occLogin", function(req, res){
 //Read File List
 app.post("/occSelectFile", function(req, res){
     var selectedFile = req.body.selectedFile;
-    var jwt = req.body.jwt;
+    var jwt = getOccJwt(req);
     var token = req.body.token;
-    console.log(selectedFile, jwt, token);
+    console.log(selectedFile, token);
 
     var FD = Users[token];
-    if(FD.fileList.data[selectedFile]){
+    if(FD && FD.fileList && FD.fileList.data[selectedFile]){
         FD.files = FD.fileList.data[selectedFile].files;
     }
 
     var config = {
-        headers: {
-            Authorization: "Bearer "+jwt
-        }
+        headers: getOccAuthHeaders(jwt)
     }
 
     axios.get(`https://${service}.okulistik.com/api/occ/${selectedFile}`, config).then(response => {
@@ -624,10 +641,9 @@ app.post("/occSelectFile", function(req, res){
     });
 });
 
-
 //Read File List
 app.post("/occSaveFile", function(req, res){
-    var jwt = req.body.jwt;
+    var jwt = getOccJwt(req);
     var stringJSON = req.body.stringJSON;
     axios({
         method: "post",
@@ -653,15 +669,13 @@ app.post("/occSaveFile", function(req, res){
 
 //Read File List
 app.post("/occDeleteFile", function(req, res){
-    var jwt = req.body.jwt;
+    var jwt = getOccJwt(req);
     var deleteFile = req.body.deleteFile;
 
     axios({
         method: "delete",
         url: `https://${service}.okulistik.com/api/occ/${deleteFile}`,
-        headers: {
-            Authorization: "Bearer "+jwt
-        }
+        headers: getOccAuthHeaders(jwt)
     }).then(response => {
         console.log("res", response.data);
         res.send({success: true, response: response.data});
@@ -678,10 +692,10 @@ app.post("/occDeleteFile", function(req, res){
 
 //Login
 app.post("/occRefreshList", function(req, res){
-    var jwt = req.body.jwt;
+    var jwt = getOccJwt(req);
 
     var config = {
-        headers: {Authorization: "Bearer "+jwt}
+        headers: getOccAuthHeaders(jwt)
     }
 
     axios.get(`https://${service}.okulistik.com/api/occ?limit=4000`, config).then(response => {
@@ -707,15 +721,13 @@ app.post("/autoGetJson", function(req, res){
 });
 
 app.post("/autoSaveData", function(req, res){
-    var jwt = req.body.jwt;
+    var jwt = getOccJwt(req);
     var stringJSON = req.body.stringJSON;
 
     axios({
         method: "post",
         url: `https://${service}.okulistik.com/api/occ`,
-        headers: {
-            Authorization: "Bearer "+jwt
-        },
+        headers: getOccAuthHeaders(jwt),
         data: {
             json: stringJSON,
         }
@@ -775,11 +787,9 @@ async function duplicateFileFNC(req, res){
     var successCopy = await copyFolder(curFolder, newFolder);
 
     if(successCopy){
-        var jwt = req.body.jwt;
+        var jwt = getOccJwt(req);
         var config = {
-            headers: {
-                Authorization: "Bearer "+jwt
-            }
+            headers: getOccAuthHeaders(jwt)
         }
 
         axios.get(`https://${service}.okulistik.com/api/occ/${req.body.duplicate_curName}`, config).then(response => {

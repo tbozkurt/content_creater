@@ -1998,6 +1998,31 @@
 
 
     /* 0. Prepare Login */
+    var OKULISTIK_JWT_COOKIE = "okulistik-jwt";
+
+    function getOkulistikJwtCookie(){
+        var cookie = document.cookie
+            .split('; ')
+            .find(function(row){
+                return row.indexOf(OKULISTIK_JWT_COOKIE + '=') === 0;
+            });
+
+        return cookie ? decodeURIComponent(cookie.substring(OKULISTIK_JWT_COOKIE.length + 1)) : '';
+    }
+
+    function setOkulistikJwtCookie(jwt){
+        document.cookie = OKULISTIK_JWT_COOKIE + "=" + encodeURIComponent(jwt) + "; path=/; SameSite=Lax";
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr){
+            var jwt = getOkulistikJwtCookie();
+            if(jwt){
+                xhr.setRequestHeader("Authorization", "Bearer " + jwt);
+            }
+        }
+    });
+
     function prepare(){
         var urlParams = new URLSearchParams(window.location.search);
         var service = urlParams.get("service");
@@ -2034,7 +2059,8 @@
                 var name = data.user.profile.name;
                 name = utils.changeCharacter(name);
                 IDE.user.appUser = name.toLocaleLowerCase('tr-TR');
-                IDE.user.jwt = data.user.jwt;
+                setOkulistikJwtCookie(data.user.jwt);
+                delete IDE.user.jwt;
                 IDE.user.uid = data.user.uid;
                 jsonV2.uid = data.user.uid;
             }
@@ -2501,6 +2527,39 @@
         delete slide.question;
     }
 
+    function syncActiveSlideRubrikBoxes(){
+        var slide = jsonV2.slides[sceneIndex];
+        if(!slide){
+            return;
+        }
+
+        ensureRubrikMeta(slide);
+        var totalBox = CREATE.checkKontrol();
+
+        var syncedBoxes = {};
+        for(var i=0; i<=totalBox; i++){
+            var boxKey = "box" + i;
+            syncedBoxes[boxKey] = Object.prototype.hasOwnProperty.call(slide.rubrik.boxes, boxKey)
+                ? slide.rubrik.boxes[boxKey]
+                : "null";
+        }
+
+        slide.rubrik.boxes = syncedBoxes;
+        slide.rubrik.groups = slide.rubrik.groups
+            .map(function(group){
+                var cleanGroup = JSON.parse(JSON.stringify(group));
+                cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
+                    ? cleanGroup.boxes.filter(function(box){
+                        return box && Object.prototype.hasOwnProperty.call(syncedBoxes, box.boxId);
+                    })
+                    : [];
+                return cleanGroup;
+            })
+            .filter(function(group){
+                return group.boxes.length > 0;
+            });
+    }
+
     function syncRubrikMetaData(){
         if(!jsonV2.slides){
             return;
@@ -2509,9 +2568,12 @@
         jsonV2.slides.map(function(slide){
             ensureRubrikMeta(slide);
         });
+
+        syncActiveSlideRubrikBoxes();
     }
 
     window.syncRubrikMetaData = syncRubrikMetaData;
+    window.syncActiveSlideRubrikBoxes = syncActiveSlideRubrikBoxes;
 
 
 /*

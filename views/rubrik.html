@@ -195,9 +195,316 @@
             width: 120px;
             display: none;
         }
+
+        .slide-tabs-panel {
+            display: none;
+            margin-bottom: 10px;
+        }
+
+        .slide-tabs-panel h3 {
+            margin-bottom: 8px;
+        }
+
+        .slide-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 2px 0;
+        }
+
+        .slide-tab {
+            flex: 0 0 auto;
+            background: #252525;
+            color: #bababa;
+            border: 1px solid #323232;
+            border-radius: 4px;
+            min-width: 54px;
+            text-align: center;
+        }
+
+        .slide-tab.active {
+            background: #bababa;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        .archive-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+            max-height: 190px;
+            overflow-y: hidden;
+        }
+
+        .archive-list.scrollable {
+            overflow-y: auto;
+        }
+
+        .archive-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px;
+            background: #323232;
+            border: 1px solid #252525;
+            border-radius: 4px;
+            color: #bababa;
+            transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        }
+
+        .archive-item:hover {
+            background: #3a3a3a;
+            border-color: #454545;
+        }
+
+        .archive-item.selected {
+            border-color: #bababa;
+            background: #3a3a3a;
+        }
+
+        .archive-info {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .archive-list.scrollable {
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #5b5b5b transparent;
+            padding-right: 4px;
+        }
+
+        .archive-list.scrollable::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .archive-list.scrollable::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
+
+        .archive-list.scrollable::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg,#6b6b6b,#4a4a4a);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .archive-list.scrollable::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg,#8b8b8b,#5e5e5e);
+            background-clip: padding-box;
+        }
+
+        .archive-index {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background: #252525;
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            font-weight: bold;
+        }
+
+        .archive-title {
+            color: #ffffff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .archive-meta {
+            color: #8f8f8f;
+            font-size: 11px;
+        }
+
+        .archive-status {
+            display: none;
+            margin-bottom: 8px;
+            padding: 7px 8px;
+            background: #252525;
+            border: 1px solid #323232;
+            border-radius: 4px;
+            color: #bababa;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .archive-status.visible {
+            display: block;
+        }
+
+        .archive-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            border-bottom: 2px solid #323232;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+        }
+
+        .archive-title-row h3 {
+            flex: 0 0 auto;
+            border: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .archive-rollback-date {
+            display: none;
+            min-width: 0;
+            color: #8f8f8f;
+            font-size: 12px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .archive-rollback-date.visible {
+            display: block;
+        }
+
+        .archive-go-btn {
+            flex: 0 0 auto;
+            padding: 5px 10px;
+            background: #bababa;
+            color: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .archive-go-btn:hover {
+            background: #ffffff;
+        }
+
+        .archive-go-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .rubrik-login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.68);
+            box-sizing: border-box;
+        }
+
+        .rubrik-login-overlay.visible {
+            display: flex;
+        }
+
+        .rubrik-login-card {
+            width: 100%;
+            max-width: 340px;
+            padding: 18px;
+            background: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            box-shadow: 0 16px 42px rgba(0, 0, 0, 0.62);
+            box-sizing: border-box;
+        }
+
+        .rubrik-login-card h3 {
+            margin-bottom: 14px;
+            font-size: 15px;
+        }
+
+        .rubrik-login-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .rubrik-login-field label {
+            color: #bababa;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .rubrik-login-field input {
+            width: 100%;
+            padding: 8px 9px;
+            background-color: #1d1d1d;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            color: #ffffff;
+            font-family: Nunito;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .rubrik-login-field input:focus {
+            outline: none;
+            border-color: #bababa;
+        }
+
+        .rubrik-login-btn {
+            width: 100%;
+            margin-top: 4px;
+            padding: 8px 12px;
+        }
+
+        .rubrik-login-btn:disabled {
+            cursor: wait;
+            opacity: 0.65;
+        }
+
+        .rubrik-login-error {
+            display: none;
+            margin-top: 10px;
+            padding: 7px 8px;
+            background: #3a1c1c;
+            border: 1px solid #ef4444;
+            border-radius: 4px;
+            color: #ff8b8b;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .rubrik-login-error.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
+
+<div id="rubrikLoginOverlay" class="rubrik-login-overlay" aria-modal="true" role="dialog">
+    <form id="rubrikLoginForm" class="rubrik-login-card">
+        <h3>Rubrik Girişi</h3>
+        <div class="rubrik-login-field">
+            <label for="rubrikUsername">Kullanıcı Adı</label>
+            <input type="text" id="rubrikUsername" autocomplete="username" required>
+        </div>
+        <div class="rubrik-login-field">
+            <label for="rubrikPassword">Şifre</label>
+            <input type="password" id="rubrikPassword" autocomplete="current-password" required>
+        </div>
+        <button id="rubrikLoginButton" type="submit" class="btn-primary rubrik-login-btn">Giriş Yap</button>
+        <div id="rubrikLoginError" class="rubrik-login-error"></div>
+    </form>
+</div>
+
+<div id="slideTabsPanel" class="slide-tabs-panel panel-card">
+    <h3>Slides</h3>
+    <div id="slideTabs" class="slide-tabs"></div>
+</div>
 
 <div class="app-layout">
     <div class="main-panel panel-card">
@@ -253,6 +560,15 @@
     </div>
 
     <div class="side-panel">
+        <div class="panel-card" id="archivePanel" style="display:none;">
+            <div class="archive-title-row">
+                <h3>Rubrik Log</h3>
+                <span id="archiveRollbackDate" class="archive-rollback-date"></span>
+            </div>
+            <div id="archiveStatus" class="archive-status"></div>
+            <div id="archiveList" class="archive-list">Log bulunamadı.</div>
+        </div>
+
         <div class="panel-card">
             <h3>Kayıtlı Gruplar</h3>
             <div id="groupsList">Henüz grup oluşturulmadı.</div>
@@ -307,12 +623,136 @@
 
 
     var rubrikData;
+    var rubrikFileData = null;
+    var occLogState = {
+        count: 0,
+        list: []
+    };
+    var selectedOccLogId = null;
+    var activeOccFileName = "";
+    var activeSlideIndex = null;
+    var hasLocalRubrikData = false;
+    var isRollbackInProgress = false;
+    var isRubrikAppStarted = false;
+    var rubrikLoginWaiters = [];
+    var rubrikCurrentUser = null;
+    const RUBRIK_JWT_COOKIE = "okulistik-jwt";
+    const RUBRIK_USER_STORAGE = "occRubrikUser";
+    const rubrikLoginOverlay = document.getElementById('rubrikLoginOverlay');
+    const rubrikLoginForm = document.getElementById('rubrikLoginForm');
+    const rubrikUsername = document.getElementById('rubrikUsername');
+    const rubrikPassword = document.getElementById('rubrikPassword');
+    const rubrikLoginButton = document.getElementById('rubrikLoginButton');
+    const rubrikLoginError = document.getElementById('rubrikLoginError');
+
+    function getCookieValue(name){
+        const cookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(name + '='));
+
+        return cookie ? decodeURIComponent(cookie.substring(name.length + 1)) : '';
+    }
+
+    function setRubrikJwt(jwt){
+        document.cookie = RUBRIK_JWT_COOKIE + "=" + encodeURIComponent(jwt) + "; path=/; SameSite=Lax";
+    }
+
+    function clearRubrikJwt(){
+        document.cookie = RUBRIK_JWT_COOKIE + "=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+
+    function getRubrikJwt(){
+        return getCookieValue(RUBRIK_JWT_COOKIE);
+    }
+
+    function getStoredRubrikUser(){
+        if(typeof(Storage) === "undefined"){
+            return null;
+        }
+
+        try {
+            return JSON.parse(localStorage.getItem(RUBRIK_USER_STORAGE) || "null");
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function setRubrikCurrentUser(user){
+        if(!user || !user.uid){
+            return;
+        }
+
+        rubrikCurrentUser = {
+            uid: user.uid,
+            username: user.username || user.profile && user.profile.username || "",
+            name: user.profile && user.profile.name ? user.profile.name : user.name || ""
+        };
+
+        if(typeof(Storage) !== "undefined"){
+            localStorage.setItem(RUBRIK_USER_STORAGE, JSON.stringify(rubrikCurrentUser));
+        }
+    }
+
+    function getRubrikAuthHeaders(headers){
+        const jwt = getRubrikJwt();
+        return jwt
+            ? Object.assign({}, headers || {}, {Authorization: "Bearer " + jwt})
+            : Object.assign({}, headers || {});
+    }
+
+    function setRubrikLoginError(message){
+        rubrikLoginError.textContent = message || '';
+        rubrikLoginError.classList.toggle('visible', Boolean(message));
+    }
+
+    function waitForRubrikLogin(){
+        showRubrikLogin();
+        return new Promise(resolve => rubrikLoginWaiters.push(resolve));
+    }
+
+    function showRubrikLogin(message){
+        setRubrikLoginError(message || '');
+        rubrikLoginOverlay.classList.add('visible');
+        setTimeout(() => rubrikUsername.focus(), 0);
+    }
+
+    function hideRubrikLogin(){
+        rubrikLoginOverlay.classList.remove('visible');
+        setRubrikLoginError('');
+        rubrikPassword.value = '';
+    }
+
+    function resolveRubrikLoginWaiters(){
+        const waiters = rubrikLoginWaiters.slice();
+        rubrikLoginWaiters = [];
+        waiters.forEach(resolve => resolve());
+    }
+
+    function isJwtFailure(status, detail){
+        const detailText = String(detail || '').toLowerCase();
+        return status === 401
+            || status === 403
+            || detailText.includes('unauthorized')
+            || detailText.includes('invalid jwt')
+            || detailText.includes('token expired');
+    }
+
+    async function handleRubrikJwtFailure(message){
+        clearRubrikJwt();
+        await waitForRubrikLogin(message || 'Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+    }
+
     function getLocalData(){
         if (typeof(Storage) !== "undefined") {
             var occSceneRubrikData = localStorage.getItem("occSceneRubrikData");
 
             if(occSceneRubrikData){
                 rubrikData = JSON.parse(occSceneRubrikData);
+                if(rubrikData && rubrikData.user){
+                    delete rubrikData.user.jwt;
+                    setRubrikCurrentUser(rubrikData.user);
+                }
+                hasLocalRubrikData = true;
                 initialAppState = rubrikData.rubrik;
                 initialRubrikAIState = normalizeRubrikAI(
                     initialAppState.rubrikAI || rubrikData.rubrikAI
@@ -322,8 +762,6 @@
             }
         }
     }
-
-    getLocalData();
 
     function ensureRuntimeGroupIds(groups) {
         return groups.map((group, index) => {
@@ -361,6 +799,12 @@
     const saveGroupBtn = document.getElementById('saveGroupBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const groupsList = document.getElementById('groupsList');
+    const slideTabsPanel = document.getElementById('slideTabsPanel');
+    const slideTabs = document.getElementById('slideTabs');
+    const archivePanel = document.getElementById('archivePanel');
+    const archiveList = document.getElementById('archiveList');
+    const archiveStatus = document.getElementById('archiveStatus');
+    const archiveRollbackDate = document.getElementById('archiveRollbackDate');
     const formTitle = document.getElementById('formTitle');
     const evaluatorInputs = document.getElementById('evaluatorInputs');
     const evaluationResult = document.getElementById('evaluationResult');
@@ -381,6 +825,49 @@
             triggerEvaluation();
         });
         extraOptions[key].num.addEventListener('input', triggerEvaluation);
+    });
+
+    rubrikLoginForm.addEventListener('submit', async function(event){
+        event.preventDefault();
+        setRubrikLoginError('');
+        rubrikLoginButton.disabled = true;
+        rubrikLoginButton.textContent = 'Giriş yapılıyor...';
+
+        try {
+            const body = new URLSearchParams();
+            body.set('username', rubrikUsername.value.trim());
+            body.set('password', rubrikPassword.value);
+
+            const response = await fetch('/occLogin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: body.toString()
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if(!response.ok || !data.success || !data.user || !data.user.jwt){
+                throw new Error(data.message || 'Kullanıcı adı veya şifre hatalı.');
+            }
+
+            setRubrikJwt(data.user.jwt);
+            setRubrikCurrentUser(data.user);
+            if(rubrikData && rubrikData.user && data.user.uid){
+                rubrikData.user.uid = data.user.uid;
+            }
+            hideRubrikLogin();
+            resolveRubrikLoginWaiters();
+
+            if(!isRubrikAppStarted){
+                startRubrikApp();
+            }
+        } catch (error) {
+            setRubrikLoginError(error.message || 'Giriş yapılamadı.');
+        } finally {
+            rubrikLoginButton.disabled = false;
+            rubrikLoginButton.textContent = 'Giriş Yap';
+        }
     });
 
     function normalizeRubrikAI(rubrikAI){
@@ -409,6 +896,539 @@
         return data;
     }
 
+    function getSlidesFromRubrikFile(){
+        return rubrikFileData && rubrikFileData.list && Array.isArray(rubrikFileData.list.slides)
+            ? rubrikFileData.list.slides
+            : [];
+    }
+
+    function getRubrikFileName(){
+        return rubrikFileData && rubrikFileData.list && rubrikFileData.list.fileName
+            ? rubrikFileData.list.fileName
+            : '';
+    }
+
+    function getQueryFileName(){
+        const params = new URLSearchParams(window.location.search);
+        return params.get('file_name') || params.get('fileName') || '';
+    }
+
+    function getRubrikUid(){
+        if(rubrikData && rubrikData.user && rubrikData.user.uid){
+            return rubrikData.user.uid;
+        }
+
+        if(rubrikCurrentUser && rubrikCurrentUser.uid){
+            return rubrikCurrentUser.uid;
+        }
+
+        const storedUser = getStoredRubrikUser();
+        return storedUser && storedUser.uid ? storedUser.uid : '';
+    }
+
+    function getOccRubrikApiUrl(fileName){
+        const apiUrl = new URL('/api/occ/' + encodeURIComponent(fileName), window.location.origin);
+        return apiUrl.pathname + apiUrl.search;
+    }
+
+    function getOccLogApiUrl(fileName){
+        const apiUrl = new URL('/api/occ/log', window.location.origin);
+        apiUrl.searchParams.set('fileName', fileName);
+        apiUrl.searchParams.set('logType[]', '1');
+        return apiUrl.pathname + apiUrl.search;
+    }
+
+    function maskSensitiveUrl(url){
+        try {
+            const parsedUrl = new URL(url, window.location.origin);
+            if(parsedUrl.searchParams.has('token')){
+                const token = parsedUrl.searchParams.get('token') || '';
+                parsedUrl.searchParams.set('token', token ? token.slice(0, 12) + '...' : '');
+            }
+            return parsedUrl.pathname + parsedUrl.search;
+        } catch (error) {
+            return url;
+        }
+    }
+
+    function getSlideName(slide, index){
+        return slide && slide.name ? slide.name : 'Slide ' + (index + 1);
+    }
+
+    function cloneState(data){
+        return JSON.parse(JSON.stringify(data));
+    }
+
+    function getEmptyRubrikState(){
+        return {
+            boxes: {},
+            groups: [],
+            rubrikAI: {
+                instructions: {type: "string", instructions: ""},
+                question: {type: "string", question: ""},
+                alias: {}
+            }
+        };
+    }
+
+    function normalizeRubrikState(state){
+        const normalizedState = state && typeof state === "object" ? state : getEmptyRubrikState();
+        if(!normalizedState.boxes || typeof normalizedState.boxes !== "object" || Array.isArray(normalizedState.boxes)){
+            normalizedState.boxes = {};
+        }
+        if(!Array.isArray(normalizedState.groups)){
+            normalizedState.groups = [];
+        }
+        normalizedState.rubrikAI = normalizeRubrikAI(normalizedState.rubrikAI);
+
+        return normalizedState;
+    }
+
+    function mergeLocalRubrikIntoActiveApiSlide(){
+        if(!hasLocalRubrikData || !rubrikData || !rubrikData.rubrik){
+            return;
+        }
+
+        const slides = getSlidesFromRubrikFile();
+        const localSlideIndex = rubrikData.scene && typeof rubrikData.scene.id !== "undefined"
+            ? Number(rubrikData.scene.id)
+            : null;
+
+        if(!Number.isInteger(localSlideIndex) || !slides[localSlideIndex]){
+            return;
+        }
+
+        const localRubrik = normalizeRubrikState(cloneState(rubrikData.rubrik));
+        const apiRubrik = normalizeRubrikState(slides[localSlideIndex].rubrik || getEmptyRubrikState());
+        const localBoxKeys = Object.keys(localRubrik.boxes);
+        const localBoxMap = localBoxKeys.reduce((boxMap, boxKey) => {
+            boxMap[boxKey] = true;
+            return boxMap;
+        }, {});
+
+        const mergedBoxes = {};
+        localBoxKeys.forEach(boxKey => {
+            mergedBoxes[boxKey] = Object.prototype.hasOwnProperty.call(apiRubrik.boxes, boxKey)
+                ? apiRubrik.boxes[boxKey]
+                : localRubrik.boxes[boxKey];
+        });
+        apiRubrik.boxes = mergedBoxes;
+
+        apiRubrik.groups = apiRubrik.groups
+            .map(group => {
+                const cleanGroup = cloneState(group);
+                cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
+                    ? cleanGroup.boxes.filter(box => box && localBoxMap[box.boxId])
+                    : [];
+                return cleanGroup;
+            })
+            .filter(group => group.boxes.length > 0);
+
+        if(apiRubrik.groups.length === 0 && localRubrik.groups.length > 0){
+            apiRubrik.groups = localRubrik.groups
+                .map(group => {
+                    const cleanGroup = cloneState(group);
+                    cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
+                        ? cleanGroup.boxes.filter(box => box && localBoxMap[box.boxId])
+                        : [];
+                    return cleanGroup;
+                })
+                .filter(group => group.boxes.length > 0);
+        }
+
+        if(!apiRubrik.rubrikAI.instructions.instructions && localRubrik.rubrikAI.instructions.instructions){
+            apiRubrik.rubrikAI.instructions = localRubrik.rubrikAI.instructions;
+        }
+
+        if(!apiRubrik.rubrikAI.question.question && localRubrik.rubrikAI.question.question){
+            apiRubrik.rubrikAI.question = localRubrik.rubrikAI.question;
+        }
+
+        Object.keys(localRubrik.rubrikAI.alias).forEach(boxKey => {
+            if(typeof apiRubrik.rubrikAI.alias[boxKey] !== "string"){
+                apiRubrik.rubrikAI.alias[boxKey] = localRubrik.rubrikAI.alias[boxKey];
+            }
+        });
+
+        slides[localSlideIndex].rubrik = apiRubrik;
+    }
+
+    function applyRubrikState(nextState){
+        const normalizedState = normalizeRubrikState(
+            nextState && typeof nextState === "object" ? cloneState(nextState) : getEmptyRubrikState()
+        );
+
+        appState.boxes = normalizedState.boxes;
+        appState.groups = ensureRuntimeGroupIds(normalizedState.groups);
+
+        const nextRubrikAI = normalizeRubrikAI(normalizedState.rubrikAI);
+        rubrikAIState.instructions = nextRubrikAI.instructions;
+        rubrikAIState.question = nextRubrikAI.question;
+        rubrikAIState.alias = nextRubrikAI.alias;
+        rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
+        rubrikAIQuestion.value = rubrikAIState.question.question;
+
+        setFormMode(null);
+        renderConfigurator();
+        renderEvaluatorTestingPanel();
+        groupNameInput.value = '';
+        groupScoreInput.value = '0';
+        Object.keys(extraOptions).forEach(k => {
+            extraOptions[k].chk.checked = false;
+            extraOptions[k].num.value = 0;
+            extraOptions[k].num.disabled = true;
+        });
+        renderGroupsList();
+        triggerEvaluation();
+    }
+
+    function getCleanRubrikState(){
+        syncRubrikAIFields();
+        return {
+            boxes: cloneState(appState.boxes),
+            groups: appState.groups.map(({ id, ...clean }) => cloneState(clean)),
+            rubrikAI: cloneState(rubrikAIState)
+        };
+    }
+
+    function persistActiveSlideRubrik(){
+        const slides = getSlidesFromRubrikFile();
+        if(activeSlideIndex === null || !slides[activeSlideIndex]){
+            return;
+        }
+        slides[activeSlideIndex].rubrik = getCleanRubrikState();
+    }
+
+    function clearBoxInputs(){
+        document.querySelectorAll('.box-input').forEach(input => {
+            input.value = '';
+        });
+        Object.keys(appState.boxes).forEach(boxKey => {
+            appState.boxes[boxKey] = 'null';
+        });
+    }
+
+    function getBoxInputDisplayValue(value){
+        return value === 'null' || value === null || typeof value === 'undefined' ? '' : value;
+    }
+
+    function renderSlideTabs(){
+        const slides = getSlidesFromRubrikFile();
+        slideTabs.innerHTML = '';
+
+        if(slides.length === 0){
+            slideTabsPanel.style.display = 'none';
+            return;
+        }
+
+        slideTabsPanel.style.display = 'block';
+        slides.forEach((slide, index) => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'slide-tab' + (index === activeSlideIndex ? ' active' : '');
+            tab.textContent = getSlideName(slide, index);
+            tab.addEventListener('click', () => selectSlide(index));
+            slideTabs.appendChild(tab);
+        });
+    }
+
+    function selectSlide(index){
+        const slides = getSlidesFromRubrikFile();
+        const slide = slides[index];
+        if(!slide) return;
+
+        const isSlideChange = activeSlideIndex !== null && activeSlideIndex !== index;
+        if(activeSlideIndex !== null && activeSlideIndex !== index){
+            persistActiveSlideRubrik();
+        }
+        activeSlideIndex = index;
+        document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${getRubrikFileName()} > Scene: ${getSlideName(slide, index)}</span>`;
+        applyRubrikState(slide.rubrik || getEmptyRubrikState());
+        if(isSlideChange){
+            clearBoxInputs();
+            triggerEvaluation();
+        }
+        renderSlideTabs();
+        renderArchiveList();
+    }
+
+    function getOccLogs(){
+        return occLogState && Array.isArray(occLogState.list) ? occLogState.list : [];
+    }
+
+    function setArchiveStatus(message){
+        archiveStatus.textContent = message || '';
+        archiveStatus.classList.toggle('visible', Boolean(message));
+    }
+
+    function setArchiveRollbackDate(dateText){
+        archiveRollbackDate.textContent = dateText ? 'Rollback: ' + dateText : '';
+        archiveRollbackDate.classList.toggle('visible', Boolean(dateText));
+    }
+
+    function formatOccLogDateTime(value){
+        if(!value){
+            return '';
+        }
+
+        const date = new Date(value);
+        if(Number.isNaN(date.getTime())){
+            const dateText = String(value).split('T')[0].trim();
+            const isoMatch = dateText.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if(isoMatch){
+                return isoMatch[3].padStart(2, '0') + '/' + isoMatch[2].padStart(2, '0') + '/' + isoMatch[1] + ' --:--';
+            }
+
+            const localMatch = dateText.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+            if(localMatch){
+                return localMatch[1].padStart(2, '0') + '/' + localMatch[2].padStart(2, '0') + '/' + localMatch[3] + ' --:--';
+            }
+
+            return dateText;
+        }
+
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hour = String(date.getHours()).padStart(2, '0');
+        const minute = String(date.getMinutes()).padStart(2, '0');
+
+        return day + '/' + month + '/' + year + ' ' + hour + ':' + minute;
+    }
+
+    function renderArchiveList(){
+        const logs = getOccLogs();
+        archivePanel.style.display = activeOccFileName || activeSlideIndex !== null ? 'block' : 'none';
+
+        if(!activeOccFileName && activeSlideIndex === null){
+            return;
+        }
+
+        if(logs.length === 0){
+            archiveList.classList.remove('scrollable');
+            archiveList.innerHTML = 'Log bulunamadı.';
+            return;
+        }
+
+        archiveList.innerHTML = '';
+        archiveList.classList.toggle('scrollable', logs.length > 3);
+        logs.forEach((log, index) => {
+            const item = document.createElement('div');
+            item.className = 'archive-item' + (log.logId === selectedOccLogId ? ' selected' : '');
+
+            const info = document.createElement('div');
+            info.className = 'archive-info';
+
+            const indexBadge = document.createElement('span');
+            indexBadge.className = 'archive-index';
+            indexBadge.textContent = index + 1;
+
+            const title = document.createElement('div');
+            title.className = 'archive-title';
+            title.textContent = formatOccLogDateTime(log.createdAt) || 'Tarih yok';
+
+            info.appendChild(indexBadge);
+            info.appendChild(title);
+
+            const goButton = document.createElement('button');
+            goButton.type = 'button';
+            goButton.className = 'archive-go-btn';
+            goButton.textContent = 'Git';
+            goButton.disabled = isRollbackInProgress || !log.logId;
+
+            goButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                rollbackToLog(log.logId);
+            });
+
+            item.appendChild(info);
+            item.appendChild(goButton);
+            archiveList.appendChild(item);
+        });
+    }
+
+    async function fetchOccLogs(fileName){
+        if(!fileName){
+            occLogState = {count: 0, list: []};
+            selectedOccLogId = null;
+            setArchiveStatus('');
+            renderArchiveList();
+            return;
+        }
+
+        activeOccFileName = fileName;
+        setArchiveStatus('Loglar yükleniyor...');
+
+        try {
+            const data = await fetchJsonFile(getOccLogApiUrl(fileName));
+            occLogState = {
+                count: Number(data.count) || 0,
+                list: Array.isArray(data.list) ? data.list : []
+            };
+            selectedOccLogId = null;
+            setArchiveStatus(occLogState.list.length ? '' : 'Log bulunamadı.');
+        } catch (error) {
+            console.error(error);
+
+            occLogState = { count: 0, list: [] };
+            selectedOccLogId = null;
+
+            setArchiveStatus(`
+Log listesi alınamadı.
+
+Message: ${error?.message || '-'}
+Status: ${error?.status || error?.response?.status || '-'}
+URL: ${maskSensitiveUrl(getOccLogApiUrl(fileName))}
+Detail: ${error?.detail || '-'}
+`.trim());
+
+            renderArchiveList();
+        }
+
+        renderArchiveList();
+    }
+
+    async function reloadActiveOccRubrikFile(){
+        if(!activeOccFileName){
+            return;
+        }
+
+        try {
+            rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(activeOccFileName));
+            const slides = getSlidesFromRubrikFile();
+            if(slides.length > 0){
+                const nextIndex = activeSlideIndex !== null && slides[activeSlideIndex] ? activeSlideIndex : 0;
+                selectSlide(nextIndex);
+            }
+        } catch (error) {
+            console.warn('Rollback sonrası OCC rubrik dosyası yenilenemedi:', error);
+        }
+    }
+
+    async function rollbackToLog(logId){
+        if(!logId){
+            alert('Lütfen rollback için bir log seçin.');
+            return;
+        }
+
+        selectedOccLogId = logId;
+        const rollbackLog = getOccLogs().find(log => log.logId === logId);
+        const rollbackDateText = rollbackLog ? formatOccLogDateTime(rollbackLog.createdAt) : '';
+        isRollbackInProgress = true;
+        setArchiveStatus('Rollback yapılıyor...');
+        renderArchiveList();
+
+        try {
+            const body = new URLSearchParams();
+            body.set('logId', logId);
+
+            const response = await authenticatedRubrikFetch('/api/occ/rollback', {
+                method: 'PUT',
+                headers: getRubrikAuthHeaders({
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }),
+                body: body.toString()
+            });
+
+            if(!response.ok){
+                throw new Error('Rollback başarısız: ' + response.status);
+            }
+
+            await response.json().catch(() => ({}));
+            await fetchOccLogs(activeOccFileName);
+            await reloadActiveOccRubrikFile();
+            setArchiveRollbackDate(rollbackDateText);
+            setArchiveStatus('Rollback başarılı.');
+        } catch (error) {
+            console.warn('Rollback isteği başarısız:', error);
+            setArchiveStatus('Rollback başarısız.');
+        } finally {
+            isRollbackInProgress = false;
+            renderArchiveList();
+        }
+    }
+
+    async function authenticatedRubrikFetch(url, options, retryAfterLogin){
+        const fetchOptions = Object.assign({}, options || {});
+        fetchOptions.headers = getRubrikAuthHeaders(fetchOptions.headers);
+
+        const response = await fetch(url, fetchOptions);
+        if(response.ok || retryAfterLogin === false){
+            return response;
+        }
+
+        let detail = "";
+        const clonedResponse = response.clone();
+        try {
+            detail = await clonedResponse.text();
+        } catch (error) {}
+
+        if(isJwtFailure(response.status, detail)){
+            await handleRubrikJwtFailure('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+            return authenticatedRubrikFetch(url, options, false);
+        }
+
+        return response;
+    }
+
+    async function fetchJsonFile(url){
+        const response = await authenticatedRubrikFetch(url, {cache: 'no-store'});
+        if(!response.ok){
+            var detail = "";
+            try {
+                detail = await response.text();
+            } catch (error) {}
+
+            var error = new Error('İstek başarısız: ' + response.status);
+            error.status = response.status;
+            error.url = url;
+            error.detail = detail;
+            if(isJwtFailure(response.status, detail)){
+                await handleRubrikJwtFailure('Oturum doğrulanamadı. Lütfen tekrar giriş yapın.');
+            }
+            throw error;
+        }
+        return response.json();
+    }
+
+    async function saveRubrikFileDirect(){
+        if(!rubrikFileData || !rubrikFileData.list){
+            throw new Error('Kaydedilecek OCC dosyası bulunamadı.');
+        }
+
+        const uid = getRubrikUid();
+        if(uid && !rubrikFileData.list.uid){
+            rubrikFileData.list.uid = uid;
+        }
+
+        if(uid && !rubrikFileData.list.creator){
+            rubrikFileData.list.creator = uid;
+        }
+
+        const body = new URLSearchParams();
+        if(uid){
+            body.set('uid', uid);
+        }
+        body.set('logType', '1');
+        body.set('stringJSON', JSON.stringify(rubrikFileData.list));
+
+        const response = await authenticatedRubrikFetch('/api/occ', {
+            method: 'POST',
+            headers: getRubrikAuthHeaders({
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }),
+            body: body.toString()
+        });
+
+        const data = await response.json().catch(() => ({}));
+        const saveSuccess = data.success || (data.response && data.response.success);
+        if(!response.ok || !saveSuccess){
+            throw new Error(data.message || 'Rubrik kaydedilemedi.');
+        }
+
+        return data;
+    }
+
     function syncRubrikAIFields(){
         rubrikAIState.instructions.instructions = rubrikAIInstructions.value;
         rubrikAIState.question.question = rubrikAIQuestion.value;
@@ -418,6 +1438,20 @@
     rubrikAIQuestion.value = rubrikAIState.question.question;
     rubrikAIInstructions.addEventListener('input', syncRubrikAIFields);
     rubrikAIQuestion.addEventListener('input', syncRubrikAIFields);
+
+    function hydrateInitialRubrikState(){
+        const hydratedState = normalizeRubrikState(cloneState(initialAppState || getEmptyRubrikState()));
+
+        appState.boxes = hydratedState.boxes;
+        appState.groups = ensureRuntimeGroupIds(hydratedState.groups);
+
+        const hydratedAI = normalizeRubrikAI(hydratedState.rubrikAI || initialRubrikAIState);
+        rubrikAIState.instructions = hydratedAI.instructions;
+        rubrikAIState.question = hydratedAI.question;
+        rubrikAIState.alias = hydratedAI.alias;
+        rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
+        rubrikAIQuestion.value = rubrikAIState.question.question;
+    }
 
     function syncAliasVisibility(row){
         const select = row.querySelector('.box-operator');
@@ -451,7 +1485,8 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'box-input';
-            input.value = appState.boxes[boxKey];
+            input.placeholder = 'Değer girin';
+            input.value = getBoxInputDisplayValue(appState.boxes[boxKey]);
 
             input.addEventListener('input', (e) => {
                 appState.boxes[boxKey] = e.target.value === '' ? 'null' : e.target.value;
@@ -636,7 +1671,7 @@
         groupNameInput.value = '';
         groupScoreInput.value = '0';
         document.querySelectorAll('.box-select').forEach(chk => chk.checked = false);
-        document.querySelectorAll('.box-input').forEach(inp => inp.value = 'null');
+        document.querySelectorAll('.box-input').forEach(inp => inp.value = '');
         document.querySelectorAll('.box-operator').forEach(sel => sel.value = '===');
         document.querySelectorAll('.box-row').forEach(syncAliasVisibility);
         syncRubrikAIVisibility();
@@ -695,7 +1730,7 @@
                 document.querySelectorAll('.box-row').forEach(row => {
                     const bk = row.dataset.box;
                     row.querySelector('.box-select').checked = false;
-                    row.querySelector('.box-input').value = 'null';
+                    row.querySelector('.box-input').value = '';
                     row.querySelector('.box-operator').value = '===';
                     appState.boxes[bk] = 'null';
                     syncAliasVisibility(row);
@@ -706,8 +1741,8 @@
                     if (row) {
                         row.querySelector('.box-select').checked = true;
                         row.querySelector('.box-operator').value = gBox.operator;
-                        row.querySelector('.box-input').value = gBox.value;
-                        appState.boxes[gBox.boxId] = gBox.value;
+                        row.querySelector('.box-input').value = getBoxInputDisplayValue(gBox.value);
+                        appState.boxes[gBox.boxId] = gBox.value || 'null';
                         syncAliasVisibility(row);
                     }
                 });
@@ -731,40 +1766,131 @@
         });
     }
 
-    btnFinalSave.addEventListener('click', () => {
-        syncRubrikAIFields();
-        const cleanState = {
-            boxes: appState.boxes,
-            groups: appState.groups.map(({ id, ...clean }) => clean),
-            rubrikAI: rubrikAIState
-        };
+    btnFinalSave.addEventListener('click', async () => {
+        persistActiveSlideRubrik();
+        const cleanState = getCleanRubrikState();
 
         console.log("=== KONSOL JSON ÇIKTISI ===");
         console.log(JSON.stringify(cleanState, null, 2));
 
-        if (typeof(Storage) !== "undefined"){
-            var occSceneRubrikSave = {
-                user: rubrikData.user,
-                payload: cleanState
-            };
-            localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
-            window.close();
+        btnFinalSave.disabled = true;
+        const defaultSaveText = btnFinalSave.textContent;
+        btnFinalSave.textContent = 'Kaydediliyor...';
+
+        try {
+            await saveRubrikFileDirect();
+            if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
+                var occSceneRubrikSave = {
+                    user: rubrikData.user,
+                    scene: {
+                        id: activeSlideIndex !== null ? activeSlideIndex : rubrikData.scene.id,
+                        name: activeSlideIndex !== null ? getSlideName(getSlidesFromRubrikFile()[activeSlideIndex], activeSlideIndex) : rubrikData.scene.name
+                    },
+                    payload: cleanState
+                };
+                localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
+            }
+            btnFinalSave.textContent = 'Kaydedildi';
+
+            if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
+                setTimeout(() => window.close(), 350);
+            } else {
+                btnFinalSave.disabled = false;
+                btnFinalSave.textContent = defaultSaveText;
+            }
+        } catch (error) {
+            console.warn('Rubrik kaydetme başarısız:', error);
+            alert(error.message || 'Rubrik kaydedilemedi.');
+            btnFinalSave.disabled = false;
+            btnFinalSave.textContent = defaultSaveText;
         }
 
         console.log("=======================================");
     });
 
-    if (initialAppState && initialAppState.groups.length > 0) {
-        Object.assign(appState.boxes, initialAppState.boxes);
-        appState.groups = ensureRuntimeGroupIds(JSON.parse(JSON.stringify(initialAppState.groups)));
+    async function initRubrikPanel(){
+        const queryFileName = getQueryFileName();
+
+        if(queryFileName){
+            activeOccFileName = queryFileName;
+            await fetchOccLogs(queryFileName);
+
+            try {
+                rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(queryFileName));
+                mergeLocalRubrikIntoActiveApiSlide();
+
+                if(getSlidesFromRubrikFile().length > 0){
+                    const initialSlideIndex = rubrikData && rubrikData.scene && Number.isInteger(Number(rubrikData.scene.id))
+                        ? Number(rubrikData.scene.id)
+                        : 0;
+                    selectSlide(getSlidesFromRubrikFile()[initialSlideIndex] ? initialSlideIndex : 0);
+                    return;
+                }
+
+                document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${queryFileName}</span>`;
+            } catch (error) {
+                console.warn('OCC rubrik dosyası okunamadı:', error);
+                document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: #ef4444">File alınamadı: ${queryFileName}</span>`;
+            }
+
+            renderConfigurator();
+            renderGroupsList();
+            renderEvaluatorTestingPanel();
+            triggerEvaluation();
+            return;
+        }
+
+        if(hasLocalRubrikData){
+            activeOccFileName = rubrikData && rubrikData.user ? rubrikData.user.selectedFile : "";
+            await fetchOccLogs(activeOccFileName);
+
+            renderConfigurator();
+            renderGroupsList();
+            renderEvaluatorTestingPanel();
+            triggerEvaluation();
+            return;
+        }
+
+        try {
+            rubrikFileData = await fetchJsonFile('/files/rubrik.json');
+            activeOccFileName = getRubrikFileName();
+            await fetchOccLogs(activeOccFileName);
+
+            if(getSlidesFromRubrikFile().length > 0){
+                selectSlide(0);
+                return;
+            }
+        } catch (error) {
+            console.warn('Rubrik/log verisi okunamadı:', error);
+        }
+
+        if (initialAppState && Array.isArray(initialAppState.groups) && initialAppState.groups.length > 0) {
+            Object.assign(appState.boxes, initialAppState.boxes);
+            appState.groups = ensureRuntimeGroupIds(JSON.parse(JSON.stringify(initialAppState.groups)));
+        }
+
         renderConfigurator();
         renderGroupsList();
-    } else {
-        renderConfigurator();
+        renderEvaluatorTestingPanel();
+        triggerEvaluation();
     }
 
-    renderEvaluatorTestingPanel();
-    triggerEvaluation();
+    function startRubrikApp(){
+        if(isRubrikAppStarted){
+            return;
+        }
+
+        isRubrikAppStarted = true;
+        getLocalData();
+        hydrateInitialRubrikState();
+        initRubrikPanel();
+    }
+
+    if(getRubrikJwt()){
+        startRubrikApp();
+    }else{
+        showRubrikLogin();
+    }
 </script>
 </body>
 </html>

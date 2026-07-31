@@ -2399,7 +2399,7 @@ document.querySelector("#duplicate_action").addEventListener("click", function()
 });
 
 document.querySelector(".goRubrik").addEventListener("click", function(){
-    var totalBox = CREATE.checkKontrol();
+    /* var totalBox = CREATE.checkKontrol(); */
     syncRubrikMetaData();
     if(!jsonV2.slides[sceneIndex].rubrik){
         jsonV2.slides[sceneIndex].rubrik = {boxes:{}, groups:[]};
@@ -2409,9 +2409,15 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
         jsonV2.slides[sceneIndex].rubrik.groups = [];
     }
 
+    /*
     jsonV2.slides[sceneIndex].rubrik.boxes={};
     for(var i=0; i<=totalBox; i++){
         jsonV2.slides[sceneIndex].rubrik.boxes["box"+i] = "null";
+    }
+    */
+
+    if(typeof window.syncActiveSlideRubrikBoxes === "function"){
+        window.syncActiveSlideRubrikBoxes();
     }
 
     var rubrikData = {
@@ -2431,7 +2437,10 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
         IDE.popupWindow.close();
     }
 
-    IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220");
+    console.log(IDE.user);
+    var rubrikPanelUrl = "/rubrik?file_name=" + encodeURIComponent(IDE.user.selectedFile);
+    IDE.popupWindow = window.open(rubrikPanelUrl, "_blank", "width=800,height=600,left=540,top=220");
+    /* IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220"); */
 });
 
 
@@ -2445,16 +2454,11 @@ window.addEventListener("focus", function(){
                 if(IDE.user.selectedFile === rubrik.user.selectedFile){
                     console.log("rubriks", rubrik);
                     console.log( occSceneRubrikSave );
-                    if(rubrik.payload && rubrik.payload.rubrik){
-                        jsonV2.slides[sceneIndex].rubrik = rubrik.payload.rubrik;
-                        if(rubrik.payload.rubrikAI){
-                            jsonV2.slides[sceneIndex].rubrik.rubrikAI = rubrik.payload.rubrikAI;
-                        }
-                    }else{
-                        console.log("B Save");
-                        jsonV2.slides[sceneIndex].rubrik = rubrik.payload;
+                    var rubrikSceneIndex = rubrik.scene && typeof rubrik.scene.id !== "undefined" ? Number(rubrik.scene.id) : sceneIndex;
+                    if(!Number.isInteger(rubrikSceneIndex) || !jsonV2.slides[rubrikSceneIndex]){
+                        rubrikSceneIndex = sceneIndex;
                     }
-                    syncRubrikMetaData();
+                    jsonV2.slides[rubrikSceneIndex].rubrik = rubrik.payload;
                     rubrikParse();
                     localStorage.removeItem("occSceneRubrikSave");
                 }

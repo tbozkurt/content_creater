@@ -1061,10 +1061,16 @@ function PLAYER(){
             SP[This.sceneIndex].feedBack.map(function (feedback) {
                 if (feedback.status === "AI") {
                     feedback.main.style.visibility = "visible";
-                    console.log(feedback.main.querySelector(".feedbackAI"));
                     feedback.main.querySelector(".feedbackAI").innerHTML = feedbackStr;
                     gsap.to(feedback.main, 0, {transformOrigin: "50% 50%", scale: 0});
                     gsap.to(feedback.main, 0.5, {transformOrigin: "50% 50%", scale: 1});
+                    if(result.includes("T1")){
+                        This.sceneComplete();
+                        This.nextScene();
+                        This.playRightAudio();
+                    }else{
+                        This.playWrongAudio();
+                    }
                 }
             });
             console.log(result);
@@ -1077,6 +1083,7 @@ function PLAYER(){
             controlBtnView(sp, "disable");
             sp.screenCloseDOM.style.display = "block";
             sp.screenCloseDOM.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+            sp.screenCloseDOM.querySelector(".ai-main").style.visibility="visible";
             sp.screenCloseDOM.querySelector("#ai_circle1").classList.add("addAnimation");
             sp.screenCloseDOM.querySelector("#ai_circle2").classList.add("addAnimation");
             sp.screenCloseDOM.querySelector("#ai_circle3").classList.add("addAnimation");
@@ -1084,68 +1091,36 @@ function PLAYER(){
             controlBtnView(sp, "enable");
             sp.screenCloseDOM.style.display = "none";
             sp.screenCloseDOM.style.backgroundColor = "rgba(0, 0, 0, 0)";
+            sp.screenCloseDOM.querySelector(".ai-main").style.visibility="hidden";
             sp.screenCloseDOM.querySelector("#ai_circle1").classList.remove("addAnimation");
             sp.screenCloseDOM.querySelector("#ai_circle2").classList.remove("addAnimation");
             sp.screenCloseDOM.querySelector("#ai_circle3").classList.remove("addAnimation");
         }
     }
 
+    function getCookie(jwt){
+        var cookie = document.cookie.split('; ').find(function(row){
+            return row.indexOf(jwt + '=') === 0;
+        });
+
+        return cookie ? decodeURIComponent(cookie.substring(jwt.length + 1)) : '';
+    }
+
+
+
     function sendDataAI(formatData) {
-        /*        var format = {
-            "id": 1,
-            "type": "BTD-TEACHER",
 
-            "instructions": {
-                "type": "string",
-                "instructions": "Amerikalı matematikçi ve meteorolog Edward N. Lorenz (Edvırd N. Lorens), 1961 yılında hava tahmini üzerine çalışmalar yürütüyordu. Atmosferin bağlı olduğu fizik kurallarını bilgisayara aktarıyor, sıcaklık ve rüzgâr gibi değişkenlerin denklemlerini yazıyordu. Bu denklemlere sayısal değerler vererek hesaplamalar yapıyor, elde ettiği sonuçları grafikler üzerinden yorumluyordu.\nBu çalışmalar sırasında Lorenz, önceden elde ettiği bir grafiği yeniden incelemek istedi. Simülasyonu baştan çalıştırmak yerine yazıcının kâğıda bastığı ara sonuçları başlangıç noktası yaptı. Ancak bilgisayar sayıları hafızasında altı haneyle tutuyor, yazıcı ise kâğıda basarken üç haneye yuvarlıyordu. Bu yüzden Lorenz, farkında olmadan 0,506127 yerine 0,506 değerini girdi. İkisi arasındaki fark binde birden küçüktü. Ancak bilgisayar her hesaplamayı bir öncekinin üzerine kurduğundan bu küçük fark, her adımda biraz daha büyüdü. Bir süre sonra ekranda oluşan grafik ilk grafikten tamamen farklıydı: İlk grafik sakin bir havayı gösterirken ikinci grafik fırtınalı bir havaya işaret ediyordu.\nLorenz bu durumu, \"Amazon Ormanları'nda bir kelebeğin kanat çırpması, dünyanın öbür ucunda fırtınaya yol açabilir mi?\" sorusuyla özetledi. Böylece \"kelebek etkisi\" kavramı doğdu.\nLorenz'in fark ettiği durum, insanın gelişimi için de düşündürücüdür. Çünkü küçük alışkanlıklar, dikkatle alınan kararlar ve sabırla sürdürülen çabalar zamanla büyük sonuçlar doğurabilir. Geleceği planlarken ayrıntıları önemsemek de bu yüzden değerlidir. Lorenz, keşfini özetlemek için pek çok varlık arasından kelebeği seçmiş ve şu soruyu sormuştur:\nAmazon Ormanları'nda bir kelebeğin kanat çırpması, dünyanın öbür ucunda fırtınaya yol açabilir mi?"
-            },
-            "question": {
-                "type": "string",
-                "question": "Lorenz bu soruyu neden başka bir varlık değil de kelebek üzerinden kurmuş olabilir?"
-            },
-            "rubriks": [
-                {
-                    "value": "T1",
-                    "btd-teacher-condition": "Kelebek çok küçük ve güçsüz bir canlıdır. Bu seçim, önemsiz görünen küçük bir eylemin bile büyük sonuçlara yol açabileceği düşüncesini güçlü biçimde aktarmaktadır.",
-                    "weight": 1
-                },
-                {
-                    "value": "K1",
-                    "btd-teacher-condition": "Kelebek küçük bir hayvandır. Küçük şeylerin de büyük etkiler yaratabileceğini göstermek için seçilmiştir.",
-                    "weight": 0.5
-                },
-                {
-                    "value": "K2",
-                    "btd-teacher-condition": "Çünkü kelebeğin kanat çırpması çok küçük bir harekettir.",
-                    "weight": 0.3
-                },
-                {
-                    "value": "K3",
-                    "btd-teacher-condition": "Çünkü Amazon Ormanları'nda kelebek yaşar.",
-                    "weight": 0.2
-                },
-                {
-                    "value": "Y1",
-                    "btd-teacher-condition": "Lorenz kelebekleri sevdiği için. / Kelebek güzel bir hayvandır. / Kelebek uçabilir.",
-                    "weight": 0
-                },
-                {
-                    "value": "-",
-                    "btd-teacher-condition": "Soruyu boş bırakır.",
-                    "weight": 0
-                }
-            ],
-            "answer": {
-                "type": "string",
-                "answer": "Çünkü Amazon Ormanları'nda kelebekler yaşayabilir."
-            }
-        }*/
+/*
+    userJWT = "eyJhbGciOiJSUzI1NiIsImp0aSI6IjdjYWRkNzY1MTA0ZTYzNzdmYjg1ZmZiMDhmMjkxOWI1IiwidHlwIjoiSldUIn0.eyJpYXQiOjE3ODUzOTkxOTAsImZ1bGxOYW1lIjoiQWxpIMOWbWVyIFnEsWxhbmPEsSIsInVUeXBlIjoiU1RVREVOVCIsInRhcmdldCI6Ii9zdHUvaGlnaHNjaG9vbC9pbmRleC5waHAiLCJleHAiOjE3ODU0ODU1OTAsImRhdGEiOnsicmVsYXRlZFVJRCI6IjEyMjkxMzUzIiwic3RSZWFsU3RhdHVzIjoiMyIsImdyYWRlIjo5LCJzdFN0YXR1cyI6IjMifSwianRpIjoiN2NhZGQ3NjUxMDRlNjM3N2ZiODVmZmIwOGYyOTE5YjUiLCJuYmYiOjE3ODUzOTkxOTAsIm1haWwiOiJkZmdkZmdkZkBnc2RzZ2YuY29tIiwibmFtZSI6IkFsaSDDlm1lciIsInN1YiI6IjEyMjkxMzUzIiwiYXVkIjoiYW5hc2F5ZmFfY29kZSIsImxhc3RuYW1lIjoiWcSxbGFuY8SxIiwic2NvcGVzIjpbImF1dGguYmFzaWMiLCJtYXJrZXQuYmFzaWMiLCJhdXRoLnN0dWRlbnQiLCJhdXRoLnN0dWRlbnRBY3RpdmUiXX0.B9IZfym4btb4x_qjDSS7jz8ainmCb22Pfoe_gQlXLZ2QStMngIJ82kpU-nLlwfS0NTt1modAyug7WpiCFHpRZq-ioDxt5v-yF7oK-FcZkt4Dtk2gyhatmZ3DXyQ-9ol-DyAmsYb3fdY66mqqES6Fv4MbCqBNtKoE1ADXjJsmdjrBl58Q0jLba71lNa1fPoEmNSf_nRqNefxD8vTOD48oyBjj0sL8CWFc400nV0lvnzcQAf16wCeCLimbZUPDa1TODbE-B6TeJ-D4IVMpwlxrbgkBpaSqvxPhWUADcbXJC_PWFupDSF54_hnB6ZlkSXCNgt_DEu29pORviKbmhZ_jVw";
+*/
 
+        var jwt = getCookie("okulistik-jwt");
+        console.log(jwt);
 
         $.ajax({
             url: "https://oktest.okulistik.com/api/evaluation/ai-evaluate",
             headers: {
-                "Authorization": 'eyJhbGciOiJSUzI1NiIsImp0aSI6IjdjYWRkNzY1MTA0ZTYzNzdmYjg1ZmZiMDhmMjkxOWI1IiwidHlwIjoiSldUIn0.eyJpYXQiOjE3ODUzOTkxOTAsImZ1bGxOYW1lIjoiQWxpIMOWbWVyIFnEsWxhbmPEsSIsInVUeXBlIjoiU1RVREVOVCIsInRhcmdldCI6Ii9zdHUvaGlnaHNjaG9vbC9pbmRleC5waHAiLCJleHAiOjE3ODU0ODU1OTAsImRhdGEiOnsicmVsYXRlZFVJRCI6IjEyMjkxMzUzIiwic3RSZWFsU3RhdHVzIjoiMyIsImdyYWRlIjo5LCJzdFN0YXR1cyI6IjMifSwianRpIjoiN2NhZGQ3NjUxMDRlNjM3N2ZiODVmZmIwOGYyOTE5YjUiLCJuYmYiOjE3ODUzOTkxOTAsIm1haWwiOiJkZmdkZmdkZkBnc2RzZ2YuY29tIiwibmFtZSI6IkFsaSDDlm1lciIsInN1YiI6IjEyMjkxMzUzIiwiYXVkIjoiYW5hc2F5ZmFfY29kZSIsImxhc3RuYW1lIjoiWcSxbGFuY8SxIiwic2NvcGVzIjpbImF1dGguYmFzaWMiLCJtYXJrZXQuYmFzaWMiLCJhdXRoLnN0dWRlbnQiLCJhdXRoLnN0dWRlbnRBY3RpdmUiXX0.B9IZfym4btb4x_qjDSS7jz8ainmCb22Pfoe_gQlXLZ2QStMngIJ82kpU-nLlwfS0NTt1modAyug7WpiCFHpRZq-ioDxt5v-yF7oK-FcZkt4Dtk2gyhatmZ3DXyQ-9ol-DyAmsYb3fdY66mqqES6Fv4MbCqBNtKoE1ADXjJsmdjrBl58Q0jLba71lNa1fPoEmNSf_nRqNefxD8vTOD48oyBjj0sL8CWFc400nV0lvnzcQAf16wCeCLimbZUPDa1TODbE-B6TeJ-D4IVMpwlxrbgkBpaSqvxPhWUADcbXJC_PWFupDSF54_hnB6ZlkSXCNgt_DEu29pORviKbmhZ_jVw',
+                "Authorization": jwt,
                 "Accept-Language": 'tr-TR'
             },
             dataType: "json",
@@ -1164,7 +1139,6 @@ function PLAYER(){
             }
         });
     }
-
 
     function specialStartFNC(SP, SD){
         if(PLX.isEKT) {
@@ -2437,7 +2411,13 @@ function PLAYER(){
     }
 
     this.addScreenClose = function (Scene, index) {
-        SP[index].screenCloseDOM = utils.addDOM({className: "screenClose", innerHTML: '<div class="ai-loader"><div class="ai-circle" id="ai_circle1"></div><div class="ai-circle" id="ai_circle2"></div><div class="ai-circle" id="ai_circle3"></div></div>'});
+        SP[index].screenCloseDOM = utils.addDOM({
+            className: "screenClose",
+            innerHTML: `<div class="ai-main">
+                            <div class="ai-textbox">Yanıtınız analiz ediliyor. Lütfen bekleyin</div>
+                            <div class="ai-loader"><div class="ai-circle" id="ai_circle1"></div><div class="ai-circle" id="ai_circle2"></div><div class="ai-circle" id="ai_circle3"></div></div>
+                        </div>`
+        });
         Scene.appendChild(SP[index].screenCloseDOM);
     }
 
@@ -10903,6 +10883,11 @@ function PLAYER(){
         });
 
         function controlBtnViewCheck(){
+            if(SD.complete){
+                controlBtnView(SP, "disable");
+                return;
+            }
+
             var found = false;
 
             for(var id in DD.input){
@@ -10994,6 +10979,12 @@ function PLAYER(){
             }
 
             evaluation.timer = setTimeout(function(){
+                if(SD.complete){
+                    btnEvents("none");
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
                 btnEvents("auto");
                 for(var id in DD.input){
                     if(DD.input[id].status !== "right"){
