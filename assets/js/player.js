@@ -1014,12 +1014,48 @@ function PLAYER(){
         } else {
             var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
             showFeedBack(result.result, "auto", SD.historyRight.length);
-            console.log("resultEvalutor:", result.result);
+            rubrikResult(SP, SD, result.result);
+        }
+    }
+
+    function rubrikResult(SP, SD, result){
+        console.log("Result:", result);
+
+        SD.historyRight.push({
+            right: 0,
+            wrong: 0,
+            success: 0
+        });
+
+        if(result === "T1"){
+            console.log("Right");
+            This.playRightAudio();
+            This.sceneComplete();
+            This.nextScene();
+            SP.fnc.map(function(fnc){
+                fnc.close(true);
+            });
+
+            controlBtnView(SP, "disable");
+            answerBtnView(SP, "disable");
+            checkViewFNC(SD);
+            showFeedBack("right", "auto", 0);
+        }else{
+            console.log("Wrong");
+            console.log("B historyRight:", SD.historyRight.length);
+            SD.wrongCount++;
+            showWarning(SP, SD);
+            This.playWrongAudio();
+            showFeedBack("wrong", "auto", SD.historyRight.length);
         }
 
-        console.log(SP);
+        This.scoreCalc(true);
+        showToolTip(SP, SD);
+        specialFNC(SP, SD);
+        console.log(SD);
+
         /*
-        if(result.result === "T1"){
+        if(result === "T1"){
             This.sceneComplete();
             This.nextScene();
             SP.fnc.map(function(fnc){
@@ -1064,16 +1100,28 @@ function PLAYER(){
                     feedback.main.querySelector(".feedbackAI").innerHTML = feedbackStr;
                     gsap.to(feedback.main, 0, {transformOrigin: "50% 50%", scale: 0});
                     gsap.to(feedback.main, 0.5, {transformOrigin: "50% 50%", scale: 1});
-                    if(result.includes("T1")){
-                        This.sceneComplete();
-                        This.nextScene();
-                        This.playRightAudio();
-                    }else{
-                        This.playWrongAudio();
-                    }
+
                 }
             });
-            console.log(result);
+
+
+            var response = response.success;
+            console.log( response );
+            console.log( result);
+
+            /*
+            if(result.includes("T1")){
+                This.sceneComplete();
+                This.nextScene();
+                This.playRightAudio();
+            }else{
+                This.playWrongAudio();
+            }
+            */
+            var sp = SP[This.sceneIndex];
+            var sd = SD[This.sceneIndex];
+
+            rubrikResult(sp, sd, result);
         }
     }
 

@@ -173,6 +173,8 @@ function utils(){
         str = str.replace("ü", "u");
         str = str.replace("ç", "c");
         str = str.replace("ş", "s");
+        str = str.replace("ö", "o");
+        str = str.replace("Ö", "o");
         console.log(str);
         return str;
     }

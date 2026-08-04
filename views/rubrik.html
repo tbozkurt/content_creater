@@ -229,6 +229,7 @@
         }
 
         .archive-list {
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: 6px;
@@ -239,6 +240,35 @@
 
         .archive-list.scrollable {
             overflow-y: auto;
+        }
+
+        .archive-list.loading {
+            min-height: 58px;
+            color: #bababa;
+        }
+
+        .archive-list.loading > :not(.archive-list-loading) {
+            filter: blur(2px);
+            opacity: 0.48;
+            pointer-events: none;
+        }
+
+        .archive-list-loading {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 0;
+            background: rgba(37, 37, 37, 0.58);
+            backdrop-filter: blur(1px);
+            border: 1px solid #454545;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            box-sizing: border-box;
         }
 
         .archive-item {
@@ -320,6 +350,22 @@
             white-space: nowrap;
         }
 
+        .archive-active-check {
+            width: 14px;
+            height: 14px;
+            margin-left: 5px;
+            border-radius: 50%;
+            background: #10b981;
+            color: #000000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 900;
+            line-height: 1;
+            vertical-align: 1px;
+        }
+
         .archive-meta {
             color: #8f8f8f;
             font-size: 11px;
@@ -339,6 +385,24 @@
 
         .archive-status.visible {
             display: block;
+        }
+
+        .archive-status.info {
+            background: #172032;
+            border-color: #3b82f6;
+            color: #93c5fd;
+        }
+
+        .archive-status.success {
+            background: #12281d;
+            border-color: #10b981;
+            color: #6ee7b7;
+        }
+
+        .archive-status.error {
+            background: #3a1c1c;
+            border-color: #ef4444;
+            color: #ff8b8b;
         }
 
         .archive-title-row {
@@ -391,6 +455,71 @@
         .archive-go-btn:disabled {
             cursor: not-allowed;
             opacity: 0.55;
+        }
+
+        .archive-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(0, 0, 0, 0.25);
+            border-top-color: #000000;
+            border-radius: 50%;
+            animation: archive-spin 0.75s linear infinite;
+            box-sizing: border-box;
+        }
+
+        .btn-loading {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            cursor: wait;
+        }
+
+        .rubrik-page-loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.58);
+        }
+
+        .rubrik-page-loading-overlay.visible {
+            display: flex;
+        }
+
+        .rubrik-page-loading-card {
+            min-width: 190px;
+            padding: 18px 20px;
+            background: #252525;
+            border: 1px solid #454545;
+            border-radius: 6px;
+            box-shadow: 0 16px 42px rgba(0, 0, 0, 0.62);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            box-sizing: border-box;
+        }
+
+        .rubrik-page-spinner {
+            width: 46px;
+            height: 46px;
+            border: 4px solid rgba(255, 255, 255, 0.28);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: archive-spin 0.75s linear infinite;
+            box-sizing: border-box;
+        }
+
+        @keyframes archive-spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .rubrik-login-overlay {
@@ -499,6 +628,13 @@
         <button id="rubrikLoginButton" type="submit" class="btn-primary rubrik-login-btn">Giriş Yap</button>
         <div id="rubrikLoginError" class="rubrik-login-error"></div>
     </form>
+</div>
+
+<div id="rubrikPageLoadingOverlay" class="rubrik-page-loading-overlay" aria-hidden="true">
+    <div class="rubrik-page-loading-card">
+        <div class="rubrik-page-spinner"></div>
+        <div id="rubrikPageLoadingText">Yükleniyor...</div>
+    </div>
 </div>
 
 <div id="slideTabsPanel" class="slide-tabs-panel panel-card">
@@ -629,10 +765,12 @@
         list: []
     };
     var selectedOccLogId = null;
+    var activeRollbackLogId = null;
     var activeOccFileName = "";
     var activeSlideIndex = null;
     var hasLocalRubrikData = false;
     var isRollbackInProgress = false;
+    var isArchiveListLoading = false;
     var isRubrikAppStarted = false;
     var rubrikLoginWaiters = [];
     var rubrikCurrentUser = null;
@@ -644,6 +782,8 @@
     const rubrikPassword = document.getElementById('rubrikPassword');
     const rubrikLoginButton = document.getElementById('rubrikLoginButton');
     const rubrikLoginError = document.getElementById('rubrikLoginError');
+    const rubrikPageLoadingOverlay = document.getElementById('rubrikPageLoadingOverlay');
+    const rubrikPageLoadingText = document.getElementById('rubrikPageLoadingText');
 
     function getCookieValue(name){
         const cookie = document.cookie
@@ -1156,14 +1296,31 @@
         return occLogState && Array.isArray(occLogState.list) ? occLogState.list : [];
     }
 
-    function setArchiveStatus(message){
+    function setArchiveStatus(message, type){
         archiveStatus.textContent = message || '';
+        archiveStatus.classList.remove('info', 'success', 'error');
+        if(message && type){
+            archiveStatus.classList.add(type);
+        }
         archiveStatus.classList.toggle('visible', Boolean(message));
     }
 
     function setArchiveRollbackDate(dateText){
         archiveRollbackDate.textContent = dateText ? 'Rollback: ' + dateText : '';
         archiveRollbackDate.classList.toggle('visible', Boolean(dateText));
+    }
+
+    function setRubrikPageLoading(isLoading, message){
+        if(message){
+            rubrikPageLoadingText.textContent = message;
+        }
+        rubrikPageLoadingOverlay.classList.toggle('visible', Boolean(isLoading));
+        rubrikPageLoadingOverlay.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+    }
+
+    function setArchiveListLoading(isLoading){
+        isArchiveListLoading = Boolean(isLoading);
+        renderArchiveList();
     }
 
     function formatOccLogDateTime(value){
@@ -1196,6 +1353,56 @@
         return day + '/' + month + '/' + year + ' ' + hour + ':' + minute;
     }
 
+    function getLatestOccLog(logs){
+        if(!Array.isArray(logs) || logs.length === 0){
+            return null;
+        }
+
+        return logs.reduce((latestLog, log) => {
+            if(!latestLog){
+                return log;
+            }
+
+            const latestTime = new Date(latestLog.createdAt).getTime();
+            const logTime = new Date(log.createdAt).getTime();
+
+            if(Number.isNaN(logTime)){
+                return latestLog;
+            }
+
+            if(Number.isNaN(latestTime) || logTime > latestTime){
+                return log;
+            }
+
+            return latestLog;
+        }, null);
+    }
+
+    function getOccLogTime(log){
+        if(!log || !log.createdAt){
+            return NaN;
+        }
+
+        return new Date(log.createdAt).getTime();
+    }
+
+    function getActiveRollbackLogId(rollbackLog, logs){
+        const latestLog = getLatestOccLog(logs);
+
+        if(!latestLog || !latestLog.logId || !rollbackLog || !rollbackLog.logId){
+            return null;
+        }
+
+        const latestTime = getOccLogTime(latestLog);
+        const rollbackTime = getOccLogTime(rollbackLog);
+
+        if(Number.isNaN(latestTime) || Number.isNaN(rollbackTime)){
+            return null;
+        }
+
+        return latestTime > rollbackTime ? latestLog.logId : null;
+    }
+
     function renderArchiveList(){
         const logs = getOccLogs();
         archivePanel.style.display = activeOccFileName || activeSlideIndex !== null ? 'block' : 'none';
@@ -1204,60 +1411,97 @@
             return;
         }
 
+        archiveList.classList.remove('loading');
+        archiveList.querySelector('.archive-list-loading')?.remove();
+
         if(logs.length === 0){
             archiveList.classList.remove('scrollable');
             archiveList.innerHTML = 'Log bulunamadı.';
-            return;
+        } else {
+            archiveList.innerHTML = '';
+            archiveList.classList.toggle('scrollable', logs.length > 3);
+            logs.forEach((log, index) => {
+                const item = document.createElement('div');
+                item.className = 'archive-item' + (log.logId === selectedOccLogId ? ' selected' : '');
+
+                const info = document.createElement('div');
+                info.className = 'archive-info';
+
+                const indexBadge = document.createElement('span');
+                indexBadge.className = 'archive-index';
+                indexBadge.textContent = index + 1;
+
+                const title = document.createElement('div');
+                title.className = 'archive-title';
+                title.textContent = formatOccLogDateTime(log.createdAt) || 'Tarih yok';
+                if(log.logId && log.logId === activeRollbackLogId){
+                    const check = document.createElement('span');
+                    check.className = 'archive-active-check';
+                    check.textContent = '✓';
+                    check.title = 'Rollback öncesi aktif kayıt';
+                    title.appendChild(check);
+                }
+
+                info.appendChild(indexBadge);
+                info.appendChild(title);
+
+                const goButton = document.createElement('button');
+                goButton.type = 'button';
+                goButton.className = 'archive-go-btn';
+                goButton.disabled = isRollbackInProgress || !log.logId;
+                goButton.textContent = 'Git';
+
+                goButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    rollbackToLog(log.logId);
+                });
+
+                item.appendChild(info);
+                item.appendChild(goButton);
+                archiveList.appendChild(item);
+            });
         }
 
-        archiveList.innerHTML = '';
-        archiveList.classList.toggle('scrollable', logs.length > 3);
-        logs.forEach((log, index) => {
-            const item = document.createElement('div');
-            item.className = 'archive-item' + (log.logId === selectedOccLogId ? ' selected' : '');
+        if(isArchiveListLoading){
+            archiveList.classList.add('loading');
 
-            const info = document.createElement('div');
-            info.className = 'archive-info';
+            const loading = document.createElement('div');
+            loading.className = 'archive-list-loading';
 
-            const indexBadge = document.createElement('span');
-            indexBadge.className = 'archive-index';
-            indexBadge.textContent = index + 1;
+            const spinner = document.createElement('span');
+            spinner.className = 'archive-spinner';
+            spinner.setAttribute('aria-hidden', 'true');
 
-            const title = document.createElement('div');
-            title.className = 'archive-title';
-            title.textContent = formatOccLogDateTime(log.createdAt) || 'Tarih yok';
-
-            info.appendChild(indexBadge);
-            info.appendChild(title);
-
-            const goButton = document.createElement('button');
-            goButton.type = 'button';
-            goButton.className = 'archive-go-btn';
-            goButton.textContent = 'Git';
-            goButton.disabled = isRollbackInProgress || !log.logId;
-
-            goButton.addEventListener('click', (event) => {
-                event.stopPropagation();
-                rollbackToLog(log.logId);
-            });
-
-            item.appendChild(info);
-            item.appendChild(goButton);
-            archiveList.appendChild(item);
-        });
+            loading.appendChild(spinner);
+            loading.appendChild(document.createTextNode('Log yenileniyor...'));
+            archiveList.appendChild(loading);
+        }
     }
 
-    async function fetchOccLogs(fileName){
+    async function fetchOccLogs(fileName, options){
+        const fetchOptions = Object.assign({
+            showStatus: true,
+            showListLoading: false
+        }, options || {});
+
         if(!fileName){
             occLogState = {count: 0, list: []};
             selectedOccLogId = null;
+            activeRollbackLogId = null;
+            isArchiveListLoading = false;
             setArchiveStatus('');
             renderArchiveList();
             return;
         }
 
         activeOccFileName = fileName;
-        setArchiveStatus('Loglar yükleniyor...');
+        if(fetchOptions.showStatus){
+            setArchiveStatus('Loglar yükleniyor...', 'info');
+        }
+        if(fetchOptions.showListLoading){
+            isArchiveListLoading = true;
+            renderArchiveList();
+        }
 
         try {
             const data = await fetchJsonFile(getOccLogApiUrl(fileName));
@@ -1266,12 +1510,15 @@
                 list: Array.isArray(data.list) ? data.list : []
             };
             selectedOccLogId = null;
-            setArchiveStatus(occLogState.list.length ? '' : 'Log bulunamadı.');
+            if(fetchOptions.showStatus){
+                setArchiveStatus('');
+            }
         } catch (error) {
             console.error(error);
 
             occLogState = { count: 0, list: [] };
             selectedOccLogId = null;
+            isArchiveListLoading = false;
 
             setArchiveStatus(`
 Log listesi alınamadı.
@@ -1280,11 +1527,12 @@ Message: ${error?.message || '-'}
 Status: ${error?.status || error?.response?.status || '-'}
 URL: ${maskSensitiveUrl(getOccLogApiUrl(fileName))}
 Detail: ${error?.detail || '-'}
-`.trim());
+`.trim(), 'error');
 
             renderArchiveList();
         }
 
+        isArchiveListLoading = false;
         renderArchiveList();
     }
 
@@ -1315,7 +1563,8 @@ Detail: ${error?.detail || '-'}
         const rollbackLog = getOccLogs().find(log => log.logId === logId);
         const rollbackDateText = rollbackLog ? formatOccLogDateTime(rollbackLog.createdAt) : '';
         isRollbackInProgress = true;
-        setArchiveStatus('Rollback yapılıyor...');
+        setRubrikPageLoading(true, 'Rollback yükleniyor...');
+        setArchiveStatus('');
         renderArchiveList();
 
         try {
@@ -1335,15 +1584,17 @@ Detail: ${error?.detail || '-'}
             }
 
             await response.json().catch(() => ({}));
-            await fetchOccLogs(activeOccFileName);
+            await fetchOccLogs(activeOccFileName, {showStatus: false});
+            activeRollbackLogId = getActiveRollbackLogId(rollbackLog, getOccLogs());
             await reloadActiveOccRubrikFile();
             setArchiveRollbackDate(rollbackDateText);
-            setArchiveStatus('Rollback başarılı.');
+            setArchiveStatus('Rollback başarılı.', 'success');
         } catch (error) {
             console.warn('Rollback isteği başarısız:', error);
-            setArchiveStatus('Rollback başarısız.');
+            setArchiveStatus('Rollback başarısız.', 'error');
         } finally {
             isRollbackInProgress = false;
+            setRubrikPageLoading(false);
             renderArchiveList();
         }
     }
@@ -1427,6 +1678,36 @@ Detail: ${error?.detail || '-'}
         }
 
         return data;
+    }
+
+    async function refreshOccLogsAfterSave(){
+        const fileName = activeOccFileName || getRubrikFileName();
+        if(!fileName){
+            return;
+        }
+
+        try {
+            await fetchOccLogs(fileName, {
+                showStatus: false,
+                showListLoading: true
+            });
+        } catch (error) {
+            console.warn('Kaydetme sonrası log listesi yenilenemedi:', error);
+        }
+    }
+
+    function setFinalSaveButtonLoading(isLoading, text){
+        btnFinalSave.classList.toggle('btn-loading', Boolean(isLoading));
+        btnFinalSave.textContent = '';
+
+        if(isLoading){
+            const spinner = document.createElement('span');
+            spinner.className = 'archive-spinner';
+            spinner.setAttribute('aria-hidden', 'true');
+            btnFinalSave.appendChild(spinner);
+        }
+
+        btnFinalSave.appendChild(document.createTextNode(text));
     }
 
     function syncRubrikAIFields(){
@@ -1775,10 +2056,15 @@ Detail: ${error?.detail || '-'}
 
         btnFinalSave.disabled = true;
         const defaultSaveText = btnFinalSave.textContent;
-        btnFinalSave.textContent = 'Kaydediliyor...';
+        setFinalSaveButtonLoading(true, 'Kaydediliyor...');
+        setArchiveStatus('');
+        if(activeOccFileName || getRubrikFileName()){
+            setArchiveListLoading(true);
+        }
 
         try {
             await saveRubrikFileDirect();
+            await refreshOccLogsAfterSave();
             if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
                 var occSceneRubrikSave = {
                     user: rubrikData.user,
@@ -1790,89 +2076,96 @@ Detail: ${error?.detail || '-'}
                 };
                 localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
             }
-            btnFinalSave.textContent = 'Kaydedildi';
+            setFinalSaveButtonLoading(false, 'Kaydedildi');
 
             if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
                 setTimeout(() => window.close(), 350);
             } else {
                 btnFinalSave.disabled = false;
-                btnFinalSave.textContent = defaultSaveText;
+                setFinalSaveButtonLoading(false, defaultSaveText);
             }
         } catch (error) {
             console.warn('Rubrik kaydetme başarısız:', error);
             alert(error.message || 'Rubrik kaydedilemedi.');
+            setArchiveListLoading(false);
             btnFinalSave.disabled = false;
-            btnFinalSave.textContent = defaultSaveText;
+            setFinalSaveButtonLoading(false, defaultSaveText);
         }
 
         console.log("=======================================");
     });
 
     async function initRubrikPanel(){
-        const queryFileName = getQueryFileName();
-
-        if(queryFileName){
-            activeOccFileName = queryFileName;
-            await fetchOccLogs(queryFileName);
-
-            try {
-                rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(queryFileName));
-                mergeLocalRubrikIntoActiveApiSlide();
-
-                if(getSlidesFromRubrikFile().length > 0){
-                    const initialSlideIndex = rubrikData && rubrikData.scene && Number.isInteger(Number(rubrikData.scene.id))
-                        ? Number(rubrikData.scene.id)
-                        : 0;
-                    selectSlide(getSlidesFromRubrikFile()[initialSlideIndex] ? initialSlideIndex : 0);
-                    return;
-                }
-
-                document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${queryFileName}</span>`;
-            } catch (error) {
-                console.warn('OCC rubrik dosyası okunamadı:', error);
-                document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: #ef4444">File alınamadı: ${queryFileName}</span>`;
-            }
-
-            renderConfigurator();
-            renderGroupsList();
-            renderEvaluatorTestingPanel();
-            triggerEvaluation();
-            return;
-        }
-
-        if(hasLocalRubrikData){
-            activeOccFileName = rubrikData && rubrikData.user ? rubrikData.user.selectedFile : "";
-            await fetchOccLogs(activeOccFileName);
-
-            renderConfigurator();
-            renderGroupsList();
-            renderEvaluatorTestingPanel();
-            triggerEvaluation();
-            return;
-        }
+        setRubrikPageLoading(true, 'Rubrik yükleniyor...');
 
         try {
-            rubrikFileData = await fetchJsonFile('/files/rubrik.json');
-            activeOccFileName = getRubrikFileName();
-            await fetchOccLogs(activeOccFileName);
+            const queryFileName = getQueryFileName();
 
-            if(getSlidesFromRubrikFile().length > 0){
-                selectSlide(0);
+            if(queryFileName){
+                activeOccFileName = queryFileName;
+                await fetchOccLogs(queryFileName);
+
+                try {
+                    rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(queryFileName));
+                    mergeLocalRubrikIntoActiveApiSlide();
+
+                    if(getSlidesFromRubrikFile().length > 0){
+                        const initialSlideIndex = rubrikData && rubrikData.scene && Number.isInteger(Number(rubrikData.scene.id))
+                            ? Number(rubrikData.scene.id)
+                            : 0;
+                        selectSlide(getSlidesFromRubrikFile()[initialSlideIndex] ? initialSlideIndex : 0);
+                        return;
+                    }
+
+                    document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${queryFileName}</span>`;
+                } catch (error) {
+                    console.warn('OCC rubrik dosyası okunamadı:', error);
+                    document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: #ef4444">File alınamadı: ${queryFileName}</span>`;
+                }
+
+                renderConfigurator();
+                renderGroupsList();
+                renderEvaluatorTestingPanel();
+                triggerEvaluation();
                 return;
             }
-        } catch (error) {
-            console.warn('Rubrik/log verisi okunamadı:', error);
-        }
 
-        if (initialAppState && Array.isArray(initialAppState.groups) && initialAppState.groups.length > 0) {
-            Object.assign(appState.boxes, initialAppState.boxes);
-            appState.groups = ensureRuntimeGroupIds(JSON.parse(JSON.stringify(initialAppState.groups)));
-        }
+            if(hasLocalRubrikData){
+                activeOccFileName = rubrikData && rubrikData.user ? rubrikData.user.selectedFile : "";
+                await fetchOccLogs(activeOccFileName);
 
-        renderConfigurator();
-        renderGroupsList();
-        renderEvaluatorTestingPanel();
-        triggerEvaluation();
+                renderConfigurator();
+                renderGroupsList();
+                renderEvaluatorTestingPanel();
+                triggerEvaluation();
+                return;
+            }
+
+            try {
+                rubrikFileData = await fetchJsonFile('/files/rubrik.json');
+                activeOccFileName = getRubrikFileName();
+                await fetchOccLogs(activeOccFileName);
+
+                if(getSlidesFromRubrikFile().length > 0){
+                    selectSlide(0);
+                    return;
+                }
+            } catch (error) {
+                console.warn('Rubrik/log verisi okunamadı:', error);
+            }
+
+            if (initialAppState && Array.isArray(initialAppState.groups) && initialAppState.groups.length > 0) {
+                Object.assign(appState.boxes, initialAppState.boxes);
+                appState.groups = ensureRuntimeGroupIds(JSON.parse(JSON.stringify(initialAppState.groups)));
+            }
+
+            renderConfigurator();
+            renderGroupsList();
+            renderEvaluatorTestingPanel();
+            triggerEvaluation();
+        } finally {
+            setRubrikPageLoading(false);
+        }
     }
 
     function startRubrikApp(){
