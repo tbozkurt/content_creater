@@ -1266,13 +1266,13 @@ function addHistory(){
         });
 
         /* if(select.length){ */
-            IDE.historyList.push(select);
-            if(IDE.historyList.length>10){
-                IDE.historyList.shift();
-            }
+        IDE.historyList.push(select);
+        if(IDE.historyList.length>10){
+            IDE.historyList.shift();
+        }
 
-            IDE.historyStep = (IDE.historyList.length-1);
-       /* } */
+        IDE.historyStep = (IDE.historyList.length-1);
+        /* } */
     }
 }
 
@@ -1372,12 +1372,18 @@ function selectIconGroup(id){
     IDE.iconGroup[id].style.display = "flex";
 }
 
+function syncRegexWorkSpaceVisibility(){
+    IDE.workSpace.WorkSpace_Regex.style.display = IDE.workSpace.activityTypes.value === "1" ? "block" : "none";
+}
+
 /* Type Select */
 IDE.workSpace.activityTypes.addEventListener("change", function(){
     selectIconGroup(parseInt(this.value));
+    syncRegexWorkSpaceVisibility();
 });
 
 selectIconGroup(0);
+syncRegexWorkSpaceVisibility();
 
 
 /* create Rect */
@@ -2441,6 +2447,14 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
     var rubrikPanelUrl = "/rubrik?file_name=" + encodeURIComponent(IDE.user.selectedFile);
     IDE.popupWindow = window.open(rubrikPanelUrl, "_blank", "width=800,height=600,left=540,top=220");
     /* IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220"); */
+});
+
+document.querySelector(".goRegex").addEventListener("click", function(){
+    if(IDE.popupWindow){
+        IDE.popupWindow.close();
+    }
+
+    IDE.popupWindow = window.open("/regex", "_blank", "width=800,height=600,left=540,top=220");
 });
 
 

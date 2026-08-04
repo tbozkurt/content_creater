@@ -509,6 +509,10 @@ app.use("/rubrik", function(req, res) {
     res.sendFile(path.join(__dirname, "views/","rubrik.html"));
 });
 
+app.use("/regex", function(req, res) {
+    res.sendFile(path.join(__dirname, "views/","regex.html"));
+});
+
 //Index Page
 app.use("/ide", function(req, res) {
     /* initApp(req, res); */

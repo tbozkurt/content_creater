@@ -936,7 +936,7 @@ function PLAYER(){
 
         function getRubrikTeacherAnswer(boxes) {
             var keys = Object.keys(boxes);
-            var alias = SD.rubrikAI && SD.rubrikAI.alias ? SD.rubrikAI.alias : {};
+            var alias = SD.rubrik && SD.rubrik.rubrikAI && SD.rubrik.rubrikAI.alias ? SD.rubrik.rubrikAI.alias : {};
 
             function formatAnswer(key) {
                 var aliasValue = typeof alias[key] === "string" ? alias[key].trim() : "";

@@ -1297,3 +1297,17 @@ tr{
     .goRubrik:hover{
         background-color: #0460a8;
     }
+
+    /* Regex */
+    .goRegex{
+        background-color: #5a6268;
+        border-radius: 4px;
+        margin: 5px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .goRegex:hover{
+        background-color: #495057;
+    }

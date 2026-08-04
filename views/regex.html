@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soru Bankası - Akıllı Regex Üretici ve Test Aracı</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F9FAFB;
+            --surface: #FFFFFF;
+            --text: #111827;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --success-hover: #059669;
+            --danger: #EF4444;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 2rem; display: flex; justify-content: center; }
+        .container { background: var(--surface); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 100%; max-width: 680px; }
+        h1 { font-size: 1.5rem; margin-top: 0; margin-bottom: 1.5rem; color: var(--text); }
+        .tab-container { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; flex-wrap: wrap; }
+        .tab { background: none; border: none; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 6px; }
+        .tab.active { background: var(--primary); color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+        label { display: block; font-weight: 500; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 1rem; font-size: 1rem; background: #fff; }
+        .row { display: flex; gap: 1rem; }
+        .row > div { flex: 1; }
+        button.generate-btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 6px; cursor: pointer; width: 100%; transition: background 0.2s; }
+        button.generate-btn:hover { background: var(--primary-hover); }
+        .result-box, .test-box { margin-top: 1.5rem; background: #F3F4F6; padding: 1rem; border-radius: 6px; border: 1px dashed var(--border); position: relative; }
+        .result-box h3, .test-box h3 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+        code { display: block; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #DC2626; font-size: 0.95rem; margin-top: 0.5rem; }
+        .info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.4rem; line-height: 1.4; }
+        .copy-btn { background: var(--success); color: white; border: none; padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .copy-btn:hover { background: var(--success-hover); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .test-result { margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem; text-align: center; display: none; }
+        .test-result.success { background: #D1FAE5; color: #065F46; display: block; }
+        .test-result.fail { background: #FEE2E2; color: #991B1B; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Akıllı Regex Üretici ve Test Aracı</h1>
+    
+    <div class="tab-container">
+        <button class="tab active" onclick="switchTab('text')">Standart Metin</button>
+        <button class="tab" onclick="switchTab('flexible')">Esnek / Yer Değiştiren Cümleler</button>
+        <button class="tab" onclick="switchTab('numeric')">Sayısal Aralıklar</button>
+    </div>
+
+    <!-- Standart Metin Sekmesi -->
+    <div id="text-section" class="section active">
+        <p class="info">Normal cümleler için Türkçe karakter, büyük/küçük harf, esnek boşluk ve son nokta toleransına sahip regex üretir.</p>
+        <label>Kabul Edilecek Cevap</label>
+        <input type="text" id="textInput" placeholder="Örn: Yörüngede gözlem yapma">
+        <button class="generate-btn" onclick="generateStandardRegex()">Regex Üret</button>
+    </div>
+
+    <!-- Esnek / Yer Değiştiren Cümleler Sekmesi -->
+    <div id="flexible-section" class="section">
+        <p class="info">Öğelerin sırasının değişebileceği cümleler için kısa ve optimize edilmiş Lookahead tabanlı temiz kalıp üretir.</p>
+        <label>Sabit Başlangıç / Fiil Kısmı (Opsiyonel)</label>
+        <input type="text" id="prefixInput" placeholder="Örn: kırtasiyeden">
+        
+        <label>Değişken Öğeler (Virgülle ayırın)</label>
+        <input type="text" id="itemsInput" placeholder="Örn: kapı, cam, pencere">
+        
+        <label>Sabit Bitiş / Fiil Kısmı (Opsiyonel)</label>
+        <input type="text" id="suffixInput" placeholder="Örn: aldı">
+        
+        <button class="generate-btn" onclick="generateFlexibleRegex()">Esnek Regex Üret</button>
+    </div>
+
+    <!-- Sayısal Sekmesi -->
+    <div id="numeric-section" class="section">
+        <p class="info">Tam sayı aralıkları için dinamik basamak gruplamalı optimize regex üretir.</p>
+        <div class="row">
+            <div>
+                <label>Minimum Değer</label>
+                <input type="text" id="minInput" placeholder="Örn: 4">
+            </div>
+            <div>
+                <label>Maksimum Değer</label>
+                <input type="text" id="maxInput" placeholder="Örn: 60">
+            </div>
+        </div>
+        <div>
+            <label>Artış Miktarı (Adım)</label>
+            <input type="text" id="stepInput" value="1" placeholder="Örn: 1">
+        </div>
+        <button class="generate-btn" onclick="generateNumericRegex()">Regex Üret</button>
+    </div>
+
+    <!-- Sonuç Ekranı -->
+    <div class="result-box">
+        <div class="header-row">
+            <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Üretilen Saf Regex Kalıbı:</span>
+            <button class="copy-btn" onclick="copyResult()">Kopyala</button>
+        </div>
+        <code id="resultOutput">Henüz üretilmedi...</code>
+    </div>
+
+    <!-- Canlı Test / Doğrulama Kutusu (Sandbox) -->
+    <div class="test-box">
+        <h3>Üretilen Regex Kalıbını Test Et (Doğrulama Alanı)</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Öğrencinin yazabileceği örnek bir metin girerek kalıbın çalışıp çalışmadığını test edin:</p>
+        <input type="text" id="testInput" placeholder="Örn: Yörüngede gözlem yapma" oninput="runTest()">
+        <div id="testResult" class="test-result">Test bekleniyor...</div>
+    </div>
+</div>
+
+<script>
+    let currentPureRegex = "";
+
+    function switchTab(tab) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        
+        let testInput = document.getElementById('testInput');
+
+        if(tab === 'text') {
+            document.getElementById('text-section').classList.add('active');
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            testInput.placeholder = "Örn: Yörüngede gözlem yapma";
+        } else if(tab === 'flexible') {
+            document.getElementById('flexible-section').classList.add('active');
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            testInput.placeholder = "Örn: cam, kapı, pencere";
+        } else {
+            document.getElementById('numeric-section').classList.add('active');
+            document.querySelectorAll('.tab')[2].classList.add('active');
+            testInput.placeholder = "Örn: 25";
+        }
+        document.getElementById('resultOutput').innerText = 'Henüz üretilmedi...';
+        document.getElementById('testResult').className = 'test-result';
+        document.getElementById('testResult').innerText = '';
+        testInput.value = '';
+        currentPureRegex = "";
+    }
+
+    function wordToRegex(str) {
+        let chars = str.split('');
+        let mapped = chars.map(char => {
+            switch(char.toLowerCase()) {
+                case 'a': return '[aAâÂ]';
+                case 'b': return '[bB]';
+                case 'c': return '[cC]';
+                case 'ç': return '[çÇcC]';
+                case 'd': return '[dD]';
+                case 'e': return '[eEêÊ]';
+                case 'f': return '[fF]';
+                case 'g': return '[gG]';
+                case 'ğ': return '[ğĞgG]';
+                case 'h': return '[hH]';
+                case 'ı': return '[ıİiI]';
+                case 'i': return '[iİıI]';
+                case 'j': return '[jJ]';
+                case 'k': return '[kK]';
+                case 'l': return '[lL]';
+                case 'm': return '[mM]';
+                case 'n': return '[nN]';
+                case 'o': return '[oOôÔ]';
+                case 'ö': return '[öÖoO]';
+                case 'p': return '[pP]';
+                case 'r': return '[rR]';
+                case 's': return '[sS]';
+                case 'ş': return '[şŞsS]';
+                case 't': return '[tT]';
+                case 'u': return '[uUûÛ]';
+                case 'ü': return '[üÜuU]';
+                case 'v': return '[vV]';
+                case 'y': return '[yY]';
+                case 'z': return '[zZ]';
+                default: return escapeRegExp(char);
+            }
+        });
+        return mapped.join('');
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function setOutput(regexStr) {
+        currentPureRegex = regexStr;
+        document.getElementById('resultOutput').innerText = regexStr;
+        runTest();
+    }
+
+    function generateStandardRegex() {
+        let text = document.getElementById('textInput').value.trim();
+        if(!text) {
+            document.getElementById('resultOutput').innerText = 'Lütfen bir metin girin.';
+            currentPureRegex = "";
+            return;
+        }
+
+        let words = text.split(/\s+/);
+        let regexParts = words.map(w => wordToRegex(w));
+        let finalRegex = `^\\s*${regexParts.join('\\s+')}\\.?\\s*$`;
+        setOutput(finalRegex);
+    }
+
+    // Esnek cümleler için katı kelime sınırı kaldırıldı, virgül ve boşluk toleransı eklendi
+    function generateFlexibleRegex() {
+        let prefix = document.getElementById('prefixInput').value.trim();
+        let itemsStr = document.getElementById('itemsInput').value.trim();
+        let suffix = document.getElementById('suffixInput').value.trim();
+
+        if(!itemsStr) {
+            document.getElementById('resultOutput').innerText = 'Lütfen virgülle ayrılan öğeleri girin.';
+            currentPureRegex = "";
+            return;
+        }
+
+        let items = itemsStr.split(',').map(i => i.trim()).filter(i => i.length > 0);
+        
+        let lookaheadChecks = items.map(item => {
+            let itemRegex = item.split(/\s+/).map(w => wordToRegex(w)).join('\\s+');
+            return `(?=.*${itemRegex})`;
+        }).join('');
+
+        let prefixPart = prefix ? wordToRegex(prefix) + '\\s*' : '';
+        let suffixPart = suffix ? '\\s*' + wordToRegex(suffix) : '';
+
+        let finalRegex = `^\\s*${prefixPart}${lookaheadChecks}.*?${suffixPart}\\.?\\s*$`;
+        setOutput(finalRegex);
+    }
+
+    function generateRangeRegexParts(min, max) {
+        let parts = [];
+        let cur = min;
+
+        while (cur <= max) {
+            let maxDigits = max.toString().length;
+            let matched = false;
+
+            for (let digits = maxDigits; digits >= 1; digits--) {
+                let tenPower = Math.pow(10, digits - 1);
+                if (cur % tenPower === 0 && cur + tenPower - 1 <= max && cur !== 0) {
+                    let startStr = cur.toString();
+                    let prefix = startStr.substring(0, startStr.length - digits + 1);
+                    if (digits > 1) {
+                        let wildcards = "[0-9]".repeat(digits - 1);
+                        parts.push(prefix + wildcards);
+                    } else {
+                        parts.push(prefix);
+                    }
+                    cur += tenPower;
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                parts.push(cur.toString());
+                cur++;
+            }
+        }
+        return parts;
+    }
+
+    function generateNumericRegex() {
+        let minStr = document.getElementById('minInput').value.replace(',', '.');
+        let maxStr = document.getElementById('maxInput').value.replace(',', '.');
+        let stepStr = document.getElementById('stepInput').value.replace(',', '.') || '1';
+
+        let min = parseInt(minStr);
+        let max = parseInt(maxStr);
+        let step = parseFloat(stepStr);
+
+        if(isNaN(min) || isNaN(max) || isNaN(step) || min > max) {
+            document.getElementById('resultOutput').innerText = 'Geçersiz aralık veya değer.';
+            currentPureRegex = "";
+            return;
+        }
+
+        let finalRegex = "";
+
+        if (step === 1 && (max - min) > 10) {
+            let parts = generateRangeRegexParts(min, max);
+            let subRegex = parts.join('|');
+            finalRegex = `^\\s*(?:${subRegex})\\s*$`;
+        } else {
+            let vals = [];
+            let decimalPlaces = (step.toString().split('.')[1] || '').length;
+
+            for(let i = min; i <= max + 0.0001; i += step) {
+                let formatted = Number(i.toFixed(decimalPlaces)).toString().replace('.', ',');
+                vals.push(formatted);
+            }
+
+            if(vals.length > 500) {
+                document.getElementById('resultOutput').innerText = 'Uyarı: Varyasyon sayısı çok yüksek (500+).';
+                currentPureRegex = "";
+                return;
+            }
+
+            finalRegex = `^\\s*(${vals.join('|')})\\s*$`;
+        }
+
+        setOutput(finalRegex);
+    }
+
+    function runTest() {
+        let testInputVal = document.getElementById('testInput').value;
+        let resultDiv = document.getElementById('testResult');
+
+        if(!currentPureRegex || currentPureRegex.includes('Henüz') || currentPureRegex.includes('Geçersiz') || currentPureRegex.includes('Uyarı')) {
+            resultDiv.className = 'test-result';
+            resultDiv.innerText = '';
+            return;
+        }
+
+        if(!testInputVal) {
+            resultDiv.className = 'test-result';
+            resultDiv.innerText = 'Test için bir öğrenci cevabı girin...';
+            return;
+        }
+
+        try {
+            let regexObj = new RegExp(currentPureRegex, 'i');
+            let isMatch = regexObj.test(testInputVal);
+
+            if(isMatch) {
+                resultDiv.className = 'test-result success';
+                resultDiv.innerText = '✔ BAŞARILI: Bu öğrenci cevabı sistem tarafından DOĞRU kabul edilir.';
+            } else {
+                resultDiv.className = 'test-result fail';
+                resultDiv.innerText = '✘ BAŞARISIZ: Bu öğrenci cevabı sistem tarafından YANLIŞ sayılır!';
+            }
+        } catch (e) {
+            resultDiv.className = 'test-result fail';
+            resultDiv.innerText = 'Geçersiz Regex Formatı';
+        }
+    }
+
+    function copyResult() {
+        let regexText = currentPureRegex;
+        
+        if(!regexText || regexText.includes('Henüz')) {
+            alert('Kopyalanacak geçerli bir regex yok!');
+            return;
+        }
+
+        navigator.clipboard.writeText(regexText).then(() => {
+            let btn = document.querySelector('.copy-btn');
+            let originalText = btn.innerText;
+            btn.innerText = 'Kopyalandı!';
+            setTimeout(() => { btn.innerText = originalText; }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
