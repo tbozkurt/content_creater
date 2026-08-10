@@ -45,7 +45,7 @@ const EvaluatorEngine = {
         if (isUserNull && isTargetNull) return "null";
         if (isUserNull) return "null";
 
-        console.log(String(userValue), String(targetValue));
+        /* console.log(String(userValue), String(targetValue)); */
         switch (operator) {
             case '===': return (String(userValue) === String(targetValue)) ? "true" : "false";
             case '==': return (String(userValue) == String(targetValue)) ? "true" : "false";

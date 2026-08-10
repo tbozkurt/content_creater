@@ -495,9 +495,13 @@ function PLAYER(){
     function setState(){
         var state = {version: AC.VersionFile, status:"update", questions:{}};
         if(AC.user){state.uid = AC.user.uid};
-
         SD.map(function(slide){
-            state.questions[slide.name] = [slide.inputs];
+            var rubrik = slide.rubrik;
+            if(PLX.isBSD && rubrik && rubrik.groups && rubrik.groups.length) {
+                state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
+            }else{
+                state.questions[slide.name] = [slide.inputs];
+            }
         });
 
         return state;
@@ -1021,11 +1025,20 @@ function PLAYER(){
     function rubrikResult(SP, SD, result){
         console.log("Result:", result);
 
-        SD.historyRight.push({
-            right: 0,
-            wrong: 0,
-            success: 0
+        var attempt = {
+            result: result,
+            score: 0,
+            duration: SD.duration,
+            inputs: JSON.parse(JSON.stringify(SD.inputs))
+        }
+
+        SD.rubrik.groups.map(function(group){
+            console.log(group);
+            if(group.name === result){
+                attempt.score = group.score;
+            }
         });
+        SD.historyRight.push(attempt);
 
         if(result === "T1"){
             console.log("Right");
@@ -1993,6 +2006,11 @@ function PLAYER(){
                     });
                 });
             }else if(el.id.includes("goUrl")){
+                var pop = {width: 1280, height: 720, fileName:""};
+                for(var p in el.data){
+                    pop[p] = el.data[p];
+                }
+
                 var url = "";
                 if(AC.player){
                     url = AC.player.RUrl;
@@ -2007,8 +2025,12 @@ function PLAYER(){
                     url = "/viewer/pdf-viewer?cmd=yem&content_id="+ cid +"&type=bsd";
                 }
 
+                if(el.data.goUrl && el.data.goUrl === "insideHTML"){
+                    url = player.root +"/img/"+ pop.fileName;
+                }
+
                 el.main.addEventListener("click", function(){
-                    var newwindow = window.open(url, "versiyon", "width=1280,height=720");
+                    var newwindow = window.open(url, "versiyon", "width="+ pop.width +",height="+ pop.height);
                     if (window.focus) {newwindow.focus()}
                     return false;
                 });

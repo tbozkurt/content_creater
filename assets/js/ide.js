@@ -2443,8 +2443,12 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
         IDE.popupWindow.close();
     }
 
-    console.log(IDE.user);
-    var rubrikPanelUrl = "/rubrik?file_name=" + encodeURIComponent(IDE.user.selectedFile);
+    var offlineRubrik = "";
+    if(!IDE.user.occMode){
+        offlineRubrik = "&offline=1";
+    }
+
+    var rubrikPanelUrl = "/rubrik?file_name="+ encodeURIComponent(IDE.user.selectedFile) +offlineRubrik;
     IDE.popupWindow = window.open(rubrikPanelUrl, "_blank", "width=800,height=600,left=540,top=220");
     /* IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220"); */
 });

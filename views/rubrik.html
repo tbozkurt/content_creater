@@ -740,6 +740,12 @@
 
 <script src="assets/js/evaluator_engine.js"></script>
 <script>
+    // Offline mod kontrolü
+    function isOfflineMode() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('offline') === 'true' || params.has('offline');
+    }
+
     // KALDIĞIN YERDEN DEVAM ETMEK İÇİN BU DEĞİŞKENE DATA BAĞLAYABİLİRSİNİZ
     let initialAppState = {
         boxes: {},
@@ -878,6 +884,10 @@
     }
 
     async function handleRubrikJwtFailure(message){
+        if(isOfflineMode()){
+            console.warn('Offline mod aktif: Login yönlendirmesi atlandı.');
+            return;
+        }
         clearRubrikJwt();
         await waitForRubrikLogin(message || 'Oturum süresi doldu. Lütfen tekrar giriş yapın.');
     }
@@ -1600,6 +1610,10 @@ Detail: ${error?.detail || '-'}
     }
 
     async function authenticatedRubrikFetch(url, options, retryAfterLogin){
+        if(isOfflineMode()){
+            return fetch(url, options || {});
+        }
+
         const fetchOptions = Object.assign({}, options || {});
         fetchOptions.headers = getRubrikAuthHeaders(fetchOptions.headers);
 
@@ -1724,7 +1738,7 @@ Detail: ${error?.detail || '-'}
         const hydratedState = normalizeRubrikState(cloneState(initialAppState || getEmptyRubrikState()));
 
         appState.boxes = hydratedState.boxes;
-        appState.groups = ensureRuntimeGroupIds(hydratedState.groups);
+        appState.groups = ensureRuntimeGroupIds(JSON.parse(JSON.stringify(hydratedState.groups)));
 
         const hydratedAI = normalizeRubrikAI(hydratedState.rubrikAI || initialRubrikAIState);
         rubrikAIState.instructions = hydratedAI.instructions;
@@ -2063,8 +2077,10 @@ Detail: ${error?.detail || '-'}
         }
 
         try {
-            await saveRubrikFileDirect();
-            await refreshOccLogsAfterSave();
+            if(!isOfflineMode()){
+                await saveRubrikFileDirect();
+                await refreshOccLogsAfterSave();
+            }
             if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
                 var occSceneRubrikSave = {
                     user: rubrikData.user,
@@ -2179,7 +2195,7 @@ Detail: ${error?.detail || '-'}
         initRubrikPanel();
     }
 
-    if(getRubrikJwt()){
+    if(isOfflineMode() || getRubrikJwt()){
         startRubrikApp();
     }else{
         showRubrikLogin();
