@@ -16,7 +16,7 @@ import platform
 import logging
 import subprocess
 
-version = '2.41.1'
+version = '2.45.2'
 publisherIcon = """
 _____________________________________________________________________________________________________________________
                                   _____       _     _ _     _
@@ -68,9 +68,9 @@ class Publisher():
         self.parser.add_argument("--kanal", help="Kanal seçimi")
         self.args = self.parser.parse_args()
         self.version = version
-        self.versionLink = 'https://cb.teknolist.com/content_publisher/releases/' + self.version + '/Publisher.py'
-        self.releaseVersionNumberLink = "https://cb.teknolist.com/content_publisher/latest.txt"
-        self.releaseNotesLink = 'https://cb.teknolist.com/content_publisher/releases/' + self.version + '/release-notes.txt'
+        self.versionLink = 'https://contentbrowser.okulistik.com/content_publisher/releases/' + self.version + '/Publisher.py'
+        self.releaseVersionNumberLink = "https://contentbrowser.okulistik.com/content_publisher/latest.txt"
+        self.releaseNotesLink = 'https://contentbrowser.okulistik.com/content_publisher/releases/' + self.version + '/release-notes.txt'
 
         print(publisherIcon + Colors.BOLD + version + Colors.ENDC)
         print(Colors.BOLD + 'Versiyondaki Değişiklikler:' + Colors.ENDC)
@@ -82,7 +82,7 @@ class Publisher():
         self.publisherConfPath = '../../../../../../../../contentpublisher.conf'
         self.publisherLogPath = '../../../../../../../../log.conf'
 
-        self.insertPathLink = "https://cb.teknolist.com/content_browser/insert-path"
+        self.insertPathLink = "https://contentbrowser.okulistik.com/content_browser/insert-path"
         self.settings = Publisher.loadConfFile(self)
         self.mediaFileExtensions = ['.avi', '.mp4', '.M3U8', '.m3u8']
         self.channel = "0"
@@ -95,7 +95,7 @@ class Publisher():
         self.logger.setLevel(logging.WARNING)
 
     def getVersionLink(self, version):
-        self.versionLink = 'https://cb.teknolist.com/content_publisher/releases/' + version + '/Publisher.py'
+        self.versionLink = 'https://contentbrowser.okulistik.com/content_publisher/releases/' + version + '/Publisher.py'
         return self.versionLink
 
     def setChannelPath(self, channel):
@@ -109,6 +109,8 @@ class Publisher():
         self.src = channel + '/src'
         self.BTDContentSource = channel + '/src/guide'
         self.BTDContentDest = channel + '/publish/guide'
+        self.pdfContentSource = channel + '/src/pdf'
+        self.pdfContentDest = channel + '/publish/pdf'
 
     def listdir_nohidden(self,path):
         return [f for f in os.listdir(path) if not f.startswith('.')]
@@ -223,7 +225,7 @@ class Publisher():
     # [KALDIRLDI]Content-Browser listesinin tamamını günceller.
     def refrestContentPath(self):
         self.log('Content-Browser dizin listesi güncelleniyor...')
-        with urllib.request.urlopen("https://cb.teknolist.com/content_browser/refresh-content-path") as url:
+        with urllib.request.urlopen("https://contentbrowser.okulistik.com/content_browser/refresh-content-path") as url:
             data = json.loads(url.read().decode())
 
     # Verilen pathdaki txt metnini döner.
@@ -316,6 +318,17 @@ class Publisher():
         if os.path.exists(self.BTDContentSource):
             shutil.copytree(self.BTDContentSource, self.publishtemp + 'guide')
             self.log('Guide klasörü publish temp klasörüne kopyalandı.')
+
+    # Bu metod pdf klasöründeki dosya veya dosyaları publishTemp klasörüne taşır
+    def movePdfToPublishTemp(self, contentName):
+        self.log('publistemp klasörü:' + self.publishtemp + 'pdf')
+        if os.path.exists(self.publishtemp + 'pdf'):
+            shutil.rmtree(self.publishtemp + 'pdf')
+            self.log(self.publishtemp + 'pdf' + ' klasörü silindi.')
+            publishTempPdf = publisher.createFolder(self.publishtemp + 'pdf')
+        if os.path.exists(self.pdfContentSource):
+            shutil.copytree(self.pdfContentSource, self.publishtemp + 'pdf')
+            self.log('Pdf klasörü publish temp klasörüne kopyalandı.')
 
     # publishtemp klasörü içerisindeki coverimg klasörünü publish klasörüne ve versionun içerisine kopyalar
     def renderCoverImgFromPublishTemp(self, versionName):
@@ -454,6 +467,8 @@ class KA_Publisher():
         publisher.renderCoverImgFromPublishTemp(versionName)
         if (content_type in ['BTD']):
             publisher.moveGuideToPublishTemp(versionName)
+        if (content_type in ['YEA', 'ECK', 'BSD']):
+            publisher.movePdfToPublishTemp(versionName)
         shutil.copytree(os.getcwd() + '/' + publisher.publishtemp,
                         os.getcwd() + '/' + channel + '/publish/' + versionName)
         publisher.insertPath(os.getcwd() + '/' + channel + '/publish/' + versionName, publisher.PATH_TYPE_VERSION)
@@ -811,12 +826,12 @@ publisher = Publisher()
 try:
     publisher.checkPublisherVersion()
     content_type = publisher.detectContentType()
-    if content_type in ['KA', 'EA', 'EVA',  'YEM', 'EB', 'DM', 'YEA', 'HDE','ESK', 'YMT', 'BTD', 'BUP', 'MTL', 'DKT','DEA','ECK','EKA',  'EAK', 'EBK',   'DIM',  'YKT', 'EKT', 'EBA','CKA','SIM','YZL','EYZ']:
+    if content_type in ['KA', 'EA', 'EVA',  'YEM', 'EB', 'DM', 'YEA', 'HDE','ESK', 'YMT', 'BTD', 'BUP', 'MTL', 'DKT','DEA','ECK','EKA',  'OKA','EAK', 'EBK',   'DIM',  'YKT', 'EKT', 'EBA','CKA','SIM','YZL','EYZ','P4C','BSD']:
         channel = publisher.selectChannel()
         publisher.setChannelPath(channel)
         KA_Publisher = KA_Publisher()
         KA_Publisher.selectProcess()
-    elif content_type in ['VS', 'VKA', 'VKB','OKA', 'VSC',  'VOS']:
+    elif content_type in ['VS', 'VKA', 'VKB', 'VSC',  'VOS']:
         VS_Publisher = VS_Publisher()
         VS_Publisher.selectProcess()
 

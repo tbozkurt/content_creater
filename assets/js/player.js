@@ -500,7 +500,7 @@ function PLAYER(){
             if(PLX.isBSD && rubrik && rubrik.groups && rubrik.groups.length) {
                 state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
             }else{
-                state.questions[slide.name] = [slide.inputs];
+                state.questions[slide.name] = [{inputs: slide.inputs, duration:0}];
             }
         });
 
@@ -546,7 +546,7 @@ function PLAYER(){
     // HDE file, version control and history load
     function HDE_Status(BUILD){
         console.log('<<HDE STATUS>>');
-        if(jsonV2.fileName.includes("HDE")){
+        if(jsonV2.fileName.includes("HDE") || jsonV2.fileName.includes("BSD")){
             if(BUILD){
                 if(BUILD.accessData){
                     var contentJsonVersion = AC.VersionFile;
@@ -561,11 +561,15 @@ function PLAYER(){
                         console.log('allHistory:', allHistory);
                         if(status === 'update'){
                             for(var sceneName in allHistory){
-                                SP.map(function(scene, index) {
-                                    if(sceneName === scene.name){
-                                        scene.history = allHistory[sceneName];
-                                        SD[index].inputs = allHistory[sceneName][0];
-                                        console.log('sahne', sceneName, scene.name, index, 'eklendi');
+                                SP.map(function(sp, index) {
+                                    if(sceneName === sp.name){
+                                        var sd = SD[index];
+                                        sp.history = allHistory[sceneName];
+                                        sd.historyRight = JSON.parse(JSON.stringify(sp.history));
+                                        var lastMove = sp.history[sp.history.length-1];
+                                        lastMove = JSON.parse(JSON.stringify(lastMove));
+                                        SD[index].inputs = lastMove.inputs;
+                                        console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
                                     }
                                 });
                             }
@@ -576,6 +580,7 @@ function PLAYER(){
             }
 
             addHDEStatus();
+            addBSDStatus();
         }
     }
 
@@ -1041,56 +1046,23 @@ function PLAYER(){
         SD.historyRight.push(attempt);
 
         if(result === "T1"){
-            console.log("Right");
             This.playRightAudio();
             This.sceneComplete();
             This.nextScene();
-            SP.fnc.map(function(fnc){
-                fnc.close(true);
-            });
-
-            controlBtnView(SP, "disable");
-            answerBtnView(SP, "disable");
+            closeActivity(SP);
             checkViewFNC(SD);
             showFeedBack("right", "auto", 0);
         }else{
-            console.log("Wrong");
-            console.log("B historyRight:", SD.historyRight.length);
-            SD.wrongCount++;
-            showWarning(SP, SD);
+            SD.wrongCount = SD.historyRight.length;
             This.playWrongAudio();
+            showWarning(SP, SD);
             showFeedBack("wrong", "auto", SD.historyRight.length);
         }
 
-        This.scoreCalc(true);
         showToolTip(SP, SD);
         specialFNC(SP, SD);
+        This.scoreCalc(true);
         console.log(SD);
-
-        /*
-        if(result === "T1"){
-            This.sceneComplete();
-            This.nextScene();
-            SP.fnc.map(function(fnc){
-                fnc.close(true);
-            });
-
-            controlBtnView(SP, "disable");
-            answerBtnView(SP, "disable");
-            checkViewFNC(SD);
-        }
-
-        var currentHistory = JSON.parse(JSON.stringify(SD.inputs));
-        var xx = ({
-            rubrik: result,
-            duration: SD.duration,
-            inputs: currentHistory
-        });
-
-        console.log(xx);
-        console.log(SD);
-        */
-
         /*
         SP.feedBack.map(function (feedback) {
             if (feedback.status === "AI") {
@@ -1100,6 +1072,15 @@ function PLAYER(){
             }
         });
         */
+    }
+
+    function closeActivity(sp){
+        controlBtnView(sp, "disable");
+        answerBtnView(sp, "disable");
+        sp.fnc.map(function(fnc){
+            clearInterval( fnc.timer );
+            fnc.close(true);
+        });
     }
 
     function feedbackAI(response) {
@@ -1179,7 +1160,7 @@ function PLAYER(){
         console.log(jwt);
 
         $.ajax({
-            url: "https://oktest.okulistik.com/api/evaluation/ai-evaluate",
+            url: "https://www.okulistik.com/api/evaluation/ai-evaluate",
             headers: {
                 "Authorization": jwt,
                 "Accept-Language": 'tr-TR'
@@ -1252,6 +1233,8 @@ function PLAYER(){
         }else if(PLX.isBSD){
             if(SD.wrongCount >= 3){
                 controlBtnView(SP, "disabled");
+                This.sceneComplete();
+                hideWarning();
 
                 SP.fnc.map(function(fnc){
                     clearInterval( fnc.timer );
@@ -1264,6 +1247,8 @@ function PLAYER(){
                     SP.popEx[0].btn.style.opacity = 1;
                     SP.popEx[0].btn.style.pointerEvents = "auto";
                 }
+
+                This.nextScene();
             }
         }
     }
@@ -1674,14 +1659,38 @@ function PLAYER(){
 
     //add check
     function addHDEStatus(){
-        player.statusIconMain = utils.addDOM({id: "statusIconMain", className: "statusIconMain"});
-        player.mainDOM.appendChild(player.statusIconMain);
-        player.statusIconMain.innerHTML = '<img id="statusRightIcon" src="assets/img/player/status_right.png"><img id="statusWrongIcon" src="assets/img/player/status_wrong.png"><img id="statusEmptyIcon" src="assets/img/player/status_empty.png">';
-        player.statusIcon = {
-            right: player.statusIconMain.querySelector("#statusRightIcon"),
-            wrong: player.statusIconMain.querySelector("#statusWrongIcon"),
-            empty: player.statusIconMain.querySelector("#statusEmptyIcon")
-        };
+        if(jsonV2.fileName.includes("HDE")){
+            player.statusIconMain = utils.addDOM({id: "statusIconMain", className: "statusIconMain"});
+            player.mainDOM.appendChild(player.statusIconMain);
+            player.statusIconMain.innerHTML = '<img id="statusRightIcon" src="assets/img/player/status_right.png"><img id="statusWrongIcon" src="assets/img/player/status_wrong.png"><img id="statusEmptyIcon" src="assets/img/player/status_empty.png">';
+            player.statusIcon = {
+                right: player.statusIconMain.querySelector("#statusRightIcon"),
+                wrong: player.statusIconMain.querySelector("#statusWrongIcon"),
+                empty: player.statusIconMain.querySelector("#statusEmptyIcon")
+            };
+        }
+    }
+
+    function addBSDStatus(){
+        if(jsonV2.fileName.includes("BSD")){
+            SP.map(function(sp, index) {
+                var sd = SD[index];
+                var lastMove = sp.history[sp.history.length-1];
+                console.log(lastMove);
+                if(lastMove){
+                    if(lastMove.result === "T1"){
+                        sd.complete = true;
+                        closeActivity(sp);
+                        checkViewFNC(sd);
+                    }else if(sd.historyRight.length >= 3){
+                        sd.complete = true;
+                        closeActivity(sp);
+                    }
+
+                    showToolTip(sp, sd);
+                }
+            });
+        }
     }
 
     function checkViewFNC(SD){
@@ -3028,7 +3037,7 @@ function PLAYER(){
 
         var tempBox = {};
         if(history){
-            var lastMove = history[history.length-1];
+            var lastMove = history[history.length-1].inputs;
             for(var box in lastMove){
                 if(lastMove[box].type === type){
                     var currentData = lastMove[box].value;

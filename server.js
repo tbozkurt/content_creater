@@ -401,7 +401,7 @@ async function downloadFNC(req, res){
         var entrance = await addFolder( path.join(FD.root, "zip") );
         info[1] = [entrance];
         var step0 = await addFolder( path.join(entrance, "ONLINE") );
-        var step1 = await addFolder( path.join(step0, "2024-2025") );
+        var step1 = await addFolder( path.join(step0, "2026-2027") );
         var step2 = await addFolder( path.join(step1, product) );
         var step3 = await addFolder( path.join(step2, grade) );
         var step4 = await addFolder( path.join(step3, "0") );
