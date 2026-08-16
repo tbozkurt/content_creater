@@ -50,6 +50,7 @@
 
         <div class="TopIconBox" id="createText"><img src="assets/img/create_text.png"></div>
         <div class="TopIconBox" id="createRectVideo"><img src="assets/img/create_video.png"></div>
+        <div class="TopIconBox" id="createiframe"><img src="assets/img/create_iframe.png"></div>
         <div class="createSpace"></div>
         <div id="topBanner_addObject">
             <div class="TopIconBox" id="createDirective"><img src="assets/img/create_directive.png"></div>
@@ -61,7 +62,6 @@
             <div class="TopIconBox" id="createRefresh"><img src="assets/img/create_refresh.png"></div>
             <div class="TopIconBox" id="createFinish"><img src="assets/img/create_finish.png"></div>
             <div class="TopIconBox" id="createSoundPlayer"><img src="assets/img/create_sound.png"></div>
-
             <div class="TopIconBox" id="createPopup"><img src="assets/img/create_popup.png"></div>
             <div class="TopIconBox" id="createFeedback"><img src="assets/img/create_feedback.png"></div>
             <div class="TopIconBox" id="createURL"><img src="assets/img/create_url.png"></div>
@@ -589,6 +589,7 @@
             createDirective: document.querySelector("#createDirective"),
             createText: document.querySelector("#createText"),
             createRect: document.querySelector("#createRect"),
+            createiframe: document.querySelector("#createiframe"),
             createSelect: document.querySelector("#createSelect"),
             createDraw: document.querySelector("#createDraw"),
             createPopup: document.querySelector("#createPopup"),
@@ -1720,8 +1721,8 @@
 
     function newFileParse(data){
         console.log(data);
+        IDE.user.selectedFile = data.files.activeFile;
         IDE.files = data.files;
-
         addSceneAddButon();
     }
 
@@ -1741,7 +1742,17 @@
 
     function zipContentAjax(file){
         var data = {token: IDE.user.token, file};
-        $.ajax({url: "/getZip", data, success: zipContentParse, type: "POST", error: ajaxError});
+        showLoader();
+        $.ajax({
+            url: "/getZip",
+            data,
+            success: zipContentParse,
+            type: "POST",
+            error: function(e){
+                hideLoader();
+                ajaxError(e);
+            }
+        });
     }
 
     function zipContentParse(data){
@@ -1753,6 +1764,8 @@
                     if(resp.ok){
                         return resp.blob()
                     }
+
+                    throw new Error("Zip dosyası indirilemedi");
                 })
                 .then(blob => {
                     const url = window.URL.createObjectURL(blob);
@@ -1765,8 +1778,10 @@
                     window.URL.revokeObjectURL(url);
                     console.log("your file has downloaded!");
                 })
-                .catch(() => alert("zip dosyası oluşturulurken hata oluştu!"));
+                .catch(() => alert("zip dosyası oluşturulurken hata oluştu!"))
+                .finally(hideLoader);
         }else{
+            hideLoader();
             alert("zip dosyası hatası!");
         }
     }
@@ -2045,9 +2060,10 @@
     }
 
     function prepareParse(data){
-        console.log( data );
+        console.log("prepareParse", data );
         IDE.user.token = data.token;
         IDE.user.root = data.root;
+        IDE.user.templateImages = data.templateImages;
         LocalGet();
     }
 
@@ -2063,7 +2079,7 @@
     }
 
     function occLogin_Parse(data){
-        console.log(data);
+        console.log("occLogin_Parse:", data);
         if(data.success){
             if(data.user){
                 var name = data.user.profile.name;
@@ -2584,6 +2600,86 @@
 
     window.syncRubrikMetaData = syncRubrikMetaData;
     window.syncActiveSlideRubrikBoxes = syncActiveSlideRubrikBoxes;
+
+
+    function folderGetList(json){
+        $.ajax({
+            type: "POST",
+            url: "/listFiles",
+            data: {  folderPath: `${IDE.user.root}/${IDE.user.selectedFile}/img`},
+            success: function(success){
+                var allFiles = success.files;
+                var usedFiles = getUsedFiles(json);
+                var unusedFiles = getUnusedFiles(allFiles, usedFiles);
+                console.log("unusedFiles:",unusedFiles);
+                if(unusedFiles.length){
+                    deleteFileList(unusedFiles);
+                }
+            },
+            error: ajaxError
+        });
+    }
+
+    function deleteFileList(unusedFiles){
+        $.ajax({
+            type: "POST",
+            url: "/deleteFileList",
+            data: {
+                fileList: unusedFiles,
+                baseDir: `${IDE.user.root}/${IDE.user.selectedFile}/img`
+            },
+            success: function(success){
+                console.log("deleted files:", success);
+            },
+            error: ajaxError
+        });
+    }
+
+    function getUsedFiles(json) {
+        var dosyalar = IDE.user.templateImages.concat([]);
+        function tara(obj) {
+            if (!obj || typeof obj !== "object") {
+                return;
+            }
+
+            if (typeof obj.src === "string") {
+                var dosyaAdi = obj.src.split("/").pop();
+
+                if (dosyalar.indexOf(dosyaAdi) === -1) {
+                    dosyalar.push(dosyaAdi);
+                }
+            }
+
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    tara(obj[key]);
+                }
+            }
+        }
+
+        tara(json);
+
+        return dosyalar;
+    }
+
+    function getUnusedFiles(allFiles, usedFiles) {
+        var unusedFiles = [];
+
+        for (var i=0; i<allFiles.length; i++) {
+            var dosya = allFiles[i];
+
+            if (/\.(mp3|html)$/i.test(dosya)) {
+                continue;
+            }
+
+            if (usedFiles.indexOf(dosya) === -1) {
+                unusedFiles.push(dosya);
+            }
+        }
+
+        return unusedFiles;
+    }
+
 
 
 /*

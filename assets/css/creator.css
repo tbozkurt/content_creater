@@ -634,6 +634,7 @@ body{
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     position: absolute;
+    z-index: 3000;
 }
 
 .startScreen_main{
@@ -1076,4 +1077,72 @@ body{
 .infoBtnDOM img{
     user-select: none;
     width: 100%;
+}
+
+/* loader AI */
+.ai-main{
+    top: 49%;
+    left: 44%;
+    text-align: center;
+    position: absolute;
+    background-color: white;
+    padding: 10px 10px 20px 10px;
+    border-radius: 10px;
+    visibility: hidden;
+}
+
+.ai-textbox{
+    font-family: Nunito;
+    color: gray;
+    margin: 10px 0;
+}
+
+.ai-loader {
+    width: 100px;
+    margin-left: 110px;
+    display: flex;
+    gap: 8px;
+}
+
+.ai-circle{
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+}
+
+.addAnimation{
+    animation: geminiPulse 1.4s infinite ease-in-out both;
+}
+
+#ai_circle1{
+    background: linear-gradient(135deg, #fdd835, #f9a825);
+}
+
+#ai_circle2{
+    background: linear-gradient(135deg, #fb8c00, #ef6c00);
+}
+
+#ai_circle3{
+    background: linear-gradient(135deg, #b0bec5, #607d8b);
+}
+
+.ai-loader div:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.ai-loader div:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes geminiPulse {
+    0%, 80%, 100% {
+        transform: scale(0.4);
+        opacity: 0.3;
+    }
+
+    40% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
 }

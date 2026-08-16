@@ -298,6 +298,7 @@ function PLAYER(){
             }
             This.addMovieClip(allObject, sceneDiv, i, get);
             SP[i].elementMainScene = {id: sceneDiv.id, main: sceneDiv, data:{}, kids: get.kids};
+            SP[i].elementList.push(SP[i].elementMainScene);
 
             player.mainDOM.appendChild(sceneDiv);
             This.searchTool(sceneDiv, i, SP[i]);
@@ -566,10 +567,12 @@ function PLAYER(){
                                         var sd = SD[index];
                                         sp.history = allHistory[sceneName];
                                         sd.historyRight = JSON.parse(JSON.stringify(sp.history));
-                                        var lastMove = sp.history[sp.history.length-1];
-                                        lastMove = JSON.parse(JSON.stringify(lastMove));
-                                        SD[index].inputs = lastMove.inputs;
-                                        console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
+                                        if(sp.history.length){
+                                            var lastMove = sp.history[sp.history.length-1];
+                                            lastMove = JSON.parse(JSON.stringify(lastMove));
+                                            SD[index].inputs = lastMove.inputs;
+                                            console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
+                                        }
                                     }
                                 });
                             }
@@ -587,16 +590,18 @@ function PLAYER(){
     // HDE history execute
     function addHistoryControl(){
         for(var scene in SP){
-            SP[scene].fnc.map(function(fnc, index){
-                try{
-                    if(fnc.history){
-                        fnc.history();
+            if(SP[scene].history.length){
+                SP[scene].fnc.map(function(fnc, index){
+                    try{
+                        if(fnc.history){
+                            fnc.history();
+                        }
+                    }catch(err){
+                        console.log("<< History Load Fail:", index);
+                        console.log("Err", err, ">>");
                     }
-                }catch(err){
-                    console.log("<< History Load Fail:", index);
-                    console.log("Err", err, ">>");
-                }
-            });
+                });
+            }
         }
     }
 
@@ -1676,7 +1681,6 @@ function PLAYER(){
             SP.map(function(sp, index) {
                 var sd = SD[index];
                 var lastMove = sp.history[sp.history.length-1];
-                console.log(lastMove);
                 if(lastMove){
                     if(lastMove.result === "T1"){
                         sd.complete = true;
@@ -1775,43 +1779,7 @@ function PLAYER(){
     This.searchTool = function(Scene, index, SP){
         var popupWindow;
         Scene.childNodes.forEach(function(obj) {
-            if(obj.id.includes("popupButon")){
-                var id = parseInt( obj.id.split("_")[1] );
-                if(!SP.popEx[id]){
-                    SP.popEx[id] = {};
-                }
-                SP.popEx[id].clicked = false;
-                SP.popEx[id].btn = obj;
-
-                obj.addEventListener("click", function(){
-                    popupWindowStatus(id);
-                    SP.popEx[id].window.style.visibility = "visible";
-                });
-
-                obj.style.cursor = "pointer";
-                obj.style.opacity = 1;
-            }else if(obj.id.includes("popupWindow")){
-                var id = parseInt( obj.id.split("_")[1] );
-                if(!SP.popEx[id]){
-                    SP.popEx[id] = {};
-                }
-
-                SP.popEx[id].window = obj;
-                obj.querySelector(".popupWindowClose").addEventListener("click", function(){
-                    popupWindowStatus(id);
-                });
-
-                var nextPageBtn = obj.querySelector(".nextPageBtn");
-                if(nextPageBtn){
-                    obj.querySelector(".nextPageBtn").addEventListener("click", function(){
-                        This.changeScene(This.sceneIndex+1);
-                    });
-
-                    nextPageBtn.style.cursor = "pointer";
-                }
-
-                obj.querySelector(".popupWindowClose").style.cursor = "pointer";
-            }else if(obj.id.includes("control")){
+            if(obj.id.includes("control")){
                 SP.controlBtn = obj;
                 SP.controlBtn.style.cursor = "pointer";
                 SP.controlBtn.style.pointerEvents = "none";
@@ -2045,6 +2013,45 @@ function PLAYER(){
                 });
 
                 el.main.style.cursor = "pointer";
+            }else if(el.id.includes("sceneMain")){
+                iframeAdd(el);
+            }else if(el.id.includes("popupButon")){
+                var id = parseInt( el.id.split("_")[1] );
+                if(!SP.popEx[id]){
+                    SP.popEx[id] = {};
+                }
+                SP.popEx[id].clicked = false;
+                SP.popEx[id].btn = el.main;
+
+                el.main.addEventListener("click", function(){
+                    popupWindowStatus(id);
+                    SP.popEx[id].window.style.visibility = "visible";
+                });
+
+                el.main.style.cursor = "pointer";
+                el.main.style.opacity = 1;
+            }else if(el.id.includes("popupWindow")){
+                var id = parseInt(el.id.split("_")[1]);
+                if(!SP.popEx[id]){
+                    SP.popEx[id] = {};
+                }
+
+                SP.popEx[id].window = el.main;
+                el.main.querySelector(".popupWindowClose").addEventListener("click", function(){
+                    popupWindowStatus(id);
+                });
+
+                var nextPageBtn = el.main.querySelector(".nextPageBtn");
+                if(nextPageBtn){
+                    el.main.querySelector(".nextPageBtn").addEventListener("click", function(){
+                        This.changeScene(This.sceneIndex+1);
+                    });
+
+                    nextPageBtn.style.cursor = "pointer";
+                }
+
+                el.main.querySelector(".popupWindowClose").style.cursor = "pointer";
+                iframeAdd(el);
             }
 
             /* manual zindex */
@@ -2065,6 +2072,27 @@ function PLAYER(){
                 }
             });
 
+        });
+    }
+
+    function iframeAdd(el){
+        el.kids.map(function(kid){
+            if(kid.className.includes("iframe")){
+                var scroll="auto";
+                var iframe = document.createElement("iframe");
+                iframe.src = player.root +"/img/"+ kid.data.url;
+                if(kid.data.scroll){
+                    scroll = kid.data.scroll;
+                }
+                iframe.setAttribute("scrolling", scroll);
+                Object.assign(iframe.style, {
+                    width: kid.main.style.width,
+                    height: kid.main.style.height,
+                    position: "absolute",
+                    border: "0"
+                });
+                kid.main.appendChild(iframe);
+            }
         });
     }
 

@@ -883,12 +883,13 @@ document.querySelector("#topMenuSaveBtn").addEventListener("click", function(){
         occSaveFile(json);
     }
 
-    console.log( json );
     IDE.showTip({txt:"prepare..", color: "#ef6c00", time:1000, x: 1458, y: (IDE.stage.height-10)});
     /*
     console.log("lütfen bekleyin");
     IDE.showTip({txt:"orange", color: "#1b5e20", time:1000, x: 1480, y: (IDE.stage.height-10)});
     */
+
+    folderGetList(json);
 });
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
@@ -2377,6 +2378,34 @@ IDE.workSpace.createDropdown.addEventListener("click", function(){
     });
 
     CREATE.checkKontrol();
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
+/* create Iframe Toggle Button */
+IDE.workSpace.createiframe.addEventListener("click", function(){
+    var position = utils.getRandomPosition(640, 360, 150);
+    var obj = CREATE.rectFNC({
+        properties:{
+            x: position.x,
+            y: position.y,
+            width: 640,
+            height: 480,
+            fill: "silver",
+            strokeWidth: 0,
+            borderPosition:"center",
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer:{
+            name: "iframe",
+            type: "objectRect",
+            class: "iframe",
+            params:{url:"sample.html", scroll:"auto"}
+        },
+        addLayer: true
+    });
+
     addHistory();
     selectItem({shiftKey: false, layer: obj});
 });

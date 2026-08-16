@@ -552,6 +552,7 @@ async function initApp(req, res){
 
     FD.token = token;
     FD.systemReady = true;
+    FD.templateImages = templateImages;
     FD.success = true;
 
     res.send(FD);
@@ -877,3 +878,385 @@ function copyFileListToFolder(fileList, targetFolder) {
         }
     });
 }
+
+/**
+ * Belirtilen klasördeki tüm dosyaları liste halinde döndüren fonksiyon (Promise tabanlı).
+ * 
+ * @param {string} targetDir - Listelenecek klasörün yolu (örn: "./files", "assets/img")
+ * @param {Object} [options] - Opsiyonel parametreler
+ * @param {boolean} [options.recursive=false] - Alt klasörlerdeki dosyaların da dahil edilip edilmeyeceği
+ * @param {boolean} [options.detailed=false] - true ise boyut, uzantı gibi detaylı nesne listesi döndürür
+ * @returns {Promise<Array>} Dosya adları/yolları veya detaylı dosya bilgileri dizisi
+ */
+function getFilesInDirectory(targetDir, options) {
+    options = options || {};
+    var recursive = options.recursive || false;
+    var detailed = options.detailed || false;
+
+    return new Promise(function(resolve, reject) {
+        if (!targetDir) {
+            return reject(new Error("Klasör yolu belirtilmedi."));
+        }
+
+        var resolvedPath = path.resolve(targetDir);
+
+        if (!fs.existsSync(resolvedPath)) {
+            return reject(new Error("Klasör bulunamadı: " + targetDir));
+        }
+
+        var stat = fs.statSync(resolvedPath);
+        if (!stat.isDirectory()) {
+            return reject(new Error("Belirtilen yol bir klasör değil: " + targetDir));
+        }
+
+        function scanDirectory(currentDir) {
+            var fileList = [];
+            var items = fs.readdirSync(currentDir);
+
+            items.forEach(function(item) {
+                var fullPath = path.join(currentDir, item);
+                var itemStat = fs.statSync(fullPath);
+
+                if (itemStat.isDirectory()) {
+                    if (recursive) {
+                        fileList = fileList.concat(scanDirectory(fullPath));
+                    }
+                } else if (itemStat.isFile()) {
+                    var relativePath = path.relative(resolvedPath, fullPath);
+
+                    if (detailed) {
+                        fileList.push({
+                            name: item,
+                            relativePath: relativePath,
+                            fullPath: fullPath,
+                            extension: path.extname(item),
+                            sizeBytes: itemStat.size,
+                            modifiedAt: itemStat.mtime
+                        });
+                    } else {
+                        fileList.push(relativePath);
+                    }
+                }
+            });
+
+            return fileList;
+        }
+
+        try {
+            var results = scanDirectory(resolvedPath);
+            resolve(results);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+/**
+ * Belirtilen klasördeki tüm dosyaları senkron olarak döndürür.
+ */
+/*
+function getFilesInDirectorySync(targetDir, options) {
+    options = options || {};
+    var recursive = options.recursive || false;
+    var detailed = options.detailed || false;
+
+    if (!targetDir) throw new Error("Klasör yolu belirtilmedi.");
+    var resolvedPath = path.resolve(targetDir);
+    if (!fs.existsSync(resolvedPath)) throw new Error("Klasör bulunamadı: " + targetDir);
+
+    var stat = fs.statSync(resolvedPath);
+    if (!stat.isDirectory()) throw new Error("Belirtilen yol bir klasör değil: " + targetDir);
+
+    function scanDirectory(currentDir) {
+        var fileList = [];
+        var items = fs.readdirSync(currentDir);
+
+        items.forEach(function(item) {
+            var fullPath = path.join(currentDir, item);
+            var itemStat = fs.statSync(fullPath);
+
+            if (itemStat.isDirectory()) {
+                if (recursive) {
+                    fileList = fileList.concat(scanDirectory(fullPath));
+                }
+            } else if (itemStat.isFile()) {
+                var relativePath = path.relative(resolvedPath, fullPath);
+
+                if (detailed) {
+                    fileList.push({
+                        name: item,
+                        relativePath: relativePath,
+                        fullPath: fullPath,
+                        extension: path.extname(item),
+                        sizeBytes: itemStat.size,
+                        modifiedAt: itemStat.mtime
+                    });
+                } else {
+                    fileList.push(relativePath);
+                }
+            }
+        });
+
+        return fileList;
+    }
+
+    return scanDirectory(resolvedPath);
+}
+*/
+
+// Express HTTP Endpoint: POST /listFiles
+app.post("/listFiles", async function(req, res) {
+    var targetFolder = req.body.folderPath || req.body.targetFolder;
+    var recursive = req.body.recursive || false;
+    var detailed = req.body.detailed || false;
+
+    if (!targetFolder) {
+        return res.status(400).send({
+            success: false,
+            message: "Lütfen 'folderPath' veya 'targetFolder' parametresi belirtin."
+        });
+    }
+
+    try {
+        var files = await getFilesInDirectory(targetFolder, {
+            recursive: recursive,
+            detailed: detailed
+        });
+
+        res.send({
+            success: true,
+            folder: targetFolder,
+            totalFiles: files.length,
+            files: files
+        });
+    } catch (err) {
+        res.status(500).send({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+/**
+ * Verilen dosya listesini silen fonksiyon (Promise tabanlı asenkron).
+ * 
+ * @param {Array<string>|string} fileList - Silinecek dosyaların yolları (dizi veya tek metin)
+ * @param {Object} [options] - Opsiyonel ayarlar
+ * @param {string} [options.baseDir=""] - Göreceli yollar için temel klasör
+ * @param {boolean} [options.ignoreMissing=true] - Bulunamayan dosyaları hata olarak sayma
+ * @returns {Promise<Object>} Silme sonuçlarının detaylı özeti
+ */
+function deleteFileList(fileList, options) {
+    options = options || {};
+    var baseDir = options.baseDir || "";
+    var ignoreMissing = options.ignoreMissing !== undefined ? options.ignoreMissing : true;
+
+    return new Promise(function(resolve, reject) {
+        if (!fileList) {
+            return reject(new Error("Silinecek dosya listesi belirtilmedi."));
+        }
+
+        if (typeof fileList === "string") {
+            fileList = [fileList];
+        }
+
+        if (!Array.isArray(fileList)) {
+            return reject(new Error("Dosya listesi bir dizi (Array) veya metin (String) olmalıdır."));
+        }
+
+        var results = [];
+        var deletedCount = 0;
+        var failedCount = 0;
+
+        var deletePromises = fileList.map(function(filePath) {
+            return new Promise(function(resolveFile) {
+                if (!filePath || typeof filePath !== "string") {
+                    results.push({
+                        path: filePath,
+                        success: false,
+                        error: "Geçersiz dosya yolu",
+                        notFound: false
+                    });
+                    failedCount++;
+                    return resolveFile();
+                }
+
+                var fullPath = baseDir ? path.resolve(baseDir, filePath) : path.resolve(filePath);
+
+                fs.stat(fullPath, function(statErr, stats) {
+                    if (statErr) {
+                        var isNotFound = statErr.code === "ENOENT";
+                        var isSuccess = isNotFound && ignoreMissing;
+
+                        results.push({
+                            path: filePath,
+                            fullPath: fullPath,
+                            success: isSuccess,
+                            error: isNotFound ? "Dosya bulunamadı" : statErr.message,
+                            notFound: isNotFound
+                        });
+
+                        if (isSuccess) {
+                            deletedCount++;
+                        } else {
+                            failedCount++;
+                        }
+                        return resolveFile();
+                    }
+
+                    if (stats.isDirectory()) {
+                        results.push({
+                            path: filePath,
+                            fullPath: fullPath,
+                            success: false,
+                            error: "Belirtilen yol bir dosya değil, bir klasör.",
+                            notFound: false
+                        });
+                        failedCount++;
+                        return resolveFile();
+                    }
+
+                    fs.unlink(fullPath, function(unlinkErr) {
+                        if (unlinkErr) {
+                            results.push({
+                                path: filePath,
+                                fullPath: fullPath,
+                                success: false,
+                                error: unlinkErr.message,
+                                notFound: false
+                            });
+                            failedCount++;
+                        } else {
+                            results.push({
+                                path: filePath,
+                                fullPath: fullPath,
+                                success: true,
+                                error: null,
+                                notFound: false
+                            });
+                            deletedCount++;
+                        }
+                        resolveFile();
+                    });
+                });
+            });
+        });
+
+        Promise.all(deletePromises).then(function() {
+            resolve({
+                success: failedCount === 0,
+                totalCount: fileList.length,
+                deletedCount: deletedCount,
+                failedCount: failedCount,
+                results: results
+            });
+        }).catch(function(err) {
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Verilen dosya listesini senkron olarak silen fonksiyon.
+ * 
+ * @param {Array<string>|string} fileList - Silinecek dosyaların yolları
+ * @param {Object} [options] - Opsiyonel ayarlar (baseDir, ignoreMissing)
+ * @returns {Object} Silme sonuç özeti
+ */
+
+/*
+
+function deleteFileSync(fileList, options) {
+    options = options || {};
+    var baseDir = options.baseDir || "";
+    var ignoreMissing = options.ignoreMissing !== undefined ? options.ignoreMissing : true;
+
+    if (!fileList) throw new Error("Silinecek dosya listesi belirtilmedi.");
+    if (typeof fileList === "string") fileList = [fileList];
+    if (!Array.isArray(fileList)) throw new Error("Dosya listesi bir dizi (Array) veya metin olmalıdır.");
+
+    var results = [];
+    var deletedCount = 0;
+    var failedCount = 0;
+
+    fileList.forEach(function(filePath) {
+        if (!filePath || typeof filePath !== "string") {
+            results.push({ path: filePath, success: false, error: "Geçersiz dosya yolu", notFound: false });
+            failedCount++;
+            return;
+        }
+
+        var fullPath = baseDir ? path.resolve(baseDir, filePath) : path.resolve(filePath);
+
+        try {
+            var stats = fs.statSync(fullPath);
+            if (stats.isDirectory()) {
+                results.push({ path: filePath, fullPath: fullPath, success: false, error: "Klasörler bu fonksiyonla silinemez.", notFound: false });
+                failedCount++;
+                return;
+            }
+
+            fs.unlinkSync(fullPath);
+            results.push({ path: filePath, fullPath: fullPath, success: true, error: null, notFound: false });
+            deletedCount++;
+        } catch (err) {
+            var isNotFound = err.code === "ENOENT";
+            var isSuccess = isNotFound && ignoreMissing;
+
+            results.push({
+                path: filePath,
+                fullPath: fullPath,
+                success: isSuccess,
+                error: isNotFound ? "Dosya bulunamadı" : err.message,
+                notFound: isNotFound
+            });
+
+            if (isSuccess) {
+                deletedCount++;
+            } else {
+                failedCount++;
+            }
+        }
+    });
+
+    return {
+        success: failedCount === 0,
+        totalCount: fileList.length,
+        deletedCount: deletedCount,
+        failedCount: failedCount,
+        results: results
+    };
+}
+*/
+
+
+
+// Express HTTP Endpoint: POST /deleteFileList
+app.post("/deleteFileList", async function(req, res) {
+    var fileList = req.body.fileList || req.body.deleteList;
+    var baseDir = req.body.baseDir || "";
+    var ignoreMissing = req.body.ignoreMissing;
+
+    if (!fileList) {
+        return res.status(400).send({
+            success: false,
+            message: "Lütfen 'fileList' veya 'deleteList' parametresi belirtin."
+        });
+    }
+
+    try {
+        var result = await deleteFileList(fileList, {
+            baseDir: baseDir,
+            ignoreMissing: ignoreMissing !== undefined ? ignoreMissing : true
+        });
+
+        res.send(result);
+    } catch (err) {
+        res.status(500).send({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+
