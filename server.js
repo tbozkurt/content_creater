@@ -14,24 +14,6 @@ var word = ["a","b","w","c","d","e","f","g","h","j","y","z"];
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
-
-var occUser = {
-    user_15514575: "basak",
-    user_15513246: "melike",
-    user_9244372: "melike",
-    user_15432145: "irem",
-    user_7729542: "kamil",
-    user_2521680: "demet",
-    user_12621116: "goknur",
-    user_15480368: "cansu",
-    user_7729545: "tuncay",
-    user_20: "gulcin",
-    user_15515696: "bahar",
-    user_15517168: "duygu",
-    user_12896817: "taner",
-    user_15944889: "deniz",
-    user_15939315: "oyku"
-}
 /////////////////////////
 
 /* Sabit dosyaları kopyalama */
@@ -592,22 +574,76 @@ app.post("/occLogin", function(req, res){
     console.log("service:", service);
 
     console.log(username, password, token, service);
-    console.log(`https://${service}.okulistik.com/srv/login?username=${username}&password=${password}&auth_type=1&ltype=2&utype=other`);
+    var loginUrl = `https://${service}.okulistik.com/srv/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&auth_type=1&ltype=2&utype=other`;
+    console.log(loginUrl);
 
-    axios.get(`https://${service}.okulistik.com/srv/login?username=${username}&password=${password}&auth_type=1&ltype=2&utype=other`).then(resp => {
-        var user = occUser["user_"+resp.data.uid];
-        if(user){
-            var FD = Users[token];
-            if(FD){
-                FD.user = user;
-            }
+    // Tarayıcı başlıklarını simüle ederek Perl servisine gönderiyoruz
+    var loginHeaders = {
+        'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': req.headers['accept-language'] || 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': `https://${service}.okulistik.com/`,
+        'Origin': `https://${service}.okulistik.com`
+    };
+
+    if (req.headers.cookie) {
+        loginHeaders['Cookie'] = req.headers.cookie;
+    }
+
+    axios.get(loginUrl, { headers: loginHeaders }).then(resp => {
+        var user = resp.data.username || (resp.data.user && resp.data.user.username) || username;
+        var FD = Users[token];
+        if(FD){
+            FD.user = user;
         }
 
         var jwt = resp.data.jwt;
+        console.log("[occLogin] resp.data keys:", Object.keys(resp.data));
+        console.log("[occLogin] jwt:", jwt ? jwt.substring(0, 20) + "..." : "YOK");
+
+        var setCookie = resp.headers['set-cookie'];
+
+        if (setCookie) {
+            var cookieArr = Array.isArray(setCookie) ? setCookie : [setCookie];
+            var isProductionHost = (req.headers.host || "").indexOf("okulistik.com") !== -1;
+
+            var forwardCookies;
+            if (isProductionHost) {
+                // Yayın: domain zaten .okulistik.com, tarayıcı kabul eder → olduğu gibi ilet
+                forwardCookies = cookieArr;
+            } else {
+                // Lokal (okulistik.loc vs.): Domain/Secure'u temizle ki tarayıcı kabul etsin
+                forwardCookies = cookieArr.map(function(c) {
+                    return c
+                        .replace(/;?\s*Domain=[^;]*/gi, '')
+                        .replace(/;?\s*Secure/gi, '')
+                        .trim();
+                });
+            }
+
+            // JWT'yi ayrıca her ortamda çalışan temiz bir cookie olarak da ekle
+            if (jwt) {
+                forwardCookies = forwardCookies.concat([
+                    'okulistik-jwt=' + encodeURIComponent(jwt) + '; Path=/; Max-Age=86400'
+                ]);
+            }
+
+            res.setHeader('Set-Cookie', forwardCookies);
+        } else if (jwt) {
+            // Perl hiç Set-Cookie dönmedi ama JWT var — sadece JWT cookie'si yaz
+            res.setHeader('Set-Cookie', [
+                'okulistik-jwt=' + encodeURIComponent(jwt) + '; Path=/; Max-Age=86400'
+            ]);
+        }
+
+        var rawCookieHeader = setCookie ? (Array.isArray(setCookie) ? setCookie.join('; ') : setCookie) : '';
 
         var config = {
-            headers: {Authorization: "Bearer "+jwt}
-        }
+            headers: {
+                Authorization: "Bearer " + jwt,
+                ...(rawCookieHeader ? { Cookie: rawCookieHeader } : {})
+            }
+        };
 
         axios.get(`https://${service}.okulistik.com/api/occ?limit=4000`, config).then(response => {
             res.send({success: true, response: response.data, user: resp.data});
@@ -881,7 +917,7 @@ function copyFileListToFolder(fileList, targetFolder) {
 
 /**
  * Belirtilen klasördeki tüm dosyaları liste halinde döndüren fonksiyon (Promise tabanlı).
- * 
+ *
  * @param {string} targetDir - Listelenecek klasörün yolu (örn: "./files", "assets/img")
  * @param {Object} [options] - Opsiyonel parametreler
  * @param {boolean} [options.recursive=false] - Alt klasörlerdeki dosyaların da dahil edilip edilmeyeceği
@@ -986,7 +1022,7 @@ app.post("/listFiles", async function(req, res) {
 
 /**
  * Verilen dosya listesini silen fonksiyon (Promise tabanlı asenkron).
- * 
+ *
  * @param {Array<string>|string} fileList - Silinecek dosyaların yolları (dizi veya tek metin)
  * @param {Object} [options] - Opsiyonel ayarlar
  * @param {string} [options.baseDir=""] - Göreceli yollar için temel klasör

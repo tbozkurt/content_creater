@@ -1156,18 +1156,16 @@ function PLAYER(){
     }
 
 
-
     function sendDataAI(formatData) {
-
-/*
-    userJWT = "eyJhbGciOiJSUzI1NiIsImp0aSI6IjdjYWRkNzY1MTA0ZTYzNzdmYjg1ZmZiMDhmMjkxOWI1IiwidHlwIjoiSldUIn0.eyJpYXQiOjE3ODUzOTkxOTAsImZ1bGxOYW1lIjoiQWxpIMOWbWVyIFnEsWxhbmPEsSIsInVUeXBlIjoiU1RVREVOVCIsInRhcmdldCI6Ii9zdHUvaGlnaHNjaG9vbC9pbmRleC5waHAiLCJleHAiOjE3ODU0ODU1OTAsImRhdGEiOnsicmVsYXRlZFVJRCI6IjEyMjkxMzUzIiwic3RSZWFsU3RhdHVzIjoiMyIsImdyYWRlIjo5LCJzdFN0YXR1cyI6IjMifSwianRpIjoiN2NhZGQ3NjUxMDRlNjM3N2ZiODVmZmIwOGYyOTE5YjUiLCJuYmYiOjE3ODUzOTkxOTAsIm1haWwiOiJkZmdkZmdkZkBnc2RzZ2YuY29tIiwibmFtZSI6IkFsaSDDlm1lciIsInN1YiI6IjEyMjkxMzUzIiwiYXVkIjoiYW5hc2F5ZmFfY29kZSIsImxhc3RuYW1lIjoiWcSxbGFuY8SxIiwic2NvcGVzIjpbImF1dGguYmFzaWMiLCJtYXJrZXQuYmFzaWMiLCJhdXRoLnN0dWRlbnQiLCJhdXRoLnN0dWRlbnRBY3RpdmUiXX0.B9IZfym4btb4x_qjDSS7jz8ainmCb22Pfoe_gQlXLZ2QStMngIJ82kpU-nLlwfS0NTt1modAyug7WpiCFHpRZq-ioDxt5v-yF7oK-FcZkt4Dtk2gyhatmZ3DXyQ-9ol-DyAmsYb3fdY66mqqES6Fv4MbCqBNtKoE1ADXjJsmdjrBl58Q0jLba71lNa1fPoEmNSf_nRqNefxD8vTOD48oyBjj0sL8CWFc400nV0lvnzcQAf16wCeCLimbZUPDa1TODbE-B6TeJ-D4IVMpwlxrbgkBpaSqvxPhWUADcbXJC_PWFupDSF54_hnB6ZlkSXCNgt_DEu29pORviKbmhZ_jVw";
-*/
-
+        var host = window.location.hostname;
+        var env = "https://www.okulistik.com";
+        if(host.includes("oktest") || host.includes("preprod")){
+            env = "";
+        }
         var jwt = getCookie("okulistik-jwt");
-        console.log(jwt);
 
         $.ajax({
-            url: "https://www.okulistik.com/api/evaluation/ai-evaluate",
+            url: env+"/api/evaluation/ai-evaluate",
             headers: {
                 "Authorization": jwt,
                 "Accept-Language": 'tr-TR'

@@ -404,10 +404,10 @@
         </div>
     </div>
 
-<!--
-    <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
-    <div id="omg2" style="width:50px; height:50px;background-color: darkred"></div>
--->
+    <!--
+        <div id="omg" style="width:50px; height:50px;background-color: #00796b"></div>
+        <div id="omg2" style="width:50px; height:50px;background-color: darkred"></div>
+    -->
 </div>
 
 <div id="welcome_main">
@@ -858,7 +858,7 @@
             IDE.tranforming = false;
         });
 
-       return tempSelect;
+        return tempSelect;
     }
 
     var changeSelect = {
@@ -1528,7 +1528,7 @@
     }
 
 
-    var boxColor = {
+    var boxColorMap = {
         basak:"#9e9d24",
         melike:"#b71c1c",
         irem:"#01579b",
@@ -1544,6 +1544,20 @@
         deniz: "#d81b60",
         oyku: "#d81b60"
     };
+
+    // Bilinmeyen kullanıcılar için otomatik renk üretir
+    var boxColor = new Proxy(boxColorMap, {
+        get: function(target, key){
+            if(target[key]) return target[key];
+            // Hash fonksiyonu ile sabit ama dinamik renk üret
+            var hash = 0;
+            for(var i = 0; i < key.length; i++){
+                hash = key.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            var h = Math.abs(hash) % 360;
+            return "hsl(" + h + ", 55%, 32%)";
+        }
+    });
 
     var occUser = {
         user_15513246: "melike",
@@ -2036,7 +2050,7 @@
     }
 
     function setOkulistikJwtCookie(jwt){
-        document.cookie = OKULISTIK_JWT_COOKIE + "=" + encodeURIComponent(jwt) + "; path=/; SameSite=Lax";
+        document.cookie = OKULISTIK_JWT_COOKIE + "=" + encodeURIComponent(jwt) + "; path=/; max-age=86400";
     }
 
     $.ajaxSetup({
@@ -2082,10 +2096,14 @@
         console.log("occLogin_Parse:", data);
         if(data.success){
             if(data.user){
-                var name = data.user.profile.name;
-                name = utils.changeCharacter(name);
-                IDE.user.appUser = name.toLocaleLowerCase('tr-TR');
-                setOkulistikJwtCookie(data.user.jwt);
+                var name = (data.user.profile && data.user.profile.name) ? data.user.profile.name : (data.user.username || "Kullanıcı");
+                if (typeof utils !== "undefined" && utils.changeCharacter) {
+                    name = utils.changeCharacter(name);
+                }
+                IDE.user.appUser = String(name).toLocaleLowerCase('tr-TR');
+                if (data.user.jwt) {
+                    setOkulistikJwtCookie(data.user.jwt);
+                }
                 delete IDE.user.jwt;
                 IDE.user.uid = data.user.uid;
                 jsonV2.uid = data.user.uid;
@@ -2093,14 +2111,13 @@
 
             var saveList = [];
 
-            data.response.list.map(function(e){
-                var user = occUser["user_"+e.creator];
-                if(!user){
-                    user = "-";
-                }
-
-                saveList.push({fileName: e.fileName, createTime: e.createTime, username: user});
-            });
+            if (data.response && Array.isArray(data.response.list)) {
+                data.response.list.map(function(e){
+                    // creator UID'sini önce occUser map'inden çevir, yoksa olduğu gibi göster
+                    var user = (occUser && occUser["user_" + e.creator]) || e.username || e.creator || "-";
+                    saveList.push({fileName: e.fileName, createTime: e.createTime, username: user});
+                });
+            }
 
             importFileList(saveList);
         }else{
@@ -2379,7 +2396,7 @@
 
 
     function autoGetJson(){
-       $.ajax({url: "/autoGetJson", data: saveFileList[IDE.auto], success: autoGetJson_Parse, type: "POST", error: ajaxError});
+        $.ajax({url: "/autoGetJson", data: saveFileList[IDE.auto], success: autoGetJson_Parse, type: "POST", error: ajaxError});
     }
 
     function autoGetJson_Parse(data){
@@ -2682,67 +2699,67 @@
 
 
 
-/*
-//FileListi modifiye etmek icin kullan newList json gelecek.arayuzde dosya ismine tiklaninca calisir.
-document.querySelector("#Slide_fileName").addEventListener("click", function(){
-    var newList = JSON.stringify();
-    var data = {token: IDE.user.token, newList:newList};
-    $.ajax({url: "/modifiedFilelist", data, success: modifiedFilelist, type: "POST", error: ajaxError});
-});
-function modifiedFilelist(data){console.log(data)}
-*/
-
-/*
-//dosya oluşturduktan sonra 2.popup göstermek istenirse.[eski dosya tipi popup]
-//Burası aktif edilir. newSceneRequest > showSceneType olarak değiştirilir.
-function addSceneTypeBtnHTML(filename, id){
-    var htmlID = "new_"+id.toLowerCase();
-
-    let html = `<div class="welcome_fileBtn_Part">
-                    <img class="welcome_fileIcon" src="/assets/img/createscene.png" alt="file">
-                    <div>${filename}</div>
-                </div>`;
-
-    let div = utils.addDOM({className:"welcome_fileBtn", id:htmlID, innerHTML:html});
-    IDE.welcome.sceneTypeList.appendChild(div);
-
-    document.querySelector("#"+ htmlID).addEventListener("click", function(e){
-        console.log("MMC");
-        var template = sceneTemplate();
-        console.log(template);
-        sceneAddNewScene(template);
-        IDE.welcome.main.style.display = "none";
+    /*
+    //FileListi modifiye etmek icin kullan newList json gelecek.arayuzde dosya ismine tiklaninca calisir.
+    document.querySelector("#Slide_fileName").addEventListener("click", function(){
+        var newList = JSON.stringify();
+        var data = {token: IDE.user.token, newList:newList};
+        $.ajax({url: "/modifiedFilelist", data, success: modifiedFilelist, type: "POST", error: ajaxError});
     });
-}
+    function modifiedFilelist(data){console.log(data)}
+    */
 
-IDE.sceneTypes.map(function(e){
-    addSceneTypeBtnHTML(e[0], e[1]);
-});
+    /*
+    //dosya oluşturduktan sonra 2.popup göstermek istenirse.[eski dosya tipi popup]
+    //Burası aktif edilir. newSceneRequest > showSceneType olarak değiştirilir.
+    function addSceneTypeBtnHTML(filename, id){
+        var htmlID = "new_"+id.toLowerCase();
 
-function showSceneType(){
-    IDE.welcome.main.style.display = "flex";
-    IDE.welcome.main.style.alignItems = "center";
-    IDE.welcome.step2.style.display = "block";
-}
+        let html = `<div class="welcome_fileBtn_Part">
+                        <img class="welcome_fileIcon" src="/assets/img/createscene.png" alt="file">
+                        <div>${filename}</div>
+                    </div>`;
 
-//Kaydedilmiş bir dosyaya tikladigindaki popup ayari
-function oldFileWindow(){
-    IDE.welcome.main.style.display = "none";
-    IDE.welcome.step1.style.display = "none";
-    IDE.welcome.step2.style.marginBottom = "50px";
-    IDE.welcome.closeInput.style.display = "none";
-}
+        let div = utils.addDOM({className:"welcome_fileBtn", id:htmlID, innerHTML:html});
+        IDE.welcome.sceneTypeList.appendChild(div);
+
+        document.querySelector("#"+ htmlID).addEventListener("click", function(e){
+            console.log("MMC");
+            var template = sceneTemplate();
+            console.log(template);
+            sceneAddNewScene(template);
+            IDE.welcome.main.style.display = "none";
+        });
+    }
+
+    IDE.sceneTypes.map(function(e){
+        addSceneTypeBtnHTML(e[0], e[1]);
+    });
+
+    function showSceneType(){
+        IDE.welcome.main.style.display = "flex";
+        IDE.welcome.main.style.alignItems = "center";
+        IDE.welcome.step2.style.display = "block";
+    }
+
+    //Kaydedilmiş bir dosyaya tikladigindaki popup ayari
+    function oldFileWindow(){
+        IDE.welcome.main.style.display = "none";
+        IDE.welcome.step1.style.display = "none";
+        IDE.welcome.step2.style.marginBottom = "50px";
+        IDE.welcome.closeInput.style.display = "none";
+    }
 
 
-//Yeni dosya oluşturunca popup tasarim ayarlamalari
-function newFileWindow(){
-    IDE.welcome.main.style.alignItems = "center";
-    IDE.welcome.step1.style.display = "none";
-    IDE.welcome.step2.style.display = "block";
-    IDE.welcome.step2.style.marginBottom = "50px";
-    IDE.welcome.closeInput.style.display = "none";
-}
-*/
+    //Yeni dosya oluşturunca popup tasarim ayarlamalari
+    function newFileWindow(){
+        IDE.welcome.main.style.alignItems = "center";
+        IDE.welcome.step1.style.display = "none";
+        IDE.welcome.step2.style.display = "block";
+        IDE.welcome.step2.style.marginBottom = "50px";
+        IDE.welcome.closeInput.style.display = "none";
+    }
+    */
 
 </script>
 <!--<div id="textEditBox" contenteditable="true">gg</div>-->
