@@ -1051,6 +1051,8 @@ function PLAYER(){
         SD.historyRight.push(attempt);
 
         if(result === "T1"){
+            SD.right = 1;
+            SD.totalRight=1;
             This.playRightAudio();
             This.sceneComplete();
             This.nextScene();
