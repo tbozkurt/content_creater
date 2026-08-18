@@ -395,11 +395,12 @@ function PLAYER(){
             score.access = accessTotalScene;
         }
 
+        var state = setState();
         if(complete){
             score.cmd = "finish";
+            state.status = "finish";
         }
 
-        var state = JSON.stringify(setState());
         if(PLX.scoreUpdate){
             PLX.scoreUpdate({
                 Access: parseInt(score.access),
@@ -409,7 +410,7 @@ function PLAYER(){
                 Wrong: score.wrong,
                 Empty: score.empty,
                 Attempt: score.wrong,
-                State: state,
+                State: JSON.stringify(state),
                 TotalRight: score.empty,
                 CurrentSceneType: "E",
                 Complete: complete,
@@ -1240,6 +1241,7 @@ function PLAYER(){
                 controlBtnView(SP, "disabled");
                 This.sceneComplete();
                 hideWarning();
+                SD.answerShow=true;
 
                 SP.fnc.map(function(fnc){
                     clearInterval( fnc.timer );
@@ -1687,8 +1689,10 @@ function PLAYER(){
                         closeActivity(sp);
                         checkViewFNC(sd);
                     }else if(sd.historyRight.length >= 3){
-                        sd.complete = true;
+                        sd.complete=true;
+                        sd.answerShow=true;
                         closeActivity(sp);
+                        checkViewFNC(sd);
                     }
 
                     showToolTip(sp, sd);
@@ -2075,12 +2079,26 @@ function PLAYER(){
         });
     }
 
+
+    function iframeAjaxFNC(url, iframe){
+        $.ajax({
+            url: url,
+            method: "GET",
+            dataType: "html",
+            success: function(html){
+                iframe.srcdoc = html;
+            },
+            error: function (xhr, status, error) {
+                console.error("iframe bulunamadı:", error);
+            }
+        });
+    }
+
     function iframeAdd(el){
         el.kids.map(function(kid){
             if(kid.className.includes("iframe")){
                 var scroll="auto";
                 var iframe = document.createElement("iframe");
-                iframe.src = player.root +"/img/"+ kid.data.url;
                 if(kid.data.scroll){
                     scroll = kid.data.scroll;
                 }
@@ -2092,6 +2110,7 @@ function PLAYER(){
                     border: "0"
                 });
                 kid.main.appendChild(iframe);
+                iframeAjaxFNC(player.root +"img/"+ kid.data.url, iframe);
             }
         });
     }
