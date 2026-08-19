@@ -496,10 +496,9 @@ function PLAYER(){
 
     function setState(){
         var state = {version: AC.VersionFile, status:"update", questions:{}};
-        if(AC.user){state.uid = AC.user.uid};
+        if(AC.user){state.uid = AC.user.uid}
         SD.map(function(slide){
-            var rubrik = slide.rubrik;
-            if(PLX.isBSD && rubrik && rubrik.groups && rubrik.groups.length) {
+            if(PLX.isBSD){
                 state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
             }else{
                 state.questions[slide.name] = [{inputs: slide.inputs, duration:0}];
@@ -572,6 +571,7 @@ function PLAYER(){
                                             var lastMove = sp.history[sp.history.length-1];
                                             lastMove = JSON.parse(JSON.stringify(lastMove));
                                             SD[index].inputs = lastMove.inputs;
+                                            SD[index].duration = lastMove.duration;
                                             console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
                                         }
                                     }
@@ -858,7 +858,11 @@ function PLAYER(){
         SD.historyRight.push({
             right: totalScore.totalRight,
             wrong: totalScore.totalWrong,
-            success: 0
+            result: finalStatus,
+            score: 0,
+            attemptDuration: getCurrentDuration(SD),
+            duration: SD.duration,
+            inputs: JSON.parse(JSON.stringify(SD.inputs))
         });
 
         if(finalStatus === "right"){
@@ -978,18 +982,39 @@ function PLAYER(){
                 alias: {}
             };
 
+            function getTeacherCondition(group) {
+                if (typeof group.teacherCondition === "string") {
+                    return group.teacherCondition;
+                }
+
+                var reviewBox = null;
+                if (group.boxes && group.boxes.length) {
+                    group.boxes.some(function (box) {
+                        if (box.operator === "review") {
+                            reviewBox = box;
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+
+                return reviewBox ? reviewBox.value : "";
+            }
+
             if (SD.rubrik && SD.rubrik.groups) {
                 SD.rubrik.groups.map(function (group) {
                     if (group.boxes && group.boxes.length) {
-                        group.boxes.map(function (box) {
-                            if (box.operator === "review") {
-                                rubriks.push({
-                                    value: group.name,
-                                    "btd-teacher-condition": box.value,
-                                    weight: group.score
-                                });
-                            }
+                        var hasReview = group.boxes.some(function (box) {
+                            return box.operator === "review";
                         });
+
+                        if (hasReview) {
+                            rubriks.push({
+                                value: group.name,
+                                "btd-teacher-condition": getTeacherCondition(group),
+                                weight: group.score
+                            });
+                        }
                     }
                 });
             }
@@ -1033,12 +1058,25 @@ function PLAYER(){
         }
     }
 
+    function getCurrentDuration(SD){
+        var prevDuration=0;
+        var history = SD.historyRight;
+        if(history.length){
+            var lastMove = history[history.length-1];
+            prevDuration = lastMove.duration;
+            return (SD.duration - prevDuration);
+        }else{
+            return SD.duration;
+        }
+    }
+
     function rubrikResult(SP, SD, result){
         console.log("Result:", result);
 
         var attempt = {
             result: result,
             score: 0,
+            attemptDuration: getCurrentDuration(SD),
             duration: SD.duration,
             inputs: JSON.parse(JSON.stringify(SD.inputs))
         }
@@ -1049,6 +1087,7 @@ function PLAYER(){
                 attempt.score = group.score;
             }
         });
+
         SD.historyRight.push(attempt);
 
         if(result === "T1"){
@@ -1084,7 +1123,6 @@ function PLAYER(){
 
     function closeActivity(sp){
         controlBtnView(sp, "disable");
-        answerBtnView(sp, "disable");
         sp.fnc.map(function(fnc){
             clearInterval( fnc.timer );
             fnc.close(true);
@@ -1238,15 +1276,10 @@ function PLAYER(){
             }
         }else if(PLX.isBSD){
             if(SD.wrongCount >= 3){
-                controlBtnView(SP, "disabled");
                 This.sceneComplete();
-                hideWarning();
                 SD.answerShow=true;
-
-                SP.fnc.map(function(fnc){
-                    clearInterval( fnc.timer );
-                    fnc.close();
-                });
+                closeActivity(SP);
+                hideWarning();
 
                 if(SP.popEx.length){
                     SP.popEx[0].clicked = true;
@@ -1254,8 +1287,6 @@ function PLAYER(){
                     SP.popEx[0].btn.style.opacity = 1;
                     SP.popEx[0].btn.style.pointerEvents = "auto";
                 }
-
-                This.nextScene();
             }
         }
     }
@@ -1684,7 +1715,9 @@ function PLAYER(){
                 var sd = SD[index];
                 var lastMove = sp.history[sp.history.length-1];
                 if(lastMove){
-                    if(lastMove.result === "T1"){
+                    if(lastMove.result === "T1" || lastMove.result === "right"){
+                        sd.right = 1;
+                        sd.totalRight=1;
                         sd.complete = true;
                         closeActivity(sp);
                         checkViewFNC(sd);
@@ -1693,6 +1726,12 @@ function PLAYER(){
                         sd.answerShow=true;
                         closeActivity(sp);
                         checkViewFNC(sd);
+                        if(sp.popEx.length){
+                            sp.popEx[0].clicked = true;
+                            sp.popEx[0].window.style.visibility = "visible";
+                            sp.popEx[0].btn.style.opacity = 1;
+                            sp.popEx[0].btn.style.pointerEvents = "auto";
+                        }
                     }
 
                     showToolTip(sp, sd);

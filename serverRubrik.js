@@ -4,6 +4,16 @@ function registerRubrikServer(app, deps){
     var getOccJwt = deps.getOccJwt;
     var getOccAuthHeaders = deps.getOccAuthHeaders;
 
+    function getRubrikTopicHeaders(req){
+        var headers = getOccAuthHeaders(getOccJwt(req));
+
+        if(req.headers.cookie){
+            headers.Cookie = req.headers.cookie;
+        }
+
+        return headers;
+    }
+
     function saveOccFileFNC(req, res){
         var jwt = getOccJwt(req);
         var stringJSON = req.body.stringJSON || req.body.json;
@@ -159,6 +169,59 @@ function registerRubrikServer(app, deps){
                 success: false,
                 message: "OCC rubrik dosyası alınamadı.",
                 fileName: fileName,
+                error: err.response ? err.response.data : err.message
+            });
+        });
+    });
+
+    app.get("/api/rubrik/topics/courses", function(req, res){
+        var gid = req.query.gid;
+        var desig = req.query.desig;
+
+        if(!gid || !desig){
+            return res.status(400).send({
+                success: false,
+                message: "Kurs listesi için gid ve desig zorunludur."
+            });
+        }
+
+        axios.get("https://www.okulistik.com/json/question", {
+            params: {cmd: "courses", gid: gid, desig: desig},
+            headers: getRubrikTopicHeaders(req)
+        }).then(response => {
+            res.send(response.data);
+        }).catch(err => {
+            var status = err.response ? err.response.status : 502;
+            console.log("error in topic courses request", err.message, status, err.response ? err.response.data : "");
+            res.status(status).send({
+                success: false,
+                message: "Konu ağacı kurs bilgisi alınamadı.",
+                error: err.response ? err.response.data : err.message
+            });
+        });
+    });
+
+    app.get("/api/rubrik/topics/tree", function(req, res){
+        var cid = req.query.cid;
+
+        if(!cid){
+            return res.status(400).send({
+                success: false,
+                message: "Konu ağacı için cid zorunludur."
+            });
+        }
+
+        axios.get("https://www.okulistik.com/json/question", {
+            params: {cmd: "tree", cid: cid},
+            headers: getRubrikTopicHeaders(req)
+        }).then(response => {
+            res.send(response.data);
+        }).catch(err => {
+            var status = err.response ? err.response.status : 502;
+            console.log("error in topic tree request", err.message, status, err.response ? err.response.data : "");
+            res.status(status).send({
+                success: false,
+                message: "Konu ağacı alınamadı.",
                 error: err.response ? err.response.data : err.message
             });
         });

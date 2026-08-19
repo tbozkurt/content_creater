@@ -58,6 +58,21 @@ function getOccJwt(req){
         return authHeader.substring(7);
     }
 
+    var cookieHeader = req.headers.cookie || "";
+    var jwtCookie = cookieHeader.split(";").map(function(cookie){
+        return cookie.trim();
+    }).find(function(cookie){
+        return cookie.indexOf("okulistik-jwt=") === 0;
+    });
+
+    if(jwtCookie){
+        try {
+            return decodeURIComponent(jwtCookie.substring("okulistik-jwt=".length));
+        } catch (error) {
+            return jwtCookie.substring("okulistik-jwt=".length);
+        }
+    }
+
     return "";
 }
 

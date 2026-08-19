@@ -104,17 +104,206 @@
             flex-wrap: wrap;
         }
 
+        .group-form-header,
+        .rubrik-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .group-form-header h3,
+        .rubrik-list-header h3 {
+            font-size: 14px;
+            border: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .rubrik-list-header {
+            border-bottom: 2px solid #323232;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .rubrik-list-header h3 {
+            font-size: 16px;
+        }
+
+        .rubrik-page-title {
+            background: #252525;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            border: 1px solid #323232;
+            box-sizing: border-box;
+            margin-bottom:10px;
+        }
+
+        .rubrik-page-title-main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .rubrik-page-title-label {
+            display: block;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .rubrik-page-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+
+        .rubrik-page-meta-item {
+            display: inline-flex;
+            align-items: center;
+            min-width: 0;
+            max-width: 100%;
+            color: #bababa;
+            font-size: 12px;
+            line-height: 1.25;
+        }
+
+        .rubrik-page-meta-label {
+            flex: 0 0 auto;
+            color: #8f8f8f;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+
+        .rubrik-page-meta-value {
+            min-width: 0;
+            color: #d8d8d8;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rubrik-page-meta-value.error {
+            color: #ff8b8b;
+        }
+
+        .rubrik-slides-section {
+            margin-bottom: 0;
+        }
         .extra-options { display: flex; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
         .extra-field { display: flex; align-items: center; gap: 4px; color: #bababa; font-size: 13px; }
         .extra-field input[type="number"] { width: 50px; padding: 3px; }
 
+        .topic-tree-panel {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #252525;
+        }
+
+        .topic-tree-toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .topic-tree-toolbar input {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .topic-tree-status {
+            margin-bottom: 6px;
+            color: #8f8f8f;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .topic-tree-list {
+            max-height: 260px;
+            overflow-y: auto;
+            background: #252525;
+            border: 1px solid #252525;
+            border-radius: 4px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .topic-tree-empty {
+            color: #8f8f8f;
+            font-size: 12px;
+            padding: 6px;
+        }
+
+        .topic-tree-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 28px;
+            padding: 3px 5px;
+            border-radius: 4px;
+            color: #bababa;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .topic-tree-row:hover,
+        .topic-tree-row.highlight {
+            background: #3a3a3a;
+        }
+
+        .topic-tree-toggle {
+            width: 20px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0;
+            background: transparent;
+            color: #bababa;
+            border: 1px solid transparent;
+            line-height: 1;
+        }
+
+        .topic-tree-toggle:hover {
+            border-color: #454545;
+            background: #323232;
+        }
+
+        .topic-tree-toggle.placeholder {
+            cursor: default;
+            visibility: hidden;
+        }
+
+        .topic-tree-checkbox {
+            flex: 0 0 auto;
+        }
+
+        .topic-tree-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s; }
-        .btn-success { background: #006400; color: #ffffff; border: 1px solid #252525; }
+        .btn-success { background: #006400; color: #ffffff; }
         .btn-success:hover { background: #008000; }
-        .btn-danger { background: #323232; color: #ef4444; border: 1px solid #252525; }
-        .btn-danger:hover { background: #ef4444; color: #000000; }
+        .btn-danger { background: #991b1b; color: #ffffff; }
+        .btn-danger:hover { background: #b91c1c; border-color: #dc2626; }
         .btn-primary { background: #bababa; color: #000000; }
         .btn-primary:hover { background: #ffffff; }
+        .btn-primary:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+        .btn-primary:disabled:hover {
+            background: #bababa;
+        }
 
         /* Renkli Grup Öğeleri Kart Yapısı */
         .group-item {
@@ -169,6 +358,7 @@
             display: none;
             gap: 8px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
         }
 
         .rubrik-ai-field {
@@ -196,6 +386,44 @@
             display: none;
         }
 
+        .box-row.review-mode .box-input {
+            display: none;
+        }
+
+        .box-row.review-mode .box-alias-input {
+            flex: 1;
+            width: auto;
+        }
+
+        #boxesContainer.review-mode .box-select {
+            display: none;
+        }
+
+        .rubrik-teacher-condition-wrap {
+            display: none;
+            flex: 0 0 100%;
+            width: 100%;
+        }
+
+        .rubrik-teacher-condition-wrap textarea {
+            width: 100%;
+            min-height: 86px;
+            resize: vertical;
+            padding: 8px;
+            background-color: #252525;
+            border: 1px solid #323232;
+            border-radius: 4px;
+            color: #bababa;
+            font-family: Nunito;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .rubrik-teacher-condition-wrap textarea:focus {
+            outline: none;
+            border-color: #bababa;
+        }
+
         .slide-tabs-panel {
             display: none;
             margin-bottom: 10px;
@@ -209,17 +437,41 @@
             display: flex;
             gap: 6px;
             overflow-x: auto;
-            padding: 2px 0;
+            padding: 5px 0;
         }
 
         .slide-tab {
             flex: 0 0 auto;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             background: #252525;
             color: #bababa;
             border: 1px solid #323232;
             border-radius: 4px;
             min-width: 54px;
             text-align: center;
+        }
+
+        .slide-tab-warning {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #f59e0b;
+            color: #000000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            border: 1px solid #252525;
+            font-size: 10px;
+            font-weight: 900;
+            line-height: 1;
+            box-sizing: border-box;
         }
 
         .slide-tab.active {
@@ -326,6 +578,47 @@
         }
 
         .archive-list.scrollable::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg,#8b8b8b,#5e5e5e);
+            background-clip: padding-box;
+        }
+
+        #rubrikAIInstructions,
+        #rubrikAIQuestion,
+        #rubrikTeacherConditionInput,
+        #topicTreeList {
+            scrollbar-width: thin;
+            scrollbar-color: #5b5b5b transparent;
+        }
+
+        #rubrikAIInstructions::-webkit-scrollbar,
+        #rubrikAIQuestion::-webkit-scrollbar,
+        #rubrikTeacherConditionInput::-webkit-scrollbar,
+        #topicTreeList::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #rubrikAIInstructions::-webkit-scrollbar-track,
+        #rubrikAIQuestion::-webkit-scrollbar-track,
+        #rubrikTeacherConditionInput::-webkit-scrollbar-track,
+        #topicTreeList::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
+
+        #rubrikAIInstructions::-webkit-scrollbar-thumb,
+        #rubrikAIQuestion::-webkit-scrollbar-thumb,
+        #rubrikTeacherConditionInput::-webkit-scrollbar-thumb,
+        #topicTreeList::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg,#6b6b6b,#4a4a4a);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        #rubrikAIInstructions::-webkit-scrollbar-thumb:hover,
+        #rubrikAIQuestion::-webkit-scrollbar-thumb:hover,
+        #rubrikTeacherConditionInput::-webkit-scrollbar-thumb:hover,
+        #topicTreeList::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg,#8b8b8b,#5e5e5e);
             background-clip: padding-box;
         }
@@ -610,9 +903,65 @@
         .rubrik-login-error.visible {
             display: block;
         }
+
+        .rubrik-confirm-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.68);
+            box-sizing: border-box;
+        }
+
+        .rubrik-confirm-overlay.visible {
+            display: flex;
+        }
+
+        .rubrik-confirm-card {
+            width: 100%;
+            max-width: 390px;
+            padding: 18px;
+            background: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            box-shadow: 0 16px 42px rgba(0, 0, 0, 0.62);
+            box-sizing: border-box;
+        }
+
+        .rubrik-confirm-card h3 {
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .rubrik-confirm-message {
+            margin: 0 0 16px;
+            color: #bababa;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .rubrik-confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
+
+<div id="rubrikConfirmOverlay" class="rubrik-confirm-overlay" aria-modal="true" role="dialog" aria-labelledby="rubrikConfirmTitle">
+    <div class="rubrik-confirm-card">
+        <h3 id="rubrikConfirmTitle">Dikkat! Eksik rubrik var</h3>
+        <p id="rubrikConfirmMessage" class="rubrik-confirm-message">Rubrik eklenmemiş slide var. Yine de devam etmek istiyor musunuz?</p>
+        <div class="rubrik-confirm-actions">
+            <button id="rubrikConfirmCancel" type="button" class="btn-danger">Vazgeç</button>
+            <button id="rubrikConfirmOk" type="button" class="btn-primary">Devam Et</button>
+        </div>
+    </div>
+</div>
 
 <div id="rubrikLoginOverlay" class="rubrik-login-overlay" aria-modal="true" role="dialog">
     <form id="rubrikLoginForm" class="rubrik-login-card">
@@ -637,28 +986,46 @@
     </div>
 </div>
 
-<div id="slideTabsPanel" class="slide-tabs-panel panel-card">
-    <h3>Slides</h3>
-    <div id="slideTabs" class="slide-tabs"></div>
+<div id="slideTabsPanel" class="slide-tabs-panel">
+    <div id="infoDiv" class="rubrik-page-title panel-card">
+        <div class="rubrik-page-title-main">
+            <span class="rubrik-page-title-label">Okulistik Rubrik Creator</span>
+            <div class="rubrik-page-meta">
+                <span class="rubrik-page-meta-item">
+                    <span class="rubrik-page-meta-label">File</span>
+                    <span id="rubrikHeaderFile" class="rubrik-page-meta-value">?</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="rubrik-slides-section panel-card">
+        <h3>Slides</h3>
+        <div id="slideTabs" class="slide-tabs"></div>
+    </div>
 </div>
 
 <div class="app-layout">
     <div class="main-panel panel-card">
-        <h3 id="infoDiv">File: ?</h3>
         <div class="rubrik-ai-panel">
             <div class="rubrik-ai-field">
                 <label class="field-label" for="rubrikAIInstructions">Instructions</label>
-                <textarea id="rubrikAIInstructions" placeholder="Instructions..."></textarea>
+                <textarea id="rubrikAIInstructions" placeholder="Instructions giriniz."></textarea>
             </div>
             <div class="rubrik-ai-field">
                 <label class="field-label" for="rubrikAIQuestion">Question</label>
-                <textarea id="rubrikAIQuestion" placeholder="Question..."></textarea>
+                <textarea id="rubrikAIQuestion" placeholder="Question giriniz."></textarea>
+            </div>
+            <div id="rubrikTeacherConditionWrap" class="rubrik-teacher-condition-wrap">
+                <label class="field-label" for="rubrikTeacherConditionInput">Condition</label>
+                <textarea id="rubrikTeacherConditionInput" placeholder="Condition giriniz."></textarea>
             </div>
         </div>
         <div id="boxesContainer"></div>
 
         <div class="group-section">
-            <h3 id="formTitle" style="font-size:14px; border:none; margin-bottom:6px;">Yeni Grup Oluştur</h3>
+            <div class="group-form-header">
+                <h3 id="formTitle">Yeni Rubrik Grubu Oluştur</h3>
+            </div>
 
             <div class="form-inline-group">
                 <div>
@@ -671,7 +1038,6 @@
                 </div>
                 <div style="display:flex; gap:6px;">
                     <button id="saveGroupBtn" class="btn-success">Grubu Kaydet</button>
-                    <button id="cancelEditBtn" style="display:none;" class="btn-danger">İptal</button>
                 </div>
             </div>
 
@@ -692,10 +1058,31 @@
                     <input type="number" id="numNullCount" value="0" disabled>
                 </div>
             </div>
+
+            <div class="topic-tree-panel">
+                <h3 style="font-size:14px; border:none; margin-bottom:6px;">Konu Ağacı</h3>
+                <div class="topic-tree-toolbar">
+                    <input type="text" id="topicTidSearch" placeholder="mcode, id veya text ile ara...">
+                    <button id="topicTidSearchBtn" type="button" class="btn-primary">Git</button>
+                    <button id="topicTidResetBtn" type="button" class="btn-danger">Temizle</button>
+                </div>
+                <div id="topicTreeStatus" class="topic-tree-status">Konu ağacı yüklenmedi.</div>
+                <div id="topicTreeList" class="topic-tree-list">
+                    <div class="topic-tree-empty">Konu ağacı için dosya bekleniyor.</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="side-panel">
+        <div class="panel-card">
+            <div class="rubrik-list-header">
+                <h3>Rubrikler</h3>
+                <button id="createRubrikBtn" type="button" class="btn-primary" style="display:none;">Rubrik Oluştur</button>
+            </div>
+            <div id="groupsList">Henüz rubrik oluşturulmadı.</div>
+        </div>
+
         <div class="panel-card" id="archivePanel" style="display:none;">
             <div class="archive-title-row">
                 <h3>Rubrik Log</h3>
@@ -705,16 +1092,13 @@
             <div id="archiveList" class="archive-list">Log bulunamadı.</div>
         </div>
 
-        <div class="panel-card">
-            <h3>Kayıtlı Gruplar</h3>
-            <div id="groupsList">Henüz grup oluşturulmadı.</div>
-        </div>
-
-        <div class="panel-card">
-            <h3>Değerlendirici Paneli</h3>
-            <p style="font-size:11px; color:#bababa; margin-top:0; margin-bottom:8px;">Girdiğiniz değerlerin eşleştiği grup sonucu:</p>
-            <div id="evaluatorInputs"></div>
-            <div class="result-box" id="evaluationResult">-</div>
+        <div class="panel-card" id="evaluatorPanel">
+            <div id="evaluatorPanelContent">
+                <h3>Değerlendirici Paneli</h3>
+                <p style="font-size:11px; color:#bababa; margin-top:0; margin-bottom:8px;">Girdiğiniz değerlerin eşleştiği grup sonucu:</p>
+                <div id="evaluatorInputs"></div>
+                <div class="result-box" id="evaluationResult">-</div>
+            </div>
             <button id="btnFinalSave" class="btn-primary" style="width:100%;">Kaydet</button>
         </div>
     </div>
@@ -771,7 +1155,6 @@
         list: []
     };
     var selectedOccLogId = null;
-    var activeRollbackLogId = null;
     var activeOccFileName = "";
     var activeSlideIndex = null;
     var hasLocalRubrikData = false;
@@ -780,6 +1163,16 @@
     var isRubrikAppStarted = false;
     var rubrikLoginWaiters = [];
     var rubrikCurrentUser = null;
+    var topicTreeState = {
+        flatItems: [],
+        treeItems: [],
+        itemMap: {},
+        parentMap: {},
+        expandedIds: {},
+        selectedIds: [],
+        isLoading: false,
+        status: 'Konu ağacı yüklenmedi.'
+    };
     const RUBRIK_JWT_COOKIE = "okulistik-jwt";
     const RUBRIK_USER_STORAGE = "occRubrikUser";
     const rubrikLoginOverlay = document.getElementById('rubrikLoginOverlay');
@@ -790,6 +1183,12 @@
     const rubrikLoginError = document.getElementById('rubrikLoginError');
     const rubrikPageLoadingOverlay = document.getElementById('rubrikPageLoadingOverlay');
     const rubrikPageLoadingText = document.getElementById('rubrikPageLoadingText');
+    const rubrikHeaderFile = document.getElementById('rubrikHeaderFile');
+    const rubrikConfirmOverlay = document.getElementById('rubrikConfirmOverlay');
+    const rubrikConfirmMessage = document.getElementById('rubrikConfirmMessage');
+    const rubrikConfirmCancel = document.getElementById('rubrikConfirmCancel');
+    const rubrikConfirmOk = document.getElementById('rubrikConfirmOk');
+    let rubrikConfirmResolve = null;
 
     function getCookieValue(name){
         const cookie = document.cookie
@@ -892,6 +1291,43 @@
         await waitForRubrikLogin(message || 'Oturum süresi doldu. Lütfen tekrar giriş yapın.');
     }
 
+    function closeRubrikConfirm(result){
+        rubrikConfirmOverlay.classList.remove('visible');
+
+        if(rubrikConfirmResolve){
+            rubrikConfirmResolve(result);
+            rubrikConfirmResolve = null;
+        }
+    }
+
+    function showRubrikConfirm(message){
+        rubrikConfirmMessage.textContent = message;
+        rubrikConfirmOverlay.classList.add('visible');
+
+        return new Promise(resolve => {
+            rubrikConfirmResolve = resolve;
+            setTimeout(() => rubrikConfirmOk.focus(), 0);
+        });
+    }
+
+    rubrikConfirmCancel.addEventListener('click', () => closeRubrikConfirm(false));
+    rubrikConfirmOk.addEventListener('click', () => closeRubrikConfirm(true));
+    rubrikConfirmOverlay.addEventListener('click', (event) => {
+        if(event.target === rubrikConfirmOverlay){
+            closeRubrikConfirm(false);
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if(event.key === 'Escape' && rubrikConfirmOverlay.classList.contains('visible')){
+            closeRubrikConfirm(false);
+        }
+    });
+
+    function setRubrikHeader(fileName, sceneName, isError){
+        rubrikHeaderFile.textContent = fileName || '?';
+        rubrikHeaderFile.classList.toggle('error', Boolean(isError));
+    }
+
     function getLocalData(){
         if (typeof(Storage) !== "undefined") {
             var occSceneRubrikData = localStorage.getItem("occSceneRubrikData");
@@ -907,7 +1343,7 @@
                 initialRubrikAIState = normalizeRubrikAI(
                     initialAppState.rubrikAI || rubrikData.rubrikAI
                 );
-                document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${rubrikData.user.selectedFile} > Scene: ${rubrikData.scene.name}</span>`;
+                setRubrikHeader(rubrikData.user.selectedFile, rubrikData.scene.name);
                 localStorage.removeItem("occSceneRubrikData");
             }
         }
@@ -947,7 +1383,7 @@
     const groupNameInput = document.getElementById('groupNameInput');
     const groupScoreInput = document.getElementById('groupScoreInput');
     const saveGroupBtn = document.getElementById('saveGroupBtn');
-    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const createRubrikBtn = document.getElementById('createRubrikBtn');
     const groupsList = document.getElementById('groupsList');
     const slideTabsPanel = document.getElementById('slideTabsPanel');
     const slideTabs = document.getElementById('slideTabs');
@@ -956,12 +1392,18 @@
     const archiveStatus = document.getElementById('archiveStatus');
     const archiveRollbackDate = document.getElementById('archiveRollbackDate');
     const formTitle = document.getElementById('formTitle');
+    const evaluatorPanelContent = document.getElementById('evaluatorPanelContent');
     const evaluatorInputs = document.getElementById('evaluatorInputs');
     const evaluationResult = document.getElementById('evaluationResult');
     const btnFinalSave = document.getElementById('btnFinalSave');
     const rubrikAIPanel = document.querySelector('.rubrik-ai-panel');
     const rubrikAIInstructions = document.getElementById('rubrikAIInstructions');
     const rubrikAIQuestion = document.getElementById('rubrikAIQuestion');
+    const topicTidSearch = document.getElementById('topicTidSearch');
+    const topicTidSearchBtn = document.getElementById('topicTidSearchBtn');
+    const topicTidResetBtn = document.getElementById('topicTidResetBtn');
+    const topicTreeStatus = document.getElementById('topicTreeStatus');
+    const topicTreeList = document.getElementById('topicTreeList');
 
     const extraOptions = {
         truecount: { chk: document.getElementById('chkTrueCount'), num: document.getElementById('numTrueCount') },
@@ -1063,6 +1505,463 @@
         return params.get('file_name') || params.get('fileName') || '';
     }
 
+    function normalizeTidArray(value){
+        if(!Array.isArray(value)){
+            return [];
+        }
+
+        const seen = {};
+        return value
+            .map(id => Number(id))
+            .filter(id => Number.isFinite(id))
+            .filter(id => {
+                if(seen[id]){
+                    return false;
+                }
+                seen[id] = true;
+                return true;
+            });
+    }
+
+    function getActiveSlide(){
+        const slides = getSlidesFromRubrikFile();
+        return activeSlideIndex !== null && slides[activeSlideIndex] ? slides[activeSlideIndex] : null;
+    }
+
+    function normalizeTopicLevelEntries(topic){
+        if(!topic || typeof topic !== "object" || Array.isArray(topic)){
+            return [];
+        }
+
+        return Object.keys(topic)
+            .filter(key => /^level\d+$/.test(key))
+            .sort((a, b) => Number(a.replace('level', '')) - Number(b.replace('level', '')))
+            .map(key => topic[key]);
+    }
+
+    function syncTopicSelectionsFromActiveSlide(){
+        const slide = getActiveSlide();
+        topicTreeState.selectedIds = normalizeTidArray(slide ? normalizeTopicLevelEntries(slide.topic) : []);
+    }
+
+    function getTopicObjectFromSelectedIds(){
+        return normalizeTidArray(topicTreeState.selectedIds).reduce((topic, id, index) => {
+            const item = topicTreeState.itemMap[id];
+            topic['level' + index] = item && item.rawId ? item.rawId : String(id);
+            return topic;
+        }, {});
+    }
+
+    function syncTopicSelectionsToActiveSlide(){
+        const slide = getActiveSlide();
+        if(!slide){
+            return;
+        }
+
+        const topic = getTopicObjectFromSelectedIds();
+        if(Object.keys(topic).length > 0){
+            slide.topic = topic;
+        } else {
+            delete slide.topic;
+        }
+    }
+
+    function removeLegacyGlobalTopicSelection(){
+        if(rubrikFileData && rubrikFileData.list && Object.prototype.hasOwnProperty.call(rubrikFileData.list, 'tid')){
+            delete rubrikFileData.list.tid;
+        }
+    }
+
+    function getTopicTreeParamsFromFileName(fileName){
+        const firstPart = String(fileName || '').split('_')[0] || '';
+        const match = firstPart.match(/^([A-Za-z]+)(\d+)/);
+
+        if(!match){
+            return null;
+        }
+
+        return {
+            desig: match[1].toUpperCase(),
+            gid: Number(match[2]) + 2
+        };
+    }
+
+    function extractArrayPayload(data){
+        if(Array.isArray(data)){
+            return data;
+        }
+
+        if(!data || typeof data !== "object"){
+            return [];
+        }
+
+        if(Array.isArray(data.list)){
+            return data.list;
+        }
+
+        if(Array.isArray(data.data)){
+            return data.data;
+        }
+
+        if(Array.isArray(data.items)){
+            return data.items;
+        }
+
+        return [];
+    }
+
+    function extractCourseCid(data){
+        const courses = extractArrayPayload(data);
+        const firstCourse = courses[0] || data;
+
+        if(firstCourse && typeof firstCourse === "object"){
+            return firstCourse.cid || firstCourse.id || firstCourse.courseid || firstCourse.courseId || null;
+        }
+
+        return null;
+    }
+
+    function buildTopicTree(flatItems){
+        const itemMap = {};
+        const parentMap = {};
+        const childrenByParent = {};
+        const normalizedItems = flatItems
+            .filter(item => item && typeof item === "object")
+            .map(item => ({
+                id: Number(item.id),
+                rawId: String(item.id || ''),
+                parentid: Number(item.parentid),
+                mcode: typeof item.mcode === "string" ? item.mcode : String(item.mcode || ''),
+                text: typeof item.text === "string" ? item.text : String(item.text || ''),
+                node: item.node === true || item.node === "true" || item.node === 1 || item.node === "1"
+            }))
+            .filter(item => Number.isFinite(item.id));
+
+        normalizedItems.forEach(item => {
+            item.children = [];
+            itemMap[item.id] = item;
+            parentMap[item.id] = Number.isFinite(item.parentid) ? item.parentid : -1;
+            const parentKey = String(Number.isFinite(item.parentid) ? item.parentid : -1);
+            if(!childrenByParent[parentKey]){
+                childrenByParent[parentKey] = [];
+            }
+            childrenByParent[parentKey].push(item);
+        });
+
+        normalizedItems.forEach(item => {
+            item.children = childrenByParent[String(item.id)] || [];
+        });
+
+        return {
+            treeItems: normalizedItems.filter(item => item.parentid === -1 || !itemMap[item.parentid]),
+            itemMap: itemMap,
+            parentMap: parentMap
+        };
+    }
+
+    function getTopicPathIds(id){
+        const pathIds = [];
+        let currentId = Number(id);
+        let guard = 0;
+
+        while(Number.isFinite(currentId) && topicTreeState.itemMap[currentId] && guard < 1000){
+            pathIds.unshift(currentId);
+            const parentId = topicTreeState.parentMap[currentId];
+            if(!Number.isFinite(parentId) || parentId === -1){
+                break;
+            }
+            currentId = parentId;
+            guard++;
+        }
+
+        return pathIds;
+    }
+
+    function isTopicLeaf(item){
+        return item && (!item.children || item.children.length === 0);
+    }
+
+    function getTopicDisplayText(item){
+        const mcode = String(item && item.mcode ? item.mcode : '').trim();
+        const text = String(item && item.text ? item.text : '').trim();
+        return (mcode ? mcode + ' ' : '') + text;
+    }
+
+    function reconcileTopicSelectionToSingleLeaf(){
+        const currentIds = normalizeTidArray(topicTreeState.selectedIds);
+        if(currentIds.length === 0){
+            topicTreeState.selectedIds = [];
+            syncTopicSelectionsToActiveSlide();
+            return;
+        }
+
+        let selectedLeaf = currentIds
+            .map(id => topicTreeState.itemMap[id])
+            .filter(item => item && isTopicLeaf(item))
+            .pop();
+
+        if(!selectedLeaf){
+            selectedLeaf = currentIds
+                .map(id => topicTreeState.itemMap[id])
+                .filter(Boolean)
+                .sort((a, b) => getTopicPathIds(b.id).length - getTopicPathIds(a.id).length)[0];
+        }
+
+        topicTreeState.selectedIds = selectedLeaf ? getTopicPathIds(selectedLeaf.id) : [];
+        syncTopicSelectionsToActiveSlide();
+    }
+
+    function setTopicTreeStatus(message){
+        topicTreeState.status = message || '';
+        topicTreeStatus.textContent = topicTreeState.status;
+    }
+
+    function isTopicSelected(id){
+        return topicTreeState.selectedIds.includes(Number(id));
+    }
+
+    function setTopicSelected(id, selected){
+        const numericId = Number(id);
+        const item = topicTreeState.itemMap[numericId];
+
+        if(!Number.isFinite(numericId) || !item){
+            return;
+        }
+
+        if(selected){
+            topicTreeState.selectedIds = getTopicPathIds(numericId);
+        } else {
+            topicTreeState.selectedIds = [];
+        }
+
+        syncTopicSelectionsToActiveSlide();
+
+        setTopicTreeStatus(
+            selected ? 'Seçili mcode: ' + item.mcode : 'Seçili mcode: -'
+        );
+
+        updateFinalSaveButtonState(false);
+    }
+
+    function refreshTopicTreeSelectionForActiveSlide(){
+        syncTopicSelectionsFromActiveSlide();
+
+        if(Object.keys(topicTreeState.itemMap).length === 0){
+            renderTopicTree();
+            return;
+        }
+
+        reconcileTopicSelectionToSingleLeaf();
+
+        topicTreeState.expandedIds = {};
+
+        Object.keys(topicTreeState.itemMap).forEach(id => {
+            if(isTopicSelected(id)){
+                expandTopicAncestors(Number(id));
+            }
+        });
+
+        const selectedIds = topicTreeState.selectedIds;
+        const selectedId = selectedIds.length
+            ? selectedIds[selectedIds.length - 1]
+            : null;
+
+        const selectedItem = selectedId !== null
+            ? topicTreeState.itemMap[selectedId]
+            : null;
+
+        setTopicTreeStatus(
+            'Konu ağacı yüklendi. Seçili mcode: ' +
+            (selectedItem ? selectedItem.mcode : '')
+        );
+
+        updateFinalSaveButtonState(false);
+        renderTopicTree();
+    }
+
+    function renderTopicTree(){
+        topicTreeStatus.textContent = topicTreeState.status || '';
+        topicTreeList.innerHTML = '';
+
+        if(topicTreeState.isLoading){
+            topicTreeList.innerHTML = '<div class="topic-tree-empty">Konu ağacı yükleniyor...</div>';
+            return;
+        }
+
+        if(topicTreeState.treeItems.length === 0){
+            topicTreeList.innerHTML = '<div class="topic-tree-empty">Konu ağacı bulunamadı.</div>';
+            return;
+        }
+
+        const renderNode = (item, level) => {
+            const row = document.createElement('div');
+            row.className = 'topic-tree-row';
+            row.dataset.tid = item.id;
+            row.style.paddingLeft = (5 + level * 18) + 'px';
+
+            const hasChildren = item.children && item.children.length > 0;
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'topic-tree-toggle' + (hasChildren ? '' : ' placeholder');
+            toggle.textContent = topicTreeState.expandedIds[item.id] ? '−' : '+';
+            toggle.setAttribute('aria-label', item.text + ' alt konuları');
+            toggle.addEventListener('click', () => {
+                topicTreeState.expandedIds[item.id] = !topicTreeState.expandedIds[item.id];
+                renderTopicTree();
+            });
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'topic-tree-checkbox';
+            checkbox.checked = isTopicSelected(item.id);
+            checkbox.disabled = !isTopicLeaf(item);
+            checkbox.addEventListener('change', event => {
+                setTopicSelected(item.id, event.target.checked);
+                renderTopicTree();
+            });
+
+            const label = document.createElement('span');
+            label.className = 'topic-tree-label';
+            label.textContent = getTopicDisplayText(item) + ' (' + item.id + ')';
+            label.title = getTopicDisplayText(item) + ' - ' + item.id;
+
+            row.appendChild(toggle);
+            row.appendChild(checkbox);
+            row.appendChild(label);
+            topicTreeList.appendChild(row);
+
+            if(hasChildren && topicTreeState.expandedIds[item.id]){
+                item.children.forEach(child => renderNode(child, level + 1));
+            }
+        };
+
+        topicTreeState.treeItems.forEach(item => renderNode(item, 0));
+    }
+
+    function getTopicApiUrl(path, params){
+        const apiUrl = new URL(path, window.location.origin);
+        Object.keys(params).forEach(key => apiUrl.searchParams.set(key, params[key]));
+        return apiUrl.pathname + apiUrl.search;
+    }
+
+    function expandTopicAncestors(tid){
+        let currentId = Number(tid);
+        let guard = 0;
+
+        while(Number.isFinite(currentId) && topicTreeState.parentMap[currentId] !== -1 && guard < 1000){
+            const parentId = topicTreeState.parentMap[currentId];
+            if(!Number.isFinite(parentId)){
+                break;
+            }
+            topicTreeState.expandedIds[parentId] = true;
+            currentId = parentId;
+            guard++;
+        }
+    }
+
+    function findTopicBySearchTerm(searchTerm){
+        const normalizedTerm = String(searchTerm || '').trim().toLocaleLowerCase('tr-TR');
+        if(!normalizedTerm){
+            return null;
+        }
+
+        const numericId = Number(normalizedTerm);
+        if(Number.isFinite(numericId) && topicTreeState.itemMap[numericId]){
+            return topicTreeState.itemMap[numericId];
+        }
+
+        const items = Object.keys(topicTreeState.itemMap).map(id => topicTreeState.itemMap[id]);
+        const exactMcodeMatch = items.find(item => String(item.mcode || '').toLocaleLowerCase('tr-TR') === normalizedTerm);
+        if(exactMcodeMatch){
+            return exactMcodeMatch;
+        }
+
+        return items.find(item => {
+            const idText = String(item.id || '').toLocaleLowerCase('tr-TR');
+            const mcodeText = String(item.mcode || '').toLocaleLowerCase('tr-TR');
+            const labelText = String(item.text || '').toLocaleLowerCase('tr-TR');
+            return idText.includes(normalizedTerm) || mcodeText.includes(normalizedTerm) || labelText.includes(normalizedTerm);
+        }) || null;
+    }
+
+    function goToTopicTid(){
+        const topicItem = findTopicBySearchTerm(topicTidSearch.value);
+        if(!topicItem){
+            setTopicTreeStatus('Konu bulunamadı.');
+            return;
+        }
+
+        const tid = topicItem.id;
+        expandTopicAncestors(tid);
+        renderTopicTree();
+
+        const row = topicTreeList.querySelector('[data-tid="' + tid + '"]');
+        if(row){
+            row.scrollIntoView({block: 'center'});
+            row.classList.add('highlight');
+            setTimeout(() => row.classList.remove('highlight'), 1600);
+            setTopicTreeStatus('Konu bulundu: ' + (topicItem.mcode ? topicItem.mcode : ''));
+        }
+    }
+
+    function resetTopicSelection(){
+        topicTidSearch.value = '';
+    }
+
+    async function loadTopicTreeForFile(fileName){
+        const params = getTopicTreeParamsFromFileName(fileName);
+
+        if(!params){
+            topicTreeState.flatItems = [];
+            topicTreeState.treeItems = [];
+            topicTreeState.itemMap = {};
+            topicTreeState.parentMap = {};
+            setTopicTreeStatus('Dosya adından konu ağacı parametresi çıkarılamadı.');
+            updateFinalSaveButtonState(false);
+            renderTopicTree();
+            return;
+        }
+
+        topicTreeState.isLoading = true;
+        setTopicTreeStatus('Konu ağacı yükleniyor...');
+        renderTopicTree();
+
+        try {
+            const courseData = await fetchJsonFile(getTopicApiUrl('/api/rubrik/topics/courses', {
+                gid: params.gid,
+                desig: params.desig
+            }));
+            //const courseData = await fetchJsonFile('files/courses.json');
+            const cid = extractCourseCid(courseData);
+
+            if(!cid){
+                throw new Error('Kurs cid bilgisi bulunamadı.');
+            }
+
+            const treeData = await fetchJsonFile(getTopicApiUrl('/api/rubrik/topics/tree', {cid: cid}));
+            //const treeData = await fetchJsonFile('files/konu-agaci.json');
+            const flatItems = extractArrayPayload(treeData);
+            const builtTree = buildTopicTree(flatItems);
+
+            topicTreeState.flatItems = flatItems;
+            topicTreeState.treeItems = builtTree.treeItems;
+            topicTreeState.itemMap = builtTree.itemMap;
+            topicTreeState.parentMap = builtTree.parentMap;
+            refreshTopicTreeSelectionForActiveSlide();
+        } catch (error) {
+            console.warn('Konu ağacı yüklenemedi:', error);
+            topicTreeState.flatItems = [];
+            topicTreeState.treeItems = [];
+            topicTreeState.itemMap = {};
+            topicTreeState.parentMap = {};
+            setTopicTreeStatus(error.message || 'Konu ağacı yüklenemedi.');
+        } finally {
+            topicTreeState.isLoading = false;
+            updateFinalSaveButtonState(false);
+            renderTopicTree();
+        }
+    }
+
     function getRubrikUid(){
         if(rubrikData && rubrikData.user && rubrikData.user.uid){
             return rubrikData.user.uid;
@@ -1121,6 +2020,32 @@
         };
     }
 
+    function normalizeReviewGroupBoxes(group){
+        if(!group || !Array.isArray(group.boxes)){
+            return group;
+        }
+
+        const reviewBox = group.boxes.find(box => box && box.operator === "review");
+        if(!reviewBox){
+            return group;
+        }
+
+        const teacherCondition = typeof group.teacherCondition === "string"
+            ? group.teacherCondition
+            : typeof reviewBox.value === "string" && reviewBox.value !== "null"
+                ? reviewBox.value
+                : "";
+
+        group.teacherCondition = teacherCondition;
+        group.boxes = [{
+            boxId: "box0",
+            value: teacherCondition,
+            operator: "review"
+        }];
+
+        return group;
+    }
+
     function normalizeRubrikState(state){
         const normalizedState = state && typeof state === "object" ? state : getEmptyRubrikState();
         if(!normalizedState.boxes || typeof normalizedState.boxes !== "object" || Array.isArray(normalizedState.boxes)){
@@ -1129,9 +2054,83 @@
         if(!Array.isArray(normalizedState.groups)){
             normalizedState.groups = [];
         }
+        normalizedState.groups = normalizedState.groups.map(group => {
+            const cleanGroup = group && typeof group === "object" ? group : {};
+            if(typeof cleanGroup.teacherCondition !== "string"){
+                const reviewBox = Array.isArray(cleanGroup.boxes)
+                    ? cleanGroup.boxes.find(box => box && box.operator === "review" && typeof box.value === "string" && box.value !== "null")
+                    : null;
+                cleanGroup.teacherCondition = reviewBox ? reviewBox.value : "";
+            }
+            return normalizeReviewGroupBoxes(cleanGroup);
+        });
         normalizedState.rubrikAI = normalizeRubrikAI(normalizedState.rubrikAI);
 
         return normalizedState;
+    }
+
+    function hasConfiguredRubrik(slide, index){
+        if(index === activeSlideIndex){
+            return appState.groups.length > 0;
+        }
+
+        return Boolean(
+            slide
+            && slide.rubrik
+            && Array.isArray(slide.rubrik.groups)
+            && slide.rubrik.groups.length > 0
+        );
+    }
+
+    function hasAnyConfiguredRubrik(slides){
+        return slides.some((slide, index) => hasConfiguredRubrik(slide, index));
+    }
+
+    function hasAnyConfiguredRubrikInCurrentContext(){
+        const slides = getSlidesFromRubrikFile();
+        if(slides.length > 0){
+            return hasAnyConfiguredRubrik(slides);
+        }
+
+        return appState.groups.length > 0;
+    }
+
+    function hasSlidesWithoutConfiguredRubrik(){
+        const slides = getSlidesFromRubrikFile();
+        return slides.length > 0
+            && hasAnyConfiguredRubrik(slides)
+            && slides.some((slide, index) => !hasConfiguredRubrik(slide, index));
+    }
+
+    function hasConfiguredTopic(slide, index){
+        if(index === activeSlideIndex){
+            return topicTreeState.selectedIds.length > 0;
+        }
+
+        return normalizeTopicLevelEntries(slide ? slide.topic : null).length > 0;
+    }
+
+    function hasSlidesWithoutConfiguredTopic(){
+        const slides = getSlidesFromRubrikFile();
+        return slides.length > 0
+            && slides.some((slide, index) => !hasConfiguredTopic(slide, index));
+    }
+
+    function updateFinalSaveButtonState(isSaving){
+        if(isSaving){
+            btnFinalSave.disabled = true;
+            return;
+        }
+
+        const hasRubrik = hasAnyConfiguredRubrikInCurrentContext();
+        const hasMissingTopic = hasSlidesWithoutConfiguredTopic();
+        const canSave = hasRubrik && !hasMissingTopic;
+        btnFinalSave.disabled = !canSave;
+        btnFinalSave.title = canSave
+            ? ''
+            : hasMissingTopic
+                ? 'Kaydetmek için tüm sahnelerde konu ağacı seçimi yapın.'
+                : 'Kaydetmek için en az bir rubrik ekleyin.';
     }
 
     function mergeLocalRubrikIntoActiveApiSlide(){
@@ -1218,25 +2217,38 @@
         rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
         rubrikAIQuestion.value = rubrikAIState.question.question;
 
-        setFormMode(null);
         renderConfigurator();
         renderEvaluatorTestingPanel();
-        groupNameInput.value = '';
-        groupScoreInput.value = '0';
-        Object.keys(extraOptions).forEach(k => {
-            extraOptions[k].chk.checked = false;
-            extraOptions[k].num.value = 0;
-            extraOptions[k].num.disabled = true;
-        });
-        renderGroupsList();
-        triggerEvaluation();
+        if(appState.groups.length > 0){
+            selectRubrikGroup(appState.groups[0].id);
+        } else {
+            setFormMode(null);
+            groupNameInput.value = '';
+            groupScoreInput.value = '0';
+            Object.keys(extraOptions).forEach(k => {
+                extraOptions[k].chk.checked = false;
+                extraOptions[k].num.value = 0;
+                extraOptions[k].num.disabled = true;
+            });
+            renderGroupsList();
+            triggerEvaluation();
+        }
     }
 
     function getCleanRubrikState(){
         syncRubrikAIFields();
+        const cleanBoxes = cloneState(appState.boxes);
+        appState.groups.forEach(group => {
+            if(group && Array.isArray(group.boxes) && group.boxes.some(box => box && box.operator === "review")){
+                Object.keys(cleanBoxes).forEach(boxKey => {
+                    cleanBoxes[boxKey] = "null";
+                });
+            }
+        });
+
         return {
-            boxes: cloneState(appState.boxes),
-            groups: appState.groups.map(({ id, ...clean }) => cloneState(clean)),
+            boxes: cleanBoxes,
+            groups: appState.groups.map(({ id, ...clean }) => normalizeReviewGroupBoxes(cloneState(clean))),
             rubrikAI: cloneState(rubrikAIState)
         };
     }
@@ -1247,6 +2259,7 @@
             return;
         }
         slides[activeSlideIndex].rubrik = getCleanRubrikState();
+        syncTopicSelectionsToActiveSlide();
     }
 
     function clearBoxInputs(){
@@ -1272,11 +2285,28 @@
         }
 
         slideTabsPanel.style.display = 'block';
+        const shouldShowMissingRubrikWarnings = hasAnyConfiguredRubrik(slides);
+        updateFinalSaveButtonState(false);
+
         slides.forEach((slide, index) => {
             const tab = document.createElement('button');
             tab.type = 'button';
             tab.className = 'slide-tab' + (index === activeSlideIndex ? ' active' : '');
-            tab.textContent = getSlideName(slide, index);
+
+            const label = document.createElement('span');
+            label.textContent = getSlideName(slide, index);
+            tab.appendChild(label);
+
+            if(shouldShowMissingRubrikWarnings && !hasConfiguredRubrik(slide, index)){
+                const warning = document.createElement('span');
+                warning.className = 'slide-tab-warning';
+                warning.textContent = '!';
+                warning.setAttribute('aria-hidden', 'true');
+                tab.title = 'Bu slide icin rubrik tanimli degil';
+                tab.setAttribute('aria-label', getSlideName(slide, index) + ' - rubrik tanimli degil');
+                tab.appendChild(warning);
+            }
+
             tab.addEventListener('click', () => selectSlide(index));
             slideTabs.appendChild(tab);
         });
@@ -1292,8 +2322,9 @@
             persistActiveSlideRubrik();
         }
         activeSlideIndex = index;
-        document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${getRubrikFileName()} > Scene: ${getSlideName(slide, index)}</span>`;
+        setRubrikHeader(getRubrikFileName(), getSlideName(slide, index));
         applyRubrikState(slide.rubrik || getEmptyRubrikState());
+        refreshTopicTreeSelectionForActiveSlide();
         if(isSlideChange){
             clearBoxInputs();
             triggerEvaluation();
@@ -1316,7 +2347,6 @@
     }
 
     function setArchiveRollbackDate(dateText){
-        archiveRollbackDate.textContent = dateText ? 'Rollback: ' + dateText : '';
         archiveRollbackDate.classList.toggle('visible', Boolean(dateText));
     }
 
@@ -1363,54 +2393,8 @@
         return day + '/' + month + '/' + year + ' ' + hour + ':' + minute;
     }
 
-    function getLatestOccLog(logs){
-        if(!Array.isArray(logs) || logs.length === 0){
-            return null;
-        }
-
-        return logs.reduce((latestLog, log) => {
-            if(!latestLog){
-                return log;
-            }
-
-            const latestTime = new Date(latestLog.createdAt).getTime();
-            const logTime = new Date(log.createdAt).getTime();
-
-            if(Number.isNaN(logTime)){
-                return latestLog;
-            }
-
-            if(Number.isNaN(latestTime) || logTime > latestTime){
-                return log;
-            }
-
-            return latestLog;
-        }, null);
-    }
-
-    function getOccLogTime(log){
-        if(!log || !log.createdAt){
-            return NaN;
-        }
-
-        return new Date(log.createdAt).getTime();
-    }
-
-    function getActiveRollbackLogId(rollbackLog, logs){
-        const latestLog = getLatestOccLog(logs);
-
-        if(!latestLog || !latestLog.logId || !rollbackLog || !rollbackLog.logId){
-            return null;
-        }
-
-        const latestTime = getOccLogTime(latestLog);
-        const rollbackTime = getOccLogTime(rollbackLog);
-
-        if(Number.isNaN(latestTime) || Number.isNaN(rollbackTime)){
-            return null;
-        }
-
-        return latestTime > rollbackTime ? latestLog.logId : null;
+    function isOccLogActive(log){
+        return Boolean(log && log.active === true);
     }
 
     function renderArchiveList(){
@@ -1444,11 +2428,11 @@
                 const title = document.createElement('div');
                 title.className = 'archive-title';
                 title.textContent = formatOccLogDateTime(log.createdAt) || 'Tarih yok';
-                if(log.logId && log.logId === activeRollbackLogId){
+                if(isOccLogActive(log)){
                     const check = document.createElement('span');
                     check.className = 'archive-active-check';
                     check.textContent = '✓';
-                    check.title = 'Rollback öncesi aktif kayıt';
+                    check.title = 'Aktif kayıt';
                     title.appendChild(check);
                 }
 
@@ -1497,7 +2481,6 @@
         if(!fileName){
             occLogState = {count: 0, list: []};
             selectedOccLogId = null;
-            activeRollbackLogId = null;
             isArchiveListLoading = false;
             setArchiveStatus('');
             renderArchiveList();
@@ -1553,6 +2536,7 @@ Detail: ${error?.detail || '-'}
 
         try {
             rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(activeOccFileName));
+            await loadTopicTreeForFile(getRubrikFileName() || activeOccFileName);
             const slides = getSlidesFromRubrikFile();
             if(slides.length > 0){
                 const nextIndex = activeSlideIndex !== null && slides[activeSlideIndex] ? activeSlideIndex : 0;
@@ -1595,7 +2579,6 @@ Detail: ${error?.detail || '-'}
 
             await response.json().catch(() => ({}));
             await fetchOccLogs(activeOccFileName, {showStatus: false});
-            activeRollbackLogId = getActiveRollbackLogId(rollbackLog, getOccLogs());
             await reloadActiveOccRubrikFile();
             setArchiveRollbackDate(rollbackDateText);
             setArchiveStatus('Rollback başarılı.', 'success');
@@ -1733,6 +2716,17 @@ Detail: ${error?.detail || '-'}
     rubrikAIQuestion.value = rubrikAIState.question.question;
     rubrikAIInstructions.addEventListener('input', syncRubrikAIFields);
     rubrikAIQuestion.addEventListener('input', syncRubrikAIFields);
+    topicTidSearchBtn.addEventListener('click', goToTopicTid);
+    topicTidResetBtn.addEventListener('click', resetTopicSelection);
+    topicTidSearch.addEventListener('keydown', event => {
+        if(event.key === 'Enter'){
+            event.preventDefault();
+            goToTopicTid();
+        }
+    });
+    topicTidSearch.addEventListener('paste', () => {
+        setTimeout(goToTopicTid, 0);
+    });
 
     function hydrateInitialRubrikState(){
         const hydratedState = normalizeRubrikState(cloneState(initialAppState || getEmptyRubrikState()));
@@ -1752,11 +2746,89 @@ Detail: ${error?.detail || '-'}
         const select = row.querySelector('.box-operator');
         const aliasInput = row.querySelector('.box-alias-input');
         aliasInput.style.display = select.value === 'review' ? 'block' : 'none';
+        row.classList.toggle('review-mode', select.value === 'review');
+    }
+
+    function getTeacherConditionInput(){
+        return document.getElementById('rubrikTeacherConditionInput');
+    }
+
+    function getTeacherConditionValue(){
+        const input = getTeacherConditionInput();
+        return input ? input.value : '';
+    }
+
+    function setTeacherConditionValue(value){
+        const input = getTeacherConditionInput();
+        if(input){
+            input.value = typeof value === "string" ? value : "";
+        }
+    }
+
+    function getGroupTeacherCondition(group){
+        if(group && typeof group.teacherCondition === "string"){
+            return group.teacherCondition;
+        }
+
+        const reviewBox = group && Array.isArray(group.boxes)
+            ? group.boxes.find(box => box && box.operator === "review" && typeof box.value === "string" && box.value !== "null")
+            : null;
+
+        return reviewBox ? reviewBox.value : "";
     }
 
     function syncRubrikAIVisibility(){
         const hasReview = Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review');
+        boxesContainer.classList.toggle('review-mode', hasReview);
+        if(hasReview){
+            document.querySelectorAll('.box-row').forEach(row => {
+                const checkbox = row.querySelector('.box-select');
+                if(checkbox){
+                    checkbox.checked = row.dataset.box === 'box0';
+                }
+            });
+        }
         rubrikAIPanel.style.display = hasReview ? 'flex' : 'none';
+        if(evaluatorPanelContent){
+            evaluatorPanelContent.style.display = hasReview ? 'none' : 'block';
+        }
+        const teacherConditionWrap = document.getElementById('rubrikTeacherConditionWrap');
+        if(teacherConditionWrap){
+            teacherConditionWrap.style.display = hasReview ? 'block' : 'none';
+        }
+    }
+
+    function syncOperatorDisplay(){
+        document.querySelectorAll('.box-row').forEach(syncAliasVisibility);
+        syncRubrikAIVisibility();
+        document.querySelectorAll('.box-operator').forEach(select => {
+            select.dataset.previousOperator = select.value;
+        });
+    }
+
+    function setAllOperators(operator){
+        document.querySelectorAll('.box-operator').forEach(select => {
+            select.value = operator;
+        });
+    }
+
+    function handleOperatorChange(changedSelect){
+        const nextOperator = changedSelect.value;
+        const previousOperator = changedSelect.dataset.previousOperator || '';
+
+        if(nextOperator === 'review'){
+            setAllOperators('review');
+        } else if(previousOperator === 'review'){
+            const wasReviewMode = Array.from(document.querySelectorAll('.box-operator')).every(select => {
+                return select === changedSelect || select.value === 'review';
+            });
+
+            if(wasReviewMode){
+                setAllOperators(nextOperator);
+            }
+        }
+
+        syncOperatorDisplay();
     }
 
     function renderConfigurator() {
@@ -1796,15 +2868,18 @@ Detail: ${error?.detail || '-'}
                 select.appendChild(opt);
             });
 
+            select.addEventListener('focus', () => {
+                select.dataset.previousOperator = select.value;
+            });
             select.addEventListener('change', () => {
-                syncAliasVisibility(row);
-                syncRubrikAIVisibility();
+                handleOperatorChange(select);
+                triggerEvaluation();
             });
 
             const aliasInput = document.createElement('input');
             aliasInput.type = 'text';
             aliasInput.className = 'box-alias-input';
-            aliasInput.placeholder = 'Alias';
+            aliasInput.placeholder = 'Alias giriniz.';
             aliasInput.value = rubrikAIState.alias[boxKey] || '';
             aliasInput.addEventListener('input', (e) => {
                 rubrikAIState.alias[boxKey] = e.target.value;
@@ -1818,7 +2893,25 @@ Detail: ${error?.detail || '-'}
             boxesContainer.appendChild(row);
             syncAliasVisibility(row);
         });
-        syncRubrikAIVisibility();
+
+        const teacherConditionWrap = document.createElement('div');
+        teacherConditionWrap.id = 'rubrikTeacherConditionWrap';
+        teacherConditionWrap.className = 'rubrik-teacher-condition-wrap';
+
+        const teacherConditionLabel = document.createElement('label');
+        teacherConditionLabel.className = 'field-label';
+        teacherConditionLabel.setAttribute('for', 'rubrikTeacherConditionInput');
+        teacherConditionLabel.textContent = 'Condition';
+
+        const teacherConditionInput = document.createElement('textarea');
+        teacherConditionInput.id = 'rubrikTeacherConditionInput';
+        teacherConditionInput.placeholder = 'Condition giriniz.';
+
+        teacherConditionWrap.appendChild(teacherConditionLabel);
+        teacherConditionWrap.appendChild(teacherConditionInput);
+        boxesContainer.appendChild(teacherConditionWrap);
+
+        syncOperatorDisplay();
     }
 
     function renderEvaluatorTestingPanel() {
@@ -1897,15 +2990,27 @@ Detail: ${error?.detail || '-'}
         }
 
         const selectedBoxes = [];
-        document.querySelectorAll('.box-row').forEach(row => {
-            if (row.querySelector('.box-select').checked) {
-                selectedBoxes.push({
-                    boxId: row.dataset.box,
-                    value: row.querySelector('.box-input').value || 'null',
-                    operator: row.querySelector('.box-operator').value
-                });
-            }
-        });
+        const teacherCondition = getTeacherConditionValue();
+        const isReviewMode = Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review');
+
+        if(isReviewMode){
+            selectedBoxes.push({
+                boxId: "box0",
+                value: teacherCondition,
+                operator: "review"
+            });
+        }else{
+            document.querySelectorAll('.box-row').forEach(row => {
+                if (row.querySelector('.box-select').checked) {
+                    const operator = row.querySelector('.box-operator').value;
+                    selectedBoxes.push({
+                        boxId: row.dataset.box,
+                        value: row.querySelector('.box-input').value || 'null',
+                        operator: operator
+                    });
+                }
+            });
+        }
 
         if (selectedBoxes.length === 0) {
             alert('Lütfen bu gruba dahil etmek için en az bir kutuyu işaretleyin.');
@@ -1926,6 +3031,7 @@ Detail: ${error?.detail || '-'}
                 appState.groups[idx].score = groupScore;
                 appState.groups[idx].boxes = selectedBoxes;
                 appState.groups[idx].extras = extras;
+                appState.groups[idx].teacherCondition = teacherCondition;
             }
             setFormMode(null);
         } else {
@@ -1934,12 +3040,15 @@ Detail: ${error?.detail || '-'}
                 name: groupName,
                 score: groupScore,
                 boxes: selectedBoxes,
-                extras: extras
+                extras: extras,
+                teacherCondition: teacherCondition
             });
         }
 
         resetGroupForm();
         renderGroupsList();
+        renderSlideTabs();
+        updateFinalSaveButtonState(false);
         triggerEvaluation();
     });
 
@@ -1948,15 +3057,15 @@ Detail: ${error?.detail || '-'}
         if (groupId !== null) {
             formTitle.textContent = "Grubu Düzenle ve Tekrar Kaydet";
             saveGroupBtn.textContent = "Değişiklikleri Güncelle";
-            cancelEditBtn.style.display = "inline-block";
+            createRubrikBtn.style.display = "inline-block";
         } else {
-            formTitle.textContent = "Yeni Grup Oluştur";
+            formTitle.textContent = "Yeni Rubrik Grubu Oluştur";
             saveGroupBtn.textContent = "Grubu Kaydet";
-            cancelEditBtn.style.display = "none";
+            createRubrikBtn.style.display = "none";
         }
     }
 
-    cancelEditBtn.addEventListener('click', () => {
+    createRubrikBtn.addEventListener('click', () => {
         setFormMode(null);
         resetGroupForm();
         renderGroupsList();
@@ -1968,8 +3077,8 @@ Detail: ${error?.detail || '-'}
         document.querySelectorAll('.box-select').forEach(chk => chk.checked = false);
         document.querySelectorAll('.box-input').forEach(inp => inp.value = '');
         document.querySelectorAll('.box-operator').forEach(sel => sel.value = '===');
-        document.querySelectorAll('.box-row').forEach(syncAliasVisibility);
-        syncRubrikAIVisibility();
+        setTeacherConditionValue('');
+        syncOperatorDisplay();
         Object.keys(appState.boxes).forEach(k => appState.boxes[k] = 'null');
         Object.keys(extraOptions).forEach(k => {
             extraOptions[k].chk.checked = false;
@@ -1978,9 +3087,64 @@ Detail: ${error?.detail || '-'}
         });
     }
 
+    function selectRubrikGroup(groupId) {
+        const group = appState.groups.find(g => g.id === groupId);
+        if(!group){
+            return;
+        }
+
+        setFormMode(group.id);
+        renderGroupsList();
+
+        groupNameInput.value = group.name;
+        groupScoreInput.value = group.score || 0;
+        setTeacherConditionValue(getGroupTeacherCondition(group));
+
+        document.querySelectorAll('.box-row').forEach(row => {
+            const bk = row.dataset.box;
+            row.querySelector('.box-select').checked = false;
+            row.querySelector('.box-input').value = '';
+            row.querySelector('.box-operator').value = '===';
+            appState.boxes[bk] = 'null';
+            syncAliasVisibility(row);
+        });
+
+        group.boxes.forEach(gBox => {
+            const row = document.querySelector(`.box-row[data-box="${gBox.boxId}"]`);
+            if (row) {
+                row.querySelector('.box-select').checked = true;
+                row.querySelector('.box-operator').value = gBox.operator;
+                if(gBox.operator !== 'review'){
+                    row.querySelector('.box-input').value = getBoxInputDisplayValue(gBox.value);
+                    appState.boxes[gBox.boxId] = gBox.value || 'null';
+                }
+                syncAliasVisibility(row);
+            }
+        });
+        if(Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review')){
+            setAllOperators('review');
+        }
+        syncOperatorDisplay();
+
+        Object.keys(extraOptions).forEach(key => {
+            if (group.extras && group.extras.hasOwnProperty(key)) {
+                extraOptions[key].chk.checked = true;
+                extraOptions[key].num.value = group.extras[key];
+                extraOptions[key].num.disabled = false;
+            } else {
+                extraOptions[key].chk.checked = false;
+                extraOptions[key].num.value = 0;
+                extraOptions[key].num.disabled = true;
+            }
+        });
+        triggerEvaluation();
+    }
+
     function renderGroupsList() {
+        updateFinalSaveButtonState(false);
+
         if (appState.groups.length === 0) {
-            groupsList.innerHTML = 'Henüz grup oluşturulmadı.';
+            groupsList.innerHTML = 'Henüz rubrik oluşturulmadı.';
             return;
         }
         groupsList.innerHTML = '';
@@ -2009,6 +3173,8 @@ Detail: ${error?.detail || '-'}
                 if (editingGroupId === group.id) setFormMode(null);
                 resetGroupForm();
                 renderGroupsList();
+                renderSlideTabs();
+                updateFinalSaveButtonState(false);
                 triggerEvaluation();
             });
 
@@ -2016,45 +3182,7 @@ Detail: ${error?.detail || '-'}
             item.appendChild(del);
 
             item.addEventListener('click', () => {
-                setFormMode(group.id);
-                renderGroupsList();
-
-                groupNameInput.value = group.name;
-                groupScoreInput.value = group.score || 0;
-
-                document.querySelectorAll('.box-row').forEach(row => {
-                    const bk = row.dataset.box;
-                    row.querySelector('.box-select').checked = false;
-                    row.querySelector('.box-input').value = '';
-                    row.querySelector('.box-operator').value = '===';
-                    appState.boxes[bk] = 'null';
-                    syncAliasVisibility(row);
-                });
-
-                group.boxes.forEach(gBox => {
-                    const row = document.querySelector(`.box-row[data-box="${gBox.boxId}"]`);
-                    if (row) {
-                        row.querySelector('.box-select').checked = true;
-                        row.querySelector('.box-operator').value = gBox.operator;
-                        row.querySelector('.box-input').value = getBoxInputDisplayValue(gBox.value);
-                        appState.boxes[gBox.boxId] = gBox.value || 'null';
-                        syncAliasVisibility(row);
-                    }
-                });
-                syncRubrikAIVisibility();
-
-                Object.keys(extraOptions).forEach(key => {
-                    if (group.extras && group.extras.hasOwnProperty(key)) {
-                        extraOptions[key].chk.checked = true;
-                        extraOptions[key].num.value = group.extras[key];
-                        extraOptions[key].num.disabled = false;
-                    } else {
-                        extraOptions[key].chk.checked = false;
-                        extraOptions[key].num.value = 0;
-                        extraOptions[key].num.disabled = true;
-                    }
-                });
-                triggerEvaluation();
+                selectRubrikGroup(group.id);
             });
 
             groupsList.appendChild(item);
@@ -2063,12 +3191,31 @@ Detail: ${error?.detail || '-'}
 
     btnFinalSave.addEventListener('click', async () => {
         persistActiveSlideRubrik();
+        removeLegacyGlobalTopicSelection();
+
+        if(!hasAnyConfiguredRubrikInCurrentContext()){
+            updateFinalSaveButtonState(false);
+            return;
+        }
+
+        if(hasSlidesWithoutConfiguredTopic()){
+            updateFinalSaveButtonState(false);
+            return;
+        }
+
+        if(
+            hasSlidesWithoutConfiguredRubrik()
+            && !await showRubrikConfirm('Rubrik eklenmemiş slide var. Yine de devam etmek istiyor musunuz?')
+        ){
+            return;
+        }
+
         const cleanState = getCleanRubrikState();
 
         console.log("=== KONSOL JSON ÇIKTISI ===");
         console.log(JSON.stringify(cleanState, null, 2));
 
-        btnFinalSave.disabled = true;
+        updateFinalSaveButtonState(true);
         const defaultSaveText = btnFinalSave.textContent;
         setFinalSaveButtonLoading(true, 'Kaydediliyor...');
         setArchiveStatus('');
@@ -2097,14 +3244,14 @@ Detail: ${error?.detail || '-'}
             if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
                 setTimeout(() => window.close(), 350);
             } else {
-                btnFinalSave.disabled = false;
+                updateFinalSaveButtonState(false);
                 setFinalSaveButtonLoading(false, defaultSaveText);
             }
         } catch (error) {
             console.warn('Rubrik kaydetme başarısız:', error);
             alert(error.message || 'Rubrik kaydedilemedi.');
             setArchiveListLoading(false);
-            btnFinalSave.disabled = false;
+            updateFinalSaveButtonState(false);
             setFinalSaveButtonLoading(false, defaultSaveText);
         }
 
@@ -2124,6 +3271,7 @@ Detail: ${error?.detail || '-'}
                 try {
                     rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(queryFileName));
                     mergeLocalRubrikIntoActiveApiSlide();
+                    await loadTopicTreeForFile(getRubrikFileName() || queryFileName);
 
                     if(getSlidesFromRubrikFile().length > 0){
                         const initialSlideIndex = rubrikData && rubrikData.scene && Number.isInteger(Number(rubrikData.scene.id))
@@ -2133,10 +3281,10 @@ Detail: ${error?.detail || '-'}
                         return;
                     }
 
-                    document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: dodgerblue">File: ${queryFileName}</span>`;
+                    setRubrikHeader(queryFileName);
                 } catch (error) {
                     console.warn('OCC rubrik dosyası okunamadı:', error);
-                    document.querySelector("#infoDiv").innerHTML = `OCC Rubrik Panel - <span style="color: #ef4444">File alınamadı: ${queryFileName}</span>`;
+                    setRubrikHeader(`alınamadı: ${queryFileName}`, null, true);
                 }
 
                 renderConfigurator();
@@ -2161,6 +3309,7 @@ Detail: ${error?.detail || '-'}
                 rubrikFileData = await fetchJsonFile('/files/rubrik.json');
                 activeOccFileName = getRubrikFileName();
                 await fetchOccLogs(activeOccFileName);
+                await loadTopicTreeForFile(activeOccFileName);
 
                 if(getSlidesFromRubrikFile().length > 0){
                     selectSlide(0);
