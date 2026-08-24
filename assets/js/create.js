@@ -154,10 +154,10 @@ function CREATE(){
                     if(!temp[id]){
                         temp[id] = e;
                     }else{
-                        temp[60] = e;
+                        temp[100] = e;
                     }
                 }else{
-                    temp[60] = e;
+                    temp[100] = e;
                 }
             }
         });

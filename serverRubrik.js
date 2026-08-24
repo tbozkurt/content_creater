@@ -226,6 +226,39 @@ function registerRubrikServer(app, deps){
             });
         });
     });
+
+    app.post("/api/rubrik/evaluation/ai-evaluate", function(req, res){
+        var jwt = getOccJwt(req);
+        var service = getService();
+
+        if(!jwt){
+            return res.status(401).send({
+                success: false,
+                message: "AI değerlendirme isteği için JWT gelmedi."
+            });
+        }
+
+        axios({
+            method: "post",
+            url: `https://${service}.okulistik.com/api/evaluation/ai-evaluate`,
+            headers: {
+                Authorization: jwt,
+                "Accept-Language": req.headers["accept-language"] || "tr-TR",
+                "Content-Type": "application/json; charset=utf-8"
+            },
+            data: req.body
+        }).then(response => {
+            res.send(response.data);
+        }).catch(err => {
+            var status = err.response ? err.response.status : 502;
+            console.log("error in rubrik ai evaluation request", err.message, status, err.response ? err.response.data : "");
+            res.status(status).send({
+                success: false,
+                message: "AI değerlendirme isteği başarısız oldu.",
+                error: err.response ? err.response.data : err.message
+            });
+        });
+    });
 }
 
 module.exports = registerRubrikServer;

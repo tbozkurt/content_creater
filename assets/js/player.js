@@ -317,6 +317,7 @@ function PLAYER(){
         addReadOnlyDOM();
         addOpenEndedDOM();
         infoSystemFNC();
+        previewMode();
         scenePropSearch();
 
         if(BUILD.mode === "optic"){
@@ -570,9 +571,15 @@ function PLAYER(){
                                         if(sp.history.length){
                                             var lastMove = sp.history[sp.history.length-1];
                                             lastMove = JSON.parse(JSON.stringify(lastMove));
-                                            SD[index].inputs = lastMove.inputs;
-                                            SD[index].duration = lastMove.duration;
-                                            console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
+                                            try{
+                                                SD[index].inputs = lastMove.inputs;
+                                                SD[index].duration = lastMove.duration;
+                                                SD[index].right = lastMove.right;
+                                                SD[index].wrong = lastMove.wrong;
+                                                SD[index].empty = lastMove.empty;
+                                                SD[index].totalRight = lastMove.totalRight;
+                                                console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
+                                            }catch(e){}
                                         }
                                     }
                                 });
@@ -611,14 +618,14 @@ function PLAYER(){
         var sp = SP[This.sceneIndex];
         var sd = SD[This.sceneIndex];
 
-        if(view === 'rightAnswer'){
-            sp.history[0] = JSON.parse(JSON.stringify(sd.inputs));
+        if(view === "rightAnswer"){
+            sp.history = [{inputs: JSON.parse(JSON.stringify(sd.inputs))}];
             sp.fnc.map(function(fnc){
                 fnc.answer();
             });
         }else{
             if(sp.history.length){
-                sd.inputs = JSON.parse(JSON.stringify(sp.history[0]));
+                sd.inputs = JSON.parse(JSON.stringify(sp.history[0].inputs));
                 sp.fnc.map(function(fnc){
                     try{
                         if(fnc.reset){
@@ -628,7 +635,6 @@ function PLAYER(){
                         if(fnc.history){
                             fnc.history();
                         }
-
                     }catch(err){}
                 });
             }
@@ -858,10 +864,12 @@ function PLAYER(){
         SD.historyRight.push({
             right: totalScore.totalRight,
             wrong: totalScore.totalWrong,
+            empty: totalScore.totalEmpty,
             result: finalStatus,
             score: 0,
             attemptDuration: getCurrentDuration(SD),
             duration: SD.duration,
+            totalRight: SD.totalRight,
             inputs: JSON.parse(JSON.stringify(SD.inputs))
         });
 
@@ -877,8 +885,8 @@ function PLAYER(){
             answerBtnView(SP, "disable");
             checkViewFNC(SD);
             showFeedBack("right", "auto", 0);
+            specialFNC(SP, SD, true);
         }else{
-            SD.wrongCount++;
             This.playWrongAudio();
             showWarning(SP, SD);
 
@@ -890,19 +898,18 @@ function PLAYER(){
                 }
             });
 
-            if(SD.wrongCount >= PLX.maxWrongMove){
+            if(SD.historyRight.length >= PLX.maxWrongMove){
                 answerBtnView(SP, "enable");
                 showFeedBack("answer", "auto", 0);
             }
 
             showFeedBack("wrong", "auto", SD.historyRight.length);
+            specialFNC(SP, SD, false);
         }
 
         console.log("History:", SD.historyRight);
-
         This.scoreCalc(true);
         showToolTip(SP, SD);
-        specialFNC(SP, SD);
         console.log(SD);
     }
 
@@ -1050,11 +1057,12 @@ function PLAYER(){
             var formatData = createRubrikTeacherJson();
             console.log("formatData", formatData);
             rubrikLoaderAnimation("show");
-            sendDataAI(formatData);
+            controlBtnView(SP, "disable");
+            sendDataAI(SP, SD, formatData);
         } else {
             var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
             showFeedBack(result.result, "auto", SD.historyRight.length);
-            rubrikResult(SP, SD, result.result);
+            rubrikResult(SP, SD, result.result, "evaluator");
         }
     }
 
@@ -1070,19 +1078,22 @@ function PLAYER(){
         }
     }
 
-    function rubrikResult(SP, SD, result){
+    function rubrikResult(SP, SD, result, type){
         console.log("Result:", result);
 
         var attempt = {
+            right: 0,
+            wrong: 0,
+            empty: 0,
             result: result,
             score: 0,
             attemptDuration: getCurrentDuration(SD),
             duration: SD.duration,
+            totalRight: SD.totalRight,
             inputs: JSON.parse(JSON.stringify(SD.inputs))
         }
 
         SD.rubrik.groups.map(function(group){
-            console.log(group);
             if(group.name === result){
                 attempt.score = group.score;
             }
@@ -1091,34 +1102,33 @@ function PLAYER(){
         SD.historyRight.push(attempt);
 
         if(result === "T1"){
-            SD.right = 1;
-            SD.totalRight=1;
+            SD.right = attempt.right = 1;
+            SD.totalRight = attempt.totalRight = 1;
             This.playRightAudio();
             This.sceneComplete();
             This.nextScene();
             closeActivity(SP);
             checkViewFNC(SD);
             showFeedBack("right", "auto", 0);
+            specialFNC(SP, SD, true);
         }else{
-            SD.wrongCount = SD.historyRight.length;
             This.playWrongAudio();
             showWarning(SP, SD);
-            showFeedBack("wrong", "auto", SD.historyRight.length);
+            if(type === "ai"){
+                if(SD.historyRight.length < 3){
+                    controlBtnView(SP, "enable");
+                    showFeedBack("AI", "auto", "A");
+                }
+            }else{
+                showFeedBack("wrong", "auto", SD.historyRight.length);
+            }
+
+            specialFNC(SP, SD, false);
         }
 
         showToolTip(SP, SD);
-        specialFNC(SP, SD);
         This.scoreCalc(true);
         console.log(SD);
-        /*
-        SP.feedBack.map(function (feedback) {
-            if (feedback.status === "AI") {
-                feedback.main.style.visibility = "visible";
-                console.log(feedback.main.querySelector(".feedbackAI"));
-                feedback.main.querySelector(".feedbackAI").innerHTML = "Sample";
-            }
-        });
-        */
     }
 
     function closeActivity(sp){
@@ -1129,46 +1139,9 @@ function PLAYER(){
         });
     }
 
-    function feedbackAI(response) {
-        console.log('Başarılı Yanıt:', response);
-        if (response.success) {
-            var result = response.data.evaluation.rubric_code;
-            var feedbackStr = response.data.feedback;
-            SP[This.sceneIndex].feedBack.map(function (feedback) {
-                if (feedback.status === "AI") {
-                    feedback.main.style.visibility = "visible";
-                    feedback.main.querySelector(".feedbackAI").innerHTML = feedbackStr;
-                    gsap.to(feedback.main, 0, {transformOrigin: "50% 50%", scale: 0});
-                    gsap.to(feedback.main, 0.5, {transformOrigin: "50% 50%", scale: 1});
-
-                }
-            });
-
-
-            var response = response.success;
-            console.log( response );
-            console.log( result);
-
-            /*
-            if(result.includes("T1")){
-                This.sceneComplete();
-                This.nextScene();
-                This.playRightAudio();
-            }else{
-                This.playWrongAudio();
-            }
-            */
-            var sp = SP[This.sceneIndex];
-            var sd = SD[This.sceneIndex];
-
-            rubrikResult(sp, sd, result);
-        }
-    }
-
     function rubrikLoaderAnimation(view){
         var sp = SP[This.sceneIndex];
         if(view === "show"){
-            controlBtnView(sp, "disable");
             sp.screenCloseDOM.style.display = "block";
             sp.screenCloseDOM.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
             sp.screenCloseDOM.querySelector(".ai-main").style.visibility="visible";
@@ -1176,7 +1149,6 @@ function PLAYER(){
             sp.screenCloseDOM.querySelector("#ai_circle2").classList.add("addAnimation");
             sp.screenCloseDOM.querySelector("#ai_circle3").classList.add("addAnimation");
         }else{
-            controlBtnView(sp, "enable");
             sp.screenCloseDOM.style.display = "none";
             sp.screenCloseDOM.style.backgroundColor = "rgba(0, 0, 0, 0)";
             sp.screenCloseDOM.querySelector(".ai-main").style.visibility="hidden";
@@ -1195,7 +1167,7 @@ function PLAYER(){
     }
 
 
-    function sendDataAI(formatData) {
+    function sendDataAI(SP, SD, formatData) {
         var host = window.location.hostname;
         var env = "https://www.okulistik.com";
         if(host.includes("oktest") || host.includes("preprod")){
@@ -1215,13 +1187,38 @@ function PLAYER(){
             processData: false,
             data: JSON.stringify(formatData),
             success: function (response) {
-                feedbackAI(response);
                 rubrikLoaderAnimation("hide");
+                console.log('AI API Yanıt:', response);
+                if(response.success){
+                    var result = response.data.evaluation.rubric_code;
+                    var feedbackStr = response.data.feedback;
+                    SP.feedBack.map(function (feedback) {
+                        if (feedback.status === "AI") {
+                            var txt = feedback.main.querySelector(".aiText");
+                            var bg = feedback.main.querySelector(".aiBG");
+                            var btn = feedback.main.querySelector(".feedbackWindowClose");
+                            txt.style.height = "unset";
+                            txt.style.maxHeight = "220px";
+                            txt.innerHTML = feedbackStr;
+                            if(txt.offsetHeight > 220){
+                                txt.style.overflowY="scroll";
+                            }else{
+                                txt.style.overflowY="unset";
+                            }
+
+                            bg.style.height = (txt.offsetHeight+130)+"px";
+                            btn.style.top = (txt.offsetHeight+65)+"px";
+                        }
+                    });
+
+                    rubrikResult(SP, SD, result, "ai");
+                }
             },
             error: function (xhr, status, error) {
                 console.error('Hata Oluştu:', status, error);
                 console.log('Hata Detayı:', xhr.responseText);
                 rubrikLoaderAnimation("hide");
+                controlBtnView(SP, "enable");
             }
         });
     }
@@ -1255,9 +1252,9 @@ function PLAYER(){
         }
     }
 
-    function specialFNC(SP, SD){
+    function specialFNC(SP, SD, right){
         if(PLX.isEKT){
-            if(SD.wrongCount >= 3){
+            if(SD.historyRight.length >= 3 && !right){
                 SD.answerShow=true;
                 This.sceneComplete();
                 This.scoreCalc(false);
@@ -1275,7 +1272,7 @@ function PLAYER(){
                 SP.popEx[0].btn.style.pointerEvents = "auto";
             }
         }else if(PLX.isBSD){
-            if(SD.wrongCount >= 3){
+            if(SD.historyRight.length >= 3 && !right){
                 This.sceneComplete();
                 SD.answerShow=true;
                 closeActivity(SP);
@@ -1504,6 +1501,11 @@ function PLAYER(){
         player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png">';
     }
 
+    function previewMode(){
+        player.previewDOM = utils.addDOM({className: "previewDOM"});
+        player.mainDOM.appendChild(player.previewDOM);
+    }
+
 
     //add read-only mode
     function addNavigationDOM(){
@@ -1716,8 +1718,6 @@ function PLAYER(){
                 var lastMove = sp.history[sp.history.length-1];
                 if(lastMove){
                     if(lastMove.result === "T1" || lastMove.result === "right"){
-                        sd.right = 1;
-                        sd.totalRight=1;
                         sd.complete = true;
                         closeActivity(sp);
                         checkViewFNC(sd);
@@ -1987,12 +1987,10 @@ function PLAYER(){
 
 
                 if(feedbackObj.status){
-                    if(feedbackObj.status.includes("wrong")){
-                        var tempStatus = feedbackObj.status.split("_");
-                        if(tempStatus.length){
-                            feedbackObj.status = tempStatus[0];
-                            feedbackObj.step = parseInt(tempStatus[1]);
-                        }
+                    var tempStatus = feedbackObj.status.split("_");
+                    if(tempStatus.length){
+                        feedbackObj.status = tempStatus[0];
+                        feedbackObj.step = tempStatus[1];
                     }
                 }
 
@@ -2234,6 +2232,7 @@ function PLAYER(){
     }
 
     function showFeedBack(type, view, step){
+        step = String(step);
         SP[This.sceneIndex].feedBack.map(function(feedback){
             if(feedback.status === type && feedback.view === view && feedback.step === step){
                 PLX.autoSceneChange.HideFNC();
@@ -3120,18 +3119,14 @@ function PLAYER(){
 
     function historyExtract(SP, type){
         var history = SP.history;
-
         var tempBox = {};
         if(history){
             var lastMove = history[history.length-1].inputs;
             for(var box in lastMove){
                 if(lastMove[box].type === type){
-                    var currentData = lastMove[box].value;
-                    if(currentData !== null && currentData !== undefined && currentData !== "" && currentData.length !== 0){
-                        var id = parseInt(box.split("box")[1]);
-                        tempBox[box] = lastMove[box];
-                        tempBox[box].id = id;
-                    }
+                    var id = parseInt(box.split("box")[1]);
+                    tempBox[box] = lastMove[box];
+                    tempBox[box].id = id;
                 }
             }
         }
@@ -3585,8 +3580,10 @@ function PLAYER(){
         function addHistory(){
             var lastMove = historyExtract(SP, 'cs');
             for(var box in lastMove){
-                var id = lastMove[box].id;
-                selectBtn(id);
+                if(lastMove[box].value){
+                    var id = lastMove[box].id;
+                    selectBtn(id);
+                }
             }
         }
 
@@ -5651,7 +5648,6 @@ function PLAYER(){
 
         function addHistory(){
             if(svgDOM){
-                SD.inputs = JSON.parse(JSON.stringify(SP.history[0]));
                 if(!svgDOMLoad){
                     svgDOMLoad = true;
                     return true;
@@ -6421,10 +6417,9 @@ function PLAYER(){
         }
 
         function stopDrawing(e){
-            e.preventDefault();
-            e.stopPropagation();
+            if (!isDrawing) return;
 
-            if(isDrawing && (e.type === 'touchend' || e.type === 'mouseup')){
+            if(e.type === 'touchend' || e.type === 'mouseup'){
                 inputsChange(SD, draw.id, "base64", draw.drawCanvas.toDataURL("image/png"));
             }
 
@@ -7757,8 +7752,10 @@ function PLAYER(){
         function addHistory(){
             var lastMove = historyExtract(SP, 'word');
             for(var box in lastMove){
-                var currentID = lastMove[box].id;
-                btnActive(currentID);
+                if(lastMove[box].value){
+                    var currentID = lastMove[box].id;
+                    btnActive(currentID);
+                }
             }
         }
 

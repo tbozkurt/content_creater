@@ -258,6 +258,10 @@
             background: #3a3a3a;
         }
 
+        .topic-tree-row.has-children {
+            cursor: pointer;
+        }
+
         .topic-tree-toggle {
             width: 20px;
             min-width: 20px;
@@ -338,6 +342,39 @@
             color: #bababa;
             border-radius: 4px;
             transition: all 0.2s ease-in-out;
+        }
+
+        .review-ai-evaluator {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .review-ai-feedback {
+            display: none;
+            padding: 8px;
+            background: #252525;
+            border: 1px solid #323232;
+            border-radius: 4px;
+            color: #d8d8d8;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .review-ai-feedback.visible {
+            display: block;
+        }
+
+        .review-ai-status {
+            min-height: 16px;
+            color: #8f8f8f;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .review-ai-status.error {
+            color: #ff8b8b;
         }
 
         @media (max-width: 900px) {
@@ -546,6 +583,11 @@
             background: #3a3a3a;
         }
 
+        .archive-item.active-log {
+            border-color: #3b82f6;
+            background: #26303d;
+        }
+
         .archive-info {
             min-width: 0;
             display: flex;
@@ -636,27 +678,17 @@
             font-weight: bold;
         }
 
+        .archive-index.archive-active-check {
+            background: #1d4ed8;
+            color: #dbeafe;
+            box-sizing: border-box;
+        }
+
         .archive-title {
             color: #ffffff;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-
-        .archive-active-check {
-            width: 14px;
-            height: 14px;
-            margin-left: 5px;
-            border-radius: 50%;
-            background: #10b981;
-            color: #000000;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 900;
-            line-height: 1;
-            vertical-align: 1px;
         }
 
         .archive-meta {
@@ -748,6 +780,10 @@
         .archive-go-btn:disabled {
             cursor: not-allowed;
             opacity: 0.55;
+        }
+
+        .archive-go-btn:disabled:hover {
+            background: #bababa;
         }
 
         .archive-spinner {
@@ -1092,12 +1128,22 @@
             <div id="archiveList" class="archive-list">Log bulunamadı.</div>
         </div>
 
-        <div class="panel-card" id="evaluatorPanel">
-            <div id="evaluatorPanelContent">
+        <div class="panel-card">
+            <div >
                 <h3>Değerlendirici Paneli</h3>
-                <p style="font-size:11px; color:#bababa; margin-top:0; margin-bottom:8px;">Girdiğiniz değerlerin eşleştiği grup sonucu:</p>
-                <div id="evaluatorInputs"></div>
-                <div class="result-box" id="evaluationResult">-</div>
+                <div id="evaluatorPanelContent">
+                    <p style="font-size:11px; color:#bababa; margin-top:0; margin-bottom:8px;">Girdiğiniz değerlerin eşleştiği grup sonucu:</p>
+                    <div id="evaluatorInputs"></div>
+                    <div class="result-box" id="evaluationResult">-</div>
+                </div>
+                <div id="reviewAIEvaluatorPanel" class="review-ai-evaluator">
+                    <p style="font-size:11px; color:#bababa; margin-top:0; margin-bottom:0;">AI ile değerlendirilecek cevaplar:</p>
+                    <div id="reviewAIAnswerInputs"></div>
+                    <button id="reviewAIEvaluateBtn" type="button" class="btn-primary">AI ile Değerlendir</button>
+                    <div id="reviewAIStatus" class="review-ai-status"></div>
+                    <div class="result-box" id="reviewAIResult">-</div>
+                    <div id="reviewAIFeedback" class="review-ai-feedback"></div>
+                </div>
             </div>
             <button id="btnFinalSave" class="btn-primary" style="width:100%;">Kaydet</button>
         </div>
@@ -1395,6 +1441,12 @@
     const evaluatorPanelContent = document.getElementById('evaluatorPanelContent');
     const evaluatorInputs = document.getElementById('evaluatorInputs');
     const evaluationResult = document.getElementById('evaluationResult');
+    const reviewAIEvaluatorPanel = document.getElementById('reviewAIEvaluatorPanel');
+    const reviewAIAnswerInputs = document.getElementById('reviewAIAnswerInputs');
+    const reviewAIEvaluateBtn = document.getElementById('reviewAIEvaluateBtn');
+    const reviewAIStatus = document.getElementById('reviewAIStatus');
+    const reviewAIResult = document.getElementById('reviewAIResult');
+    const reviewAIFeedback = document.getElementById('reviewAIFeedback');
     const btnFinalSave = document.getElementById('btnFinalSave');
     const rubrikAIPanel = document.querySelector('.rubrik-ai-panel');
     const rubrikAIInstructions = document.getElementById('rubrikAIInstructions');
@@ -1795,19 +1847,33 @@
 
         const renderNode = (item, level) => {
             const row = document.createElement('div');
-            row.className = 'topic-tree-row';
             row.dataset.tid = item.id;
             row.style.paddingLeft = (5 + level * 18) + 'px';
 
             const hasChildren = item.children && item.children.length > 0;
+            row.className = 'topic-tree-row' + (hasChildren ? ' has-children' : '');
+            const toggleTopicNode = () => {
+                if(!hasChildren){
+                    return;
+                }
+                topicTreeState.expandedIds[item.id] = !topicTreeState.expandedIds[item.id];
+                renderTopicTree();
+            };
+            row.addEventListener('click', event => {
+                if(event.target.closest('button, input, label, select, textarea, a')){
+                    return;
+                }
+                toggleTopicNode();
+            });
+
             const toggle = document.createElement('button');
             toggle.type = 'button';
             toggle.className = 'topic-tree-toggle' + (hasChildren ? '' : ' placeholder');
             toggle.textContent = topicTreeState.expandedIds[item.id] ? '−' : '+';
             toggle.setAttribute('aria-label', item.text + ' alt konuları');
-            toggle.addEventListener('click', () => {
-                topicTreeState.expandedIds[item.id] = !topicTreeState.expandedIds[item.id];
-                renderTopicTree();
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                toggleTopicNode();
             });
 
             const checkbox = document.createElement('input');
@@ -2414,36 +2480,38 @@
         } else {
             archiveList.innerHTML = '';
             archiveList.classList.toggle('scrollable', logs.length > 3);
-            logs.forEach((log, index) => {
+            let visibleIndex = 1;
+            logs.forEach((log) => {
+                const isActiveLog = isOccLogActive(log);
                 const item = document.createElement('div');
-                item.className = 'archive-item' + (log.logId === selectedOccLogId ? ' selected' : '');
+                item.className = 'archive-item'
+                    + (log.logId === selectedOccLogId ? ' selected' : '')
+                    + (isActiveLog ? ' active-log' : '');
 
                 const info = document.createElement('div');
                 info.className = 'archive-info';
 
                 const indexBadge = document.createElement('span');
-                indexBadge.className = 'archive-index';
-                indexBadge.textContent = index + 1;
+                indexBadge.className = 'archive-index' + (isActiveLog ? ' archive-active-check' : '');
+                indexBadge.textContent = isActiveLog ? '✓' : visibleIndex;
+                indexBadge.title = isActiveLog ? 'Aktif kayıt' : '';
+                info.appendChild(indexBadge);
+
+                if(!isActiveLog){
+                    visibleIndex++;
+                }
 
                 const title = document.createElement('div');
                 title.className = 'archive-title';
                 title.textContent = formatOccLogDateTime(log.createdAt) || 'Tarih yok';
-                if(isOccLogActive(log)){
-                    const check = document.createElement('span');
-                    check.className = 'archive-active-check';
-                    check.textContent = '✓';
-                    check.title = 'Aktif kayıt';
-                    title.appendChild(check);
-                }
 
-                info.appendChild(indexBadge);
                 info.appendChild(title);
 
                 const goButton = document.createElement('button');
                 goButton.type = 'button';
                 goButton.className = 'archive-go-btn';
-                goButton.disabled = isRollbackInProgress || !log.logId;
-                goButton.textContent = 'Git';
+                goButton.disabled = isRollbackInProgress || !log.logId || isActiveLog;
+                goButton.textContent = isActiveLog ? 'Aktif' : 'Git';
 
                 goButton.addEventListener('click', (event) => {
                     event.stopPropagation();
@@ -2712,6 +2780,35 @@ Detail: ${error?.detail || '-'}
         rubrikAIState.question.question = rubrikAIQuestion.value;
     }
 
+    function setReviewAIStatus(message, isError){
+        reviewAIStatus.textContent = message || '';
+        reviewAIStatus.classList.toggle('error', Boolean(isError));
+    }
+
+    function setReviewAIResult(result){
+        reviewAIResult.textContent = result || '-';
+
+        const matchedIndex = appState.groups.findIndex(group => group && group.name === result);
+        if(matchedIndex >= 0){
+            applyResultBoxTheme(themeColors[matchedIndex % themeColors.length], reviewAIResult);
+        } else if(!result){
+            applyResultBoxTheme(neutralTheme, reviewAIResult);
+        } else {
+            applyResultBoxTheme(dangerTheme, reviewAIResult);
+        }
+    }
+
+    function setReviewAIFeedback(feedback){
+        reviewAIFeedback.textContent = feedback || '';
+        reviewAIFeedback.classList.toggle('visible', Boolean(feedback));
+    }
+
+    function resetReviewAIEvaluation(){
+        setReviewAIStatus('');
+        setReviewAIResult('');
+        setReviewAIFeedback('');
+    }
+
     rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
     rubrikAIQuestion.value = rubrikAIState.question.question;
     rubrikAIInstructions.addEventListener('input', syncRubrikAIFields);
@@ -2777,8 +2874,70 @@ Detail: ${error?.detail || '-'}
         return reviewBox ? reviewBox.value : "";
     }
 
+    function hasReviewOperatorSelected(){
+        return Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review');
+    }
+
+    function getReviewRubrikGroups(){
+        return appState.groups.filter(group => {
+            return group
+                && Array.isArray(group.boxes)
+                && group.boxes.some(box => box && box.operator === "review");
+        });
+    }
+
+    function getReviewAnswerValues(){
+        const values = {};
+        document.querySelectorAll('.review-ai-answer-input').forEach(input => {
+            values[input.dataset.box] = input.value;
+        });
+        return values;
+    }
+
+    function getReviewAnswerText(){
+        const answerValues = getReviewAnswerValues();
+        const boxKeys = Object.keys(appState.boxes);
+
+        if(boxKeys.length === 1){
+            return answerValues[boxKeys[0]] || "";
+        }
+
+        return boxKeys.map(boxKey => {
+            const aliasValue = typeof rubrikAIState.alias[boxKey] === "string" ? rubrikAIState.alias[boxKey].trim() : "";
+            const answerValue = answerValues[boxKey] || "";
+            return aliasValue ? aliasValue + "=" + answerValue : answerValue;
+        }).join("\n");
+    }
+
+    function hasReviewAnswerValue(){
+        const answerValues = getReviewAnswerValues();
+        return Object.keys(answerValues).some(boxKey => String(answerValues[boxKey] || "").trim());
+    }
+
+    function createReviewAIRequestData(){
+        syncRubrikAIFields();
+
+        return {
+            id: activeSlideIndex !== null ? activeSlideIndex + 1 : 1,
+            type: "BTD-TEACHER",
+            instructions: cloneState(rubrikAIState.instructions),
+            question: cloneState(rubrikAIState.question),
+            rubriks: getReviewRubrikGroups().map(group => {
+                return {
+                    value: group.name,
+                    "btd-teacher-condition": getGroupTeacherCondition(group),
+                    weight: group.score
+                };
+            }),
+            answer: {
+                type: "string",
+                answer: getReviewAnswerText()
+            }
+        };
+    }
+
     function syncRubrikAIVisibility(){
-        const hasReview = Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review');
+        const hasReview = hasReviewOperatorSelected();
         boxesContainer.classList.toggle('review-mode', hasReview);
         if(hasReview){
             document.querySelectorAll('.box-row').forEach(row => {
@@ -2791,6 +2950,9 @@ Detail: ${error?.detail || '-'}
         rubrikAIPanel.style.display = hasReview ? 'flex' : 'none';
         if(evaluatorPanelContent){
             evaluatorPanelContent.style.display = hasReview ? 'none' : 'block';
+        }
+        if(reviewAIEvaluatorPanel){
+            reviewAIEvaluatorPanel.style.display = hasReview ? 'flex' : 'none';
         }
         const teacherConditionWrap = document.getElementById('rubrikTeacherConditionWrap');
         if(teacherConditionWrap){
@@ -2916,6 +3078,7 @@ Detail: ${error?.detail || '-'}
 
     function renderEvaluatorTestingPanel() {
         evaluatorInputs.innerHTML = '';
+        reviewAIAnswerInputs.innerHTML = '';
         Object.keys(appState.boxes).forEach(boxKey => {
             const div = document.createElement('div');
             div.style.display = 'flex';
@@ -2940,11 +3103,39 @@ Detail: ${error?.detail || '-'}
             div.appendChild(lbl);
             div.appendChild(inp);
             evaluatorInputs.appendChild(div);
+
+            const reviewDiv = document.createElement('div');
+            reviewDiv.style.display = 'flex';
+            reviewDiv.style.alignItems = 'center';
+            reviewDiv.style.gap = '6px';
+            reviewDiv.style.marginBottom = '4px';
+
+            const reviewLabel = document.createElement('label');
+            reviewLabel.textContent = boxKey + ': ';
+            reviewLabel.style.width = '45px';
+            reviewLabel.style.fontSize = '13px';
+
+            const reviewInput = document.createElement('input');
+            reviewInput.type = 'text';
+            reviewInput.className = 'review-ai-answer-input';
+            reviewInput.dataset.box = boxKey;
+            reviewInput.placeholder = 'Cevap...';
+            reviewInput.style.flex = '1';
+            reviewInput.style.backgroundColor = '#323232';
+            reviewInput.addEventListener('input', resetReviewAIEvaluation);
+
+            reviewDiv.appendChild(reviewLabel);
+            reviewDiv.appendChild(reviewInput);
+            reviewAIAnswerInputs.appendChild(reviewDiv);
         });
     }
 
     // Canlı değerlendirme ve sonuç kutusu renk uyumunun yönetilmesi
     function triggerEvaluation() {
+        if(hasReviewOperatorSelected()){
+            return;
+        }
+
         const testInputs = {};
         document.querySelectorAll('.eval-test-input').forEach(inp => {
             testInputs[inp.dataset.box] = inp.value === '' ? null : inp.value;
@@ -2971,14 +3162,82 @@ Detail: ${error?.detail || '-'}
         }
     }
 
-    function applyResultBoxTheme(theme) {
-        evaluationResult.style.borderLeftColor = theme.border;
-        evaluationResult.style.borderRightColor = theme.border;
-        evaluationResult.style.borderTopColor = theme.border;
-        evaluationResult.style.borderBottomColor = theme.border;
-        evaluationResult.style.backgroundColor = theme.bg;
-        evaluationResult.style.color = theme.text;
+    function applyResultBoxTheme(theme, targetElement) {
+        const resultElement = targetElement || evaluationResult;
+        resultElement.style.borderLeftColor = theme.border;
+        resultElement.style.borderRightColor = theme.border;
+        resultElement.style.borderTopColor = theme.border;
+        resultElement.style.borderBottomColor = theme.border;
+        resultElement.style.backgroundColor = theme.bg;
+        resultElement.style.color = theme.text;
     }
+
+    async function sendReviewDataAI(formatData){
+        const response = await authenticatedRubrikFetch('/api/rubrik/evaluation/ai-evaluate', {
+            method: 'POST',
+            headers: getRubrikAuthHeaders({
+                'Content-Type': 'application/json; charset=utf-8'
+            }),
+            body: JSON.stringify(formatData)
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if(!response.ok || data.success === false){
+            const message = data.message || data.error && data.error.message || 'AI değerlendirme isteği başarısız oldu.';
+            throw new Error(message);
+        }
+
+        return data;
+    }
+
+    async function evaluateReviewAI(){
+        resetReviewAIEvaluation();
+
+        if(!hasReviewOperatorSelected()){
+            setReviewAIStatus('Review operatörü seçili değil.', true);
+            return;
+        }
+
+        if(!rubrikAIState.question.question.trim()){
+            setReviewAIStatus('AI değerlendirme için Question alanı zorunludur.', true);
+            return;
+        }
+
+        if(getReviewRubrikGroups().length === 0){
+            setReviewAIStatus('AI değerlendirme için en az bir review rubriği kaydedin.', true);
+            return;
+        }
+
+        if(!hasReviewAnswerValue()){
+            setReviewAIStatus('Değerlendirilecek en az bir cevap girin.', true);
+            return;
+        }
+
+        reviewAIEvaluateBtn.disabled = true;
+        reviewAIEvaluateBtn.textContent = 'Değerlendiriliyor...';
+        setReviewAIStatus('AI değerlendirme isteği gönderiliyor...');
+
+        try {
+            const response = await sendReviewDataAI(createReviewAIRequestData());
+            const data = response && response.data ? response.data : {};
+            const result = data.evaluation && data.evaluation.rubric_code ? data.evaluation.rubric_code : '';
+            const feedback = typeof data.feedback === "string" ? data.feedback : '';
+
+            setReviewAIResult(result);
+            setReviewAIFeedback(feedback);
+            setReviewAIStatus(result ? 'Değerlendirme tamamlandı.' : 'Değerlendirme tamamlandı, sonuç kodu bulunamadı.', !result);
+        } catch (error) {
+            console.error('AI değerlendirme hatası:', error);
+            setReviewAIResult('');
+            setReviewAIFeedback('');
+            setReviewAIStatus(error.message || 'AI değerlendirme başarısız oldu.', true);
+        } finally {
+            reviewAIEvaluateBtn.disabled = false;
+            reviewAIEvaluateBtn.textContent = 'AI ile Değerlendir';
+        }
+    }
+
+    reviewAIEvaluateBtn.addEventListener('click', evaluateReviewAI);
 
     saveGroupBtn.addEventListener('click', () => {
         const groupName = groupNameInput.value.trim();
