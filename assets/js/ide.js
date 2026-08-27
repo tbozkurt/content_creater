@@ -2457,7 +2457,9 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
 
     var rubrikData = {
         user: IDE.user,
-        rubrik: jsonV2.slides[sceneIndex].rubrik,
+        slidesRubrik: jsonV2.slides.map(function(slide){
+            return slide && slide.rubrik ? JSON.parse(JSON.stringify(slide.rubrik)) : {boxes:{}, groups:[]};
+        }),
         scene: {
             id: sceneIndex,
             name: jsonV2.slides[sceneIndex].name
@@ -2501,11 +2503,13 @@ window.addEventListener("focus", function(){
                 if(IDE.user.selectedFile === rubrik.user.selectedFile){
                     console.log("rubriks", rubrik);
                     console.log( occSceneRubrikSave );
-                    var rubrikSceneIndex = rubrik.scene && typeof rubrik.scene.id !== "undefined" ? Number(rubrik.scene.id) : sceneIndex;
-                    if(!Number.isInteger(rubrikSceneIndex) || !jsonV2.slides[rubrikSceneIndex]){
-                        rubrikSceneIndex = sceneIndex;
+                    if(Array.isArray(rubrik.slidesRubrik)){
+                        rubrik.slidesRubrik.forEach(function(slideRubrik, index){
+                            if(jsonV2.slides[index] && slideRubrik && typeof slideRubrik === "object"){
+                                jsonV2.slides[index].rubrik = slideRubrik;
+                            }
+                        });
                     }
-                    jsonV2.slides[rubrikSceneIndex].rubrik = rubrik.payload;
                     rubrikParse();
                     localStorage.removeItem("occSceneRubrikSave");
                 }

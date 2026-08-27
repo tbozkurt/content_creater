@@ -2541,6 +2541,10 @@
             slide.rubrik.groups = [];
         }
 
+        if(!slide.rubrik.topic || typeof slide.rubrik.topic !== "object" || Array.isArray(slide.rubrik.topic)){
+            slide.rubrik.topic = {};
+        }
+
         if(!slide.rubrik.rubrikAI || typeof slide.rubrik.rubrikAI !== "object"){
             slide.rubrik.rubrikAI = slide.rubrikAI && typeof slide.rubrikAI === "object" ? slide.rubrikAI : {};
         }
@@ -2568,16 +2572,161 @@
         delete slide.rubrikAI;
         delete slide.instructions;
         delete slide.question;
+        delete slide.topic;
+    }
+    /* occde yapılan değişikliklerin orc yansıması start */
+    var rubrikAnswerObjectTypes = [
+        "selectButon",
+        "inputArea",
+        "matchDrop",
+        "boxDrop",
+        "paintBox",
+        "drawCanvas",
+        "pointCanvas",
+        "soundRecord",
+        "freeDrawCanvas",
+        "wordBox",
+        "dropdown"
+    ];
+
+    function getRubrikLayerName(item){
+        return item && item.Layer && typeof item.Layer.name === "string" ? item.Layer.name : "";
     }
 
-    function syncActiveSlideRubrikBoxes(){
-        var slide = jsonV2.slides[sceneIndex];
-        if(!slide){
-            return;
+    function getRubrikBaseName(layerName){
+        return layerName.split("_")[0];
+    }
+
+    function getRubrikObjectIndex(layerName){
+        var parts = layerName.split("_");
+        if(parts.length > 1 && parts[1] !== ""){
+            var index = parseInt(parts[1], 10);
+            if(!isNaN(index)){
+                return index;
+            }
+        }
+        return null;
+    }
+
+    function getRubrikObjectParams(item){
+        return item && item.Layer && item.Layer.params && typeof item.Layer.params === "object"
+            ? item.Layer.params
+            : {};
+    }
+
+    function getRubrikAnswerBoxTotalFromAll(allObjects){
+        if(!Array.isArray(allObjects)){
+            return -1;
         }
 
+        var globalCount = -1;
+        rubrikAnswerObjectTypes.forEach(function(typeName){
+            var foundIndexes = {};
+            var fallbackCount = 0;
+
+            allObjects.forEach(function(item){
+                var layerName = getRubrikLayerName(item);
+                if(getRubrikBaseName(layerName) !== typeName){
+                    return;
+                }
+
+                var objectIndex = getRubrikObjectIndex(layerName);
+                if(objectIndex === null){
+                    fallbackCount++;
+                    return;
+                }
+                foundIndexes[objectIndex] = true;
+            });
+
+            var countForType = Object.keys(foundIndexes).length + fallbackCount;
+            if(countForType > 0){
+                globalCount += countForType;
+            }
+        });
+
+        var sortGroups = {};
+        allObjects.forEach(function(item){
+            var layerName = getRubrikLayerName(item);
+            if(getRubrikBaseName(layerName) !== "sortDrag"){
+                return;
+            }
+
+            var group = getRubrikObjectParams(item).group;
+            if(group !== null && typeof group !== "undefined"){
+                sortGroups[group] = true;
+            }
+        });
+        globalCount += Object.keys(sortGroups).length;
+
+        return globalCount;
+    }
+
+    function getRubrikAnswerBoxTotalFromAnswer(answer){
+        if(!answer || typeof answer !== "object" || Array.isArray(answer)){
+            return -1;
+        }
+
+        var maxIndex = -1;
+        Object.keys(answer).forEach(function(answerKey){
+            if(answerKey === "New"){
+                return;
+            }
+            var index = parseInt(answerKey, 10);
+            if(!isNaN(index) && String(index) === String(answerKey) && index > maxIndex){
+                maxIndex = index;
+            }
+        });
+        return maxIndex;
+    }
+
+    function getRubrikAnswerBoxTotalFromRubrikBoxes(rubrik){
+        if(!rubrik || typeof rubrik !== "object"){
+            return -1;
+        }
+
+        var maxIndex = -1;
+        var boxKeys = [];
+
+        if(rubrik.boxes && typeof rubrik.boxes === "object" && !Array.isArray(rubrik.boxes)){
+            boxKeys = boxKeys.concat(Object.keys(rubrik.boxes));
+        }
+
+        if(Array.isArray(rubrik.groups)){
+            rubrik.groups.forEach(function(group){
+                if(group && Array.isArray(group.boxes)){
+                    group.boxes.forEach(function(box){
+                        if(box && typeof box.boxId === "string"){
+                            boxKeys.push(box.boxId);
+                        }
+                    });
+                }
+            });
+        }
+
+        boxKeys.forEach(function(boxKey){
+            var match = /^box(\d+)$/.exec(boxKey);
+            if(match){
+                var index = parseInt(match[1], 10);
+                if(!isNaN(index) && index > maxIndex){
+                    maxIndex = index;
+                }
+            }
+        });
+        return maxIndex;
+    }
+
+    function getRubrikAnswerBoxTotalForSlide(slide){
+        var totalBox = getRubrikAnswerBoxTotalFromAll(slide.all);
+        var answerTotalBox = getRubrikAnswerBoxTotalFromAnswer(slide.answer);
+        var rubrikTotalBox = getRubrikAnswerBoxTotalFromRubrikBoxes(slide.rubrik);
+        return Math.max(totalBox, answerTotalBox, rubrikTotalBox);
+    }
+    /* occde yapılan değişikliklerin orc yansıması end */
+    function syncSlideRubrikBoxes(slide, totalBox){
+        var existingTopic = slide && slide.rubrik && slide.rubrik.topic && typeof slide.rubrik.topic === "object" && !Array.isArray(slide.rubrik.topic)
+            ? JSON.parse(JSON.stringify(slide.rubrik.topic))
+            : null;
         ensureRubrikMeta(slide);
-        var totalBox = CREATE.checkKontrol();
 
         var syncedBoxes = {};
         for(var i=0; i<=totalBox; i++){
@@ -2601,8 +2750,23 @@
             .filter(function(group){
                 return group.boxes.length > 0;
             });
+
+        if(existingTopic){
+            slide.rubrik.topic = existingTopic;
+        }
     }
 
+    function syncActiveSlideRubrikBoxes(){
+        var slide = jsonV2.slides[sceneIndex];
+        if(!slide){
+            return;
+        }
+
+        var totalBox = CREATE.checkKontrol();
+        syncSlideRubrikBoxes(slide, totalBox);
+    }
+
+    /* eski
     function syncRubrikMetaData(){
         if(!jsonV2.slides){
             return;
@@ -2613,6 +2777,20 @@
         });
 
         syncActiveSlideRubrikBoxes();
+    }
+    */
+    function syncRubrikMetaData(){
+        if(!jsonV2.slides){
+            return;
+        }
+
+        jsonV2.slides.map(function(slide, index){
+            if(index === sceneIndex){
+                syncActiveSlideRubrikBoxes();
+                return;
+            }
+            syncSlideRubrikBoxes(slide, getRubrikAnswerBoxTotalForSlide(slide));
+        });
     }
 
     window.syncRubrikMetaData = syncRubrikMetaData;

@@ -1146,3 +1146,106 @@ body{
         opacity: 1;
     }
 }
+
+/* Preview Mode */
+.previewWindow{
+    width: 1280px;
+    height: 720px;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background-color: #000000cc;
+    z-index: 3001;
+}
+
+.previewCard {
+    background-color: #1e293b;
+    padding: 48px;
+    border-radius: 20px;
+    border: 1px solid #334155;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.previewIcon {
+    width: 80px;
+    height: 80px;
+    background-color: rgba(59, 130, 246, 0.1);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 24px auto;
+}
+
+.previewIcon svg {
+    width: 40px;
+    height: 40px;
+    fill: #3b82f6;
+}
+
+.previewTitle {
+    color: #f8fafc;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.previewDescription {
+    color: #f8fafc;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.previewDescription {
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 36px;
+}
+
+.previewBtnGroup {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.previewBtn {
+    flex: 1;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.previewBtnPrimary {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+.previewBtnPrimary:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+.previewBtnSecondary{
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+.previewBtnSecondary:hover {
+    background-color: #475569;
+    transform: translateY(-2px);
+}
+

@@ -1073,7 +1073,7 @@
                     <input type="number" id="groupScoreInput" placeholder="Puan" style="width: 70px;" value="0">
                 </div>
                 <div style="display:flex; gap:6px;">
-                    <button id="saveGroupBtn" class="btn-success">Grubu Kaydet</button>
+                    <button id="saveGroupBtn" class="btn-success">Oluştur</button>
                 </div>
             </div>
 
@@ -1385,10 +1385,13 @@
                     setRubrikCurrentUser(rubrikData.user);
                 }
                 hasLocalRubrikData = true;
-                initialAppState = rubrikData.rubrik;
-                initialRubrikAIState = normalizeRubrikAI(
-                    initialAppState.rubrikAI || rubrikData.rubrikAI
-                );
+                const localSlideIndex = rubrikData.scene && typeof rubrikData.scene.id !== "undefined"
+                    ? Number(rubrikData.scene.id)
+                    : 0;
+                initialAppState = Array.isArray(rubrikData.slidesRubrik) && rubrikData.slidesRubrik[localSlideIndex]
+                    ? rubrikData.slidesRubrik[localSlideIndex]
+                    : getEmptyRubrikState();
+                initialRubrikAIState = normalizeRubrikAI(initialAppState.rubrikAI);
                 setRubrikHeader(rubrikData.user.selectedFile, rubrikData.scene.name);
                 localStorage.removeItem("occSceneRubrikData");
             }
@@ -1593,7 +1596,9 @@
 
     function syncTopicSelectionsFromActiveSlide(){
         const slide = getActiveSlide();
-        topicTreeState.selectedIds = normalizeTidArray(slide ? normalizeTopicLevelEntries(slide.topic) : []);
+        topicTreeState.selectedIds = normalizeTidArray(
+            normalizeTopicLevelEntries(slide && slide.rubrik ? slide.rubrik.topic : null)
+        );
     }
 
     function getTopicObjectFromSelectedIds(){
@@ -1611,10 +1616,13 @@
         }
 
         const topic = getTopicObjectFromSelectedIds();
+        if(!slide.rubrik || typeof slide.rubrik !== "object"){
+            slide.rubrik = getEmptyRubrikState();
+        }
         if(Object.keys(topic).length > 0){
-            slide.topic = topic;
+            slide.rubrik.topic = topic;
         } else {
-            delete slide.topic;
+            delete slide.rubrik.topic;
         }
     }
 
@@ -2082,7 +2090,8 @@
                 instructions: {type: "string", instructions: ""},
                 question: {type: "string", question: ""},
                 alias: {}
-            }
+            },
+            topic: {}
         };
     }
 
@@ -2131,6 +2140,9 @@
             return normalizeReviewGroupBoxes(cleanGroup);
         });
         normalizedState.rubrikAI = normalizeRubrikAI(normalizedState.rubrikAI);
+        if(!normalizedState.topic || typeof normalizedState.topic !== "object" || Array.isArray(normalizedState.topic)){
+            normalizedState.topic = {};
+        }
 
         return normalizedState;
     }
@@ -2173,7 +2185,7 @@
             return topicTreeState.selectedIds.length > 0;
         }
 
-        return normalizeTopicLevelEntries(slide ? slide.topic : null).length > 0;
+        return normalizeTopicLevelEntries(slide && slide.rubrik ? slide.rubrik.topic : null).length > 0;
     }
 
     function hasSlidesWithoutConfiguredTopic(){
@@ -2199,30 +2211,34 @@
                 : 'Kaydetmek için en az bir rubrik ekleyin.';
     }
 
-    function mergeLocalRubrikIntoActiveApiSlide(){
-        if(!hasLocalRubrikData || !rubrikData || !rubrikData.rubrik){
-            return;
-        }
-
-        const slides = getSlidesFromRubrikFile();
-        const localSlideIndex = rubrikData.scene && typeof rubrikData.scene.id !== "undefined"
-            ? Number(rubrikData.scene.id)
-            : null;
-
-        if(!Number.isInteger(localSlideIndex) || !slides[localSlideIndex]){
-            return;
-        }
-
-        const localRubrik = normalizeRubrikState(cloneState(rubrikData.rubrik));
-        const apiRubrik = normalizeRubrikState(slides[localSlideIndex].rubrik || getEmptyRubrikState());
-        const localBoxKeys = Object.keys(localRubrik.boxes);
-        const localBoxMap = localBoxKeys.reduce((boxMap, boxKey) => {
+    function mergeRubrikState(apiState, localState){
+        const localRubrik = normalizeRubrikState(cloneState(localState || getEmptyRubrikState()));
+        const apiRubrik = normalizeRubrikState(apiState || getEmptyRubrikState());
+        const getGroupBoxKeys = groups => {
+            const keys = [];
+            if(Array.isArray(groups)){
+                groups.forEach(group => {
+                    if(group && Array.isArray(group.boxes)){
+                        group.boxes.forEach(box => {
+                            if(box && typeof box.boxId === "string"){
+                                keys.push(box.boxId);
+                            }
+                        });
+                    }
+                });
+            }
+            return keys;
+        };
+        const localBoxKeys = Object.keys(localRubrik.boxes).concat(getGroupBoxKeys(localRubrik.groups));
+        const apiBoxKeys = Object.keys(apiRubrik.boxes).concat(getGroupBoxKeys(apiRubrik.groups));
+        const boxKeys = Array.from(new Set(localBoxKeys.length > 0 ? localBoxKeys : apiBoxKeys));
+        const boxKeyMap = boxKeys.reduce((boxMap, boxKey) => {
             boxMap[boxKey] = true;
             return boxMap;
         }, {});
 
         const mergedBoxes = {};
-        localBoxKeys.forEach(boxKey => {
+        boxKeys.forEach(boxKey => {
             mergedBoxes[boxKey] = Object.prototype.hasOwnProperty.call(apiRubrik.boxes, boxKey)
                 ? apiRubrik.boxes[boxKey]
                 : localRubrik.boxes[boxKey];
@@ -2233,7 +2249,7 @@
             .map(group => {
                 const cleanGroup = cloneState(group);
                 cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
-                    ? cleanGroup.boxes.filter(box => box && localBoxMap[box.boxId])
+                    ? cleanGroup.boxes.filter(box => box && boxKeyMap[box.boxId])
                     : [];
                 return cleanGroup;
             })
@@ -2244,7 +2260,7 @@
                 .map(group => {
                     const cleanGroup = cloneState(group);
                     cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
-                        ? cleanGroup.boxes.filter(box => box && localBoxMap[box.boxId])
+                        ? cleanGroup.boxes.filter(box => box && boxKeyMap[box.boxId])
                         : [];
                     return cleanGroup;
                 })
@@ -2265,7 +2281,31 @@
             }
         });
 
-        slides[localSlideIndex].rubrik = apiRubrik;
+        if(
+            normalizeTopicLevelEntries(localRubrik.topic).length > 0
+        ){
+            apiRubrik.topic = cloneState(localRubrik.topic);
+        }
+
+        return apiRubrik;
+    }
+
+    function mergeLocalRubrikIntoApiSlides(){
+        if(!hasLocalRubrikData || !rubrikData){
+            return;
+        }
+
+        const slides = getSlidesFromRubrikFile();
+
+        if(!Array.isArray(rubrikData.slidesRubrik)){
+            return;
+        }
+
+        rubrikData.slidesRubrik.forEach((slideRubrik, index) => {
+            if(slides[index] && slideRubrik && typeof slideRubrik === "object"){
+                slides[index].rubrik = mergeRubrikState(slides[index].rubrik, slideRubrik);
+            }
+        });
     }
 
     function applyRubrikState(nextState){
@@ -2315,7 +2355,8 @@
         return {
             boxes: cleanBoxes,
             groups: appState.groups.map(({ id, ...clean }) => normalizeReviewGroupBoxes(cloneState(clean))),
-            rubrikAI: cloneState(rubrikAIState)
+            rubrikAI: cloneState(rubrikAIState),
+            topic: getTopicObjectFromSelectedIds()
         };
     }
 
@@ -2392,7 +2433,6 @@
         applyRubrikState(slide.rubrik || getEmptyRubrikState());
         refreshTopicTreeSelectionForActiveSlide();
         if(isSlideChange){
-            clearBoxInputs();
             triggerEvaluation();
         }
         renderSlideTabs();
@@ -3315,11 +3355,11 @@ Detail: ${error?.detail || '-'}
         editingGroupId = groupId;
         if (groupId !== null) {
             formTitle.textContent = "Grubu Düzenle ve Tekrar Kaydet";
-            saveGroupBtn.textContent = "Değişiklikleri Güncelle";
+            saveGroupBtn.textContent = "Grubu Güncelle";
             createRubrikBtn.style.display = "inline-block";
         } else {
             formTitle.textContent = "Yeni Rubrik Grubu Oluştur";
-            saveGroupBtn.textContent = "Grubu Kaydet";
+            saveGroupBtn.textContent = "Oluştur";
             createRubrikBtn.style.display = "none";
         }
     }
@@ -3469,11 +3509,6 @@ Detail: ${error?.detail || '-'}
             return;
         }
 
-        const cleanState = getCleanRubrikState();
-
-        console.log("=== KONSOL JSON ÇIKTISI ===");
-        console.log(JSON.stringify(cleanState, null, 2));
-
         updateFinalSaveButtonState(true);
         const defaultSaveText = btnFinalSave.textContent;
         setFinalSaveButtonLoading(true, 'Kaydediliyor...');
@@ -3488,13 +3523,16 @@ Detail: ${error?.detail || '-'}
                 await refreshOccLogsAfterSave();
             }
             if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
+                const slidesRubrikPayload = getSlidesFromRubrikFile().map(slide => (
+                    slide && slide.rubrik ? cloneState(slide.rubrik) : getEmptyRubrikState()
+                ));
                 var occSceneRubrikSave = {
                     user: rubrikData.user,
                     scene: {
                         id: activeSlideIndex !== null ? activeSlideIndex : rubrikData.scene.id,
                         name: activeSlideIndex !== null ? getSlideName(getSlidesFromRubrikFile()[activeSlideIndex], activeSlideIndex) : rubrikData.scene.name
                     },
-                    payload: cleanState
+                    slidesRubrik: slidesRubrikPayload
                 };
                 localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
             }
@@ -3529,7 +3567,7 @@ Detail: ${error?.detail || '-'}
 
                 try {
                     rubrikFileData = await fetchJsonFile(getOccRubrikApiUrl(queryFileName));
-                    mergeLocalRubrikIntoActiveApiSlide();
+                    mergeLocalRubrikIntoApiSlides();
                     await loadTopicTreeForFile(getRubrikFileName() || queryFileName);
 
                     if(getSlidesFromRubrikFile().length > 0){

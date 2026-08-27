@@ -32,7 +32,10 @@ var templateImages = [
     "record_on.png",
     "color.png",
     "clean.png",
-    "arrow.png"
+    "arrow.png",
+    "square.png",
+    "circle.png",
+    "triangle.png"
 ];
 
 async function copyTemplateImages(imgFolder) {

@@ -16,6 +16,7 @@ function PLAYER(){
     var SP = [];
     var SD = [];
     var stateLog = {};
+    var build={};
     var AC;
     var player = {
         sound: new Howl({
@@ -204,6 +205,7 @@ function PLAYER(){
     this.startBuild = function(BUILD){
         console.log("################ PLAYER ################");
         console.log(BUILD);
+        build = BUILD;
         AC=BUILD.activeContent;
         player.root = AC.Url;
         PLX.sendDurationFNC = BUILD.sendDuration;
@@ -222,6 +224,7 @@ function PLAYER(){
         BUILD.container.appendChild(player.mainDOM);
         PLX.isEKT = jsonV2.fileName.includes("EKT");
         PLX.isBSD = jsonV2.fileName.includes("BSD");
+        PLX.isHDE = jsonV2.fileName.includes("HDE");
 
         var sceneCSS = [];
         jsonV2.slides.map(function(slide, index){
@@ -317,7 +320,6 @@ function PLAYER(){
         addReadOnlyDOM();
         addOpenEndedDOM();
         infoSystemFNC();
-        previewMode();
         scenePropSearch();
 
         if(BUILD.mode === "optic"){
@@ -329,7 +331,7 @@ function PLAYER(){
 
         this.scoreCalc(false);
         PLX.Mode = BUILD.mode;
-        HDE_Status(BUILD);
+        MHA(BUILD);
         sendDuration();
     }
 
@@ -444,19 +446,19 @@ function PLAYER(){
 
 
         if(complete){
-            SP.map(function(sp){
-                if(sp.hdeStatus === 'empty'){
+            SD.map(function(sd){
+                if(sd.historyRight[0].result === 'empty'){
                     emptyCount++;
                 }else{
                     accessCount++;
                 }
 
-                if(!sp.completeBtn){
-                    if(sp.hdeStatus === 'right'){
+                if(!sd.completeBtn){
+                    if(sd.historyRight[0].result === 'right'){
                         rightCount++;
                     }
 
-                    if(sp.hdeStatus.length){
+                    if(sd.historyRight[0].result.length){
                         totalSuccessScene++;
                     }
                 }
@@ -499,7 +501,7 @@ function PLAYER(){
         var state = {version: AC.VersionFile, status:"update", questions:{}};
         if(AC.user){state.uid = AC.user.uid}
         SD.map(function(slide){
-            if(PLX.isBSD){
+            if(PLX.isBSD || PLX.isHDE){
                 state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
             }else{
                 state.questions[slide.name] = [{inputs: slide.inputs, duration:0}];
@@ -525,17 +527,17 @@ function PLAYER(){
                 SD.inputs["box"+ id][param] = data;
             }
 
-            if(jsonV2.fileName.includes("HDE")){
+            if(PLX.isHDE){
                 clearInterval(player.dataSendTimer);
                 player.dataSendTimer = setTimeout(function(){
-                    HDE_ScoreCalc(false);
+                    HDE_ControlFNC(false);
                 }, 1000);
             }
         }
     }
 
     function HDE_virtualControlBtn(){
-        if(jsonV2.fileName.includes("HDE")){
+        if(PLX.isHDE){
             player.virtualControlBtn = utils.addDOM({id: "virtualControlBtn"});
             player.mainDOM.appendChild(player.virtualControlBtn);
 
@@ -545,52 +547,69 @@ function PLAYER(){
         }
     }
 
-    // HDE file, version control and history load
-    function HDE_Status(BUILD){
-        console.log('<<HDE STATUS>>');
-        if(jsonV2.fileName.includes("HDE") || jsonV2.fileName.includes("BSD")){
-            if(BUILD){
-                if(BUILD.accessData){
+
+    function MHA(){
+        if(PLX.isHDE || PLX.isBSD){
+            if(build){
+                if(build.accessData){
                     var contentJsonVersion = AC.VersionFile;
-                    var dataJsonVersion = BUILD.accessData.state.version;
-                    console.log("contentJsonVersion", contentJsonVersion);
-                    console.log("dataJsonVersion", dataJsonVersion);
-                    PLX.HDE_access = parseInt(BUILD.accessData.stats.access);
+                    var dataJsonVersion = build.accessData.state.version;
+                    console.log("contentJsonVersion:", contentJsonVersion, "- dataJsonVersion:", dataJsonVersion);
+                    PLX.HDE_access = parseInt(build.accessData.stats.access);
 
                     if(contentJsonVersion === dataJsonVersion){
-                        var status = BUILD.accessData.state.status;
-                        var allHistory = BUILD.accessData.state.questions;
-                        console.log('allHistory:', allHistory);
-                        if(status === 'update'){
-                            for(var sceneName in allHistory){
-                                SP.map(function(sp, index) {
-                                    if(sceneName === sp.name){
-                                        var sd = SD[index];
-                                        sp.history = allHistory[sceneName];
-                                        sd.historyRight = JSON.parse(JSON.stringify(sp.history));
-                                        if(sp.history.length){
-                                            var lastMove = sp.history[sp.history.length-1];
-                                            lastMove = JSON.parse(JSON.stringify(lastMove));
-                                            try{
-                                                SD[index].inputs = lastMove.inputs;
-                                                SD[index].duration = lastMove.duration;
-                                                SD[index].right = lastMove.right;
-                                                SD[index].wrong = lastMove.wrong;
-                                                SD[index].empty = lastMove.empty;
-                                                SD[index].totalRight = lastMove.totalRight;
-                                                console.log("sahne", sceneName, sp.name, index, SD[index].inputs , "eklendi");
-                                            }catch(e){}
-                                        }
-                                    }
-                                });
-                            }
-                            addHistoryControl();
+                        var status = build.accessData.state.status;
+                        console.log("status:", status);
+                        if(status === 'finish'){
+                            previewMode();
+                        }else{
+                            HDE_Status(build);
                         }
                     }
                 }
             }
 
             addHDEStatus();
+        }
+    }
+
+    // HDE file, version control and history load
+    function HDE_Status(){
+        if(PLX.isHDE || PLX.isBSD){
+            if(build){
+                if(build.accessData){
+                    PLX.HDE_access = parseInt(build.accessData.stats.access);
+                    var allHistory = build.accessData.state.questions;
+                    console.log('old States DATA:', allHistory);
+
+                    for(var sceneName in allHistory){
+                        SP.map(function(sp, index) {
+                            if(sceneName === sp.name){
+                                var sd = SD[index];
+                                sp.history = allHistory[sceneName];
+                                sd.historyRight = JSON.parse(JSON.stringify(sp.history));
+                                if(sp.history.length){
+                                    var lastMove = sp.history[sp.history.length-1];
+                                    lastMove = JSON.parse(JSON.stringify(lastMove));
+                                    try{
+                                        sd.inputs = lastMove.inputs;
+                                        sd.duration = lastMove.duration;
+                                        sd.right = lastMove.right;
+                                        sd.wrong = lastMove.wrong;
+                                        sd.empty = lastMove.empty;
+                                        sd.totalRight = lastMove.totalRight;
+                                        console.log("sahne", sceneName, sp.name, index, sd.inputs , "eklendi");
+                                    }catch(e){}
+                                }
+                            }
+                        });
+
+                        addHistoryControl();
+                    }
+                }
+            }
+
+
             addBSDStatus();
         }
     }
@@ -687,13 +706,13 @@ function PLAYER(){
 
     function HDE_endExam(){
         PLX.showReadOnly = true;
-        HDE_ControlFNC();
         if(player.watcher_main){
             player.watcher_main.style.visibility = "hidden";
         }
         player.readOnlyDOM.style.visibility = "visible";
         clearInterval(player.dataSendTimer);
-        HDE_ScoreCalc(true);
+        HDE_ControlFNC(true);
+        /* HDE_ScoreCalc(true); */
         HDE_StatusFNC();
 
         SP.map(function(sp){
@@ -708,10 +727,10 @@ function PLAYER(){
     }
 
     // HDE answer control
-    function HDE_ControlFNC(){
+    function HDE_ControlFNC(complete){
         console.log("HDEControl FNC");
 
-        SP.map(function(sp){
+        SP.map(function(sp, index){
             var totalScore = {totalRight:0, totalWrong:0, totalEmpty:0};
 
             sp.fnc.map(function(fnc){
@@ -721,23 +740,35 @@ function PLAYER(){
                 totalScore.totalEmpty += currentScore.totalEmpty;
                 fnc.currentStatus = scoreEvalution(currentScore);
             });
-            sp.hdeStatus = scoreEvalution(totalScore);
+
+            var sd = SD[index];
+            sd.historyRight[0] = {
+                right: totalScore.totalRight,
+                wrong: totalScore.totalWrong,
+                empty: totalScore.totalEmpty,
+                result: scoreEvalution(totalScore),
+                score: 1,
+                attemptDuration: getCurrentDuration(sd),
+                duration: sd.duration,
+                totalRight: sd.totalRight,
+                inputs: JSON.parse(JSON.stringify(sd.inputs))
+            };
         });
 
-        watcherHDE();
+        HDE_ScoreCalc(complete);
     }
 
     function watcherHDE(){
-        console.log('watcherHDE FNC');
+        console.log("watcherHDE FNC");
 
         if(PLX.Mode === "normal"){
             var emptyFound = false;
-            SP.map(function(sp){
-                if(sp.hdeStatus === "empty"){
+            SD.map(function(sd){
+                if(sd.historyRight[0].result === "empty"){
                     emptyFound = true;
-                    player.watcherListAllBox[sp.id].style.display = "block";
+                    player.watcherListAllBox[sd.id].style.display = "block";
                 }else{
-                    player.watcherListAllBox[sp.id].style.display = "none";
+                    player.watcherListAllBox[sd.id].style.display = "none";
                 }
             });
 
@@ -755,10 +786,11 @@ function PLAYER(){
     }
 
     function HDE_StatusFNC(){
-        if(jsonV2.fileName.includes("HDE") && PLX.showReadOnly){
+        if(PLX.isHDE && PLX.showReadOnly){
             var sp = SP[This.sceneIndex];
+            var sd = SD[This.sceneIndex];
 
-            var hdeStatus = sp.hdeStatus;
+            var hdeStatus = sd.historyRight[0].result;
             var completeBtn = sp.completeBtn;
             var iconDOM;
             if(completeBtn){
@@ -1032,6 +1064,7 @@ function PLAYER(){
                 instructions: rubrikAI.instructions,
                 question: rubrikAI.question,
                 rubriks: rubriks,
+                attempt: (SD.historyRight.length)+1,
                 answer: {
                     type: "string",
                     answer: getRubrikTeacherAnswer(finalBox)
@@ -1502,8 +1535,68 @@ function PLAYER(){
     }
 
     function previewMode(){
-        player.previewDOM = utils.addDOM({className: "previewDOM"});
-        player.mainDOM.appendChild(player.previewDOM);
+        player.preview = {
+            previewWindow: utils.addDOM({className: "previewWindow"})
+        };
+        player.mainDOM.appendChild(player.preview.previewWindow);
+        player.preview.previewWindow.innerHTML = `<div class="previewCard">
+            <div class="previewIcon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+            </div>
+            
+            <h1 class="previewTitle">Etkinliği Daha Önce Aldınız</h1>
+            <p class="previewDescription">Bu etkinliği zaten tamamladınız. Mevcut cevaplarınızı inceleyebilir veya etkinliği tekrar başlatabilirsiniz.</p>
+            
+            <div class="previewBtnGroup">
+                <button class="previewBtn previewBtnPrimary">Cevapları Gör</button>
+                <button class="previewBtn previewBtnSecondary">Tekrar Al</button>
+            </div>
+        </div>`;
+
+        function previewModeConvert(){
+            PLX.showReadOnly = true;
+            player.readOnlyDOM.style.visibility = "visible";
+
+            SP.map(function(sp){
+                if(sp.allControl){
+                    sp.allControl.style.display = "none";
+                }
+            });
+
+
+            SP.map(function(sp){
+                sp.fnc.map(function(fnc){
+                    fnc.close();
+                });
+            });
+
+            if(PLX.isHDE){
+                HDE_StatusFNC();
+            }
+        }
+
+        player.preview.previewBtnPrimary = player.preview.previewWindow.querySelector(".previewBtnPrimary");
+        player.preview.previewBtnSecondary = player.preview.previewWindow.querySelector(".previewBtnSecondary");
+
+        player.preview.previewBtnPrimary.addEventListener("click",function(){
+            PLX.playScreen.style.display = "none";
+            player.preview.previewWindow.style.display="none";
+            PLX.soundConfirm = true;
+            HDE_Status(build);
+            previewModeConvert();
+        });
+
+        player.preview.previewBtnSecondary.addEventListener("click", function(){
+            PLX.playScreen.style.display = "none";
+            PLX.soundConfirm = true;
+            This.playAutoSound();
+            player.preview.previewWindow.style.display="none";
+        });
+
+        console.log(PLX.playScreen);
+
     }
 
 
@@ -1582,7 +1675,7 @@ function PLAYER(){
             player.watcher_main.style.visibility = "hidden";
         });
 
-        if(jsonV2.fileName.includes("HDE")){
+        if(PLX.isHDE){
             player.watcher_endBtn.addEventListener("click", function(){
                 HDE_endExam();
             });
@@ -1658,7 +1751,7 @@ function PLAYER(){
     }
 
     this.showReadOnly = function(){
-        if(!jsonV2.fileName.includes("HDE")){
+        if(!PLX.isHDE){
             player.readOnlyDOM.style.visibility = "visible";
             PLX.showReadOnly = true;
             SP.map(function(sp){
@@ -1699,7 +1792,7 @@ function PLAYER(){
 
     //add check
     function addHDEStatus(){
-        if(jsonV2.fileName.includes("HDE")){
+        if(PLX.isHDE){
             player.statusIconMain = utils.addDOM({id: "statusIconMain", className: "statusIconMain"});
             player.mainDOM.appendChild(player.statusIconMain);
             player.statusIconMain.innerHTML = '<img id="statusRightIcon" src="assets/img/player/status_right.png"><img id="statusWrongIcon" src="assets/img/player/status_wrong.png"><img id="statusEmptyIcon" src="assets/img/player/status_empty.png">';
@@ -1712,7 +1805,7 @@ function PLAYER(){
     }
 
     function addBSDStatus(){
-        if(jsonV2.fileName.includes("BSD")){
+        if(PLX.isBSD){
             SP.map(function(sp, index) {
                 var sd = SD[index];
                 var lastMove = sp.history[sp.history.length-1];
@@ -1769,7 +1862,7 @@ function PLAYER(){
             player.notice.style.visibility = "hidden";
         }
 
-        if(!jsonV2.fileName.includes("HDE")){
+        if(!PLX.isHDE){
             if(SD.type === "e"){
                 player.infoBtnDOM.style.display = "block";
             }else{
@@ -1946,7 +2039,7 @@ function PLAYER(){
                     if(PLX.mode === 'preview'){
                         HDE_endExam();
                     }else{
-                        HDE_ControlFNC();
+                        watcherHDE();
                     }
                 });
 
@@ -2397,7 +2490,7 @@ function PLAYER(){
     }
 
     This.playAutoSound = function(){
-        if(jsonV2.fileName.includes("HDE")){
+        if(PLX.isHDE){
             if(PLX.HDE_autoSoundPlay){
                 if(SP[This.sceneIndex].directive.sound){
                     if(PLX.soundConfirm){
@@ -6974,13 +7067,15 @@ function PLAYER(){
             var lastMove = historyExtract(SP, 'point');
             for(var box in lastMove){
                 var currentID = lastMove[box].id;
-                if(canvasList[currentID]){
-                    lastMove[box].value.map(function(line){
-                        var point = line.split('_');
-                        var startPoint = parseInt(point[0]);
-                        var finishPoint = parseInt(point[1]);
-                        createLine( allCircle[startPoint], allCircle[finishPoint] );
-                    });
+                if(lastMove[box].value){
+                    if(canvasList[currentID]){
+                        lastMove[box].value.map(function(line){
+                            var point = line.split('_');
+                            var startPoint = parseInt(point[0]);
+                            var finishPoint = parseInt(point[1]);
+                            createLine( allCircle[startPoint], allCircle[finishPoint] );
+                        });
+                    }
                 }
             }
         }
@@ -9677,8 +9772,10 @@ function PLAYER(){
         var activeStageID;
         var defaultTextValue = "Lorem ipsum";
         var closeActiveTextEditor = null;
+        var shapeReleaseBound = false;
+        var activeShapeDrag = null;
 
-        var draw = {konva:[], textNodes:[], selectedText: null};
+        var draw = {konva:[], textNodes:[], selectedText: null, selectedShape: null};
 
         var settings = {
             /* Douglas Peucker Tolerans 0-10 */
@@ -9722,6 +9819,9 @@ function PLAYER(){
                 draw.drawBox = element.main.querySelector(".drawBox");
                 draw.eraserBox = element.main.querySelector(".eraserBox");
                 draw.textBox = element.main.querySelector(".textBox");
+                draw.rectBox = element.main.querySelector(".rectBox");
+                draw.circleBox = element.main.querySelector(".circleBox");
+                draw.triangleBox = element.main.querySelector(".triangleBox");
                 draw.dragBox = element.main.querySelector(".dragBox");
                 draw.dragBoxLabel = element.main.querySelector(".dragBoxLabel");
                 draw.fontSizeBox = element.main.querySelector(".fontSizeBox");
@@ -9734,12 +9834,14 @@ function PLAYER(){
 
                 draw.drawBox.addEventListener("click",function(){
                     mod = "source-over";
+                    clearShapeSelection();
                     setTextDragMode(false);
                     mouseCursorStatus();
                 });
 
                 draw.eraserBox.addEventListener("click",function(){
                     mod = "destination-out";
+                    clearShapeSelection();
                     setTextDragMode(false);
                     mouseCursorStatus();
                 });
@@ -9747,6 +9849,7 @@ function PLAYER(){
                 if(draw.textBox){
                     draw.textBox.addEventListener("click",function(){
                         mod = "textDrag";
+                        clearShapeSelection();
                         addText(getActiveDrawCanvas());
                         setTextDragMode(true);
                         mouseCursorStatus();
@@ -9754,6 +9857,10 @@ function PLAYER(){
 
                     draw.textBox.style.cursor = "pointer";
                 }
+
+                bindShapeButton(draw.rectBox, "rect");
+                bindShapeButton(draw.circleBox, "circle");
+                bindShapeButton(draw.triangleBox, "triangle");
 
                 if(draw.dragBox){
                     draw.dragBox.style.display = "none";
@@ -9822,6 +9929,238 @@ function PLAYER(){
                 updateTextSelection();
                 getSceneBase64();
             }
+            if(draw.selectedShape && draw.selectedShape.getStage()){
+                draw.selectedShape.fill(color);
+                draw.selectedShape.stroke(color);
+                var shapeCanvas = getTextCanvas(draw.selectedShape);
+                if(shapeCanvas){
+                    selectShape(shapeCanvas, draw.selectedShape);
+                }
+                getSceneBase64();
+            }
+        }
+
+        function bindShapeButton(button, shapeType){
+            if(!button){
+                return;
+            }
+
+            button.addEventListener("click", function(){
+                mod = "shape";
+                clearTextSelection();
+                addShape(getActiveDrawCanvas(), shapeType);
+                setTextDragMode(false);
+                mouseCursorStatus(shapeType);
+            });
+
+            button.style.cursor = "pointer";
+        }
+
+        function getNextShapePosition(DX, width, height){
+            DX.shapeAddCount = DX.shapeAddCount || 0;
+            var offset = (DX.shapeAddCount % 6) * 18;
+            DX.shapeAddCount++;
+
+            return {
+                x: Math.min(Math.max((DX.stage.width() - width) / 2 + offset, 0), Math.max(DX.stage.width() - width, 0)),
+                y: Math.min(Math.max((DX.stage.height() - height) / 2 + offset, 0), Math.max(DX.stage.height() - height, 0))
+            };
+        }
+
+        function getShapeTransformer(DX){
+            if(!DX.shapeTransformer){
+                DX.shapeTransformer = new Konva.Transformer({
+                    rotateEnabled: false,
+                    flipEnabled: false,
+                    keepRatio: false,
+                    enabledAnchors: ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']
+                });
+                DX.layer.add(DX.shapeTransformer);
+            }
+
+            return DX.shapeTransformer;
+        }
+
+        function selectShape(DX, shape){
+            draw.selectedShape = shape;
+            activeStageID = DX.id;
+            clearTextSelection();
+            getShapeTransformer(DX).nodes([shape]).moveToTop();
+            shape.moveToTop();
+            DX.shapeTransformer.moveToTop();
+            DX.layer.batchDraw();
+        }
+
+        function clearShapeSelection(){
+            draw.selectedShape = null;
+            draw.konva.map(function(konva){
+                if(konva && konva.shapeTransformer){
+                    konva.shapeTransformer.nodes([]);
+                    konva.layer.batchDraw();
+                }
+            });
+        }
+
+        function normalizeRectShape(shape){
+            shape.setAttrs({
+                width: Math.max(shape.width() * shape.scaleX(), 8),
+                height: Math.max(shape.height() * shape.scaleY(), 8),
+                scaleX: 1,
+                scaleY: 1
+            });
+        }
+
+        function bindShapeRelease(shape, DX){
+            activeShapeDrag = {shape: shape, DX: DX};
+            if(shapeReleaseBound){
+                return;
+            }
+
+            shapeReleaseBound = true;
+            window.addEventListener("mouseup", finishShapeRelease, true);
+            window.addEventListener("touchend", finishShapeRelease, true);
+            window.addEventListener("pointerup", finishShapeRelease, true);
+            window.addEventListener("touchcancel", finishShapeRelease, true);
+            window.addEventListener("pointercancel", finishShapeRelease, true);
+            window.addEventListener("contextmenu", finishShapeRelease, true);
+            window.addEventListener("blur", finishShapeRelease, true);
+            document.addEventListener("mouseup", finishShapeRelease, true);
+            document.addEventListener("touchend", finishShapeRelease, true);
+            document.addEventListener("pointerup", finishShapeRelease, true);
+            document.addEventListener("touchcancel", finishShapeRelease, true);
+            document.addEventListener("pointercancel", finishShapeRelease, true);
+            document.addEventListener("contextmenu", finishShapeRelease, true);
+        }
+
+        function unbindShapeRelease(){
+            if(!shapeReleaseBound){
+                return;
+            }
+
+            shapeReleaseBound = false;
+            window.removeEventListener("mouseup", finishShapeRelease, true);
+            window.removeEventListener("touchend", finishShapeRelease, true);
+            window.removeEventListener("pointerup", finishShapeRelease, true);
+            window.removeEventListener("touchcancel", finishShapeRelease, true);
+            window.removeEventListener("pointercancel", finishShapeRelease, true);
+            window.removeEventListener("contextmenu", finishShapeRelease, true);
+            window.removeEventListener("blur", finishShapeRelease, true);
+            document.removeEventListener("mouseup", finishShapeRelease, true);
+            document.removeEventListener("touchend", finishShapeRelease, true);
+            document.removeEventListener("pointerup", finishShapeRelease, true);
+            document.removeEventListener("touchcancel", finishShapeRelease, true);
+            document.removeEventListener("pointercancel", finishShapeRelease, true);
+            document.removeEventListener("contextmenu", finishShapeRelease, true);
+        }
+
+        function finishShapeRelease(){
+            var shape = activeShapeDrag && activeShapeDrag.shape ? activeShapeDrag.shape : draw.selectedShape;
+            if(!shape || !shape.getStage()){
+                activeShapeDrag = null;
+                unbindShapeRelease();
+                return;
+            }
+
+            var DX = activeShapeDrag && activeShapeDrag.DX ? activeShapeDrag.DX : getTextCanvas(shape);
+            if(shape.stopDrag){
+                shape.stopDrag();
+            }
+
+            if(shape.getClassName && shape.getClassName() === "Rect"){
+                normalizeRectShape(shape);
+            }
+
+            if(DX){
+                selectShape(DX, shape);
+                getSceneBase64();
+            }
+
+            activeShapeDrag = null;
+            unbindShapeRelease();
+
+            setTimeout(function(){
+                if(shape.getStage && shape.getStage() && shape.isDragging && shape.isDragging()){
+                    shape.stopDrag();
+                    if(DX){
+                        selectShape(DX, shape);
+                        getSceneBase64();
+                    }
+                }
+            }, 0);
+        }
+
+        function addShape(DX, shapeType){
+            if(!DX){
+                return false;
+            }
+
+            activeStageID = DX.id;
+            var shape;
+            var pos = getNextShapePosition(DX, 80, 80);
+            var baseAttrs = {
+                fill: settings.brushColor,
+                stroke: settings.brushColor,
+                strokeWidth: 0,
+                draggable: true,
+                listening: true,
+                freeDrawShape: true
+            };
+
+            if(shapeType === "circle"){
+                shape = new Konva.Circle(Object.assign({
+                    x: pos.x + 40,
+                    y: pos.y + 40,
+                    radius: 36
+                }, baseAttrs));
+            }else if(shapeType === "triangle"){
+                shape = new Konva.RegularPolygon(Object.assign({
+                    x: pos.x + 40,
+                    y: pos.y + 43,
+                    sides: 3,
+                    radius: 42,
+                    rotation: 0
+                }, baseAttrs));
+            }else{
+                shape = new Konva.Rect(Object.assign({
+                    x: pos.x + 5,
+                    y: pos.y + 5,
+                    width: 70,
+                    height: 70
+                }, baseAttrs));
+            }
+
+            shape.on("mousedown touchstart", function(e){
+                isPaint = false;
+                selectShape(DX, shape);
+                bindShapeRelease(shape, DX);
+                if(e.evt){
+                    e.evt.preventDefault();
+                    e.evt.stopPropagation();
+                }
+            });
+
+            shape.on("dragstart", function(){
+                isPaint = false;
+                selectShape(DX, shape);
+                bindShapeRelease(shape, DX);
+            });
+
+            shape.on("mouseup touchend pointerup touchcancel pointercancel", function(){
+                finishShapeRelease();
+            });
+
+            shape.on("dragend transformend", function(){
+                if(shapeType === "rect"){
+                    normalizeRectShape(shape);
+                }
+                selectShape(DX, shape);
+                getSceneBase64();
+                unbindShapeRelease();
+            });
+
+            DX.layer.add(shape);
+            selectShape(DX, shape);
+            getSceneBase64();
         }
 
         function getSqSegDist(p, p1, p2) {
@@ -9907,10 +10246,11 @@ function PLAYER(){
                 }
 
                 clearTextSelection();
+                clearShapeSelection();
 
                 var pos = DX.stage.getPointerPosition();
 
-                if(mod === "text"){
+                if(mod === "text" || mod === "shape"){
                     if(closeActiveTextEditor){
                         closeActiveTextEditor(true);
                     }
@@ -10068,20 +10408,32 @@ function PLAYER(){
         }
 
         function withSelectionHidden(callback){
-            var visibleBoxes = [];
+            var visibleTextBoxes = [];
+            var visibleShapeTransformers = [];
             draw.konva.map(function(konva){
                 if(konva && konva.selectionBox && konva.selectionBox.visible()){
-                    visibleBoxes.push(konva);
+                    visibleTextBoxes.push(konva);
                     konva.selectionBox.hide();
+                    konva.layer.batchDraw();
+                }
+                if(konva && konva.shapeTransformer && konva.shapeTransformer.nodes().length){
+                    visibleShapeTransformers.push(konva);
+                    konva.shapeTransformer.hide();
                     konva.layer.batchDraw();
                 }
             });
 
             var result = callback();
 
-            visibleBoxes.map(function(konva){
+            visibleTextBoxes.map(function(konva){
                 konva.selectionBox.show();
                 konva.selectionBox.moveToTop();
+                konva.layer.batchDraw();
+            });
+
+            visibleShapeTransformers.map(function(konva){
+                konva.shapeTransformer.show();
+                konva.shapeTransformer.moveToTop();
                 konva.layer.batchDraw();
             });
 
@@ -10637,12 +10989,17 @@ function PLAYER(){
         function clearStage(id){
             draw.konva[id].layer.destroyChildren();
             draw.konva[id].textAddCount = 0;
+            draw.konva[id].shapeAddCount = 0;
             draw.textNodes = draw.textNodes.filter(function(text){
                 return text.getStage();
             });
             draw.konva[id].selectionBox = null;
+            draw.konva[id].shapeTransformer = null;
             if(draw.selectedText && !draw.selectedText.getStage()){
                 draw.selectedText = null;
+            }
+            if(draw.selectedShape && !draw.selectedShape.getStage()){
+                draw.selectedShape = null;
             }
             /* Önceki bellek kayıtlarını temizle */
             draw.konva[id].layer.clearCache();
@@ -10680,11 +11037,24 @@ function PLAYER(){
             });
         }
 
-        function mouseCursorStatus(){
+        function passiveShapeButtons(){
+            if(draw.rectBox){
+                passiveBtnFNC(draw.rectBox);
+            }
+            if(draw.circleBox){
+                passiveBtnFNC(draw.circleBox);
+            }
+            if(draw.triangleBox){
+                passiveBtnFNC(draw.triangleBox);
+            }
+        }
+
+        function mouseCursorStatus(activeShapeType){
             if(mod === "source-over"){
                 settings.activeSize = settings.brushSize;
                 activeBtnFNC(draw.drawBox);
                 passiveBtnFNC(draw.eraserBox);
+                passiveShapeButtons();
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
                 }
@@ -10695,6 +11065,7 @@ function PLAYER(){
                 settings.activeSize = settings.eraserSize;
                 activeBtnFNC(draw.eraserBox);
                 passiveBtnFNC(draw.drawBox);
+                passiveShapeButtons();
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
                 }
@@ -10706,6 +11077,7 @@ function PLAYER(){
                 activeBtnFNC(draw.textBox);
                 passiveBtnFNC(draw.drawBox);
                 passiveBtnFNC(draw.eraserBox);
+                passiveShapeButtons();
                 if(draw.dragBox){
                     passiveBtnFNC(draw.dragBox);
                 }
@@ -10713,8 +11085,24 @@ function PLAYER(){
                 settings.activeSize = 0;
                 passiveBtnFNC(draw.drawBox);
                 passiveBtnFNC(draw.eraserBox);
+                passiveShapeButtons();
                 if(draw.textBox){
                     activeBtnFNC(draw.textBox);
+                }
+            }else if(mod === "shape"){
+                settings.activeSize = 0;
+                passiveBtnFNC(draw.drawBox);
+                passiveBtnFNC(draw.eraserBox);
+                if(draw.textBox){
+                    passiveBtnFNC(draw.textBox);
+                }
+                passiveShapeButtons();
+                if(activeShapeType === "circle" && draw.circleBox){
+                    activeBtnFNC(draw.circleBox);
+                }else if(activeShapeType === "triangle" && draw.triangleBox){
+                    activeBtnFNC(draw.triangleBox);
+                }else if(draw.rectBox){
+                    activeBtnFNC(draw.rectBox);
                 }
             }
 
