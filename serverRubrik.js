@@ -227,6 +227,23 @@ function registerRubrikServer(app, deps){
         });
     });
 
+    app.get("/api/rubrik/skills/tree", function(req, res){
+        axios.get("https://www.okulistik.com/json/question", {
+            params: {cmd: "skill_tree"},
+            headers: getRubrikTopicHeaders(req)
+        }).then(response => {
+            res.send(response.data);
+        }).catch(err => {
+            var status = err.response ? err.response.status : 502;
+            console.log("error in skill tree request", err.message, status, err.response ? err.response.data : "");
+            res.status(status).send({
+                success: false,
+                message: "Süreç bileşeni ağacı alınamadı.",
+                error: err.response ? err.response.data : err.message
+            });
+        });
+    });
+
     app.post("/api/rubrik/evaluation/ai-evaluate", function(req, res){
         var jwt = getOccJwt(req);
         var service = getService();

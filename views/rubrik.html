@@ -206,6 +206,12 @@
             border-top: 1px solid #252525;
         }
 
+        .rubrik-tree-panels {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 10px;
+        }
+
         .topic-tree-toolbar {
             display: flex;
             gap: 8px;
@@ -227,6 +233,7 @@
 
         .topic-tree-list {
             max-height: 260px;
+            overflow-x: auto;
             overflow-y: auto;
             background: #252525;
             border: 1px solid #252525;
@@ -251,6 +258,7 @@
             color: #bababa;
             font-size: 13px;
             box-sizing: border-box;
+            width: 100%;
         }
 
         .topic-tree-row:hover,
@@ -292,6 +300,99 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .topic-tree-list.is-scrolled-x .topic-tree-label {
+            max-width: none !important;
+            overflow: visible;
+            text-overflow: clip;
+        }
+
+        .skill-weight-panel {
+            display: none;
+            margin-top: 8px;
+            padding: 8px;
+            background: #252525;
+            border: 1px solid #252525;
+            border-radius: 4px;
+        }
+
+        .skill-weight-panel.visible {
+            display: block;
+        }
+
+        .skill-weight-title {
+            margin-bottom: 6px;
+            color: #bababa;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .skill-weight-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 86px;
+            gap: 8px;
+            align-items: start;
+            margin-bottom: 6px;
+        }
+
+        .skill-weight-label {
+            display: block;
+            min-width: 0;
+            max-width: 100%;
+            padding-top: 5px;
+            color: #d8d8d8;
+            font-size: 12px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .skill-weight-input-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        input[type="text"].skill-weight-input {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #1b1b1b;
+            border: 1px solid #5f5f5f;
+            color: #ffffff;
+        }
+
+        input[type="text"].skill-weight-input:focus {
+            outline: none;
+            border-color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14);
+        }
+
+        input[type="text"].skill-weight-input.error {
+            border-color: #ef4444;
+        }
+
+        .skill-weight-error {
+            display: none;
+            color: #ff8b8b;
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
+        .skill-weight-error.visible {
+            display: block;
+        }
+
+        .skill-weight-summary {
+            margin-top: 4px;
+            color: #8f8f8f;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .skill-weight-summary.error {
+            color: #ff8b8b;
         }
 
         button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s; }
@@ -384,6 +485,9 @@
             .main-panel, .side-panel {
                 flex: 1 1 100%;
                 width: 100%;
+            }
+            .rubrik-tree-panels {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -627,7 +731,9 @@
         #rubrikAIInstructions,
         #rubrikAIQuestion,
         #rubrikTeacherConditionInput,
-        #topicTreeList {
+        #rubrikVisibleConditionInput,
+        #topicTreeList,
+        #skillTreeList {
             scrollbar-width: thin;
             scrollbar-color: #5b5b5b transparent;
         }
@@ -635,14 +741,19 @@
         #rubrikAIInstructions::-webkit-scrollbar,
         #rubrikAIQuestion::-webkit-scrollbar,
         #rubrikTeacherConditionInput::-webkit-scrollbar,
-        #topicTreeList::-webkit-scrollbar {
+        #rubrikVisibleConditionInput::-webkit-scrollbar,
+        #topicTreeList::-webkit-scrollbar,
+        #skillTreeList::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
 
         #rubrikAIInstructions::-webkit-scrollbar-track,
         #rubrikAIQuestion::-webkit-scrollbar-track,
         #rubrikTeacherConditionInput::-webkit-scrollbar-track,
-        #topicTreeList::-webkit-scrollbar-track {
+        #rubrikVisibleConditionInput::-webkit-scrollbar-track,
+        #topicTreeList::-webkit-scrollbar-track,
+        #skillTreeList::-webkit-scrollbar-track {
             background: transparent;
             border-radius: 10px;
         }
@@ -650,7 +761,9 @@
         #rubrikAIInstructions::-webkit-scrollbar-thumb,
         #rubrikAIQuestion::-webkit-scrollbar-thumb,
         #rubrikTeacherConditionInput::-webkit-scrollbar-thumb,
-        #topicTreeList::-webkit-scrollbar-thumb {
+        #rubrikVisibleConditionInput::-webkit-scrollbar-thumb,
+        #topicTreeList::-webkit-scrollbar-thumb,
+        #skillTreeList::-webkit-scrollbar-thumb {
             background: linear-gradient(180deg,#6b6b6b,#4a4a4a);
             border-radius: 10px;
             border: 2px solid transparent;
@@ -660,7 +773,9 @@
         #rubrikAIInstructions::-webkit-scrollbar-thumb:hover,
         #rubrikAIQuestion::-webkit-scrollbar-thumb:hover,
         #rubrikTeacherConditionInput::-webkit-scrollbar-thumb:hover,
-        #topicTreeList::-webkit-scrollbar-thumb:hover {
+        #rubrikVisibleConditionInput::-webkit-scrollbar-thumb:hover,
+        #topicTreeList::-webkit-scrollbar-thumb:hover,
+        #skillTreeList::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg,#8b8b8b,#5e5e5e);
             background-clip: padding-box;
         }
@@ -1055,6 +1170,10 @@
                 <label class="field-label" for="rubrikTeacherConditionInput">Condition</label>
                 <textarea id="rubrikTeacherConditionInput" placeholder="Condition giriniz."></textarea>
             </div>
+            <div id="rubrikVisibleConditionWrap" class="rubrik-teacher-condition-wrap">
+                <label class="field-label" for="rubrikVisibleConditionInput">Visible Condition</label>
+                <textarea id="rubrikVisibleConditionInput" placeholder="Visible Condition giriniz."></textarea>
+            </div>
         </div>
         <div id="boxesContainer"></div>
 
@@ -1095,16 +1214,36 @@
                 </div>
             </div>
 
-            <div class="topic-tree-panel">
-                <h3 style="font-size:14px; border:none; margin-bottom:6px;">Konu Ağacı</h3>
-                <div class="topic-tree-toolbar">
-                    <input type="text" id="topicTidSearch" placeholder="mcode, id veya text ile ara...">
-                    <button id="topicTidSearchBtn" type="button" class="btn-primary">Git</button>
-                    <button id="topicTidResetBtn" type="button" class="btn-danger">Temizle</button>
+            <div class="rubrik-tree-panels">
+                <div class="topic-tree-panel">
+                    <h3 style="font-size:14px; border:none; margin-bottom:6px;">Konu Ağacı</h3>
+                    <div class="topic-tree-toolbar">
+                        <input type="text" id="topicTidSearch" placeholder="mcode, id veya text ile ara...">
+                        <button id="topicTidSearchBtn" type="button" class="btn-primary">Git</button>
+                        <button id="topicTidResetBtn" type="button" class="btn-danger">Temizle</button>
+                    </div>
+                    <div id="topicTreeStatus" class="topic-tree-status">Konu ağacı yüklenmedi.</div>
+                    <div id="topicTreeList" class="topic-tree-list">
+                        <div class="topic-tree-empty">Konu ağacı için dosya bekleniyor.</div>
+                    </div>
                 </div>
-                <div id="topicTreeStatus" class="topic-tree-status">Konu ağacı yüklenmedi.</div>
-                <div id="topicTreeList" class="topic-tree-list">
-                    <div class="topic-tree-empty">Konu ağacı için dosya bekleniyor.</div>
+
+                <div class="topic-tree-panel">
+                    <h3 style="font-size:14px; border:none; margin-bottom:6px;">Beceri Ağacı</h3>
+                    <div class="topic-tree-toolbar">
+                        <input type="text" id="skillTreeSearch" placeholder="mcode, skill_id veya text ile ara...">
+                        <button id="skillTreeSearchBtn" type="button" class="btn-primary">Git</button>
+                        <button id="skillTreeResetBtn" type="button" class="btn-danger">Temizle</button>
+                    </div>
+                    <div id="skillTreeStatus" class="topic-tree-status">Beceri ağacı yüklenmedi.</div>
+                    <div id="skillTreeList" class="topic-tree-list">
+                        <div class="topic-tree-empty">Beceri ağacı için konu seçimi bekleniyor.</div>
+                    </div>
+                    <div id="skillWeightPanel" class="skill-weight-panel">
+                        <div class="skill-weight-title">Seçili beceri ağırlıkları</div>
+                        <div id="skillWeightList"></div>
+                        <div id="skillWeightSummary" class="skill-weight-summary"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1184,6 +1323,11 @@
             instructions: {type: "string", instructions: ""},
             question: {type: "string", question: ""},
             alias: {}
+        },
+        tree: {
+            topicPath: {},
+            selectedTopicId: null,
+            skillIds: []
         }
     };
 
@@ -1218,6 +1362,19 @@
         selectedIds: [],
         isLoading: false,
         status: 'Konu ağacı yüklenmedi.'
+    };
+    var skillTreeState = {
+        flatItems: [],
+        treeItems: [],
+        itemMap: {},
+        parentMap: {},
+        expandedIds: {},
+        selectedIds: [],
+        weightMap: {},
+        lastEditedWeightId: null,
+        allowedIds: [],
+        isLoading: false,
+        status: 'Beceri ağacı yüklenmedi.'
     };
     const RUBRIK_JWT_COOKIE = "okulistik-jwt";
     const RUBRIK_USER_STORAGE = "occRubrikUser";
@@ -1459,6 +1616,14 @@
     const topicTidResetBtn = document.getElementById('topicTidResetBtn');
     const topicTreeStatus = document.getElementById('topicTreeStatus');
     const topicTreeList = document.getElementById('topicTreeList');
+    const skillTreeSearch = document.getElementById('skillTreeSearch');
+    const skillTreeSearchBtn = document.getElementById('skillTreeSearchBtn');
+    const skillTreeResetBtn = document.getElementById('skillTreeResetBtn');
+    const skillTreeStatus = document.getElementById('skillTreeStatus');
+    const skillTreeList = document.getElementById('skillTreeList');
+    const skillWeightPanel = document.getElementById('skillWeightPanel');
+    const skillWeightList = document.getElementById('skillWeightList');
+    const skillWeightSummary = document.getElementById('skillWeightSummary');
 
     const extraOptions = {
         truecount: { chk: document.getElementById('chkTrueCount'), num: document.getElementById('numTrueCount') },
@@ -1578,6 +1743,129 @@
             });
     }
 
+    function normalizeSkillIdArray(value){
+        const values = Array.isArray(value) ? value : (typeof value === "undefined" || value === null ? [] : [value]);
+        const seen = {};
+
+        return values
+            .flatMap(skillId => typeof skillId === "string" && skillId.includes(',')
+                ? skillId.split(',')
+                : [skillId]
+            )
+            .map(skillId => skillId && typeof skillId === "object"
+                ? skillId.id ?? skillId.skillId ?? skillId.skill_id
+                : skillId
+            )
+            .map(skillId => Number(skillId))
+            .filter(skillId => Number.isFinite(skillId))
+            .filter(skillId => {
+                if(seen[skillId]){
+                    return false;
+                }
+                seen[skillId] = true;
+                return true;
+            });
+    }
+
+    function normalizeSkillWeightValue(value){
+        const normalizedValue = typeof value === "string" ? value.replace(',', '.') : value;
+        const weight = Number(normalizedValue);
+        return Number.isFinite(weight) && weight >= 0 ? weight : null;
+    }
+
+    function normalizeSkillWeightMap(value){
+        if(!value || typeof value !== "object" || Array.isArray(value)){
+            return {};
+        }
+
+        return Object.keys(value).reduce((map, key) => {
+            const id = Number(key);
+            const weight = normalizeSkillWeightValue(value[key]);
+            if(Number.isFinite(id) && weight !== null){
+                map[id] = weight;
+            }
+            return map;
+        }, {});
+    }
+
+    function isEditableSkillWeightText(value){
+        return typeof value === "string" && /^\d*(?:[,.]\d*)?$/.test(value);
+    }
+
+    function normalizeSkillSelectionArray(value){
+        const values = Array.isArray(value) ? value : (typeof value === "undefined" || value === null ? [] : [value]);
+        const seen = {};
+
+        return values
+            .flatMap(skill => typeof skill === "string" && skill.includes(',')
+                ? skill.split(',')
+                : [skill]
+            )
+            .map(skill => {
+                const isObject = skill && typeof skill === "object";
+                const id = Number(isObject ? skill.id ?? skill.skillId ?? skill.skill_id : skill);
+                const weight = isObject ? normalizeSkillWeightValue(skill.weight) : null;
+
+                return {
+                    id: id,
+                    weight: weight
+                };
+            })
+            .filter(skill => Number.isFinite(skill.id))
+            .filter(skill => {
+                if(seen[skill.id]){
+                    return false;
+                }
+                seen[skill.id] = true;
+                return true;
+            });
+    }
+
+    function formatSkillWeightValue(value){
+        if(isEditableSkillWeightText(value)){
+            return value;
+        }
+
+        const weight = normalizeSkillWeightValue(value);
+        return weight === null ? '' : String(Number(weight.toFixed(2)));
+    }
+
+    function getSkillWeightMapForIds(ids, sourceWeightMap){
+        const selectedIds = normalizeSkillIdArray(ids);
+
+        return selectedIds.reduce((map, id) => {
+            const weight = normalizeSkillWeightValue(sourceWeightMap && sourceWeightMap[id]);
+            map[id] = weight !== null ? weight : '';
+            return map;
+        }, {});
+    }
+
+    function setSelectedSkillWeightsFromMap(sourceWeightMap){
+        skillTreeState.weightMap = getSkillWeightMapForIds(skillTreeState.selectedIds, sourceWeightMap);
+        skillTreeState.lastEditedWeightId = null;
+    }
+
+    function clearSelectedSkillWeights(){
+        skillTreeState.selectedIds = [];
+        skillTreeState.weightMap = {};
+        skillTreeState.lastEditedWeightId = null;
+    }
+
+    function getSkillSelectionsWithWeights(){
+        return normalizeSkillIdArray(skillTreeState.selectedIds).map(id => ({
+            id: id,
+            weight: normalizeSkillWeightValue(skillTreeState.weightMap[id]) ?? 0
+        }));
+    }
+
+    function getSkillIdsFromTopicItem(item){
+        return normalizeSkillIdArray(item ? item.skill_id : []);
+    }
+
+    function getSkillWeightsFromTopicItem(item){
+        return normalizeSkillWeightMap(item ? item.skill_weights || item.skillWeights : null);
+    }
+
     function getActiveSlide(){
         const slides = getSlidesFromRubrikFile();
         return activeSlideIndex !== null && slides[activeSlideIndex] ? slides[activeSlideIndex] : null;
@@ -1594,11 +1882,10 @@
             .map(key => topic[key]);
     }
 
-    function syncTopicSelectionsFromActiveSlide(){
-        const slide = getActiveSlide();
-        topicTreeState.selectedIds = normalizeTidArray(
-            normalizeTopicLevelEntries(slide && slide.rubrik ? slide.rubrik.topic : null)
-        );
+    function getTreeStateFromRubrik(rubrik){
+        return rubrik && rubrik.tree && typeof rubrik.tree === "object" && !Array.isArray(rubrik.tree)
+            ? rubrik.tree
+            : {};
     }
 
     function getTopicObjectFromSelectedIds(){
@@ -1609,21 +1896,167 @@
         }, {});
     }
 
+    function getSelectedTopicIdFromSelectedIds(){
+        const selectedIds = normalizeTidArray(topicTreeState.selectedIds);
+        const selectedId = selectedIds.length ? selectedIds[selectedIds.length - 1] : null;
+        const item = selectedId !== null ? topicTreeState.itemMap[selectedId] : null;
+        return item && item.rawId ? item.rawId : selectedId;
+    }
+
+    function getTreeObjectFromSelections(){
+        return {
+            topicPath: getTopicObjectFromSelectedIds(),
+            selectedTopicId: getSelectedTopicIdFromSelectedIds(),
+            skillIds: getSkillSelectionsWithWeights()
+        };
+    }
+
+    function normalizeRubrikTreeState(rubrik){
+        const tree = getTreeStateFromRubrik(rubrik);
+        const normalizedSkillSelections = normalizeSkillSelectionArray(tree.skillIds);
+
+        return {
+            topicPath: tree.topicPath && typeof tree.topicPath === "object"
+                ? tree.topicPath
+                : {},
+            selectedTopicId: tree.selectedTopicId ?? null,
+            skillIds: normalizedSkillSelections.map(skill => ({
+                id: skill.id,
+                weight: skill.weight ?? 0
+            }))
+        };
+    }
+
+    function syncTopicSelectionsFromActiveSlide(){
+        const slide = getActiveSlide();
+
+        topicTreeState.selectedIds = normalizeTidArray(
+            normalizeTopicLevelEntries(
+                slide && slide.rubrik && slide.rubrik.tree
+                    ? slide.rubrik.tree.topicPath
+                    : null
+            )
+        );
+    }
+
     function syncTopicSelectionsToActiveSlide(){
         const slide = getActiveSlide();
+
         if(!slide){
             return;
         }
 
-        const topic = getTopicObjectFromSelectedIds();
         if(!slide.rubrik || typeof slide.rubrik !== "object"){
             slide.rubrik = getEmptyRubrikState();
         }
-        if(Object.keys(topic).length > 0){
-            slide.rubrik.topic = topic;
+
+        slide.rubrik.tree = Object.assign(
+            normalizeRubrikTreeState(slide.rubrik),
+            {
+                topicPath: getTopicObjectFromSelectedIds(),
+                selectedTopicId: getSelectedTopicIdFromSelectedIds()
+            }
+        );
+    }
+
+    function getDefaultSkillSelectionIds(){
+        const allowedMap = skillTreeState.allowedIds.reduce((map, id) => {
+            map[id] = true;
+            return map;
+        }, {});
+
+        return Object.keys(skillTreeState.itemMap)
+            .map(id => skillTreeState.itemMap[id])
+            .filter(item => item && allowedMap[item.id] && isSkillLeaf(item))
+            .map(item => item.id);
+    }
+
+    function syncSkillSelectionsFromActiveSlide(){
+        const slide = getActiveSlide();
+        const rubrik = slide && slide.rubrik;
+        const tree = getTreeStateFromRubrik(rubrik);
+
+        const hasSavedSkillIds = Array.isArray(tree.skillIds);
+        const savedSelections = hasSavedSkillIds
+            ? normalizeSkillSelectionArray(tree.skillIds)
+            : [];
+        const savedIds = savedSelections.map(skill => skill.id);
+        const savedWeightMap = savedSelections.reduce((map, skill) => {
+            if(skill.weight !== null){
+                map[skill.id] = skill.weight;
+            }
+            return map;
+        }, {});
+
+        const availableMap = Object.keys(skillTreeState.itemMap).reduce((map, id) => {
+            map[id] = true;
+            return map;
+        }, {});
+
+        skillTreeState.selectedIds = (
+            hasSavedSkillIds
+                ? savedIds
+                : getDefaultSkillSelectionIds()
+        ).filter(id => availableMap[id]);
+
+        if(hasSavedSkillIds && Object.keys(savedWeightMap).length > 0){
+            skillTreeState.weightMap = getSkillWeightMapForIds(skillTreeState.selectedIds, savedWeightMap);
         } else {
-            delete slide.rubrik.topic;
+            const selectedTopicId = getSelectedTopicIdFromSelectedIds();
+            const selectedTopic = selectedTopicId !== null ? topicTreeState.itemMap[selectedTopicId] : null;
+            setSelectedSkillWeightsFromMap(getSkillWeightsFromTopicItem(selectedTopic));
         }
+
+        syncSkillSelectionsToActiveSlide();
+    }
+
+    function syncSkillSelectionsToActiveSlide(){
+        const slide = getActiveSlide();
+
+        if(!slide){
+            return;
+        }
+
+        if(!slide.rubrik || typeof slide.rubrik !== "object"){
+            slide.rubrik = getEmptyRubrikState();
+        }
+
+        slide.rubrik.tree = Object.assign(
+            normalizeRubrikTreeState(slide.rubrik),
+            {
+                skillIds: getSkillSelectionsWithWeights()
+            }
+        );
+    }
+
+    function getSelectedTopicSkillIds(){
+        const selectedIds = normalizeTidArray(topicTreeState.selectedIds);
+        const selectedTopicId = selectedIds.length ? selectedIds[selectedIds.length - 1] : null;
+        const selectedTopic = selectedTopicId !== null ? topicTreeState.itemMap[selectedTopicId] : null;
+
+        return selectedTopic ? normalizeSkillIdArray(selectedTopic.skillIds) : [];
+    }
+
+    function rebuildSkillTreeForTopicSkillIds(useSavedSelection){
+        const allowedSkillIds = getSelectedTopicSkillIds();
+        const builtSkillTree = buildSkillTree(skillTreeState.flatItems, allowedSkillIds);
+
+        skillTreeState.treeItems = builtSkillTree.treeItems;
+        skillTreeState.itemMap = builtSkillTree.itemMap;
+        skillTreeState.parentMap = builtSkillTree.parentMap;
+        skillTreeState.allowedIds = allowedSkillIds;
+
+        if(useSavedSelection){
+            syncSkillSelectionsFromActiveSlide();
+        } else {
+            skillTreeState.selectedIds = getDefaultSkillSelectionIds();
+            const selectedTopicId = getSelectedTopicIdFromSelectedIds();
+            const selectedTopic = selectedTopicId !== null ? topicTreeState.itemMap[selectedTopicId] : null;
+            setSelectedSkillWeightsFromMap(getSkillWeightsFromTopicItem(selectedTopic));
+            syncSkillSelectionsToActiveSlide();
+        }
+
+        refreshSkillTreeSelectionForActiveSlide(false);
     }
 
     function removeLegacyGlobalTopicSelection(){
@@ -1693,12 +2126,84 @@
                 parentid: Number(item.parentid),
                 mcode: typeof item.mcode === "string" ? item.mcode : String(item.mcode || ''),
                 text: typeof item.text === "string" ? item.text : String(item.text || ''),
-                node: item.node === true || item.node === "true" || item.node === 1 || item.node === "1"
+                node: item.node === true || item.node === "true" || item.node === 1 || item.node === "1",
+                skillIds: getSkillIdsFromTopicItem(item),
+                skillWeights: getSkillWeightsFromTopicItem(item)
             }))
             .filter(item => Number.isFinite(item.id));
 
         normalizedItems.forEach(item => {
             item.children = [];
+            itemMap[item.id] = item;
+            parentMap[item.id] = Number.isFinite(item.parentid) ? item.parentid : -1;
+            const parentKey = String(Number.isFinite(item.parentid) ? item.parentid : -1);
+            if(!childrenByParent[parentKey]){
+                childrenByParent[parentKey] = [];
+            }
+            childrenByParent[parentKey].push(item);
+        });
+
+        normalizedItems.forEach(item => {
+            item.children = childrenByParent[String(item.id)] || [];
+        });
+
+        return {
+            treeItems: normalizedItems.filter(item => item.parentid === -1 || !itemMap[item.parentid]),
+            itemMap: itemMap,
+            parentMap: parentMap
+        };
+    }
+
+    function buildSkillTree(flatItems, allowedIds){
+        const allowedMap = normalizeSkillIdArray(allowedIds).reduce((map, id) => {
+            map[id] = true;
+            return map;
+        }, {});
+        const itemById = {};
+        const includeMap = {};
+        const childrenByParent = {};
+
+        flatItems
+            .filter(item => item && typeof item === "object")
+            .forEach(item => {
+                const id = Number(item.id);
+                if(!Number.isFinite(id) || itemById[id]){
+                    return;
+                }
+
+                itemById[id] = {
+                    id: id,
+                    rawId: String(item.id || ''),
+                    parentid: Number(item.parentid),
+                    mcode: typeof item.mcode === "string" ? item.mcode : String(item.mcode || ''),
+                    text: typeof item.text === "string" ? item.text : String(item.text || ''),
+                    node: item.node === true || item.node === "true" || item.node === 1 || item.node === "1",
+                    children: []
+                };
+            });
+
+        Object.keys(allowedMap).forEach(id => {
+            let currentId = Number(id);
+            let guard = 0;
+
+            while(Number.isFinite(currentId) && itemById[currentId] && guard < 1000){
+                includeMap[currentId] = true;
+                const parentId = Number(itemById[currentId].parentid);
+                if(!Number.isFinite(parentId) || parentId === -1){
+                    break;
+                }
+                currentId = parentId;
+                guard++;
+            }
+        });
+
+        const normalizedItems = Object.keys(itemById)
+            .map(id => itemById[id])
+            .filter(item => includeMap[item.id]);
+        const itemMap = {};
+        const parentMap = {};
+
+        normalizedItems.forEach(item => {
             itemMap[item.id] = item;
             parentMap[item.id] = Number.isFinite(item.parentid) ? item.parentid : -1;
             const parentKey = String(Number.isFinite(item.parentid) ? item.parentid : -1);
@@ -1741,10 +2246,49 @@
         return item && (!item.children || item.children.length === 0);
     }
 
+    function isSkillLeaf(item){
+        return item && (!item.children || item.children.length === 0);
+    }
+
     function getTopicDisplayText(item){
         const mcode = String(item && item.mcode ? item.mcode : '').trim();
         const text = String(item && item.text ? item.text : '').trim();
         return (mcode ? mcode + ' ' : '') + text;
+    }
+
+    function getSkillDisplayText(item){
+        const mcode = String(item && item.mcode ? item.mcode : '').trim();
+        const text = String(item && item.text ? item.text : '').trim();
+        return (mcode ? mcode + ' ' : '') + text;
+    }
+
+    function updateTreeListHorizontalOverflow(listElement){
+        if(!listElement){
+            return;
+        }
+
+        listElement.classList.toggle('is-scrolled-x', listElement.scrollLeft > 0);
+
+        Array.from(listElement.querySelectorAll('.topic-tree-row')).forEach(row => {
+            const label = row.querySelector('.topic-tree-label');
+            if(!label){
+                return;
+            }
+
+            row.style.width = '';
+            label.style.maxWidth = '';
+
+            const visibleLabelWidth = label.getBoundingClientRect().width;
+            const fullLabelWidth = label.scrollWidth;
+
+            if(fullLabelWidth <= visibleLabelWidth){
+                return;
+            }
+
+            const rowWidth = row.getBoundingClientRect().width - visibleLabelWidth + fullLabelWidth;
+            row.style.width = Math.ceil(rowWidth) + 'px';
+            label.style.maxWidth = Math.max(0, Math.floor(visibleLabelWidth)) + 'px';
+        });
     }
 
     function reconcileTopicSelectionToSingleLeaf(){
@@ -1795,9 +2339,10 @@
         }
 
         syncTopicSelectionsToActiveSlide();
+        rebuildSkillTreeForTopicSkillIds(false);
 
         setTopicTreeStatus(
-            selected ? 'Seçili mcode: ' + item.mcode : 'Seçili mcode: -'
+            selected ? 'Seçili süreç bileşeni: ' + item.mcode : 'Seçili süreç bileşeni: -'
         );
 
         updateFinalSaveButtonState(false);
@@ -1807,6 +2352,15 @@
         syncTopicSelectionsFromActiveSlide();
 
         if(Object.keys(topicTreeState.itemMap).length === 0){
+            skillTreeState.treeItems = [];
+            skillTreeState.itemMap = {};
+            skillTreeState.parentMap = {};
+            skillTreeState.allowedIds = [];
+            skillTreeState.selectedIds = [];
+            skillTreeState.weightMap = {};
+            skillTreeState.lastEditedWeightId = null;
+            setSkillTreeStatus('Beceri ağacı için konu seçimi bekleniyor.');
+            renderSkillTree();
             renderTopicTree();
             return;
         }
@@ -1831,10 +2385,25 @@
             : null;
 
         setTopicTreeStatus(
-            'Konu ağacı yüklendi. Seçili mcode: ' +
+            'Konu ağacı yüklendi: ' +
             (selectedItem ? selectedItem.mcode : '')
         );
 
+        if(!selectedItem){
+            skillTreeState.treeItems = [];
+            skillTreeState.itemMap = {};
+            skillTreeState.parentMap = {};
+            skillTreeState.allowedIds = [];
+            clearSelectedSkillWeights();
+            syncSkillSelectionsToActiveSlide();
+            setSkillTreeStatus('Beceri ağacı için konu seçimi bekleniyor.');
+            renderSkillTree();
+            updateFinalSaveButtonState(false);
+            renderTopicTree();
+            return;
+        }
+
+        rebuildSkillTreeForTopicSkillIds(true);
         updateFinalSaveButtonState(false);
         renderTopicTree();
     }
@@ -1910,6 +2479,253 @@
         };
 
         topicTreeState.treeItems.forEach(item => renderNode(item, 0));
+        updateTreeListHorizontalOverflow(topicTreeList);
+    }
+
+    function setSkillTreeStatus(message){
+        skillTreeState.status = message || '';
+        skillTreeStatus.textContent = skillTreeState.status;
+    }
+
+    function isSkillSelected(id){
+        return skillTreeState.selectedIds.includes(Number(id));
+    }
+
+    function getSelectedSkillMcodeText(){
+        const mcodes = normalizeSkillIdArray(skillTreeState.selectedIds)
+            .map(id => skillTreeState.itemMap[id])
+            .filter(Boolean)
+            .map(item => String(item.mcode || '').trim())
+            .filter(Boolean);
+
+        return mcodes.length ? mcodes.join(', ') : '-';
+    }
+
+    function setSkillSelected(id, selected){
+        const numericId = Number(id);
+        const item = skillTreeState.itemMap[numericId];
+
+        if(!Number.isFinite(numericId) || !item || !isSkillLeaf(item)){
+            return;
+        }
+
+        if(selected && !isSkillSelected(numericId)){
+            skillTreeState.selectedIds.push(numericId);
+            if(typeof skillTreeState.weightMap[numericId] === "undefined"){
+                const selectedTopicId = getSelectedTopicIdFromSelectedIds();
+                const selectedTopic = selectedTopicId !== null ? topicTreeState.itemMap[selectedTopicId] : null;
+                const topicWeight = selectedTopic && selectedTopic.skillWeights
+                    ? normalizeSkillWeightValue(selectedTopic.skillWeights[numericId])
+                    : null;
+                skillTreeState.weightMap[numericId] = topicWeight !== null ? topicWeight : '';
+            }
+        } else if(!selected){
+            skillTreeState.selectedIds = skillTreeState.selectedIds.filter(skillId => skillId !== numericId);
+        }
+
+        skillTreeState.weightMap = getSkillWeightMapForIds(skillTreeState.selectedIds, skillTreeState.weightMap);
+        skillTreeState.lastEditedWeightId = null;
+        syncSkillSelectionsToActiveSlide();
+        setSkillTreeStatus('Seçili süreç bileşeni: ' + getSelectedSkillMcodeText());
+        updateFinalSaveButtonState(false);
+    }
+
+    function getSkillWeightTotal(){
+        return normalizeSkillIdArray(skillTreeState.selectedIds)
+            .reduce((total, id) => total + (normalizeSkillWeightValue(skillTreeState.weightMap[id]) ?? 0), 0);
+    }
+
+    function isSkillWeightTotalValidForIds(ids, weightMap){
+        const selectedIds = normalizeSkillIdArray(ids);
+        if(selectedIds.length === 0){
+            return false;
+        }
+
+        const total = selectedIds.reduce((sum, id) => {
+            const weight = normalizeSkillWeightValue(weightMap[id]);
+            return sum + (weight === null ? 0 : weight);
+        }, 0);
+
+        return Math.abs(total - 1) <= 0.00001;
+    }
+
+    function hasValidActiveSkillWeights(){
+        return isSkillWeightTotalValidForIds(skillTreeState.selectedIds, skillTreeState.weightMap);
+    }
+
+    function hasValidSavedSkillWeights(slide, index){
+        if(index === activeSlideIndex){
+            return hasValidActiveSkillWeights();
+        }
+
+        const rubrik = slide && slide.rubrik;
+        const tree = getTreeStateFromRubrik(rubrik);
+        const selections = normalizeSkillSelectionArray(tree.skillIds);
+        const ids = selections.map(skill => skill.id);
+        const weightMap = selections.reduce((map, skill) => {
+            map[skill.id] = skill.weight ?? 0;
+            return map;
+        }, {});
+
+        return isSkillWeightTotalValidForIds(ids, weightMap);
+    }
+
+    function hasSlidesWithInvalidSkillWeights(){
+        const slides = getSlidesFromRubrikFile();
+        if(slides.length > 0){
+            return slides.some((slide, index) => !hasValidSavedSkillWeights(slide, index));
+        }
+
+        return !hasValidActiveSkillWeights();
+    }
+
+    function renderSkillWeightInputs(){
+        const selectedIds = normalizeSkillIdArray(skillTreeState.selectedIds);
+        skillWeightPanel.classList.toggle('visible', selectedIds.length > 0);
+        skillWeightList.innerHTML = '';
+
+        if(selectedIds.length === 0){
+            skillWeightSummary.textContent = '';
+            skillWeightSummary.classList.remove('error');
+            return;
+        }
+
+        const total = getSkillWeightTotal();
+        const totalIsValid = Math.abs(total - 1) <= 0.00001;
+
+        selectedIds.forEach(id => {
+            const item = skillTreeState.itemMap[id];
+            const row = document.createElement('div');
+            row.className = 'skill-weight-row';
+
+            const label = document.createElement('div');
+            label.className = 'skill-weight-label';
+            const labelText = item ? getSkillDisplayText(item) : String(id);
+            label.textContent = labelText + ':';
+            label.title = item ? labelText + ' - ' + item.id : String(id);
+
+            const inputWrap = document.createElement('div');
+            inputWrap.className = 'skill-weight-input-wrap';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'decimal';
+            input.className = 'skill-weight-input';
+            input.value = formatSkillWeightValue(skillTreeState.weightMap[id]);
+            input.dataset.skillWeightId = id;
+            input.addEventListener('input', event => {
+                skillTreeState.weightMap[id] = event.target.value;
+                skillTreeState.lastEditedWeightId = id;
+                syncSkillSelectionsToActiveSlide();
+                renderSkillWeightInputs();
+                const updatedInput = skillWeightList.querySelector('[data-skill-weight-id="' + id + '"]');
+                if(updatedInput){
+                    updatedInput.focus();
+                }
+                updateFinalSaveButtonState(false);
+            });
+
+            inputWrap.appendChild(input);
+            row.appendChild(label);
+            row.appendChild(inputWrap);
+            skillWeightList.appendChild(row);
+        });
+
+        skillWeightSummary.textContent = 'Toplam: ' + formatSkillWeightValue(total) + (totalIsValid ? '' : ' / 1 olmalı');
+        skillWeightSummary.classList.toggle('error', !totalIsValid);
+    }
+
+    function refreshSkillTreeSelectionForActiveSlide(syncFromSlide){
+        if(syncFromSlide !== false){
+            syncSkillSelectionsFromActiveSlide();
+        }
+        skillTreeState.expandedIds = {};
+
+        Object.keys(skillTreeState.itemMap).forEach(id => {
+            if(isSkillSelected(id)){
+                expandSkillAncestors(Number(id));
+            }
+        });
+
+        setSkillTreeStatus('Seçili süreç bileşeni: ' + getSelectedSkillMcodeText());
+        renderSkillTree();
+    }
+
+    function renderSkillTree(){
+        skillTreeStatus.textContent = skillTreeState.status || '';
+        skillTreeList.innerHTML = '';
+
+        if(skillTreeState.isLoading){
+            skillTreeList.innerHTML = '<div class="topic-tree-empty">Beceri ağacı yükleniyor...</div>';
+            renderSkillWeightInputs();
+            return;
+        }
+
+        if(skillTreeState.treeItems.length === 0){
+            skillTreeList.innerHTML = '<div class="topic-tree-empty">Beceri ağacı bulunamadı.</div>';
+            renderSkillWeightInputs();
+            return;
+        }
+
+        const renderNode = (item, level) => {
+            const row = document.createElement('div');
+            row.dataset.skillId = item.id;
+            row.style.paddingLeft = (5 + level * 18) + 'px';
+
+            const hasChildren = item.children && item.children.length > 0;
+            row.className = 'topic-tree-row' + (hasChildren ? ' has-children' : '');
+            const toggleSkillNode = () => {
+                if(!hasChildren){
+                    return;
+                }
+                skillTreeState.expandedIds[item.id] = !skillTreeState.expandedIds[item.id];
+                renderSkillTree();
+            };
+            row.addEventListener('click', event => {
+                if(event.target.closest('button, input, label, select, textarea, a')){
+                    return;
+                }
+                toggleSkillNode();
+            });
+
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'topic-tree-toggle' + (hasChildren ? '' : ' placeholder');
+            toggle.textContent = skillTreeState.expandedIds[item.id] ? '−' : '+';
+            toggle.setAttribute('aria-label', item.text + ' alt süreç bileşenleri');
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                toggleSkillNode();
+            });
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'topic-tree-checkbox';
+            checkbox.checked = isSkillSelected(item.id);
+            checkbox.disabled = !isSkillLeaf(item);
+            checkbox.addEventListener('change', event => {
+                setSkillSelected(item.id, event.target.checked);
+                renderSkillTree();
+            });
+
+            const label = document.createElement('span');
+            label.className = 'topic-tree-label';
+            label.textContent = getSkillDisplayText(item) + ' (' + item.id + ')';
+            label.title = getSkillDisplayText(item) + ' - ' + item.id;
+
+            row.appendChild(toggle);
+            row.appendChild(checkbox);
+            row.appendChild(label);
+            skillTreeList.appendChild(row);
+
+            if(hasChildren && skillTreeState.expandedIds[item.id]){
+                item.children.forEach(child => renderNode(child, level + 1));
+            }
+        };
+
+        skillTreeState.treeItems.forEach(item => renderNode(item, 0));
+        updateTreeListHorizontalOverflow(skillTreeList);
+        renderSkillWeightInputs();
     }
 
     function getTopicApiUrl(path, params){
@@ -1933,6 +2749,21 @@
         }
     }
 
+    function expandSkillAncestors(skillId){
+        let currentId = Number(skillId);
+        let guard = 0;
+
+        while(Number.isFinite(currentId) && skillTreeState.parentMap[currentId] !== -1 && guard < 1000){
+            const parentId = skillTreeState.parentMap[currentId];
+            if(!Number.isFinite(parentId)){
+                break;
+            }
+            skillTreeState.expandedIds[parentId] = true;
+            currentId = parentId;
+            guard++;
+        }
+    }
+
     function findTopicBySearchTerm(searchTerm){
         const normalizedTerm = String(searchTerm || '').trim().toLocaleLowerCase('tr-TR');
         if(!normalizedTerm){
@@ -1945,6 +2776,31 @@
         }
 
         const items = Object.keys(topicTreeState.itemMap).map(id => topicTreeState.itemMap[id]);
+        const exactMcodeMatch = items.find(item => String(item.mcode || '').toLocaleLowerCase('tr-TR') === normalizedTerm);
+        if(exactMcodeMatch){
+            return exactMcodeMatch;
+        }
+
+        return items.find(item => {
+            const idText = String(item.id || '').toLocaleLowerCase('tr-TR');
+            const mcodeText = String(item.mcode || '').toLocaleLowerCase('tr-TR');
+            const labelText = String(item.text || '').toLocaleLowerCase('tr-TR');
+            return idText.includes(normalizedTerm) || mcodeText.includes(normalizedTerm) || labelText.includes(normalizedTerm);
+        }) || null;
+    }
+
+    function findSkillBySearchTerm(searchTerm){
+        const normalizedTerm = String(searchTerm || '').trim().toLocaleLowerCase('tr-TR');
+        if(!normalizedTerm){
+            return null;
+        }
+
+        const numericId = Number(normalizedTerm);
+        if(Number.isFinite(numericId) && skillTreeState.itemMap[numericId]){
+            return skillTreeState.itemMap[numericId];
+        }
+
+        const items = Object.keys(skillTreeState.itemMap).map(id => skillTreeState.itemMap[id]);
         const exactMcodeMatch = items.find(item => String(item.mcode || '').toLocaleLowerCase('tr-TR') === normalizedTerm);
         if(exactMcodeMatch){
             return exactMcodeMatch;
@@ -1982,6 +2838,30 @@
         topicTidSearch.value = '';
     }
 
+    function goToSkillId(){
+        const skillItem = findSkillBySearchTerm(skillTreeSearch.value);
+        if(!skillItem){
+            setSkillTreeStatus('Beceri ağacı bulunamadı.');
+            return;
+        }
+
+        const skillId = skillItem.id;
+        expandSkillAncestors(skillId);
+        renderSkillTree();
+
+        const row = skillTreeList.querySelector('[data-skill-id="' + skillId + '"]');
+        if(row){
+            row.scrollIntoView({block: 'center'});
+            row.classList.add('highlight');
+            setTimeout(() => row.classList.remove('highlight'), 1600);
+            setSkillTreeStatus('Beceri ağacı bulundu: ' + (skillItem.mcode ? skillItem.mcode : skillId));
+        }
+    }
+
+    function resetSkillSelection(){
+        skillTreeSearch.value = '';
+    }
+
     async function loadTopicTreeForFile(fileName){
         const params = getTopicTreeParamsFromFileName(fileName);
 
@@ -1990,15 +2870,28 @@
             topicTreeState.treeItems = [];
             topicTreeState.itemMap = {};
             topicTreeState.parentMap = {};
+            skillTreeState.flatItems = [];
+            skillTreeState.treeItems = [];
+            skillTreeState.itemMap = {};
+            skillTreeState.parentMap = {};
+            skillTreeState.allowedIds = [];
+            skillTreeState.selectedIds = [];
+            skillTreeState.weightMap = {};
+            skillTreeState.lastEditedWeightId = null;
             setTopicTreeStatus('Dosya adından konu ağacı parametresi çıkarılamadı.');
+            setSkillTreeStatus('Beceri ağacı için konu ağacı yüklenemedi.');
             updateFinalSaveButtonState(false);
             renderTopicTree();
+            renderSkillTree();
             return;
         }
 
         topicTreeState.isLoading = true;
+        skillTreeState.isLoading = true;
         setTopicTreeStatus('Konu ağacı yükleniyor...');
+        setSkillTreeStatus('Beceri ağacı yükleniyor...');
         renderTopicTree();
+        renderSkillTree();
 
         try {
             const courseData = await fetchJsonFile(getTopicApiUrl('/api/rubrik/topics/courses', {
@@ -2016,11 +2909,22 @@
             //const treeData = await fetchJsonFile('files/konu-agaci.json');
             const flatItems = extractArrayPayload(treeData);
             const builtTree = buildTopicTree(flatItems);
+            const skillTreeData = await fetchJsonFile('/api/rubrik/skills/tree');
+            //const skillTreeData = await fetchJsonFile('files/skill.json');
+            const flatSkillItems = extractArrayPayload(skillTreeData);
 
             topicTreeState.flatItems = flatItems;
             topicTreeState.treeItems = builtTree.treeItems;
             topicTreeState.itemMap = builtTree.itemMap;
             topicTreeState.parentMap = builtTree.parentMap;
+            skillTreeState.flatItems = flatSkillItems;
+            skillTreeState.treeItems = [];
+            skillTreeState.itemMap = {};
+            skillTreeState.parentMap = {};
+            skillTreeState.allowedIds = [];
+            skillTreeState.selectedIds = [];
+            skillTreeState.weightMap = {};
+            skillTreeState.lastEditedWeightId = null;
             refreshTopicTreeSelectionForActiveSlide();
         } catch (error) {
             console.warn('Konu ağacı yüklenemedi:', error);
@@ -2028,11 +2932,22 @@
             topicTreeState.treeItems = [];
             topicTreeState.itemMap = {};
             topicTreeState.parentMap = {};
+            skillTreeState.flatItems = [];
+            skillTreeState.treeItems = [];
+            skillTreeState.itemMap = {};
+            skillTreeState.parentMap = {};
+            skillTreeState.allowedIds = [];
+            skillTreeState.selectedIds = [];
+            skillTreeState.weightMap = {};
+            skillTreeState.lastEditedWeightId = null;
             setTopicTreeStatus(error.message || 'Konu ağacı yüklenemedi.');
+            setSkillTreeStatus(error.message || 'Beceri ağacı yüklenemedi.');
         } finally {
             topicTreeState.isLoading = false;
+            skillTreeState.isLoading = false;
             updateFinalSaveButtonState(false);
             renderTopicTree();
+            renderSkillTree();
         }
     }
 
@@ -2091,7 +3006,11 @@
                 question: {type: "string", question: ""},
                 alias: {}
             },
-            topic: {}
+            tree: {
+                topicPath: {},
+                selectedTopicId: null,
+                skillIds: []
+            }
         };
     }
 
@@ -2110,8 +3029,12 @@
             : typeof reviewBox.value === "string" && reviewBox.value !== "null"
                 ? reviewBox.value
                 : "";
+        const visibleCondition = typeof group.visibleCondition === "string"
+            ? group.visibleCondition
+            : "";
 
         group.teacherCondition = teacherCondition;
+        group.visibleCondition = visibleCondition;
         group.boxes = [{
             boxId: "box0",
             value: teacherCondition,
@@ -2137,13 +3060,13 @@
                     : null;
                 cleanGroup.teacherCondition = reviewBox ? reviewBox.value : "";
             }
+            if(typeof cleanGroup.visibleCondition !== "string"){
+                cleanGroup.visibleCondition = "";
+            }
             return normalizeReviewGroupBoxes(cleanGroup);
         });
         normalizedState.rubrikAI = normalizeRubrikAI(normalizedState.rubrikAI);
-        if(!normalizedState.topic || typeof normalizedState.topic !== "object" || Array.isArray(normalizedState.topic)){
-            normalizedState.topic = {};
-        }
-
+        normalizedState.tree = normalizeRubrikTreeState(normalizedState);
         return normalizedState;
     }
 
@@ -2185,13 +3108,33 @@
             return topicTreeState.selectedIds.length > 0;
         }
 
-        return normalizeTopicLevelEntries(slide && slide.rubrik ? slide.rubrik.topic : null).length > 0;
+        const rubrik = slide && slide.rubrik;
+        const tree = getTreeStateFromRubrik(rubrik);
+
+        return normalizeTopicLevelEntries(tree.topicPath).length > 0;
     }
 
     function hasSlidesWithoutConfiguredTopic(){
         const slides = getSlidesFromRubrikFile();
         return slides.length > 0
             && slides.some((slide, index) => !hasConfiguredTopic(slide, index));
+    }
+
+    function hasConfiguredSkill(slide, index){
+        if(index === activeSlideIndex){
+            return skillTreeState.selectedIds.length > 0;
+        }
+
+        const rubrik = slide && slide.rubrik;
+        const tree = getTreeStateFromRubrik(rubrik);
+
+        return normalizeSkillIdArray(tree.skillIds).length > 0;
+    }
+
+    function hasSlidesWithoutConfiguredSkill(){
+        const slides = getSlidesFromRubrikFile();
+        return slides.length > 0
+            && slides.some((slide, index) => !hasConfiguredSkill(slide, index));
     }
 
     function updateFinalSaveButtonState(isSaving){
@@ -2202,13 +3145,19 @@
 
         const hasRubrik = hasAnyConfiguredRubrikInCurrentContext();
         const hasMissingTopic = hasSlidesWithoutConfiguredTopic();
-        const canSave = hasRubrik && !hasMissingTopic;
+        const hasMissingSkill = hasSlidesWithoutConfiguredSkill();
+        const hasInvalidSkillWeight = hasSlidesWithInvalidSkillWeights();
+        const canSave = hasRubrik && !hasMissingTopic && !hasMissingSkill && !hasInvalidSkillWeight;
         btnFinalSave.disabled = !canSave;
         btnFinalSave.title = canSave
             ? ''
             : hasMissingTopic
                 ? 'Kaydetmek için tüm sahnelerde konu ağacı seçimi yapın.'
-                : 'Kaydetmek için en az bir rubrik ekleyin.';
+                : hasMissingSkill
+                    ? 'Kaydetmek için tüm sahnelerde süreç bileşeni seçimi yapın.'
+                    : hasInvalidSkillWeight
+                        ? 'Kaydetmek için süreç bileşeni ağırlıkları toplamı 1 olmalı.'
+                        : 'Kaydetmek için en az bir rubrik ekleyin.';
     }
 
     function mergeRubrikState(apiState, localState){
@@ -2282,9 +3231,13 @@
         });
 
         if(
-            normalizeTopicLevelEntries(localRubrik.topic).length > 0
+            normalizeTopicLevelEntries(localRubrik.tree.topicPath).length > 0
         ){
-            apiRubrik.topic = cloneState(localRubrik.topic);
+            apiRubrik.tree.topicPath = cloneState(localRubrik.tree.topicPath);
+            apiRubrik.tree.selectedTopicId = localRubrik.tree.selectedTopicId;
+        }
+        if(localRubrik.tree.skillIds.length > 0){
+            apiRubrik.tree.skillIds = cloneState(localRubrik.tree.skillIds);
         }
 
         return apiRubrik;
@@ -2322,6 +3275,8 @@
         rubrikAIState.alias = nextRubrikAI.alias;
         rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
         rubrikAIQuestion.value = rubrikAIState.question.question;
+        setTeacherConditionValue('');
+        setVisibleConditionValue('');
 
         renderConfigurator();
         renderEvaluatorTestingPanel();
@@ -2356,7 +3311,7 @@
             boxes: cleanBoxes,
             groups: appState.groups.map(({ id, ...clean }) => normalizeReviewGroupBoxes(cloneState(clean))),
             rubrikAI: cloneState(rubrikAIState),
-            topic: getTopicObjectFromSelectedIds()
+            tree: getTreeObjectFromSelections()
         };
     }
 
@@ -2367,6 +3322,15 @@
         }
         slides[activeSlideIndex].rubrik = getCleanRubrikState();
         syncTopicSelectionsToActiveSlide();
+        syncSkillSelectionsToActiveSlide();
+    }
+
+    function normalizeSlideRubrikStatesBeforeSave(){
+        getSlidesFromRubrikFile().forEach(slide => {
+            if(slide && slide.rubrik && typeof slide.rubrik === "object"){
+                slide.rubrik = normalizeRubrikState(cloneState(slide.rubrik));
+            }
+        });
     }
 
     function clearBoxInputs(){
@@ -2432,6 +3396,7 @@
         setRubrikHeader(getRubrikFileName(), getSlideName(slide, index));
         applyRubrikState(slide.rubrik || getEmptyRubrikState());
         refreshTopicTreeSelectionForActiveSlide();
+        refreshSkillTreeSelectionForActiveSlide();
         if(isSlideChange){
             triggerEvaluation();
         }
@@ -2864,6 +3829,27 @@ Detail: ${error?.detail || '-'}
     topicTidSearch.addEventListener('paste', () => {
         setTimeout(goToTopicTid, 0);
     });
+    topicTreeList.addEventListener('scroll', () => {
+        topicTreeList.classList.toggle('is-scrolled-x', topicTreeList.scrollLeft > 0);
+    });
+    skillTreeSearchBtn.addEventListener('click', goToSkillId);
+    skillTreeResetBtn.addEventListener('click', resetSkillSelection);
+    skillTreeSearch.addEventListener('keydown', event => {
+        if(event.key === 'Enter'){
+            event.preventDefault();
+            goToSkillId();
+        }
+    });
+    skillTreeSearch.addEventListener('paste', () => {
+        setTimeout(goToSkillId, 0);
+    });
+    skillTreeList.addEventListener('scroll', () => {
+        skillTreeList.classList.toggle('is-scrolled-x', skillTreeList.scrollLeft > 0);
+    });
+    window.addEventListener('resize', () => {
+        updateTreeListHorizontalOverflow(topicTreeList);
+        updateTreeListHorizontalOverflow(skillTreeList);
+    });
 
     function hydrateInitialRubrikState(){
         const hydratedState = normalizeRubrikState(cloneState(initialAppState || getEmptyRubrikState()));
@@ -2890,13 +3876,29 @@ Detail: ${error?.detail || '-'}
         return document.getElementById('rubrikTeacherConditionInput');
     }
 
+    function getVisibleConditionInput(){
+        return document.getElementById('rubrikVisibleConditionInput');
+    }
+
     function getTeacherConditionValue(){
         const input = getTeacherConditionInput();
         return input ? input.value : '';
     }
 
+    function getVisibleConditionValue(){
+        const input = getVisibleConditionInput();
+        return input ? input.value : '';
+    }
+
     function setTeacherConditionValue(value){
         const input = getTeacherConditionInput();
+        if(input){
+            input.value = typeof value === "string" ? value : "";
+        }
+    }
+
+    function setVisibleConditionValue(value){
+        const input = getVisibleConditionInput();
         if(input){
             input.value = typeof value === "string" ? value : "";
         }
@@ -2912,6 +3914,12 @@ Detail: ${error?.detail || '-'}
             : null;
 
         return reviewBox ? reviewBox.value : "";
+    }
+
+    function getGroupVisibleCondition(group){
+        return group && typeof group.visibleCondition === "string"
+            ? group.visibleCondition
+            : "";
     }
 
     function hasReviewOperatorSelected(){
@@ -2994,10 +4002,9 @@ Detail: ${error?.detail || '-'}
         if(reviewAIEvaluatorPanel){
             reviewAIEvaluatorPanel.style.display = hasReview ? 'flex' : 'none';
         }
-        const teacherConditionWrap = document.getElementById('rubrikTeacherConditionWrap');
-        if(teacherConditionWrap){
-            teacherConditionWrap.style.display = hasReview ? 'block' : 'none';
-        }
+        document.querySelectorAll('#rubrikTeacherConditionWrap, #rubrikVisibleConditionWrap').forEach(wrap => {
+            wrap.style.display = hasReview ? 'block' : 'none';
+        });
     }
 
     function syncOperatorDisplay(){
@@ -3095,23 +4102,6 @@ Detail: ${error?.detail || '-'}
             boxesContainer.appendChild(row);
             syncAliasVisibility(row);
         });
-
-        const teacherConditionWrap = document.createElement('div');
-        teacherConditionWrap.id = 'rubrikTeacherConditionWrap';
-        teacherConditionWrap.className = 'rubrik-teacher-condition-wrap';
-
-        const teacherConditionLabel = document.createElement('label');
-        teacherConditionLabel.className = 'field-label';
-        teacherConditionLabel.setAttribute('for', 'rubrikTeacherConditionInput');
-        teacherConditionLabel.textContent = 'Condition';
-
-        const teacherConditionInput = document.createElement('textarea');
-        teacherConditionInput.id = 'rubrikTeacherConditionInput';
-        teacherConditionInput.placeholder = 'Condition giriniz.';
-
-        teacherConditionWrap.appendChild(teacherConditionLabel);
-        teacherConditionWrap.appendChild(teacherConditionInput);
-        boxesContainer.appendChild(teacherConditionWrap);
 
         syncOperatorDisplay();
     }
@@ -3290,6 +4280,7 @@ Detail: ${error?.detail || '-'}
 
         const selectedBoxes = [];
         const teacherCondition = getTeacherConditionValue();
+        const visibleCondition = getVisibleConditionValue();
         const isReviewMode = Array.from(document.querySelectorAll('.box-operator')).some(select => select.value === 'review');
 
         if(isReviewMode){
@@ -3331,6 +4322,7 @@ Detail: ${error?.detail || '-'}
                 appState.groups[idx].boxes = selectedBoxes;
                 appState.groups[idx].extras = extras;
                 appState.groups[idx].teacherCondition = teacherCondition;
+                appState.groups[idx].visibleCondition = visibleCondition;
             }
             setFormMode(null);
         } else {
@@ -3340,7 +4332,8 @@ Detail: ${error?.detail || '-'}
                 score: groupScore,
                 boxes: selectedBoxes,
                 extras: extras,
-                teacherCondition: teacherCondition
+                teacherCondition: teacherCondition,
+                visibleCondition: visibleCondition
             });
         }
 
@@ -3377,6 +4370,7 @@ Detail: ${error?.detail || '-'}
         document.querySelectorAll('.box-input').forEach(inp => inp.value = '');
         document.querySelectorAll('.box-operator').forEach(sel => sel.value = '===');
         setTeacherConditionValue('');
+        setVisibleConditionValue('');
         syncOperatorDisplay();
         Object.keys(appState.boxes).forEach(k => appState.boxes[k] = 'null');
         Object.keys(extraOptions).forEach(k => {
@@ -3398,6 +4392,7 @@ Detail: ${error?.detail || '-'}
         groupNameInput.value = group.name;
         groupScoreInput.value = group.score || 0;
         setTeacherConditionValue(getGroupTeacherCondition(group));
+        setVisibleConditionValue(getGroupVisibleCondition(group));
 
         document.querySelectorAll('.box-row').forEach(row => {
             const bk = row.dataset.box;
@@ -3501,6 +4496,18 @@ Detail: ${error?.detail || '-'}
             updateFinalSaveButtonState(false);
             return;
         }
+
+        if(hasSlidesWithoutConfiguredSkill()){
+            updateFinalSaveButtonState(false);
+            return;
+        }
+
+        if(hasSlidesWithInvalidSkillWeights()){
+            updateFinalSaveButtonState(false);
+            return;
+        }
+
+        normalizeSlideRubrikStatesBeforeSave();
 
         if(
             hasSlidesWithoutConfiguredRubrik()

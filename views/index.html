@@ -2530,7 +2530,15 @@
     /* Rubrik Functions */
     function ensureRubrikMeta(slide){
         if(!slide.rubrik || typeof slide.rubrik !== "object"){
-            slide.rubrik = {boxes:{}, groups:[]};
+            slide.rubrik = {
+                boxes: {},
+                groups: [],
+                tree: {
+                    topicPath: {},
+                    selectedTopicId: null,
+                    skillIds: []
+                }
+            };
         }
 
         if(!slide.rubrik.boxes || typeof slide.rubrik.boxes !== "object" || Array.isArray(slide.rubrik.boxes)){
@@ -2541,9 +2549,29 @@
             slide.rubrik.groups = [];
         }
 
-        if(!slide.rubrik.topic || typeof slide.rubrik.topic !== "object" || Array.isArray(slide.rubrik.topic)){
-            slide.rubrik.topic = {};
-        }
+        var tree = slide.rubrik.tree
+        && typeof slide.rubrik.tree === "object"
+        && !Array.isArray(slide.rubrik.tree)
+            ? slide.rubrik.tree
+            : {};
+
+        slide.rubrik.tree = {
+            topicPath: tree.topicPath
+            && typeof tree.topicPath === "object"
+            && !Array.isArray(tree.topicPath)
+                ? tree.topicPath
+                : {},
+
+            selectedTopicId:
+                typeof tree.selectedTopicId !== "undefined"
+                && tree.selectedTopicId !== null
+                    ? tree.selectedTopicId
+                    : null,
+
+            skillIds: Array.isArray(tree.skillIds)
+                ? tree.skillIds
+                : []
+        };
 
         if(!slide.rubrik.rubrikAI || typeof slide.rubrik.rubrikAI !== "object"){
             slide.rubrik.rubrikAI = slide.rubrikAI && typeof slide.rubrikAI === "object" ? slide.rubrikAI : {};
@@ -2572,7 +2600,6 @@
         delete slide.rubrikAI;
         delete slide.instructions;
         delete slide.question;
-        delete slide.topic;
     }
     /* occde yapılan değişikliklerin orc yansıması start */
     var rubrikAnswerObjectTypes = [
@@ -2723,9 +2750,6 @@
     }
     /* occde yapılan değişikliklerin orc yansıması end */
     function syncSlideRubrikBoxes(slide, totalBox){
-        var existingTopic = slide && slide.rubrik && slide.rubrik.topic && typeof slide.rubrik.topic === "object" && !Array.isArray(slide.rubrik.topic)
-            ? JSON.parse(JSON.stringify(slide.rubrik.topic))
-            : null;
         ensureRubrikMeta(slide);
 
         var syncedBoxes = {};
@@ -2750,10 +2774,6 @@
             .filter(function(group){
                 return group.boxes.length > 0;
             });
-
-        if(existingTopic){
-            slide.rubrik.topic = existingTopic;
-        }
     }
 
     function syncActiveSlideRubrikBoxes(){
