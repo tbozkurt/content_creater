@@ -15,7 +15,6 @@ function PLAYER(){
     var KT={};
     var SP = [];
     var SD = [];
-    var stateLog = {};
     var build={};
     var AC;
     var player = {
@@ -246,6 +245,7 @@ function PLAYER(){
                 historyRight:[],
                 success: 0,
                 answerShow: false,
+                unique: slide.unique,
                 rubrik:{
                     boxes:{},
                     groups:[],
@@ -331,7 +331,7 @@ function PLAYER(){
 
         this.scoreCalc(false);
         PLX.Mode = BUILD.mode;
-        MHA(BUILD);
+        prevDataStatusFNC(BUILD);
         sendDuration();
     }
 
@@ -495,14 +495,10 @@ function PLAYER(){
     }
 
     function setState(){
-        var state = {version: AC.VersionFile, status:"update", questions:{}};
+        var state = {version: AC.VersionFile, status:"update", questions:{}, type:"v3"};
         if(AC.user){state.uid = AC.user.uid}
         SD.map(function(slide){
-            if(PLX.isBSD || PLX.isHDE){
-                state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
-            }else{
-                state.questions[slide.name] = [{inputs: slide.inputs, duration:0}];
-            }
+            state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
         });
 
         return state;
@@ -545,34 +541,58 @@ function PLAYER(){
     }
 
 
-    function MHA(){
-        if(PLX.isHDE || PLX.isBSD){
-            if(build){
-                if(build.accessData){
-                    var contentJsonVersion = AC.VersionFile;
-                    var dataJsonVersion = build.accessData.state.version;
-                    console.log("contentJsonVersion:", contentJsonVersion, "- dataJsonVersion:", dataJsonVersion);
-                    PLX.HDE_access = parseInt(build.accessData.stats.access);
+    function prevDataStatusFNC(){
+        if(build){
+            if(build.accessData){
+                var contentJsonVersion = AC.VersionFile;
+                var dataJsonVersion = build.accessData.state.version;
+                var type = build.accessData.state.type;
+                console.log("contentJsonVersion:", contentJsonVersion, "- dataJsonVersion:", dataJsonVersion,"type:", type);
+                PLX.HDE_access = parseInt(build.accessData.stats.access);
 
-                    if(contentJsonVersion === dataJsonVersion){
-                        var status = build.accessData.state.status;
-                        console.log("status:", status);
-                        if(status === 'finish'){
-                            previewMode();
-                        }else{
-                            HDE_Status(build);
-                        }
+                if(contentJsonVersion === dataJsonVersion && type === "v3"){
+                    var status = build.accessData.state.status;
+                    console.log("status:", status);
+                    if(status === 'finish'){
+                        previewMode();
+                    }else{
+                        oldPerfLoadFNC(build);
                     }
                 }
             }
+        }
 
-            addHDEStatus();
+        addHDEStatus();
+    }
+
+    function addHistoryStep(sd, step){
+        var temp = {
+            sceneId: sd.id,
+            right: step.right,
+            wrong: step.wrong,
+            empty: step.empty,
+            result: step.result,
+            score: step.score,
+            attemptDuration: getCurrentDuration(sd),
+            duration: sd.duration,
+            totalRight: step.totalRight,
+            answered: step.answered,
+            inputs: JSON.parse(JSON.stringify(sd.inputs))
+        }
+
+        if(PLX.isBSD){
+            temp.unique = sd.unique;
+        }
+
+        if(step.step){
+            sd.historyRight[step.step] = temp;
+        }else{
+            sd.historyRight.push(temp);
         }
     }
 
     // HDE file, version control and history load
-    function HDE_Status(){
-        if(PLX.isHDE || PLX.isBSD){
+    function oldPerfLoadFNC(){
             if(build){
                 if(build.accessData){
                     PLX.HDE_access = parseInt(build.accessData.stats.access);
@@ -589,11 +609,11 @@ function PLAYER(){
                                     var lastMove = sp.history[sp.history.length-1];
                                     lastMove = JSON.parse(JSON.stringify(lastMove));
                                     try{
-                                        sd.inputs = lastMove.inputs;
-                                        sd.duration = lastMove.duration;
                                         sd.right = lastMove.right;
                                         sd.wrong = lastMove.wrong;
                                         sd.empty = lastMove.empty;
+                                        sd.inputs = lastMove.inputs;
+                                        sd.duration = lastMove.duration;
                                         sd.totalRight = lastMove.totalRight;
                                         console.log("sahne", sceneName, sp.name, index, sd.inputs , "eklendi");
                                     }catch(e){}
@@ -605,8 +625,7 @@ function PLAYER(){
                     }
                 }
             }
-            addBSDStatus();
-        }
+            prevSceneSettings();
     }
 
     // HDE history execute
@@ -736,17 +755,16 @@ function PLAYER(){
             });
 
             var sd = SD[index];
-            sd.historyRight[0] = {
+            addHistoryStep(sd, {
+                step: 0,
                 right: totalScore.totalRight,
                 wrong: totalScore.totalWrong,
                 empty: totalScore.totalEmpty,
                 result: scoreEvalution(totalScore),
                 score: 1,
-                attemptDuration: getCurrentDuration(sd),
-                duration: sd.duration,
                 totalRight: sd.totalRight,
-                inputs: JSON.parse(JSON.stringify(sd.inputs))
-            };
+                answered: "0",
+            });
         });
 
         HDE_ScoreCalc(status, true);
@@ -853,9 +871,15 @@ function PLAYER(){
 
     this.answerHQ = function (SP, SD){
         console.log("answerHQ");
+        SD.answerShow=true;
         SP.fnc.map(function(fnc){
             fnc.answer();
         });
+
+        if(SD.historyRight.length){
+            var lastMove = SD.historyRight[SD.historyRight.length-1];
+            lastMove.answered = "1";
+        }
 
         controlBtnView(SP, "disable");
         answerBtnView(SP, "disable");
@@ -887,16 +911,14 @@ function PLAYER(){
         SD.right = totalScore.totalRight;
         SD.wrong = totalScore.totalWrong;
         SD.empty = totalScore.totalEmpty;
-        SD.historyRight.push({
+        addHistoryStep(SD, {
             right: totalScore.totalRight,
             wrong: totalScore.totalWrong,
             empty: totalScore.totalEmpty,
             result: finalStatus,
             score: 0,
-            attemptDuration: getCurrentDuration(SD),
-            duration: SD.duration,
             totalRight: SD.totalRight,
-            inputs: JSON.parse(JSON.stringify(SD.inputs))
+            answered: "0",
         });
 
         if(finalStatus === "right"){
@@ -1072,10 +1094,8 @@ function PLAYER(){
             empty: 0,
             result: result,
             score: 0,
-            attemptDuration: getCurrentDuration(SD),
-            duration: SD.duration,
             totalRight: SD.totalRight,
-            inputs: JSON.parse(JSON.stringify(SD.inputs))
+            answered: "0"
         }
 
         SD.rubrik.groups.map(function(group){
@@ -1084,7 +1104,7 @@ function PLAYER(){
             }
         });
 
-        SD.historyRight.push(attempt);
+        addHistoryStep(SD, attempt);
 
         if(result === "T1"){
             SD.right = attempt.right = 1;
@@ -1238,30 +1258,17 @@ function PLAYER(){
     }
 
     function specialFNC(sp, sd, right){
-        if(PLX.isEKT){
+        if(PLX.isBSD ||PLX.isEKT){
             if(sd.historyRight.length >= 3 && !right){
                 sd.answerShow=true;
                 This.sceneComplete();
-                This.scoreCalc(false);
-                controlBtnView(sp, "disabled");
-                sp.fnc.map(function(fnc){
-                    clearInterval( fnc.timer );
-                });
-
-                if(sp.popEx.length){
-                    sp.popEx[0].clicked = true;
-                    sp.popEx[0].window.style.visibility = "visible";
-                }
-            }else if(sp.popEx.length){
-                sp.popEx[0].btn.style.opacity = 1;
-                sp.popEx[0].btn.style.pointerEvents = "auto";
-            }
-        }else if(PLX.isBSD){
-            if(sd.historyRight.length >= 3 && !right){
-                This.sceneComplete();
-                sd.answerShow=true;
                 closeActivity(sp);
                 hideWarning();
+
+                if(sd.historyRight.length){
+                    var lastMove = sd.historyRight[sd.historyRight.length-1];
+                    lastMove.answered = "1";
+                }
 
                 var allComplete = true;
                 SD.map(function(scene){
@@ -1280,6 +1287,9 @@ function PLAYER(){
                     sp.popEx[0].btn.style.opacity = 1;
                     sp.popEx[0].btn.style.pointerEvents = "auto";
                 }
+            }else if(PLX.isEKT){
+                sp.popEx[0].btn.style.opacity = 1;
+                sp.popEx[0].btn.style.pointerEvents = "auto";
             }
         }
     }
@@ -1558,7 +1568,7 @@ function PLAYER(){
             PLX.playScreen.style.display = "none";
             player.preview.previewWindow.style.display="none";
             PLX.soundConfirm = true;
-            HDE_Status(build);
+            oldPerfLoadFNC(build);
             previewModeConvert();
         });
 
@@ -1568,9 +1578,6 @@ function PLAYER(){
             This.playAutoSound();
             player.preview.previewWindow.style.display="none";
         });
-
-        console.log(PLX.playScreen);
-
     }
 
 
@@ -1741,22 +1748,26 @@ function PLAYER(){
     }
 
     //add tooltip
-    function addToolTip(SP, index){
-        SP.toolTipDOM = utils.addDOM({className: "toolTipDOM"});
-        SP.controlBtn.appendChild(SP.toolTipDOM);
+    function addToolTip(SP){
+        if(SP.controlBtn) {
+            SP.toolTipDOM = utils.addDOM({className: "toolTipDOM"});
+            SP.controlBtn.appendChild(SP.toolTipDOM);
+        }
     }
 
-    function showToolTip(SP,SD){
-        var currentWarning = SD.historyRight.length;
-        SP.toolTipDOM.style.visibility = "visible";
-        SP.toolTipDOM.innerHTML = currentWarning;
+    function showToolTip(SP, SD){
+        if(SP.controlBtn){
+            var currentWarning = SD.historyRight.length;
+            SP.toolTipDOM.style.visibility = "visible";
+            SP.toolTipDOM.innerHTML = currentWarning;
+        }
     }
 
     //add check
     function addCheckIcon(){
         player.checkIconDOM = utils.addDOM({id: "checkIconDOM", className: "checkIconDOM"});
         player.mainDOM.appendChild(player.checkIconDOM);
-        player.checkIconDOM.innerHTML = '<div id="pageCheckIcon" class="pageStatusIcon"><img src="assets/img/player/check.png"></div><div id="pageAnswerIcon" class="pageStatusIcon"><img src="assets/img/player/answer.png"></div><div class="notice"></div>';
+        player.checkIconDOM.innerHTML = '<div id="pageCheckIcon" class="pageStatusIcon"><img src="assets/img/player/check.png"></div><div id="pageAnswerIcon" class="pageStatusIcon" style="border-radius: 100px"><img src="assets/img/player/answered.png"></div><div class="notice"></div>';
         player.notice = player.checkIconDOM.querySelector(".notice");
         player.pageStatusIcon = {
             check: player.checkIconDOM.querySelector("#pageCheckIcon"),
@@ -1778,27 +1789,37 @@ function PLAYER(){
         }
     }
 
-    function addBSDStatus(){
-        if(PLX.isBSD){
-            SP.map(function(sp, index) {
+    function prevSceneSettings(){
+        if(!PLX.isHDE){
+            SP.map(function(sp, index){
                 var sd = SD[index];
                 var lastMove = sp.history[sp.history.length-1];
                 if(lastMove){
                     if(lastMove.result === "T1" || lastMove.result === "right"){
                         sd.complete = true;
                         closeActivity(sp);
-                        checkViewFNC(sd);
-                    }else if(sd.historyRight.length >= 3){
+                    }else if(lastMove.answered === "1"){
                         sd.complete=true;
                         sd.answerShow=true;
                         closeActivity(sp);
-                        checkViewFNC(sd);
-                        if(sp.popEx.length){
-                            sp.popEx[0].clicked = true;
-                            sp.popEx[0].window.style.visibility = "visible";
-                            sp.popEx[0].btn.style.opacity = 1;
-                            sp.popEx[0].btn.style.pointerEvents = "auto";
+
+                        if(PLX.isBSD || PLX.isEKT){
+                            if(sp.popEx.length){
+                                sp.popEx[0].clicked = true;
+                                sp.popEx[0].window.style.visibility = "visible";
+                                sp.popEx[0].btn.style.opacity = 1;
+                                sp.popEx[0].btn.style.pointerEvents = "auto";
+                            }
                         }
+
+                        if(!PLX.isBSD){
+                            sp.fnc.map(function(fnc){
+                                fnc.answer();
+                            });
+                        }
+                    }else if(PLX.isEKT && sp.history.length){
+                        sp.popEx[0].btn.style.opacity = 1;
+                        sp.popEx[0].btn.style.pointerEvents = "auto";
                     }
 
                     showToolTip(sp, sd);
@@ -1806,6 +1827,7 @@ function PLAYER(){
             });
 
             This.scoreCalc(false);
+            checkViewFNC(SD[This.sceneIndex]);
         }
     }
 
@@ -1817,8 +1839,16 @@ function PLAYER(){
             var noticeTxt = currentWarning +". denemede tamamlandı.";
 
             if(SD.answerShow){
-                bgColor = "#F57F17";
-                noticeTxt = "Yanıt desteği ile tamamlandı.";
+                if(PLX.isBSD){
+                    bgColor = "#e64e39";
+                    player.pageStatusIcon.answer.style.backgroundColor = "#e64e39";
+                    noticeTxt = "Çözüm desteği ile tamamlandı.";
+                }else {
+                    bgColor = "#F57F17";
+                    player.pageStatusIcon.answer.style.backgroundColor = "#F57F17";
+                    noticeTxt = "Yanıt desteği ile tamamlandı.";
+                }
+
                 player.pageStatusIcon.check.style.display = "none";
                 player.pageStatusIcon.answer.style.display = "block";
             }else{
@@ -1912,7 +1942,6 @@ function PLAYER(){
                 SP.answerBtn.style.cursor = "pointer";
                 SP.answerBtn.style.pointerEvents = "none";
                 SP.answerBtn.addEventListener("click", function(){
-                    SD.answerShow=true;
                     This.answerHQ(SP, SD);
                     showFeedBack("answer", "btn", 0);
                 });
@@ -1924,17 +1953,16 @@ function PLAYER(){
                     SD.complete=true;
                     player.openEndedDOM.style.visibility = "visible";
 
-                    SD.historyRight[0] = {
+                    addHistoryStep(SD, {
+                        step: 0,
                         right: 0,
                         wrong: 0,
                         empty: 0,
-                        result: "",
+                        result: "right",
                         score: 0,
-                        attemptDuration: getCurrentDuration(SD),
-                        duration: SD.duration,
-                        totalRight: 1,
-                        inputs: JSON.parse(JSON.stringify(SD.inputs))
-                    };
+                        totalRight: 0,
+                        answered: "0",
+                    });
 
                     This.scoreCalc(true);
                     checkViewFNC(SD);
@@ -2199,7 +2227,7 @@ function PLAYER(){
     }
 
     function aiPopAdd(el, SD){
-        if(el.data.ai){
+        if(el.data && el.data.ai){
             var txt = el.main.querySelector(".aiText");
             var bg = el.main.querySelector(".aiBG");
             var nextPageBtn = el.main.querySelector(".nextPageBtn");
@@ -2214,15 +2242,16 @@ function PLAYER(){
             }
 
             txt.style.height = "unset";
-            txt.style.maxHeight = "220px";
-            txt.innerHTML = feedbackStr;
+            txt.style.whiteSpace = "pre-line";
+            txt.textContent = feedbackStr.replace(/\\n/g, '\n');
 
-            if(txt.offsetHeight > 220){
+            if(txt.offsetHeight > 300){
                 txt.style.overflowY="scroll";
             }else{
                 txt.style.overflowY="unset";
             }
 
+            txt.style.maxHeight = "300px";
             var popupHeight = (txt.offsetHeight+150);
             bg.style.height = popupHeight+"px";
 
@@ -4114,14 +4143,15 @@ function PLAYER(){
         ];
 
         function getCSS(id, element, type){
-            BOX[id] = {main: element.main, currentPairing: [], maxPairing: 0, type:0}
+            BOX[id] = {main: element.main, currentPairing: [], maxPairing: 0, type:0};
             BOX[id].type = type;
             BOX[id].left = parseInt(element.main.style.left);
             BOX[id].top = parseInt(element.main.style.top);
             BOX[id].width = element.main.offsetWidth;
             BOX[id].height = element.main.offsetHeight;
-            BOX[id].widthEnd = BOX[id].left + BOX.width;
-            BOX[id].heightEnd = BOX[id].top + BOX.height;
+            // Düzeltme: BOX.width yerine BOX[id].width kullanıldı
+            BOX[id].widthEnd = BOX[id].left + BOX[id].width;
+            BOX[id].heightEnd = BOX[id].top + BOX[id].height;
         }
 
         SP.elementList.forEach(function(element){
@@ -4139,7 +4169,7 @@ function PLAYER(){
                 canvasOrigin = {
                     left: parseInt(canvas.main.style.left),
                     top: parseInt(canvas.main.style.top)
-                }
+                };
             }
         });
 
@@ -4180,8 +4210,11 @@ function PLAYER(){
                 }
             });
 
-            BOX.canvas.on("mousedown touchstart", function() {
+            BOX.canvas.on("mousedown touchstart", function(e) {
                 currentID = id;
+                if (e && e.evt && e.evt.cancelable) {
+                    e.evt.preventDefault();
+                }
             });
 
             layer.add(BOX.canvas);
@@ -4191,32 +4224,45 @@ function PLAYER(){
             addCanvasObject(id, BOX[id]);
         }
 
-        stage.on("mousedown touchstart", function(){
+        stage.on("mousedown touchstart", function(e){
             startPos = stage.getPointerPosition();
             globalColor = borderColors[utils.getRandomNumber(borderColors.length)];
+            if (e && e.evt && e.evt.cancelable) {
+                e.evt.preventDefault();
+            }
         });
 
-        stage.on("mouseup touchend", function(){
+        stage.on("mouseup touchend", function(e){
             if(currentID){
                 pairingFNC();
+            }
+            if (e && e.evt && e.evt.cancelable) {
+                e.evt.preventDefault();
             }
         });
 
         stage.on("mousemove touchmove", function (e) {
+            if(e && e.evt && e.evt.cancelable){
+                e.evt.preventDefault();
+            }
+
             if(currentID){
-                currentLine.canvas.destroy();
+                if(currentLine && currentLine.canvas){
+                    currentLine.canvas.destroy();
+                }
             }else{
                 return;
             }
 
             endPos = stage.getPointerPosition();
-            currentCanvasLine(startPos, endPos);
-            e.evt.preventDefault();
+            if(endPos && startPos){
+                currentCanvasLine(startPos, endPos);
+            }
         });
 
         function pairingFNC(){
             var found = false;
-            if(currentID && endPos !== undefined){
+            if(currentID && endPos !== undefined && endPos !== null){
                 for(var i in BOX){
                     if(currentID !== i){
                         if(endPos.x >= BOX[i].x && endPos.x <= BOX[i].widthEnd && endPos.y >= BOX[i].canvas.y() && endPos.y <= BOX[i].heightEnd){
@@ -4242,7 +4288,9 @@ function PLAYER(){
                 addNewLine();
                 controlBtnViewCheck();
             }else{
-                currentLine.canvas.destroy();
+                if(currentLine && currentLine.canvas){
+                    currentLine.canvas.destroy();
+                }
                 stage.container().style.cursor = "default";
             }
 
@@ -4302,7 +4350,7 @@ function PLAYER(){
                 shadowBlur: 6,
                 shadowOffset: { x: 3, y: 3 },
                 shadowOpacity: 0.4
-            }
+            };
 
             if(extra){
                 Object.assign(border, extra);
@@ -4375,7 +4423,7 @@ function PLAYER(){
 
         function deleteWrongBorders(){
             returnColor.map(function(line){
-                line.canvas.destroy();
+                if(line.canvas) line.canvas.destroy();
             });
 
             returnColor.map(function(line){
@@ -4474,7 +4522,7 @@ function PLAYER(){
 
         function reset(){
             LA.map(function(line){
-                line.canvas.destroy();
+                if(line.canvas) line.canvas.destroy();
             });
 
             LA=[];
@@ -4500,10 +4548,10 @@ function PLAYER(){
             history: addHistory,
             reset: reset,
             close: close
-        }
+        };
 
         SP.fnc.push(evaluation);
-    }
+    };
 
     /** Add sb **/
     this.initSB = function(SP, SD, index){
@@ -6263,6 +6311,16 @@ function PLAYER(){
 
         var watchedFNC = function(){
             SD.complete = true;
+            addHistoryStep(SD, {
+                step: 0,
+                right: 0,
+                wrong: 0,
+                empty: 0,
+                result: "right",
+                score: 0,
+                totalRight: 0,
+                answered: "0",
+            });
             This.scoreCalc(true);
             checkViewFNC(SD);
         }
@@ -6288,6 +6346,10 @@ function PLAYER(){
                     metaDataFNC: metaDataFNC,
                     occMode: true
                 };
+
+                if(PLX.isBSD){
+                    videoProp.showSpeed = true;
+                }
 
                 var tempVideo = AddPlayer(videoProp);
                 tempVideo.type = "a_video";
@@ -6354,7 +6416,7 @@ function PLAYER(){
                     videoLink = getVideoPath();
                 }
 
-                return {
+                var videoProps = {
                     div: $("#"+videoID),
                     divCSS: {
                         left: pos.left+"px",
@@ -6369,6 +6431,12 @@ function PLAYER(){
                     watchedFNC: null,
                     occMode: true
                 };
+
+                if(PLX.isBSD){
+                    videoProps.showSpeed = true;
+                }
+
+                return videoProps;
             }
         }
 
@@ -6376,7 +6444,7 @@ function PLAYER(){
             var videoPath = "undefined.m3u8";
             jsonV2.slides[index].videoPath.map(function(video){
                 if(video.active){
-                    videoPath = video.videoPath;
+                    videoPath = video.path;
                     videoPath = videoPath.replace("www", "cdn");
                 }
             });

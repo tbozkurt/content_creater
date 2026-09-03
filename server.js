@@ -454,6 +454,7 @@ var userList = {
     bahar:{password:"1q2w3e"},
     duygu:{password:"1q2w3e"},
     taner:{password:"1q2w3e"},
+    yusuf:{password:"1q2w3e"},
     deniz:{password:"1q2w3e"},
     oyku:{password:"1q2w3e"}
 };

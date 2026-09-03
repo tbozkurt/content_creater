@@ -25,7 +25,7 @@ function JWPlayerRefreshFNC(){
 			backgroundColor: "black",
 			overflow: "hidden"
 		};
-		
+
 		var qualityBoxMainCSS = {
 			width: 200,
 			position: "absolute",
@@ -33,7 +33,15 @@ function JWPlayerRefreshFNC(){
 			color: "#fff",
 			bottom: 80
 		};
-		
+
+		var speedBoxMainCSS = {
+			width: 120,
+			position: "absolute",
+			visibility: "hidden",
+			color: "#fff",
+			bottom: 80
+		};
+
 		var qualityBoxCSS = {
 			height: 30,
 			backgroundColor: "rgba(50, 50, 50, .75)",
@@ -45,7 +53,7 @@ function JWPlayerRefreshFNC(){
 			paddingRight: 5,
 			fontSize: 15
 		};
-	
+
 		var playerSkinCSS = {
 			width:"100%",
 			visibility: "hidden",
@@ -54,7 +62,7 @@ function JWPlayerRefreshFNC(){
 			filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='#00020000', endColorstr='#99000000', GradientType=0)",
 			bottom: 0
 		};
-		
+
 		var sliderContainerCSS = {
 			width: "90%",
 			height: "100%",
@@ -63,7 +71,7 @@ function JWPlayerRefreshFNC(){
 			display: "flex",
 			alignItems: "center"
 		};
-	
+
 		var sliderBatCSS = {
 			width: "90%",
 			height: "100%",
@@ -71,21 +79,21 @@ function JWPlayerRefreshFNC(){
 			position: "relative",
 			display: "flex"
 		};
-	
+
 		var sliderBufferCSS = {
 			width: "100%",
 			position: "absolute",
 			opacity: 0.5,
 			backgroundColor: "white"
 		};
-	
+
 		var sliderFrontCSS = {
 			width: 0,
 			position: "absolute",
 			background: "#fcc240",
 			opacity: 0.8
 		};
-		
+
 		var sliderCircleCSS = {
 			left:-7,
 			width: 14,
@@ -94,13 +102,13 @@ function JWPlayerRefreshFNC(){
 			borderRadius: 6,
 			position:"absolute"
 		};
-		
+
 		var controlMainHalfCSS = {
 			width: "50%",
 			height:"100%",
 			display: "inline-flex"
 		};
-		
+
 		var butonBoxCSS = {
 			height: "100%",
 			display: "inline-block",
@@ -111,7 +119,7 @@ function JWPlayerRefreshFNC(){
 			cursor: "pointer",
 			userSelect: "none"
 		};
-		
+
 		var currentTimeCSS = {
 			height: "100%",
 			display: "inline-block",
@@ -120,7 +128,7 @@ function JWPlayerRefreshFNC(){
 			verticalAlign: "top",
 			color: "white",
 		};
-	
+
 		var stopBtnCSS = {
 			top:0,
 			left:0,
@@ -138,7 +146,7 @@ function JWPlayerRefreshFNC(){
 			top: 5,
 			position:"relative"
 		};
-		
+
 		var blackScreenCSS = {
 			left:0,
 			top:0,
@@ -147,17 +155,17 @@ function JWPlayerRefreshFNC(){
 			position: "absolute",
 			display: "none"
 		};
-		
+
 		var selected = {
 			fontWeight: "bold",
 			color: "#fcc240"
 		};
-		
+
 		var selectedNone = {
 			fontWeight: "normal",
 			color: "white"
 		};
-		
+
 		var fullScreenPlayCSS = {
 			left:0,
 			top:0,
@@ -165,11 +173,11 @@ function JWPlayerRefreshFNC(){
 			height: "100%",
 			position: "absolute"
 		};
-		
+
 		var mediaNavigationMainCSS = {
 			width: "100%",
 		};
-	
+
 		var mediaNavigationBoxCSS = {
 			width: 45,
 			height: 55,
@@ -196,7 +204,7 @@ function JWPlayerRefreshFNC(){
 			marginLeft: 17,
 			backgroundColor: "#8d6e63"
 		}
-		
+
 		var ArrowUpCSS = {
 			width: 0,
 			height: 0,
@@ -205,7 +213,7 @@ function JWPlayerRefreshFNC(){
 			borderBottom: "10px solid darkorange",
 			position: "absolute"
 		};
-		
+
 		var playerFullScreenControlCSS = {
 			left: 0,
 			top: 0,
@@ -218,16 +226,16 @@ function JWPlayerRefreshFNC(){
 		var naviconCSS = {
 			width: "100%"
 		}
-		
-		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:false, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, metaDataFNC:undefined, currentMediaID:0, lang:"tr"};
+
+		var conf = {occMode:false, div:"", divCSS:{}, src:"", width:"100%", autoStart:false, fullScreen:false, skin:true, videoCapture:false, vsMode:false, vsLevel:null, vkaMode:false, keyboardEvent:false, hype:{mode:false, height:720}, fullScreenFNC:null, endFNC:undefined, watchedFNC:undefined, metaDataFNC:undefined, currentMediaID:0, lang:"tr", showSpeed:false};
 		var playerListMode = false;
 		var playlist = [];
 		for (var x in obj) {
 			conf[x] = obj[x];
 		}
 
-		var methods = {PlayVideo:{}, StopVideo:{}, FullScreenPlay:{}, FullScreenVideo:{}, gotoTime:{}, HlsSelectLevel:{}, resizePosition:{}, hypeResize:{}, curTime:"0:00", durTime:"0:00", buffer:{}, globalPlay:false, firstPlay:false, endMovie:false, accessPercent:0, qualityOptions:[], hlsSupport:false, autoQuality:-1, selectedQuality:-1, currentMediaID: conf.currentMediaID};
-		
+		var methods = {PlayVideo:{}, StopVideo:{}, FullScreenPlay:{}, FullScreenVideo:{}, gotoTime:{}, HlsSelectLevel:{}, SelectPlaybackRate:{}, resizePosition:{}, hypeResize:{}, curTime:"0:00", durTime:"0:00", buffer:{}, globalPlay:false, firstPlay:false, endMovie:false, accessPercent:0, qualityOptions:[], speedOptions:[], hlsSupport:false, autoQuality:-1, selectedQuality:-1, playbackRate:1, currentMediaID: conf.currentMediaID};
+
 		var MainDIV = conf.div;
 		var MainDivName = MainDIV.attr("id");
 		MainDIV.replaceWith("<div id='"+ MainDivName +"'></div>");
@@ -281,7 +289,7 @@ function JWPlayerRefreshFNC(){
 		if(conf.currentMediaID >= MainSrc.length){
 			methods.currentMediaID = 0;
 		}
-		
+
 		if(typeof MainSrc === "object"){
 			playerListMode = true;
 			playlist = MainSrc;
@@ -290,7 +298,7 @@ function JWPlayerRefreshFNC(){
 			playlist[0] = MainSrc;
 			addFormatType()
 		}
-		
+
 		function addFormatType(){
 			for(var i=0; i<playlist.length; i++){
 				var _src;
@@ -319,26 +327,36 @@ function JWPlayerRefreshFNC(){
 				return false;
 			}
 		}
-		
+
 		/* Html Codes Start */
-		var html = '<div class="videoContainer"><div style="position:relative"><video playsinline></video></div><div class="playerFullScreenControl"></div><div class="playerSkin"><div class="sliderMain"><div class="sliderContainer"><div class="sliderBuffer"><canvas></canvas></div><div class="sliderFront"></div><div class="sliderCircle"></div></div></div><div class="controlMain"><div class="sliderBat"><div class="controlMainHalf1"><div class="butonBox"><div class="stopBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/pause.svg" class="navicon" alt=""></div><div class="playBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/play.svg" class="navicon" alt=""></div></div><div class="currentTime">0:00 / 0:00</div></div><div class="controlMainHalf2"><div class="backFileBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/back.svg" class="navicon" alt=""></div><div class="navigationBtn butonBox">0/0</div><div class="nextFileBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/next.svg" class="navicon" alt=""></div></div></div></div><div class="mediaNavigationMain"></div></div><div class="blackScreen"></div><div class="qualityBoxMain"></div><div class="fullScreenPlay"></div><div class="LoaderDiv"><div class="LdrRing1"></div><div class="LdrRing2"></div><div class="LdrRing3"></div><div class="LdrRing4"></div></div></div>';
+		var html = '<div class="videoContainer"><div style="position:relative"><video playsinline></video></div><div class="playerFullScreenControl"></div><div class="playerSkin"><div class="sliderMain"><div class="sliderContainer"><div class="sliderBuffer"><canvas></canvas></div><div class="sliderFront"></div><div class="sliderCircle"></div></div></div><div class="controlMain"><div class="sliderBat"><div class="controlMainHalf1"><div class="butonBox"><div class="stopBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/pause.svg" class="navicon" alt=""></div><div class="playBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/play.svg" class="navicon" alt=""></div></div><div class="currentTime">0:00 / 0:00</div></div><div class="controlMainHalf2"><div class="backFileBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/back.svg" class="navicon" alt=""></div><div class="navigationBtn butonBox">0/0</div><div class="nextFileBtn butonBox"><img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/next.svg" class="navicon" alt=""></div></div></div></div><div class="mediaNavigationMain"></div></div><div class="blackScreen"></div><div class="qualityBoxMain"></div><div class="speedBoxMain"></div><div class="fullScreenPlay"></div><div class="LoaderDiv"><div class="LdrRing1"></div><div class="LdrRing2"></div><div class="LdrRing3"></div><div class="LdrRing4"></div></div></div>';
 		MainDIV.html(html);
 		/* Html Codes End */
 
 		var controlMainHalf1 = MainDIV.find(".controlMainHalf1");
 		var controlMainHalf2 = MainDIV.find(".controlMainHalf2");
-		var html2='<div class="settingsBtn butonBox"> <img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/settings.svg" class="navicon" alt=""> </div> <div class="fullScreenBtn butonBox"> <img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/fullscreen.svg" class="navicon" alt=""> </div>';
+		var html2='<div class="settingsBtn butonBox"> <img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/settings.svg" class="navicon" alt=""> </div> <div class="speedBtn butonBox"> <img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/speed.svg" class="navicon" alt=""> </div> <div class="fullScreenBtn butonBox"> <img src="https://cdn.okulistik.com/mobileplayer/videoplayer/image/fullscreen.svg" class="navicon" alt=""> </div>';
 		var fullScreenBtn;
+		var speedBtn;
 
 		if(conf.occMode){
 			qualityBoxMainCSS.left = "16%"
+			speedBoxMainCSS.left = "22%"
 			controlMainHalf1.append(html2);
 			fullScreenBtn = MainDIV.find(".fullScreenBtn");
+			speedBtn = MainDIV.find(".speedBtn");
+			speedBtn.css("visibility", "hidden");
 			fullScreenBtn.css("visibility", "hidden");
 		}else{
 			qualityBoxMainCSS.right = "5%"
+			speedBoxMainCSS.right = "calc(5% + 50px)"
 			controlMainHalf2.append(html2);
 			fullScreenBtn = MainDIV.find(".fullScreenBtn");
+			speedBtn = MainDIV.find(".speedBtn");
+		}
+
+		if(!conf.showSpeed){
+			speedBtn.hide();
 		}
 
 		/* Elements Start */
@@ -358,11 +376,13 @@ function JWPlayerRefreshFNC(){
 		var fullScreenPlay = MainDIV.find(".fullScreenPlay");
 		var controlMain = MainDIV.find(".controlMain");
 		var qualityBoxMain = MainDIV.find(".qualityBoxMain");
+		var speedBoxMain = MainDIV.find(".speedBoxMain");
 		var playerSkin = MainDIV.find(".playerSkin");
 		var currentTime = MainDIV.find(".currentTime");
 		var Loader = MainDIV.find(".LoaderDiv");
 		var LoaderRings = Loader.find("div");
 		var qualityBox;
+		var speedBox;
 		var sliderBat = MainDIV.find(".sliderBat");
 		var butonBox = MainDIV.find(".butonBox");
 		var navicon = MainDIV.find(".navicon");
@@ -381,6 +401,7 @@ function JWPlayerRefreshFNC(){
 		videoContainer.css(videoContainerCSS);
 		playerSkin.css(playerSkinCSS).css("background", "-moz-linear-gradient(top, rgba(2,0,0,0) 0%, rgba(0,0,0,0.6) 100%)").css("background", "-webkit-linear-gradient(top, rgba(2,0,0,0) 0%,rgba(0,0,0,0.6) 100%)");
 		qualityBoxMain.css(qualityBoxMainCSS);
+		speedBoxMain.css(speedBoxMainCSS);
 		sliderContainer.css(sliderContainerCSS);
 		sliderBat.css(sliderBatCSS);
 		sliderFront.css(sliderFrontCSS);
@@ -396,7 +417,7 @@ function JWPlayerRefreshFNC(){
 		mediaNavigationMain.css(mediaNavigationMainCSS);
 		playerFullScreenControl.css(playerFullScreenControlCSS);
 		navicon.css(naviconCSS);
-		
+
 		function addLoader(){
 			var LoaderDivCSS = {
 				left: "calc(50% - 32px)",
@@ -409,7 +430,7 @@ function JWPlayerRefreshFNC(){
 				visibility: "hidden",
 				opacity: 0.6
 			};
-			
+
 			var RingCSS = {
 				boxSizing: "border-box",
 				display: "block",
@@ -419,14 +440,13 @@ function JWPlayerRefreshFNC(){
 				borderRadius: 100,
 				animation: "lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
 				borderColor: "#fff transparent transparent transparent"
-				
 			};
-			
+
 			var Ring1 = {width:26, height:26, left:12, top:12};
 			var Ring2 = {width:34, height:34, left:8, top:8};
 			var Ring3 = {width:42, height:42, left:4, top:4};
 			var Ring4 = {width:50, height:50, left:0, top:0};
-			
+
 			Loader.css(LoaderDivCSS);
 			LoaderRings.css(RingCSS);
 			Loader.find(".LdrRing1").css("animation-delay", "-0.45s").css(Ring1);
@@ -435,21 +455,21 @@ function JWPlayerRefreshFNC(){
 			Loader.find(".LdrRing4").css(Ring4);
 			LoaderClose();
 		}
-		
+
 		function LoaderOpen(){
 			loaderCount=0;
 			loaderActive=true;
 			LoaderRings.css("animation-play-state", "running");
 			Loader.css("visibility", "unset");
 		}
-		
+
 		function LoaderClose(){
 			loaderCount=0;
 			loaderActive=false;
 			LoaderRings.css("animation-play-state", "paused");
 			Loader.css("visibility", "hidden");
 		}
-		
+
 		addLoader();
 
 		if(!conf.skin){
@@ -460,7 +480,7 @@ function JWPlayerRefreshFNC(){
 		if(vSolutionLevel){
 			playerFullScreenControl.before('<div style="width: 8%; height: 8%; position: absolute; top: 5px; right: 5px"><img src="/mobileplayer/videoplayer/image/zor'+ vSolutionLevel +'.png" width="100%" alt=""></div>');
 		}
-		
+
 		var playerContainerWidth;
 		var playerContainerHeight;
 		var video = MainDIV.find("video")[0];
@@ -471,10 +491,22 @@ function JWPlayerRefreshFNC(){
 		var sliderHeight = 10;
 		var controllerHeight = 50;
 		var time;
+		var timeView;
 		var skinTimer;
 		var pointerLeave = true;
 		var xMouse=0;
 		var ButonArray = [];
+		var SpeedOptions = [
+			{name: "0.50x", speed: 0.5},
+			{name: "0.75x", speed: 0.75},
+			{name: "1x (Normal)", speed: 1},
+			{name: "1.25x", speed: 1.25},
+			{name: "1.50x", speed: 1.5},
+			{name: "1.75x", speed: 1.75},
+			{name: "2.00x", speed: 2}
+		];
+		methods.speedOptions = SpeedOptions;
+		SpeedCreateFNC();
 		var appleDevice = false;
 		var firstAutoLevel = true;
 		var watchTime=0;
@@ -484,11 +516,11 @@ function JWPlayerRefreshFNC(){
 		var frag3Loaded = false;
 		var firstFragLoaded = false;
 		var firstCaptureSettings = false;
-		
+
 		var $mobileDevice = false;
 		var $ua = navigator.userAgent.toLowerCase();
 		var ctx;
-		
+
 		function isMobileFNC(){
 			var isIphone = $ua.indexOf("iphone") > -1;
 			var isIpad = $ua.indexOf("ipad") > -1;
@@ -500,11 +532,10 @@ function JWPlayerRefreshFNC(){
 				appleDevice=true;
 			}
 		}
-		
+
 		isMobileFNC();
-		
 		var userEvent = {};
-		
+
 		/* Cihaza göre eventlar ayarlanıyor. */
 		function eventSettingsFNC() {
 			if ($mobileDevice) {
@@ -527,9 +558,9 @@ function JWPlayerRefreshFNC(){
 				};
 			}
 		}
-		
+
 		eventSettingsFNC();
-		
+
 		function playerMediaSupport(playerType){
 			createMediaNavigationFNC();
 			if(playerType==="m3u8"){
@@ -553,15 +584,14 @@ function JWPlayerRefreshFNC(){
 					});
 				}
 			}
-			
+
 			if(!playerListMode){
 				backFileBtn.hide();
 				navigationBtn.hide();
 				nextFileBtn.hide();
 				playerFullScreenControl.css("visibility", "hidden");
 			}
-			
-			
+
 			if(videoCapture===true){
 				fullScreenPlay.hide();
 				if(playlist.length===1){
@@ -569,7 +599,7 @@ function JWPlayerRefreshFNC(){
 				}
 			}
 		}
-		
+
 		playerMediaSupport(playlist[methods.currentMediaID][1]);
 
 		function LocalSaveBTD(QualityLevel) {
@@ -612,7 +642,7 @@ function JWPlayerRefreshFNC(){
 				LevelCreateFNC();
 				hls.startLevel = LocalBTDTotalGet();
 			});
-			
+
 			hls.on(Hls.Events.FRAG_LOADED,function(e) {
 				if(videoCapture){
 					if(fragLoadedCount===2 && !frag3Loaded && !methods.firstPlay){
@@ -632,7 +662,7 @@ function JWPlayerRefreshFNC(){
 					}
 				}
 			});
-			
+
 			hls.on(Hls.Events.MANIFEST_LOADED,function() {
 				if(videoCapture){
 					MaxQualityFNC(playerContainerHeight);
@@ -652,15 +682,15 @@ function JWPlayerRefreshFNC(){
 				methods.HlsSelectLevel(totalLevel, true);
 			}
 		}
-		
+
 		function bufferClearFNC(){
 			ctx = canvas.getContext('2d');
 			ctx.fillStyle = 'silver';
 			ctx.fillRect(0, 0, sliderWidth, sliderHeight);
 			ctx.fillStyle = 'rgba(100, 100, 100, 1)';
 		}
-		
-		
+
+
 		function showMediaListFNC(visible){
 			if(visible){
 				mediaNavigationMain.css("visibility", "unset");
@@ -670,15 +700,16 @@ function JWPlayerRefreshFNC(){
 				mediaNavigationMain.hide();
 			}
 		}
-		
+
 		function MediaChangeFNC(){
 			firstCaptureSettings = false;
 			fragLoadedCount=0;
 			frag3Loaded = false;
 			watchTime = 0;
 			settingsBtn.hide();
+			speedBtn.hide();
 			fullScreenBtn.hide();
-			clearInterval(time);
+			clearTimeIntervals();
 			currentTime.text("0:00 / 0:00");
 			sliderCircle.css("left", -7);
 			firstAutoLevel = true;
@@ -689,17 +720,17 @@ function JWPlayerRefreshFNC(){
 			}else{
 				nextFileBtn.hide();
 			}
-			
+
 			if(methods.currentMediaID > 0){
 				backFileBtn.show();
 			}else{
 				backFileBtn.hide();
 			}
-			
+
 			bufferClearFNC();
 			PlayingIconVisibleFNC(true);
 			sliderFront.css("width", 0);
-			
+
 			if(playlist[methods.currentMediaID][1]==="m3u8"){
 				if(methods.hlsSupport){
 					if(hls!==undefined){
@@ -717,7 +748,8 @@ function JWPlayerRefreshFNC(){
 			}else if(playlist[methods.currentMediaID][1]==="mp4"){
 				video.src = playlist[methods.currentMediaID][0];
 			}
-			
+			applyPlaybackRate();
+
 			navigationBtn.text((methods.currentMediaID+1) +" / "+ playlist.length);
 			showMediaListFNC(false);
 			if(playerListMode){
@@ -726,8 +758,8 @@ function JWPlayerRefreshFNC(){
 			methods.firstPlay = false;
 			autoChangeHide();
 		}
-		
-		
+
+
 		function parentContainerWidthFNC(){
 			if(autoScale){
 				playerContainerWidth =  Math.floor(MainDIV.parent().width() * (percent/100));
@@ -742,14 +774,13 @@ function JWPlayerRefreshFNC(){
 			if(fullScreen===true){
 				playerContainerHeight = window.innerHeight;
 			}
-			
 		}
 
 		/* Playlist kutusunun yukarı bakan ok'u left değeri güncelleniyor */
 		function arrowPosRefreshFNC(){
 			mediaNavigationArrow.css("left", navigationBtn.offset().left + 30);
 		}
-		
+
 		function supportM3U8(){
 			if(isM3U8 && methods.hlsSupport){
 				return true;
@@ -778,11 +809,11 @@ function JWPlayerRefreshFNC(){
 
 			return capping;
 		}
-		
+
 		playBtn.on(userEvent.click, function(){
 			methods.PlayVideo();
 		});
-		
+
 		stopBtn.on(userEvent.click, function(){
 			methods.StopVideo();
 		});
@@ -805,16 +836,18 @@ function JWPlayerRefreshFNC(){
 				PlayingIconVisibleFNC(false);
 			}
 		};
-		
+
 		methods.StopVideo = function(){
 			video.pause();
 			PlayingIconVisibleFNC(true);
 		};
-		
+
 		settingsBtn.on(userEvent.click, function(){
 			if(qualityBoxMain.css("visibility")==="hidden"){
 				qualityBoxMain.css("visibility", "unset");
+				speedBoxMain.css("visibility", "hidden");
 				settingsBtn.css("background-color","rgba(150,200,150,0.75)");
+				speedBtn.css("background-color","transparent");
 				blackScreen.show();
 			}else{
 				qualityBoxMain.css("visibility", "hidden");
@@ -822,33 +855,69 @@ function JWPlayerRefreshFNC(){
 				blackScreen.hide();
 			}
 		});
-		
+
+		speedBtn.on(userEvent.click, function(){
+			if(speedBoxMain.css("visibility")==="hidden"){
+				speedBoxMain.css("visibility", "unset");
+				qualityBoxMain.css("visibility", "hidden");
+				speedBtn.css("background-color","rgba(150,200,150,0.75)");
+				settingsBtn.css("background-color","transparent");
+				blackScreen.show();
+			}else{
+				speedBoxMain.css("visibility", "hidden");
+				speedBtn.css("background-color","transparent");
+				blackScreen.hide();
+			}
+		});
+
 		blackScreen.on("click", function() {
 			blackScreenClose();
 		});
-		
+
 		function blackScreenClose(){
 			qualityBoxMain.css("visibility", "hidden");
+			speedBoxMain.css("visibility", "hidden");
 			settingsBtn.css("background-color","transparent");
+			speedBtn.css("background-color","transparent");
 			blackScreen.hide();
 		}
-		
+
+		function applyPlaybackRate(){
+			video.playbackRate = methods.playbackRate;
+			video.defaultPlaybackRate = methods.playbackRate;
+		}
+
+		function clearTimeIntervals(){
+			clearInterval(time);
+			clearInterval(timeView);
+		}
+
+		function startTimeIntervals(watch){
+			clearTimeIntervals();
+			if(watch){
+				time = setInterval(updateSliderAndTimeFNC, 1000, true);
+				timeView = setInterval(updateSliderAndTimeFNC, 250, false);
+			}else{
+				time = setInterval(updateSliderAndTimeFNC, 1000, false);
+			}
+		}
+
 		fullScreenPlay.on(userEvent.click, function(){
 			methods.FullScreenPlay();
 		});
-		
+
 		methods.FullScreenPlay = function(){
 			LoaderOpen();
 			MediaChangeFNC();
 			methods.PlayVideo();
 			fullScreenPlay.hide();
 		};
-		
-		 methods.gotoTime = function(time){
-			 video.currentTime = time;
-			 updateSliderAndTimeFNC(false);
-		 };
-		
+
+		methods.gotoTime = function(time){
+			video.currentTime = time;
+			updateSliderAndTimeFNC(false);
+		};
+
 		/* Navigasyon Next Buton Event */
 		nextFileBtn.on("click", function(){
 			methods.changeScene("next");
@@ -883,7 +952,7 @@ function JWPlayerRefreshFNC(){
 				qualityBoxMain.css("bottom", 80);
 			}
 		});
-		
+
 		playerFullScreenControl.on(userEvent.click, function(){
 			if(methods.globalPlay){
 				methods.StopVideo();
@@ -891,7 +960,7 @@ function JWPlayerRefreshFNC(){
 				methods.PlayVideo();
 			}
 		});
-		
+
 		function updateSliderAndTimeFNC(watch){
 			curTime = video.currentTime;
 			durTime = video.duration;
@@ -902,7 +971,7 @@ function JWPlayerRefreshFNC(){
 						$GlobalVKATime[0] = watchTime;
 						$GlobalVKATime[1] = durTime;
 					}
-					
+
 					methods.accessPercent = parseInt((watchTime / durTime)*100);
 					if(methods.accessPercent > 62 && !WatchConfirm[methods.currentMediaID]){
 						WatchConfirm[methods.currentMediaID] = true;
@@ -924,7 +993,7 @@ function JWPlayerRefreshFNC(){
 				sliderFront.css("width", math);
 				sliderCircle.css("left", (sliderFront.width()-7));
 			}
-			
+
 			methods.curTime = digit(parseInt(curTime));
 			methods.durTime = digit(parseInt(durTime));
 			methods.cTime = curTime;
@@ -934,13 +1003,13 @@ function JWPlayerRefreshFNC(){
 			}else{
 				methods.endMovie = false;
 			}
-			
+
 			if(!sliderCirclePress){
 				currentTime.text(methods.curTime+" / "+methods.durTime);
 			}
-			
+
 			checkBuffer();
-			
+
 			if(methods.hlsSupport){
 				try{
 					methods.autoQuality = hls.currentLevel;
@@ -954,7 +1023,7 @@ function JWPlayerRefreshFNC(){
 				}catch (err){}
 			}
 		}
-		
+
 		sliderContainer.on(userEvent.down, function(e) {
 			if(methods.firstPlay) {
 				gotoCircle(e);
@@ -976,7 +1045,7 @@ function JWPlayerRefreshFNC(){
 				y: e.clientY
 			};
 		}
-		
+
 		function gotoCircle(e){
 			if ($mobileDevice) {
 				xMouse = e.originalEvent.touches[0].pageX;
@@ -994,15 +1063,15 @@ function JWPlayerRefreshFNC(){
 			}else if(localX > sliderWidth){
 				localX=sliderWidth;
 			}
-			
+
 			var goes = (localX / sliderWidth);
 			goes = Math.ceil(goes * parseInt(durTime));
 			currentTime.text(digit(goes)+" / "+methods.durTime);
-			
+
 			sliderFront.css("width", localX);
 			sliderCircle.css("left", (localX-7));
 		}
-		
+
 		function gotoTime(e){
 			if(sliderCirclePress && methods.firstPlay){
 				sliderCirclePress = false;
@@ -1011,8 +1080,8 @@ function JWPlayerRefreshFNC(){
 				methods.gotoTime(goes);
 			}
 		}
-		
-		
+
+
 		$("html").on(userEvent.move, function(e){
 			if(sliderCirclePress && methods.firstPlay){
 				gotoCircle(e);
@@ -1020,7 +1089,7 @@ function JWPlayerRefreshFNC(){
 		}).on(userEvent.up, function(e){
 			gotoTime(e);
 		});
-		
+
 		if(!$mobileDevice && conf.keyboardEvent){
 			$(window).keypress(function (e) {
 				if(e.keyCode===32){
@@ -1033,12 +1102,12 @@ function JWPlayerRefreshFNC(){
 				}
 			});
 		}
-		
-		
+
+
 		fullScreenBtn.on(userEvent.click, function() {
 			methods.FullScreenVideo();
 		});
-		
+
 		methods.FullScreenVideo = function(){
 			GlobalFullScreenID = LocalFullScreenID;
 			if(hype.mode){
@@ -1075,23 +1144,23 @@ function JWPlayerRefreshFNC(){
 				}
 			}
 		};
-		
+
 		document.addEventListener("fullscreenchange", function () {
 			onFullScreen(document.fullscreen);
 		}, false);
-		
+
 		document.addEventListener("mozfullscreenchange", function () {
 			onFullScreen(document.mozFullScreen);
 		}, false);
-		
+
 		document.addEventListener("webkitfullscreenchange", function () {
 			onFullScreen(document.webkitIsFullScreen);
 		}, false);
-		
+
 		document.addEventListener("msfullscreenchange", function () {
 			onFullScreen(document.msFullscreenElement);
 		}, false);
-		
+
 		function onFullScreen(skin) {
 			if(GlobalFullScreenID === LocalFullScreenID){
 				if(skin){
@@ -1109,7 +1178,7 @@ function JWPlayerRefreshFNC(){
 						conf.fullScreenFNC(false);
 					}
 				}
-				
+
 				if(hype.mode){
 					video.controls = skin;
 				}
@@ -1145,6 +1214,7 @@ function JWPlayerRefreshFNC(){
 			butonBox.css({width: controllerHeight, height: controllerHeight});
 			currentTime.css({lineHeight: controllerHeight+"px"});
 			navigationBtn.css({width:(controllerHeight+30), lineHeight: controllerHeight+"px"});
+			speedBoxMain.css("bottom", controllerHeight + 30);
 			sliderFront.css("height", sliderHeight);
 			sliderMain.css("height", 30).css("width", "100%");
 			arrowPosRefreshFNC();
@@ -1177,12 +1247,12 @@ function JWPlayerRefreshFNC(){
 			});
 		}
 
-		
+
 		var videoBuffer;
 		var startBuffer;
 		var endBuffer;
 		var sendBuffer;
-		
+
 		/* video'nun ne kadar buffer yaptığı canvas'a çiziliyor */
 		function checkBuffer() {
 			videoBuffer = video.buffered;
@@ -1197,7 +1267,7 @@ function JWPlayerRefreshFNC(){
 				methods.buffer = sendBuffer;
 			}
 		}
-		
+
 		/**
 		 * @return {number}
 		 */
@@ -1210,7 +1280,7 @@ function JWPlayerRefreshFNC(){
 			}
 			return 0;
 		}
-		
+
 		/* Hls için video kalitesi kutusu burada oluşturuluyor */
 		function LevelCreateFNC(){
 			qualityBoxMain.html("");
@@ -1222,12 +1292,12 @@ function JWPlayerRefreshFNC(){
 				sortArray[x] =[hls.levels[x].height, x];
 			}
 			sortArray = sortArray.sort(Comparator);
-			
+
 			for(var j=0; j<sortArray.length; j++){
 				sortArray[j][2] = LNames[j];
 			}
 			sortArray.unshift([0, -1, AutoTxt]);
-			
+
 			methods.qualityOptions = sortArray;
 			for(var i=0; i<sortArray.length; i++){
 				if(sortArray[i][1]===-1){
@@ -1243,10 +1313,37 @@ function JWPlayerRefreshFNC(){
 					blackScreenClose();
 				}).css("cursor", "pointer").data({quality: sortArray[i][1] });
 			}
-			
+
 			ButonArray[0].css(selected);
 			qualityBox = MainDIV.find(".qualityBox");
 			qualityBox.css(qualityBoxCSS);
+		}
+
+		function SpeedCreateFNC(){
+			speedBoxMain.html("");
+			for(var i=0; i<SpeedOptions.length; i++){
+				speedBoxMain.append('<div class="speedBox">'+ SpeedOptions[i].name +'</div>');
+				speedBox = $(MainDIV.find(".speedBox")[i]);
+				speedBox.on("click", function(){
+					methods.SelectPlaybackRate($(this).data().speed);
+					speedSelectedBtn($(this).data().speed);
+					blackScreenClose();
+				}).css("cursor", "pointer").data({speed: SpeedOptions[i].speed});
+			}
+
+			speedBox = MainDIV.find(".speedBox");
+			speedBox.css(qualityBoxCSS).css("text-align", "center").css("padding-right", 0);
+			speedSelectedBtn(methods.playbackRate);
+		}
+
+		function speedSelectedBtn(playbackRate){
+			speedBox.each(function(){
+				var btn = $(this);
+				btn.css(selectedNone);
+				if(btn.data().speed === playbackRate){
+					btn.css(selected);
+				}
+			});
 		}
 
 		function qualitySelectedBtn(selectedQuality){
@@ -1261,7 +1358,7 @@ function JWPlayerRefreshFNC(){
 
 			}
 		}
-		
+
 		/* Hls videoları için Kalite ayarları Buradan Yapılır */
 		methods.HlsSelectLevel = function (selectedQuality, loaderShow, click){
 			if(methods.selectedQuality !== selectedQuality){
@@ -1289,7 +1386,13 @@ function JWPlayerRefreshFNC(){
 				methods.resizePosition();
 			}
 		};
-		
+
+		/* Video oynatma hızı buradan ayarlanır */
+		methods.SelectPlaybackRate = function(playbackRate){
+			methods.playbackRate = playbackRate;
+			applyPlaybackRate();
+		};
+
 		/* Playlist Kutusu burada oluşturuluyor */
 		function createMediaNavigationFNC(){
 			allMediaBtn = [];
@@ -1349,24 +1452,23 @@ function JWPlayerRefreshFNC(){
 		video.onplay = function() {
 			PlayingIconVisibleFNC(false);
 		};
-		
+
 		video.onpause = function() {
 			methods.globalPlay = false;
 			PlayingIconVisibleFNC(true);
-			clearInterval(time);
-			time = setInterval(updateSliderAndTimeFNC, 1000, false);
+			startTimeIntervals(false);
 		};
-		
+
 		video.onwaiting = function() {
 			LoaderOpen();
-			clearInterval(time);
+			clearTimeIntervals();
 		};
 
 		video.addEventListener("loadedmetadata", function() {
 			conf.metaDataFNC(Math.round(video.duration));
 		});
-		
-		
+
+
 		video.onplaying = function() {
 			methods.globalPlay = true;
 			if(!methods.firstPlay){
@@ -1376,13 +1478,16 @@ function JWPlayerRefreshFNC(){
 				if(methods.hlsSupport){
 					settingsBtn.show();
 				}
+
+				if(conf.showSpeed){
+					speedBtn.show().css("visibility", "unset");
+				}
 				methods.firstPlay = true;
 			}
 
 			fullScreenBtn.show();
 			PlayingIconVisibleFNC(false);
-			clearInterval(time);
-			time = setInterval(updateSliderAndTimeFNC, 1000, true);
+			startTimeIntervals(true);
 			addSkinEventFNC();
 			updateSliderAndTimeFNC(false);
 			if(playlist.length > 1){
@@ -1391,7 +1496,7 @@ function JWPlayerRefreshFNC(){
 		};
 
 		video.onended = function() {
-			clearInterval(time);
+			clearTimeIntervals();
 			updateSliderAndTimeFNC(false);
 			PlayingIconVisibleFNC(true);
 			if(conf.endFNC !== undefined){
@@ -1416,25 +1521,24 @@ function JWPlayerRefreshFNC(){
 				conf.autoChange("hide");
 			}
 		}
-		
+
 		video.ontimeupdate = function() {
 			if(loaderActive){
 				if(loaderCount>2){
 					LoaderClose();
-					clearInterval(time);
-					time = setInterval(updateSliderAndTimeFNC, 1000, true);
+					startTimeIntervals(true);
 				}else{
 					loaderCount++;
 				}
 			}
 		};
-		
+
 		video.onsuspend = function() {
 			if(playlist[methods.currentMediaID][1]==="mp4"){
 				playerSkin.css("visibility", "unset");
 			}
 		};
-		
+
 		video.onseeking = function() {
 			LoaderOpen();
 		};
@@ -1474,7 +1578,7 @@ function JWPlayerRefreshFNC(){
 		videoContainer.on("contextmenu", function () {
 			return false;
 		});
-		
+
 		videoContainer.on("contextmenu", function (e) {
 			e.preventDefault();
 		});
@@ -1482,13 +1586,13 @@ function JWPlayerRefreshFNC(){
 		methods.videoSkinHide = function(){
 			playerSkin.css("display", "none");
 		}
-		
+
 		function digit(x) {
 			var dk = parseInt(x / 60);
 			var sn = zero(x % 60);
 			return dk+":"+sn;
 		}
-		
+
 		function zero(x) {
 			if (x<10){
 				return "0"+x;
