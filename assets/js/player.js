@@ -316,7 +316,7 @@ function PLAYER(){
         addStartScreen(BUILD.mode);
         this.addEvents();
         addWarning();
-        addCheckIcon();
+        addStatusIcon();
         addReadOnlyDOM();
         addOpenEndedDOM();
         infoSystemFNC();
@@ -495,7 +495,7 @@ function PLAYER(){
     }
 
     function setState(){
-        var state = {version: AC.VersionFile, status:"update", questions:{}, type:"v3"};
+        var state = {version: AC.VersionFile, status:"update", questions:{}, type:"v4"};
         if(AC.user){state.uid = AC.user.uid}
         SD.map(function(slide){
             state.questions[slide.name] = JSON.parse(JSON.stringify(slide.historyRight));
@@ -550,7 +550,7 @@ function PLAYER(){
                 console.log("contentJsonVersion:", contentJsonVersion, "- dataJsonVersion:", dataJsonVersion,"type:", type);
                 PLX.HDE_access = parseInt(build.accessData.stats.access);
 
-                if(contentJsonVersion === dataJsonVersion && type === "v3"){
+                if(contentJsonVersion === dataJsonVersion && type === "v4"){
                     var status = build.accessData.state.status;
                     console.log("status:", status);
                     if(status === 'finish'){
@@ -561,8 +561,6 @@ function PLAYER(){
                 }
             }
         }
-
-        addHDEStatus();
     }
 
     function addHistoryStep(sd, step){
@@ -584,10 +582,10 @@ function PLAYER(){
             temp.unique = sd.unique;
         }
 
-        if(step.step){
-            sd.historyRight[step.step] = temp;
-        }else{
+        if(step.step === undefined){
             sd.historyRight.push(temp);
+        }else{
+            sd.historyRight[step.step] = temp;
         }
     }
 
@@ -707,11 +705,18 @@ function PLAYER(){
                     }
                 });
 
+                var solutionVideoFound;
+                sp.popEx.map(function(pop){
+                    if(pop.solutionVideo !== undefined){
+                        solutionVideoFound = pop.solutionVideo;
+                    }
+                });
+
                 if(zindex){
-                    sp.popEx[0].window.style.zIndex = zindex;
+                    sp.popEx[solutionVideoFound].window.style.zIndex = zindex;
                 }
 
-                popupWindowStatus(0);
+                popupWindowStatus(solutionVideoFound, "auto");
             });
 
             player.videoSolution.style.display = 'none';
@@ -808,18 +813,18 @@ function PLAYER(){
             if(completeBtn){
                 iconDOM = null;
             }else{
-                iconDOM = player.statusIcon[hdeStatus];
+                iconDOM = player.status.icon[hdeStatus];
             }
 
             if(iconDOM){
-                player.statusIconMain.style.display = "block";
-                for(var name in player.statusIcon){
-                    player.statusIcon[name].style.visibility = "hidden";
+                player.status.main.style.visibility = "visible";
+                for(var name in player.status.icon){
+                    player.status.icon[name].style.display = "none";
                 }
 
-                iconDOM.style.visibility = "visible";
+                iconDOM.style.display = "block";
             }else{
-                player.statusIconMain.style.display = "none";
+                player.status.main.style.visibility = "hidden";
             }
 
             var userAnswerView;
@@ -834,9 +839,16 @@ function PLAYER(){
                 rightAnswerView = 'block';
             }
 
-            if(sp.popEx.length){
-                if(sp.popEx[0].clicked){
-                    popupWindowStatus(0);
+            var solutionVideoFound;
+            sp.popEx.map(function(pop){
+                if(pop.solutionVideo !== undefined){
+                    solutionVideoFound = pop.solutionVideo;
+                }
+            });
+
+            if(solutionVideoFound !== undefined){
+                if(sp.popEx[solutionVideoFound].clicked){
+                    popupWindowStatus(solutionVideoFound, "auto");
                 }
             }else{
                 videoSolutionView = 'none';
@@ -987,65 +999,6 @@ function PLAYER(){
 
         console.log(SD);
 
-        function createRubrikTeacherJson() {
-            var rubriks = [];
-            var rubrikAI = SD.rubrik.rubrikAI || {
-                instructions: {type: "string", instructions: ""},
-                question: {type: "string", question: ""},
-                alias: {}
-            };
-
-            function getTeacherCondition(group) {
-                if (typeof group.teacherCondition === "string") {
-                    return group.teacherCondition;
-                }
-
-                var reviewBox = null;
-                if (group.boxes && group.boxes.length) {
-                    group.boxes.some(function (box) {
-                        if (box.operator === "review") {
-                            reviewBox = box;
-                            return true;
-                        }
-                        return false;
-                    });
-                }
-
-                return reviewBox ? reviewBox.value : "";
-            }
-
-            if (SD.rubrik && SD.rubrik.groups) {
-                SD.rubrik.groups.map(function (group) {
-                    if (group.boxes && group.boxes.length) {
-                        var hasReview = group.boxes.some(function (box) {
-                            return box.operator === "review";
-                        });
-
-                        if (hasReview) {
-                            rubriks.push({
-                                value: group.name,
-                                "btd-teacher-condition": getTeacherCondition(group),
-                                weight: group.score
-                            });
-                        }
-                    }
-                });
-            }
-
-            return {
-                id: typeof SD.id === "number" ? SD.id + 1 : 1,
-                type: "BTD-TEACHER",
-                instructions: rubrikAI.instructions,
-                question: rubrikAI.question,
-                rubriks: rubriks,
-                attempt: (SD.historyRight.length)+1,
-                answer: {
-                    type: "string",
-                    answer: getRubrikTeacherAnswer(finalBox)
-                }
-            };
-        }
-
         for (var boxName in SD.inputs) {
             if (SD.inputs[boxName].base64) {
                 SP.fnc.map(function (fnc) {
@@ -1053,7 +1006,11 @@ function PLAYER(){
                 });
             }
 
-            finalBox[boxName] = String(SD.inputs[boxName].value);
+            if(SD.inputs[boxName].type === "sr"){
+                finalBox[boxName] = String(SD.inputs[boxName].transcript || "");
+            }else{
+                finalBox[boxName] = String(SD.inputs[boxName].value);
+            }
         }
 
         console.log("SD.rubrik:", SD.rubrik);
@@ -1061,7 +1018,7 @@ function PLAYER(){
 
         if (SD.rubrik.rubrikAI.question && SD.rubrik.rubrikAI.question.question.length > 0) {
             console.log(SD.rubrik.rubrikAI);
-            var formatData = createRubrikTeacherJson();
+            var formatData = buildRubrikAIEvaluationPayload(SD, getRubrikTeacherAnswer(finalBox));
             console.log("formatData", formatData);
             rubrikLoaderAnimation("show");
             controlBtnView(SP, "disable");
@@ -1069,6 +1026,13 @@ function PLAYER(){
         } else {
             var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
             showFeedBack(result.result, "auto", SD.historyRight.length);
+            console.log(result);
+            SP.fnc.map(function(fnc){
+                if(fnc.rubrikBoxView){
+                    fnc.rubrikBoxView(result.boxes || result);
+                }
+            });
+
             rubrikResult(SP, SD, result.result, "evaluator");
         }
     }
@@ -1172,25 +1136,109 @@ function PLAYER(){
     }
 
 
-    function sendDataAI(SP, SD, formatData) {
+    function getRubrikAIEnv(){
         var host = window.location.hostname;
-        var env = "https://www.okulistik.com";
-        if(host.includes("oktest") || host.includes("preprod")){
-            env = "";
+        if(host.includes("oktest") || host.includes("preprod") || host.includes("localhost")){
+            return "";
         }
+
+        return "https://contentcreator.okulistik.com";
+    }
+
+    function buildRubrikAIEvaluationPayload(SD, answer){
+        var rubrikAI = SD.rubrik && SD.rubrik.rubrikAI ? SD.rubrik.rubrikAI : {
+            instructions: {type: "string", instructions: ""},
+            question: {type: "string", question: ""},
+            alias: {}
+        };
+        var rubriks = [];
+
+        function getTeacherCondition(group) {
+            if (typeof group.teacherCondition === "string") {
+                return group.teacherCondition;
+            }
+
+            var reviewBox = null;
+            if (group.boxes && group.boxes.length) {
+                group.boxes.some(function (box) {
+                    if (box.operator === "review") {
+                        reviewBox = box;
+                        return true;
+                    }
+                    return false;
+                });
+            }
+
+            return reviewBox ? reviewBox.value : "";
+        }
+
+        if (SD.rubrik && SD.rubrik.groups) {
+            SD.rubrik.groups.map(function (group) {
+                if (group.boxes && group.boxes.length) {
+                    var hasReview = group.boxes.some(function (box) {
+                        return box.operator === "review";
+                    });
+
+                    if (hasReview) {
+                        rubriks.push({
+                            value: group.name,
+                            "btd-teacher-condition": getTeacherCondition(group),
+                            weight: group.score
+                        });
+                    }
+                }
+            });
+        }
+
+        return {
+            id: typeof SD.id === "number" ? SD.id + 1 : 1,
+            type: "BTD-TEACHER",
+            instructions: rubrikAI.instructions,
+            question: rubrikAI.question,
+            rubriks: rubriks,
+            attempt: SD.historyRight.length + 1,
+            answer: {
+                type: "string",
+                answer: answer
+            }
+        };
+    }
+
+    function requestRubrikAIEvaluation(formatData, options) {
         var jwt = getCookie("okulistik-jwt");
+        var requestOptions = options || {};
 
         $.ajax({
-            url: env+"/api/evaluation/ai-evaluate",
+            url: getRubrikAIEnv()+"/api/rubrik/evaluation/ai-evaluate",
             headers: {
                 "Authorization": jwt,
-                "Accept-Language": 'tr-TR'
+                "Accept-Language": "tr-TR"
             },
             dataType: "json",
             type: "POST",
-            contentType: 'application/json; charset=utf-8', // Raw verinin türü (JSON)
+            contentType: "application/json; charset=utf-8",
             processData: false,
             data: JSON.stringify(formatData),
+            success: function (response) {
+                if(typeof requestOptions.success === "function"){
+                    requestOptions.success(response);
+                }
+            },
+            error: function (xhr, status, error) {
+                if(typeof requestOptions.error === "function"){
+                    requestOptions.error(xhr, status, error);
+                }
+            },
+            complete: function(){
+                if(typeof requestOptions.complete === "function"){
+                    requestOptions.complete();
+                }
+            }
+        });
+    }
+
+    function sendDataAI(SP, SD, formatData) {
+        requestRubrikAIEvaluation(formatData, {
             success: function (response) {
                 rubrikLoaderAnimation("hide");
                 console.log('AI API Yanıt:', response);
@@ -1228,31 +1276,43 @@ function PLAYER(){
         });
     }
 
-    function specialStartFNC(SP, SD){
+    function specialStartFNC(sp, sd){
         if(PLX.isEKT) {
-            if(SP.popEx.length){
-                SP.popEx[0].btn.addEventListener("click", function(){
-                    if(!SD.complete){
-                        SD.answerShow=true;
-                        SP.fnc.map(function(fnc){
+            if(sp.popEx.length){
+                sp.popEx[0].btn.addEventListener("click", function(){
+                    if(!sd.complete){
+                        sd.answerShow=true;
+                        This.sceneComplete();
+                        sp.fnc.map(function(fnc){
                             fnc.reset();
                             fnc.close(true);
                             clearInterval(fnc.timer);
                         });
 
-                        This.sceneComplete();
+                        var allComplete = true;
+                        SD.map(function(scene){
+                            if(!scene.complete){
+                                allComplete = false;
+                            }
+                        });
+
+                        if(allComplete){
+                            This.nextScene();
+                        }
+
                         This.scoreCalc(false);
-                        controlBtnView(SP, "disabled");
+                        controlBtnView(sp, "disabled");
+                        checkViewFNC(sd);
                     }
                 });
 
-                SP.popEx[0].btn.style.pointerEvents = "none";
-                SP.popEx[0].btn.style.opacity = 0.5;
+                sp.popEx[0].btn.style.pointerEvents = "none";
+                sp.popEx[0].btn.style.opacity = 0.5;
             }
         }else if(PLX.isBSD) {
-            if(SP.popEx.length){
-                SP.popEx[0].btn.style.pointerEvents = "none";
-                SP.popEx[0].btn.style.opacity = 0.5;
+            if(sp.popEx.length){
+                sp.popEx[0].btn.style.pointerEvents = "none";
+                sp.popEx[0].btn.style.opacity = 0.5;
             }
         }
     }
@@ -1282,11 +1342,12 @@ function PLAYER(){
                 }
 
                 if(sp.popEx.length){
-                    sp.popEx[0].clicked = true;
-                    sp.popEx[0].window.style.visibility = "visible";
+                    popupWindowStatus(0,"open");
                     sp.popEx[0].btn.style.opacity = 1;
                     sp.popEx[0].btn.style.pointerEvents = "auto";
                 }
+
+                checkViewFNC(sd);
             }else if(PLX.isEKT){
                 sp.popEx[0].btn.style.opacity = 1;
                 sp.popEx[0].btn.style.pointerEvents = "auto";
@@ -1444,6 +1505,18 @@ function PLAYER(){
             }else{
                 SP.answerBtn.style.opacity = 0.5;
                 SP.answerBtn.style.pointerEvents = "none";
+            }
+        }
+    }
+
+    function saveBtnView(SP, status){
+        if(SP.completeBtn){
+            if(status === "enable"){
+                SP.completeBtn.style.opacity = 1;
+                SP.completeBtn.style.pointerEvents = "auto";
+            }else{
+                SP.completeBtn.style.opacity = 0.5;
+                SP.completeBtn.style.pointerEvents = "none";
             }
         }
     }
@@ -1736,14 +1809,11 @@ function PLAYER(){
             player.readOnlyDOM.style.visibility = "visible";
             PLX.showReadOnly = true;
             SP.map(function(sp){
-                if(sp.completeBtn){
-                    sp.completeBtn.style.opacity=0.5;
-                    sp.completeBtn.style.cursor="default";
-                    sp.completeBtn.style.pointerEvents="none";
-                }
-
-                sp.screenCloseDOM.style.display = "block";
+                closeActivity(sp);
+                answerBtnView(sp, "disable");
+                saveBtnView(sp, "disable");
             });
+
         }
     }
 
@@ -1764,28 +1834,28 @@ function PLAYER(){
     }
 
     //add check
-    function addCheckIcon(){
-        player.checkIconDOM = utils.addDOM({id: "checkIconDOM", className: "checkIconDOM"});
-        player.mainDOM.appendChild(player.checkIconDOM);
-        player.checkIconDOM.innerHTML = '<div id="pageCheckIcon" class="pageStatusIcon"><img src="assets/img/player/check.png"></div><div id="pageAnswerIcon" class="pageStatusIcon" style="border-radius: 100px"><img src="assets/img/player/answered.png"></div><div class="notice"></div>';
-        player.notice = player.checkIconDOM.querySelector(".notice");
-        player.pageStatusIcon = {
-            check: player.checkIconDOM.querySelector("#pageCheckIcon"),
-            answer: player.checkIconDOM.querySelector("#pageAnswerIcon")
+    function addStatusIcon(){
+        player.status = {
+            main: utils.addDOM({className: "statusMain"})
         }
-    }
 
-    //add check
-    function addHDEStatus(){
-        if(PLX.isHDE){
-            player.statusIconMain = utils.addDOM({id: "statusIconMain", className: "statusIconMain"});
-            player.mainDOM.appendChild(player.statusIconMain);
-            player.statusIconMain.innerHTML = '<img id="statusRightIcon" src="assets/img/player/status_right.png"><img id="statusWrongIcon" src="assets/img/player/status_wrong.png"><img id="statusEmptyIcon" src="assets/img/player/status_empty.png">';
-            player.statusIcon = {
-                right: player.statusIconMain.querySelector("#statusRightIcon"),
-                wrong: player.statusIconMain.querySelector("#statusWrongIcon"),
-                empty: player.statusIconMain.querySelector("#statusEmptyIcon")
-            };
+        player.mainDOM.appendChild(player.status.main);
+        player.status.main.innerHTML =
+            `<div class="statusIconMain">
+            <img id="statusRightIcon" src="assets/img/player/status_right.png">
+            <img id="statusWrongIcon" src="assets/img/player/status_wrong.png">
+            <img id="statusEmptyIcon" src="assets/img/player/status_empty.png">
+            <img id="statusAnswerIcon" src="assets/img/player/status_answer.png">
+        </div>
+        <div class="notice"></div>`;
+
+        player.status.notice = player.status.main.querySelector(".notice");
+        player.status.iconMain = player.status.main.querySelector(".statusIconMain");
+        player.status.icon = {
+            right: player.status.iconMain.querySelector("#statusRightIcon"),
+            wrong: player.status.iconMain.querySelector("#statusWrongIcon"),
+            empty: player.status.iconMain.querySelector("#statusEmptyIcon"),
+            answer: player.status.iconMain.querySelector("#statusAnswerIcon")
         }
     }
 
@@ -1805,8 +1875,7 @@ function PLAYER(){
 
                         if(PLX.isBSD || PLX.isEKT){
                             if(sp.popEx.length){
-                                sp.popEx[0].clicked = true;
-                                sp.popEx[0].window.style.visibility = "visible";
+                                popupWindowStatus(0, "open");
                                 sp.popEx[0].btn.style.opacity = 1;
                                 sp.popEx[0].btn.style.pointerEvents = "auto";
                             }
@@ -1833,39 +1902,43 @@ function PLAYER(){
 
     function checkViewFNC(SD){
         if(SD.complete){
-            player.checkIconDOM.style.visibility = "visible";
+            player.status.main.style.visibility = "visible";
             var currentWarning = SD.historyRight.length;
             var bgColor = "#548b2e";
             var noticeTxt = currentWarning +". denemede tamamlandı.";
 
+            for(var name in player.status.icon){
+                player.status.icon[name].style.display = "none";
+            }
+
+            player.status.iconMain.style.backgroundColor = "unset";
+
             if(SD.answerShow){
-                if(PLX.isBSD){
+                if(PLX.isBSD || PLX.isEKT){
                     bgColor = "#e64e39";
-                    player.pageStatusIcon.answer.style.backgroundColor = "#e64e39";
+                    player.status.iconMain.style.backgroundColor = "#e64e39";
                     noticeTxt = "Çözüm desteği ile tamamlandı.";
                 }else {
                     bgColor = "#F57F17";
-                    player.pageStatusIcon.answer.style.backgroundColor = "#F57F17";
+                    player.status.iconMain.style.backgroundColor = "#F57F17";
                     noticeTxt = "Yanıt desteği ile tamamlandı.";
                 }
 
-                player.pageStatusIcon.check.style.display = "none";
-                player.pageStatusIcon.answer.style.display = "block";
+                player.status.icon.answer.style.display = "block";
             }else{
-                player.pageStatusIcon.check.style.display = "block";
-                player.pageStatusIcon.answer.style.display = "none";
+                player.status.icon.right.style.display = "block";
             }
 
             if(currentWarning){
-                player.notice.style.backgroundColor = bgColor;
-                player.notice.style.visibility = "visible";
-                player.notice.innerHTML = noticeTxt;
+                player.status.notice.style.backgroundColor = bgColor;
+                player.status.notice.innerHTML = noticeTxt;
+                player.status.notice.style.visibility = "visible";
             }else{
-                player.notice.style.visibility = "hidden";
+                player.status.notice.style.visibility = "hidden";
             }
         }else{
-            player.checkIconDOM.style.visibility = "hidden";
-            player.notice.style.visibility = "hidden";
+            player.status.main.style.visibility = "hidden";
+            player.status.notice.style.visibility = "hidden";
         }
 
         if(!PLX.isHDE){
@@ -1873,8 +1946,10 @@ function PLAYER(){
                 player.infoBtnDOM.style.display = "block";
             }else{
                 player.infoBtnDOM.style.display = "none";
+                player.status.notice.style.visibility = "hidden";
             }
         }
+
         hideWarning();
     }
 
@@ -2143,7 +2218,7 @@ function PLAYER(){
                     url = AC.player.RUrl;
                 }
 
-                if(el.data.goUrl && el.data.goUrl === "insidePDF"){
+                if(PLX.isBSD && el.data.goUrl && el.data.goUrl === "insidePDF"){
                     var cid="0000";
                     if(AC.ID){
                         cid = AC.ID.split("-")[1];
@@ -2174,8 +2249,8 @@ function PLAYER(){
                 SP.popEx[id].btn = el.main;
 
                 el.main.addEventListener("click", function(){
-                    popupWindowStatus(id);
-                    SP.popEx[id].window.style.visibility = "visible";
+                    popupWindowStatus(id, "auto");
+                    //SP.popEx[id].window.style.visibility = "visible";
                 });
 
                 el.main.style.cursor = "pointer";
@@ -2188,8 +2263,12 @@ function PLAYER(){
 
                 SP.popEx[id].window = el.main;
                 el.main.querySelector(".popupWindowClose").addEventListener("click", function(){
-                    popupWindowStatus(id);
+                    popupWindowStatus(id, "close");
                 });
+
+                if(el.main.querySelector(".videoPlayer")){
+                    SP.popEx[id].solutionVideo = id;
+                }
 
                 var nextPageBtn = el.main.querySelector(".nextPageBtn");
                 if(nextPageBtn){
@@ -2329,29 +2408,48 @@ function PLAYER(){
         }
     };
 
-    function popupWindowStatus(popID){
+    function popupWindowStatus(popID, status){
         var sp = SP[This.sceneIndex];
-        if(sp.popEx[popID].clicked){
-            sp.popEx[popID].window.style.visibility = "hidden";
-            sp.popEx[popID].clicked = false;
-            if(player.statusIconMain){
-                player.statusIconMain.style.display = 'block';
-            }
 
-            if(PLX.showReadOnly){
-                player.readOnlyDOM.style.visibility = "visible";
-            }
-        }else{
+         function closePopup(){
+             sp.popEx[popID].window.style.visibility = "hidden";
+             sp.popEx[popID].clicked = false;
+
+             player.status.main.style.opacity = 1;
+
+             if(PLX.isHDE && PLX.showReadOnly){
+                 player.readOnlyDOM.style.visibility = "visible";
+                 if(sp.popEx[popID].solutionVideo !== undefined){
+                     player.status.main.style.opacity = 1;
+                 }
+             }
+        }
+
+        function openPopup(){
             sp.popEx[popID].window.style.visibility = "visible";
             sp.popEx[popID].clicked = true;
-            if(player.statusIconMain){
-                player.statusIconMain.style.display = 'none';
-            }
 
-            if(PLX.showReadOnly){
+            player.status.main.style.opacity = 0.15;
+
+            if(PLX.isHDE && PLX.showReadOnly){
                 player.readOnlyDOM.style.visibility = "hidden";
+                if(sp.popEx[popID].solutionVideo !== undefined){
+                    player.status.main.style.opacity = 0;
+                }
             }
             PLX.autoSceneChange_stopQuickly();
+        }
+
+        if(status === "open"){
+            openPopup();
+        }else if(status === "close"){
+            closePopup();
+        }else{
+            if(sp.popEx[popID].clicked){
+                closePopup();
+            }else{
+                openPopup();
+            }
         }
 
         This.popupVideoPlayStatus(sp, false);
@@ -2443,7 +2541,7 @@ function PLAYER(){
         if(!soundPlayer.Confirm){
             soundPlayer.Confirm = true;
             soundPlayer.howl = new Howl({
-                src: [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".mp3"],
+                src: [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".webm"],
                 onload: function(){
                     soundPlayer.load = true;
                 },
@@ -2647,6 +2745,9 @@ function PLAYER(){
             navListSelect(index);
             hideOpenEndedDOM();
             HDE_StatusFNC();
+            if(PLX.isEKT || PLX.isBSD){
+                popupWindowStatus(0, "close");
+            }
 
             /*Screen tazeleme video icin gerekli*/
             This.screenRatio();
@@ -3967,6 +4068,48 @@ function PLAYER(){
             inputsChange(SD, id, "value", "");
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            btnEvents("none");
+
+            for(var id in BD.input){
+                var boxKey = "box" + id;
+                var status = boxes[boxKey] || boxes[id];
+
+                if(!status && boxes.hasOwnProperty(boxKey)){
+                    status = boxes[boxKey];
+                }
+
+                if(status){
+                    BD.input[id].status = status;
+                }
+
+                if(status === "right"){
+                    showRightView(id);
+                }else if(status === "wrong"){
+                    showWrongView(id);
+                }
+            }
+
+            evaluation.timer = setTimeout(function(){
+                if(SD.complete){
+                    btnEvents("none");
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
+                btnEvents("auto");
+                for(var id in BD.input){
+                    if(BD.input[id].status !== "right"){
+                        showDefaultView(id);
+                    }
+                }
+                controlBtnViewCheck();
+            }, 1000);
+        }
+
         function showAllDefaultView(){
             for(var i in BD.input){
                 if(BD.input[i].events){
@@ -4100,6 +4243,7 @@ function PLAYER(){
             wrong: wrongActionFNC,
             right: wrongActionFNC,
             answer: answerActionFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
@@ -4434,6 +4578,10 @@ function PLAYER(){
                     }
                 }
             });
+
+            returnColor = [];
+            layer.draw();
+            controlBtnViewCheck();
         }
 
         function wrongActionFNC(){
@@ -4470,6 +4618,72 @@ function PLAYER(){
             }
 
             returnColorFNC();
+        }
+
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            returnColor = [];
+
+            for(var boxKey in boxes){
+                var dropID = String(boxKey).replace("box", "");
+                var status = boxes[boxKey];
+
+                if(!BOX[dropID]) continue;
+
+                if(status === "right"){
+                    LA.map(function(line){
+                        if(line.pair){
+                            var lineDragID = "d" + line.pair.split("-")[0];
+                            var lineDropID = line.pair.split("-")[1];
+                            if(lineDropID === dropID){
+                                if(BOX[lineDragID]){
+                                    BOX[lineDragID].canvas.off("mousedown mouseenter touchstart mouseleave");
+                                    BOX[lineDragID].main.style.opacity = 0.5;
+                                    BOX[lineDragID].status = false;
+                                }
+                                if(BOX[lineDropID]){
+                                    BOX[lineDropID].canvas.off("mousedown mouseenter touchstart mouseleave");
+                                    BOX[lineDropID].main.style.opacity = 0.5;
+                                    BOX[lineDropID].status = false;
+                                }
+                                if(line.canvas){
+                                    line.canvas.stroke("#2e7d32").opacity(0.7);
+                                }
+                            }
+                        }
+                    });
+                }else if(status === "wrong"){
+                    LA.map(function(line){
+                        if(line.pair){
+                            var lineDragID = line.pair.split("-")[0];
+                            var lineDropID = line.pair.split("-")[1];
+                            if(lineDropID === dropID){
+                                returnColor.push(line);
+                                var drop = SD.inputs["box"+ dropID].value;
+                                var deleteID = drop.indexOf(lineDragID);
+                                if(deleteID > -1){
+                                    drop.splice(deleteID, 1);
+                                }
+                                if(line.canvas){
+                                    line.canvas.stroke("#b71c1c").opacity(0.7);
+                                }
+                                inputsChange(SD);
+                            }
+                        }
+                    });
+                }else if(status === "empty"){
+                    // Boş kutu: Henüz eşleştirme yapılmamış, kutu varsayılan durumunda kalır
+                    if(BOX[dropID] && BOX[dropID].status){
+                        BOX[dropID].main.style.opacity = 1;
+                    }
+                }
+            }
+
+            layer.draw();
+            returnColorFNC();
+            controlBtnViewCheck();
         }
 
         function answerActionFNC(){
@@ -4545,6 +4759,7 @@ function PLAYER(){
             wrong: wrongActionFNC,
             right: wrongActionFNC,
             answer: answerActionFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
@@ -4618,9 +4833,12 @@ function PLAYER(){
                 element.main.style.display = "none";
             }else if(element.id.includes("boxDrop")){
                 id = parseInt(element.id.split("_")[1]);
+                var bgEl = element.main.querySelector(".boxbg");
                 dropList[id] = {
                     drop: element.main,
-                    background: element.main.querySelector(".boxbg"),
+                    background: bgEl,
+                    bgColor: bgEl ? bgEl.style.backgroundColor : "",
+                    bgVisibility: bgEl ? bgEl.style.visibility : "hidden",
                     slot:[],
                     online: true
                 };
@@ -5149,11 +5367,102 @@ function PLAYER(){
             return (dragCount+2);
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            var wrongDrops = [];
+
+            for(var boxKey in boxes){
+                var dropID = String(boxKey).replace("box", "");
+                var status = boxes[boxKey];
+
+                if(!dropList[dropID]) continue;
+
+                if(status === "right"){
+                    dropList[dropID].generalStatus = "right";
+                    dropList[dropID].online = false;
+
+                    if(dropList[dropID].background){
+                        dropList[dropID].background.style.visibility = "visible";
+                        dropList[dropID].background.style.backgroundColor = "green";
+                    } else if(dropList[dropID].drop){
+                        dropList[dropID].drop.style.backgroundColor = "rgba(76, 175, 80, 0.3)";
+                    }
+
+                    dropList[dropID].slot.map(function(e){
+                        if(e.cloneID && cloneList[e.cloneID]){
+                            cloneList[e.cloneID].style.opacity = 0.5;
+                            var dragObj = Draggable.get(cloneList[e.cloneID]);
+                            if(dragObj) dragObj.disable();
+                            cloneList[e.cloneID].style.userSelect = "none";
+                            e.status = false;
+                        }
+                    });
+                }else if(status === "wrong"){
+                    wrongDrops.push(dropID);
+
+                    if(dropList[dropID].background){
+                        dropList[dropID].background.style.visibility = "visible";
+                        dropList[dropID].background.style.backgroundColor = "red";
+                    } else if(dropList[dropID].drop){
+                        dropList[dropID].drop.style.backgroundColor = "rgba(244, 67, 54, 0.3)";
+                    }
+                }else if(status === "empty"){
+                    // Boş kutu: varsayılan görünümünü korur
+                    if(dropList[dropID].background){
+                        dropList[dropID].background.style.backgroundColor = dropList[dropID].bgColor || "";
+                        dropList[dropID].background.style.visibility = dropList[dropID].bgVisibility || "hidden";
+                    } else if(dropList[dropID].drop){
+                        dropList[dropID].drop.style.backgroundColor = "";
+                    }
+                    dropList[dropID].online = true;
+                }
+            }
+
+            if(wrongDrops.length){
+                evaluation.timer = setTimeout(function(){
+                    if(SD.complete){
+                        controlBtnView(SP, "disable");
+                        return;
+                    }
+
+                    wrongDrops.map(function(dropID){
+                        if(!dropList[dropID]) return;
+
+                        if(dropList[dropID].background){
+                            dropList[dropID].background.style.backgroundColor = dropList[dropID].bgColor || "";
+                            dropList[dropID].background.style.visibility = dropList[dropID].bgVisibility || "hidden";
+                        } else if(dropList[dropID].drop){
+                            dropList[dropID].drop.style.backgroundColor = "";
+                        }
+
+                        dropList[dropID].slot.map(function(e, sIndex){
+                            if(e.cloneID){
+                                var mainID = parseInt(e.cloneID.split("_")[0]);
+                                returnDrag(mainID, e.cloneID);
+                                e.cloneID = null;
+                                if(SD.inputs["box" + dropID] && Array.isArray(SD.inputs["box" + dropID].value)){
+                                    SD.inputs["box" + dropID].value[sIndex] = null;
+                                }
+                            }
+                        });
+                    });
+
+                    inputsChange(SD);
+                    controlBtnViewCheck();
+                }, 1000);
+            }else{
+                controlBtnViewCheck();
+            }
+        }
+
         var evaluation = {
             control: checkAnswer,
             wrong: wrongActionFNC,
             right: wrongActionFNC,
             answer: answerActionFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             zindex: zindex,
             reset: reset,
@@ -6288,11 +6597,67 @@ function PLAYER(){
         }
         */
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            for(var boxKey in boxes){
+                var section = String(boxKey).replace("box", "");
+                var status = boxes[boxKey];
+
+                if(!SR[section]) continue;
+
+                SR[section].status = status;
+
+                if(status === "right"){
+                    if(SR[section].statusBorder){
+                        SR[section].statusBorder.style.visibility = "visible";
+                        SR[section].statusBorder.style.borderColor = "green";
+                    }
+
+                    for(var id in SR[section].drag){
+                        SR[section].drag[id].dom.style.pointerEvents = "none";
+                        SR[section].drag[id].dom.style.opacity = 0.75;
+                    }
+                }else if(status === "wrong"){
+                    if(SR[section].statusBorder){
+                        SR[section].statusBorder.style.visibility = "visible";
+                        SR[section].statusBorder.style.borderColor = "red";
+                    }
+                }else if(status === "empty"){
+                    if(SR[section].statusBorder){
+                        SR[section].statusBorder.style.visibility = "hidden";
+                    }
+
+                    for(var id in SR[section].drag){
+                        SR[section].drag[id].dom.style.pointerEvents = "auto";
+                        SR[section].drag[id].dom.style.opacity = 1;
+                    }
+                }
+            }
+
+            setTimeout(function(){
+                if(SD.complete){
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
+                for(var section in SR){
+                    if(SR[section].status === "wrong"){
+                        if(SR[section].statusBorder){
+                            SR[section].statusBorder.style.visibility = "hidden";
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
         var evaluation = {
             control: checkAnswer,
             wrong: afterAction,
             right: afterAction,
             answer: showAnwers,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
@@ -7212,6 +7577,8 @@ function PLAYER(){
         console.log("init RECORD");
         var SR;
         var input;
+        var inputKey;
+        var set = {recordTime:15, countDown:false};
 
         var lang = {
             prepare: "Lütfen Bekleyiniz.",
@@ -7225,8 +7592,13 @@ function PLAYER(){
         SP.elementList.forEach(function(e){
             if(e.id.includes("soundRecord")){
                 var id = parseInt(e.id.split("_")[1]);
-                SD.inputs["box"+ id] = {value: null, type: "sr"};
-                input = SD.inputs["box"+ id];
+                SD.inputs["box"+ id] = {
+                    value: null,
+                    transcript: "",
+                    type: "sr"
+                };
+                inputKey = "box"+ id;
+                input = SD.inputs[inputKey];
                 SP.soundRecord[id] = {
                     elapsedTime: null,
                     recordInterval: null,
@@ -7236,19 +7608,41 @@ function PLAYER(){
                     progressAnimation: true,
                     recording: false,
                     pausedSeconds: 0,
-                    isPaused: false
+                    isPaused: false,
+                    transcript: "",
+                    recognition: null,
+                    recognitionSupported: false,
+                    recognitionStarted: false,
+                    recognitionManuallyStopped: false,
+                    recognitionFinalText: "",
+                    recognitionInterimText: "",
+                    aiRequestPending: false
                 };
 
                 SR = SP.soundRecord[id];
 
                 for(var param in e.data){
                     lang[param] = e.data[param];
+                    if(param === "maxRecordingDuration"){
+                        var maxRecordingDuration = parseInt(e.data[param], 10);
+                        if(maxRecordingDuration > 0){
+                            set.recordTime = maxRecordingDuration;
+                            set.countDown = true;
+                        }
+                    }
                 }
             }
         });
 
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(SR){
+            SR.recognitionSupported = !!SpeechRecognition;
+            if(!SR.recognitionSupported){
+                console.warn("Tarayıcı Web Speech API'yi desteklemiyor. Ses kaydı normal şekilde devam edecek.");
+            }
+        }
+
         var Scene = SP.sceneDiv;
-        var set = {recordTime:15};
 
         var audioRecorder = {
             audioBlobs: [],
@@ -7270,6 +7664,7 @@ function PLAYER(){
 
                             audioRecorder.mediaRecorder.addEventListener("start", function(e) {
                                 SR.recording = true;
+                                SR.startSpeechRecognitionFNC(false);
                             });
 
                             audioRecorder.mediaRecorder.start();
@@ -7323,10 +7718,204 @@ function PLAYER(){
         }
 
 
+        function normalizeTranscript(text){
+            return text.replace(/\s+/g, " ").trim();
+        }
+
+        function getLastTranscript(){
+            var transcript = SR.recognitionFinalText || "";
+            if(SR.recognitionInterimText){
+                transcript += (transcript ? " " : "") + SR.recognitionInterimText;
+            }
+
+            return normalizeTranscript(transcript);
+        }
+
+        function sendTranscriptForEvaluation(){
+            if(PLX.isHDE){
+                return;
+            }
+
+            var transcript = "";
+            if(inputKey && SD.inputs[inputKey]){
+                transcript = normalizeTranscript(SD.inputs[inputKey].transcript || "");
+            }
+
+            if(!transcript){
+                return;
+            }
+
+            if(SR.aiRequestPending){
+                return;
+            }
+            var formatData = buildRubrikAIEvaluationPayload(SD, transcript);
+
+            SR.aiRequestPending = true;
+            rubrikLoaderAnimation("show");
+            controlBtnView(SP, "disable");
+
+            requestRubrikAIEvaluation(formatData, {
+                success: function(response){
+                    console.log("Speech transcript AI evaluate response:", response);
+                },
+                error: function(xhr, status, error){
+                    console.error("Speech transcript AI evaluate error:", status, error);
+                    console.log("Speech transcript AI evaluate error detail:", xhr.responseText);
+                },
+                complete: function(){
+                    SR.aiRequestPending = false;
+                    rubrikLoaderAnimation("hide");
+                    controlBtnView(SP, input.value !== null ? "enable" : "disable");
+                }
+            });
+        }
+
+        SR.updateTranscriptFNC = function(sendChange){
+            SR.transcript = getLastTranscript();
+            input.transcript = SR.transcript;
+            console.log("Konuşmanın son metni:", SR.transcript);
+
+            if(sendChange){
+                inputsChange(SD);
+            }
+        }
+
+        SR.resetSpeechRecognitionTextFNC = function(){
+            SR.transcript = "";
+            SR.recognitionFinalText = "";
+            SR.recognitionInterimText = "";
+            input.transcript = "";
+        }
+
+        SR.stopSpeechRecognitionFNC = function(){
+            SR.recognitionManuallyStopped = true;
+            if(SR.recognition && SR.recognitionStarted){
+                try {
+                    SR.recognition.stop();
+                } catch (error) {
+                    if(error.name === "InvalidStateError"){
+                        console.log("SpeechRecognition InvalidStateError: Tanıma zaten durmuş olabilir.");
+                    }else{
+                        console.log("SpeechRecognition durdurma hatası:", error.name);
+                    }
+                }
+            }
+        }
+
+        SR.startSpeechRecognitionFNC = function(keepFinalText){
+            if(!SR.recognitionSupported){
+                return;
+            }
+
+            if(SR.recognitionStarted){
+                return;
+            }
+
+            if(!keepFinalText){
+                SR.resetSpeechRecognitionTextFNC();
+            }else{
+                SR.recognitionInterimText = "";
+                SR.updateTranscriptFNC(false);
+            }
+
+            var recognition = new SpeechRecognition();
+            recognition.lang = "tr-TR";
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = function(event){
+                var interimTranscript = "";
+                var finalTranscript = "";
+
+                for(var i = event.resultIndex; i < event.results.length; i++){
+                    var text = event.results[i][0].transcript;
+                    if(event.results[i].isFinal){
+                        finalTranscript += text;
+                    }else{
+                        interimTranscript += text;
+                    }
+                }
+
+                SR.recognitionInterimText = normalizeTranscript(interimTranscript);
+                if(SR.recognitionInterimText){
+                    console.log("Anlık konuşma:", SR.recognitionInterimText);
+                }
+
+                if(finalTranscript){
+                    finalTranscript = normalizeTranscript(finalTranscript);
+                    SR.recognitionFinalText = normalizeTranscript(SR.recognitionFinalText + (SR.recognitionFinalText ? " " : "") + finalTranscript);
+                    SR.recognitionInterimText = "";
+                    console.log("Kesinleşen konuşma:", SR.recognitionFinalText);
+                    SR.updateTranscriptFNC(true);
+                }else{
+                    SR.updateTranscriptFNC(false);
+                }
+            }
+
+            recognition.onerror = function(event){
+                switch (event.error) {
+                    case "not-allowed":
+                        console.log("SpeechRecognition not-allowed: Mikrofon veya konuşma tanıma izni verilmedi.");
+                        SR.recognitionManuallyStopped = true;
+                        break;
+                    case "audio-capture":
+                        console.log("SpeechRecognition audio-capture: Mikrofon yakalanamadı.");
+                        SR.recognitionManuallyStopped = true;
+                        break;
+                    case "no-speech":
+                        console.log("SpeechRecognition no-speech: Konuşma algılanmadı.");
+                        break;
+                    case "network":
+                        console.log("SpeechRecognition network: Konuşma tanıma ağ hatası.");
+                        break;
+                    case "aborted":
+                        console.log("SpeechRecognition aborted: Konuşma tanıma durduruldu.");
+                        break;
+                    default:
+                        console.log("SpeechRecognition hatası:", event.error);
+                }
+            }
+
+            recognition.onend = function(){
+                SR.recognitionStarted = false;
+                SR.recognition = null;
+                SR.recognitionInterimText = "";
+                SR.updateTranscriptFNC(true);
+
+                if(SR.recording && !SR.recognitionManuallyStopped && !SR.isPaused){
+                    setTimeout(function(){
+                        if(SR.recording && !SR.recognitionStarted && !SR.recognitionManuallyStopped && !SR.isPaused){
+                            SR.startSpeechRecognitionFNC(true);
+                        }
+                    }, 250);
+                }
+            }
+
+            SR.recognition = recognition;
+            SR.recognitionManuallyStopped = false;
+
+            try {
+                recognition.start();
+                SR.recognitionStarted = true;
+            } catch (error) {
+                if(error.name === "InvalidStateError"){
+                    console.log("SpeechRecognition InvalidStateError: Tanıma zaten başlamış olabilir.");
+                }else{
+                    console.log("SpeechRecognition başlatma hatası:", error.name);
+                }
+                SR.recognitionStarted = false;
+                SR.recognition = null;
+            }
+        }
+
+
         SR.startAudioRecordingFNC = function(){
             if (SR.Howl && SR.Howl.playing()) {
                 SR.Howl.stop();
             }
+
+            SR.resetSpeechRecognitionTextFNC();
+            controlBtnView(SP, "disable");
 
             audioRecorder.start()
                 .then(() => {
@@ -7376,6 +7965,7 @@ function PLAYER(){
             if (SR.recording && !SR.isPaused) {
                 audioRecorder.pause();
                 SR.isPaused = true;
+                SR.stopSpeechRecognitionFNC();
 
                 clearInterval(SR.recordInterval);
                 var timeData = SR.recordTimeCalcFNC(SR.recordStartTime);
@@ -7391,6 +7981,7 @@ function PLAYER(){
             if (SR.recording && SR.isPaused) {
                 audioRecorder.resume();
                 SR.isPaused = false;
+                SR.startSpeechRecognitionFNC(true);
 
                 SR.recordStartTime = new Date();
                 SR.recordInterval = setInterval(SR.recordElapsedTimeFNC, 1000);
@@ -7404,6 +7995,7 @@ function PLAYER(){
         SR.stopAudioRecordingFNC = function() {
             console.log("Stopping Audio Recording...");
             if(SR.recording){
+                SR.stopSpeechRecognitionFNC();
                 audioRecorder.stop()
                     .then(audioAsblob => {
                         SR.playAudioFNC(audioAsblob);
@@ -7425,6 +8017,8 @@ function PLAYER(){
 
         SR.cancelAudioRecordingFNC = function() {
             console.log("Canceling audio...");
+            SR.stopSpeechRecognitionFNC();
+            SR.resetSpeechRecognitionTextFNC();
             audioRecorder.cancel();
             SR.stopViewFNC();
             SR.base64 = null;
@@ -7465,12 +8059,25 @@ function PLAYER(){
             };
         }
 
+        SR.recordTimeTextFNC = function(timeData){
+            if(set.countDown){
+                var remainingTime = Math.ceil(set.recordTime - timeData.totalSeconds);
+                if(remainingTime < 0){
+                    remainingTime = 0;
+                }
+
+                return SR.timeConvertSecondAndMinutes(remainingTime);
+            }
+
+            return timeData.formatted;
+        }
+
 
         SR.recordElapsedTimeFNC = function(){
             if (SR.isPaused) return;
 
             var timeData = SR.recordTimeCalcFNC(SR.recordStartTime);
-            SR.elapsedTime = timeData.formatted;
+            SR.elapsedTime = SR.recordTimeTextFNC(timeData);
             SR.recordTime.innerText = SR.elapsedTime;
 
             if (timeData.totalSeconds >= set.recordTime) {
@@ -7735,6 +8342,11 @@ function PLAYER(){
         function addB64DataFNC(soundData){
             input.value = soundData;
             inputsChange(SD);
+            if(soundData){
+                controlBtnView(SP, "enable");
+            }else{
+                controlBtnView(SP, "disable");
+            }
         }
 
         function addHistory(){
@@ -7742,12 +8354,19 @@ function PLAYER(){
             for(var box in lastMove){
                 var currentID = lastMove[box].id;
                 if(SP.soundRecord[currentID]){
+                    SR.transcript = lastMove[box].transcript || "";
+                    SR.recognitionFinalText = SR.transcript;
+                    input.transcript = SR.transcript;
                     SR.oldDataLoad(lastMove[box].value, false, true);
                 }
             }
         }
 
         function checkRightAnswer(){
+            if(input.value !== null){
+                sendTranscriptForEvaluation();
+            }
+
             if(input.value === null){
                 return {totalRight:0, totalWrong:0, totalEmpty:1, Type:"sr"};
             }else{
@@ -7959,11 +8578,60 @@ function PLAYER(){
             });
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            for(var boxKey in boxes){
+                var id = parseInt(String(boxKey).replace("box", ""));
+                var status = boxes[boxKey];
+
+                if(!wordArray[id]) continue;
+
+                wordArray[id].status = status;
+
+                if(status === "right"){
+                    wordArray[id].bg.style.backgroundColor = "#008000";
+                    wordArray[id].main.style.pointerEvents = "none";
+                }else if(status === "wrong"){
+                    wordArray[id].bg.style.backgroundColor = "#c62828";
+                    wordArray[id].main.style.pointerEvents = "none";
+                }else if(status === "empty"){
+                    wordArray[id].bg.style.backgroundColor = set.mouseLeave;
+                    wordArray[id].main.style.pointerEvents = "auto";
+                    wordArray[id].clicked = false;
+                }
+            }
+
+            setTimeout(function(){
+                if(SD.complete){
+                    wordArray.map(function(work){
+                        work.main.style.pointerEvents = "none";
+                    });
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
+                wordArray.map(function(work){
+                    if(work.status !== "right"){
+                        work.bg.style.backgroundColor = set.mouseLeave;
+                        work.main.style.pointerEvents = "auto";
+                        work.status = null;
+                        work.clicked = false;
+                        inputsChange(SD, work.id, "value", null);
+                    }
+                });
+
+                controlBtnViewCheck();
+            }, 1000);
+        }
+
         var evaluation = {
             control: checkAnswer,
             wrong: controlAfterFNC,
             right: controlAfterFNC,
             answer: answerActionFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: resetFNC,
             close: close

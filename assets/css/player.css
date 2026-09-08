@@ -604,7 +604,6 @@ body{
 
 .notice{
     padding: 0 10px;
-    width: 232px;
     height: 42px;
     margin-top: 5px;
     border-radius: 20px;
@@ -615,7 +614,7 @@ body{
     line-height: 42px;
 }
 
-.checkIconDOM{
+.statusMain{
     right: 10px;
     bottom: 190px;
     position: absolute;
@@ -625,16 +624,24 @@ body{
     flex-direction: column;
     align-items: end;
     z-index: 2000;
+    pointer-events: none;
+    user-select: none;
 }
 
-.pageStatusIcon{
+.statusIconMain{
     width: 70px;
     height: 70px;
-    display: none;
+    border-radius: 70px;
+    position: relative;
 }
 
-.pageStatusIcon img{
-    width:100%;
+.statusIconMain img{
+    left:0;
+    top:0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: none;
 }
 
 .readOnlyDOM{
@@ -763,24 +770,6 @@ body{
 
 
 /* HDE */
-.statusIconMain{
-    right: 10px;
-    bottom: 240px;
-    width: 70px;
-    height: 70px;
-    position: absolute;
-    display: none;
-}
-
-.statusIconMain img{
-    left:0;
-    top:0;
-    width: 100%;
-    height: 100%;
-    visibility: hidden;
-    position: absolute;
-}
-
 .watcher_mainBtn{
     justify-content: center;
     margin-bottom: 14px;
