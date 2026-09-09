@@ -2016,6 +2016,7 @@ IDE.workSpace.createVideo.addEventListener("click", function(){
         }
     });
 
+    CREATE.checkKontrol();
     addHistory();
     selectItem({shiftKey: false, layer: obj});
 });
@@ -2041,10 +2042,12 @@ IDE.workSpace.createRectVideo.addEventListener("click", function(){
             name: "videoBox",
             type: "objectRect",
             class: "videoPlayer",
+            params:{},
         },
         addLayer: true
     });
 
+    CREATE.checkKontrol();
     addHistory();
     selectItem({shiftKey: false, layer: obj});
 });
@@ -2480,7 +2483,7 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
     }
 
     var rubrikPanelUrl = "/rubrik?file_name="+ encodeURIComponent(IDE.user.selectedFile) +offlineRubrik;
-    IDE.popupWindow = window.open(rubrikPanelUrl, "_blank", "width=800,height=600,left=540,top=220");
+    IDE.popupWindow = window.open(rubrikPanelUrl, "_blank", "width=1200,height=600,left=100,top=100");
     /* IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220"); */
 });
 

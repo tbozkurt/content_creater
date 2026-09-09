@@ -1026,14 +1026,13 @@ function PLAYER(){
         } else {
             var result = EvaluatorEngine.evaluate(SD.rubrik, finalBox);
             showFeedBack(result.result, "auto", SD.historyRight.length);
-            console.log(result);
             SP.fnc.map(function(fnc){
                 if(fnc.rubrikBoxView){
                     fnc.rubrikBoxView(result.boxes || result);
                 }
             });
 
-            rubrikResult(SP, SD, result.result, "evaluator");
+            rubrikResult(SP, SD, result, "evaluator");
         }
     }
 
@@ -1050,8 +1049,6 @@ function PLAYER(){
     }
 
     function rubrikResult(SP, SD, result, type){
-        console.log("Result:", result);
-
         var attempt = {
             right: 0,
             wrong: 0,
@@ -1062,15 +1059,21 @@ function PLAYER(){
             answered: "0"
         }
 
+        console.log("Evaluator Result:", result);
+
+        if(type === "evaluator"){
+            attempt.result = result.result;
+        }
+
         SD.rubrik.groups.map(function(group){
-            if(group.name === result){
+            if(group.name === attempt.result){
                 attempt.score = group.score;
             }
         });
 
         addHistoryStep(SD, attempt);
 
-        if(result === "T1"){
+        if(attempt.result  === "T1"){
             SD.right = attempt.right = 1;
             SD.totalRight = attempt.totalRight = 1;
             This.playRightAudio();
@@ -1138,11 +1141,11 @@ function PLAYER(){
 
     function getRubrikAIEnv(){
         var host = window.location.hostname;
-        if(host.includes("oktest") || host.includes("preprod") || host.includes("localhost")){
+        if(host.includes("oktest") || host.includes("preprod")){
             return "";
         }
 
-        return "https://contentcreator.okulistik.com";
+        return "https://www.okulistik.com";
     }
 
     function buildRubrikAIEvaluationPayload(SD, answer){
@@ -1209,7 +1212,7 @@ function PLAYER(){
         var requestOptions = options || {};
 
         $.ajax({
-            url: getRubrikAIEnv()+"/api/rubrik/evaluation/ai-evaluate",
+            url: getRubrikAIEnv()+"/api/evaluation/ai-evaluate",
             headers: {
                 "Authorization": jwt,
                 "Accept-Language": "tr-TR"
@@ -2071,6 +2074,7 @@ function PLAYER(){
                 obj.style.cursor = "pointer";
 
                 directivePlay.addEventListener("click", function(e){
+                    This.stopAllMedia();
                     SP.directive.sound.play();
                     e.stopPropagation();
                 });
@@ -2084,6 +2088,13 @@ function PLAYER(){
                 var id = parseInt( obj.id.split("_")[1] );
                 SP.soundPlayer[id] = {sceneID:sceneID, id:id};
                 var soundPlayer = SP.soundPlayer[id];
+                var soundPlayerData = {};
+                SP.elementList.map(function(element){
+                    if(element.id === obj.id && element.data){
+                        soundPlayerData = element.data;
+                    }
+                });
+                soundPlayer.timeRange = getMediaTimeRange(soundPlayerData);
 
                 soundPlayer.playBtn = obj.querySelector(".play");
                 soundPlayer.pauseBtn = obj.querySelector(".pause");
@@ -2537,21 +2548,77 @@ function PLAYER(){
         soundPlayer.restartBtn.style.display = "block";
     }
 
+    /* Media Range Start */
+    function getMediaTimeRange(params){
+        params = params || {};
+
+        function parseTime(value){
+            if(value === undefined || value === null || value === ""){
+                return null;
+            }
+
+            var time = Number(value);
+            if(isNaN(time) || time < 0){
+                return null;
+            }
+
+            return time;
+        }
+
+        var minTime = parseTime(params.minTime);
+        var maxTime = parseTime(params.maxTime);
+
+        if(minTime === null && maxTime === null){
+            return null;
+        }
+
+        if(minTime !== null && maxTime !== null && maxTime <= minTime){
+            maxTime = null;
+        }
+
+        return {
+            minTime: minTime,
+            maxTime: maxTime
+        };
+    }
+
+    function getMediaRangeStart(range){
+        return range && range.minTime !== null ? range.minTime : 0;
+    }
+
+    function getMediaRangeEnd(range, duration){
+        if(!range || range.maxTime === null){
+            return duration;
+        }
+
+        return duration ? Math.min(range.maxTime, duration) : range.maxTime;
+    }
+    /* Media Range End */
+
     this.SoundPlayerHowler = function(soundPlayer){
         if(!soundPlayer.Confirm){
             soundPlayer.Confirm = true;
             soundPlayer.howl = new Howl({
-                src: [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".webm"],
+                src: [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".mp3"],
                 onload: function(){
                     soundPlayer.load = true;
+                    if(soundPlayer.timeRange){
+                        soundPlayer.howl.seek(getMediaRangeStart(soundPlayer.timeRange));
+                        progressSP(soundPlayer, false);
+                    }
                 },
                 onloaderror: function() {},
                 onplay: function(){
+                    soundPlayer.rangeEnded = false;
                     playBtnShow(soundPlayer);
                     addSPsetInterval(soundPlayer);
                 },
                 onpause: function(){
-                    pauseBtnShow(soundPlayer);
+                    if(soundPlayer.rangeEnded){
+                        RestartBtnShow(soundPlayer);
+                    }else{
+                        pauseBtnShow(soundPlayer);
+                    }
                     delSPInterval();
                 },
                 onend: function(){
@@ -2575,7 +2642,26 @@ function PLAYER(){
     function progressSP(soundPlayer, showFullBar){
         var pos = Number(soundPlayer.howl.seek().toFixed(1));
         var dur = Number(soundPlayer.howl.duration().toFixed(1));
-        var percent = ((pos / dur) * 100);
+        var range = soundPlayer.timeRange;
+        var start = getMediaRangeStart(range);
+        var end = getMediaRangeEnd(range, dur);
+        var duration = end - start;
+
+        if(range && range.maxTime !== null && pos >= end){
+            soundPlayer.rangeEnded = true;
+            soundPlayer.howl.pause();
+            soundPlayer.howl.seek(end);
+            RestartBtnShow(soundPlayer);
+            delSPInterval();
+            pos = end;
+            showFullBar = true;
+        }
+
+        if(pos < start){
+            pos = start;
+        }
+
+        var percent = duration > 0 ? (((pos - start) / duration) * 100) : 0;
         if(soundPlayer.progressBarMain){
             if(showFullBar){
                 soundPlayer.progressBarFront.style.width = "100%";
@@ -2613,14 +2699,25 @@ function PLAYER(){
         if(soundPlayer.load){
             if(status==="play" && !soundPlayer.howl.playing()){
                 This.stopAllMedia();
+                if(soundPlayer.timeRange && soundPlayer.howl.seek() >= getMediaRangeEnd(soundPlayer.timeRange, soundPlayer.howl.duration())){
+                    soundPlayer.howl.seek(getMediaRangeStart(soundPlayer.timeRange));
+                }else if(soundPlayer.timeRange && soundPlayer.howl.seek() < getMediaRangeStart(soundPlayer.timeRange)){
+                    soundPlayer.howl.seek(getMediaRangeStart(soundPlayer.timeRange));
+                }
+                soundPlayer.rangeEnded = false;
                 soundPlayer.howl.play();
             }else if(status==="pause"){
                 soundPlayer.howl.pause();
             }else if(status==="seek"){
                 var duration = soundPlayer.howl.duration();
                 if(duration){
-                    var seekTime = Number((duration * seekPercent).toFixed(2));
+                    var range = soundPlayer.timeRange;
+                    var start = getMediaRangeStart(range);
+                    var end = getMediaRangeEnd(range, duration);
+                    var seekDuration = end - start;
+                    var seekTime = Number(((seekDuration > 0 ? start + (seekDuration * seekPercent) : start)).toFixed(2));
                     soundPlayer.howl.seek(seekTime);
+                    soundPlayer.rangeEnded = false;
                     progressSP(soundPlayer, false);
 
                     if(soundPlayer.howl.playing()){
@@ -2630,6 +2727,61 @@ function PLAYER(){
 
             }
         }
+    }
+
+    function applyVideoTimeRange(video, params){
+        var range = getMediaTimeRange(params);
+        if(!range){
+            return;
+        }
+
+        video.timeRange = range;
+        var originalPlay = video.PlayVideo;
+        var originalStop = video.StopVideo;
+        var rangeInterval;
+
+        function getStart(){
+            return getMediaRangeStart(range);
+        }
+
+        function getEnd(){
+            return getMediaRangeEnd(range, video.dTime);
+        }
+
+        function clearRangeInterval(){
+            clearInterval(rangeInterval);
+        }
+
+        function enforceStart(){
+            var start = getStart();
+            var end = getEnd();
+            var current = Number(video.cTime || 0);
+
+            if(current < start || (range.maxTime !== null && current >= end)){
+                video.gotoTime(start);
+            }
+        }
+
+        function watchRange(){
+            var end = getEnd();
+            if(range.maxTime !== null && Number(video.cTime || 0) >= end){
+                originalStop.call(video);
+                video.gotoTime(end);
+                clearRangeInterval();
+            }
+        }
+
+        video.PlayVideo = function(){
+            enforceStart();
+            originalPlay.call(video);
+            clearRangeInterval();
+            rangeInterval = setInterval(watchRange, 200);
+        };
+
+        video.StopVideo = function(){
+            clearRangeInterval();
+            originalStop.call(video);
+        };
     }
 
 
@@ -2671,34 +2823,41 @@ function PLAYER(){
     }
 
     this.stopAllMedia = function(){
-        /* Video */
-        SP.map(function(slide){
-            slide.video.map(function(video){
-                video.StopVideo();
+        try{
+            /*directive*/
+            This.soundAllSound();
+
+            /* Video */
+            SP.map(function(slide){
+                slide.video.map(function(video){
+                    video.StopVideo();
+                });
             });
-        });
 
-        /* Sound Record */
-        for(var id in SP[This.sceneIndex].soundRecord){
-            SP[This.sceneIndex].soundRecord[id].stopPlayedRecord();
-            SP[This.sceneIndex].soundRecord[id].stopAudioRecordingFNC();
-        }
-        
-        /* soundPlayer */
-        SP[This.sceneIndex].soundPlayer.map(function(sound){
-            if(sound.load){
-                if(sound.howl.playing()){
-                    sound.howl.pause();
+            /* Sound Record */
+            for(var id in SP[This.sceneIndex].soundRecord){
+                SP[This.sceneIndex].soundRecord[id].stopPlayedRecord();
+                SP[This.sceneIndex].soundRecord[id].stopAudioRecordingFNC();
+            }
+
+            /* soundPlayer */
+            SP[This.sceneIndex].soundPlayer.map(function(sound){
+                if(sound.load){
+                    if(sound.howl.playing()){
+                        sound.howl.pause();
+                    }
                 }
-            }
-        });
+            });
 
-        /* feedback */
-        SP[This.sceneIndex].feedBack.map(function(feedback){
-            if(feedback.howl){
-                feedback.howl.pause();
-            }
-        });
+            /* feedback */
+            SP[This.sceneIndex].feedBack.map(function(feedback){
+                if(feedback.howl){
+                    feedback.howl.pause();
+                }
+            });
+        }catch(err){
+            console.log(err);
+        }
     }
 
     /* ChangeScene */
@@ -2717,7 +2876,6 @@ function PLAYER(){
 
             this.addSceneInterval();
             PLX.autoSceneChange_stopQuickly();
-            This.soundAllSound();
             This.playAutoSound();
 
             if(index === 0){
@@ -6709,7 +6867,8 @@ function PLAYER(){
                     endFNC: endFNC,
                     watchedFNC: watchedFNC,
                     metaDataFNC: metaDataFNC,
-                    occMode: true
+                    occMode: true,
+                    timeRange: getMediaTimeRange(element.data)
                 };
 
                 if(PLX.isBSD){
@@ -6717,6 +6876,7 @@ function PLAYER(){
                 }
 
                 var tempVideo = AddPlayer(videoProp);
+                applyVideoTimeRange(tempVideo, element.data);
                 tempVideo.type = "a_video";
                 SP.video.push(tempVideo);
             }else if(element.id.includes("popupWindow")){
@@ -6727,6 +6887,7 @@ function PLAYER(){
                     videoProp.metaDataFNC = function(){};
 
                     var tempVideo = AddPlayer(videoProp);
+                    applyVideoTimeRange(tempVideo, videoProp.timeRangeParams);
                     tempVideo.type = "popup";
                     SP.video.push(tempVideo);
                 }
@@ -6738,6 +6899,7 @@ function PLAYER(){
                     videoProp.metaDataFNC = function(){};
                     videoProp.videoCapture = true;
                     var tempVideo = AddPlayer(videoProp);
+                    applyVideoTimeRange(tempVideo, videoProp.timeRangeParams);
                     SP.video.push(tempVideo);
                     tempVideo.type = "feedback";
                     tempVideo.feedbackID = parseInt(element.id.split("_")[1]);
@@ -6753,6 +6915,7 @@ function PLAYER(){
                 videoProp.metaDataFNC = function(){};
                 videoProp.videoCapture = true;
                 var tempVideo = AddPlayer(videoProp);
+                applyVideoTimeRange(tempVideo, videoProp.timeRangeParams);
                 tempVideo.type = "e_video";
                 SP.video.push(tempVideo);
             }
@@ -6763,10 +6926,12 @@ function PLAYER(){
         function addVideoElement(element){
             var videoRect;
             var videoLink;
+            var timeRangeParams;
             for(var kid of element.kids){
                 if(kid.className.includes("videoPlayer")){
                     videoRect = kid.main;
                     videoLink = kid.data.videoLink;
+                    timeRangeParams = kid.data;
                     break;
                 }
             }
@@ -6794,7 +6959,9 @@ function PLAYER(){
                     fullScreen: false,
                     endFNC: null,
                     watchedFNC: null,
-                    occMode: true
+                    occMode: true,
+                    timeRangeParams: timeRangeParams,
+                    timeRange: getMediaTimeRange(timeRangeParams)
                 };
 
                 if(PLX.isBSD){
@@ -7756,7 +7923,7 @@ function PLAYER(){
 
             requestRubrikAIEvaluation(formatData, {
                 success: function(response){
-                    console.log("Speech transcript AI evaluate response:", response);
+                    //console.log("Speech transcript AI evaluate response:", response);
                 },
                 error: function(xhr, status, error){
                     console.error("Speech transcript AI evaluate error:", status, error);
@@ -7773,7 +7940,7 @@ function PLAYER(){
         SR.updateTranscriptFNC = function(sendChange){
             SR.transcript = getLastTranscript();
             input.transcript = SR.transcript;
-            console.log("Konuşmanın son metni:", SR.transcript);
+            //console.log("Konuşmanın son metni:", SR.transcript);
 
             if(sendChange){
                 inputsChange(SD);
@@ -7837,15 +8004,17 @@ function PLAYER(){
                 }
 
                 SR.recognitionInterimText = normalizeTranscript(interimTranscript);
+                /*
                 if(SR.recognitionInterimText){
                     console.log("Anlık konuşma:", SR.recognitionInterimText);
                 }
+                */
 
                 if(finalTranscript){
                     finalTranscript = normalizeTranscript(finalTranscript);
                     SR.recognitionFinalText = normalizeTranscript(SR.recognitionFinalText + (SR.recognitionFinalText ? " " : "") + finalTranscript);
                     SR.recognitionInterimText = "";
-                    console.log("Kesinleşen konuşma:", SR.recognitionFinalText);
+                    //console.log("Kesinleşen konuşma:", SR.recognitionFinalText);
                     SR.updateTranscriptFNC(true);
                 }else{
                     SR.updateTranscriptFNC(false);
@@ -7920,7 +8089,7 @@ function PLAYER(){
             audioRecorder.start()
                 .then(() => {
                     SR.recordStartTime = new Date();
-                    console.log("SR.recordStartTime",SR.recordStartTime);
+                    //console.log("SR.recordStartTime",SR.recordStartTime);
                     SR.startViewFNC();
                 })
                 .catch(error => {

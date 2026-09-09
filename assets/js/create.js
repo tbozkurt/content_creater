@@ -187,6 +187,7 @@ function CREATE(){
         {obj: "popupButon", answer:false},
         {obj: "soundPlayer", answer:false},
         {obj: "soundRecord", answer:true},
+        {obj: "videoBox", answer:false},
         {obj: "feedback", answer:false},
         {obj: "freeDrawCanvas", answer:true},
         {obj: "wordBox", answer:true},

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gelişmiş Mantık Kurgulayıcı Paneli</title>
     <style>
+        @import url("../assets/font/nunito/nunito.css");
+        @import url("/assets/font/nunito/nunito.css");
         @import url("https://cdn.okulistik.com/mobileplayer/contentplayer/assets/font/nunito/nunito.css");
         body {
             font-family: Nunito;
@@ -12,11 +14,6 @@
             margin: 0;
             padding: 10px;
             color: #bababa;
-            box-sizing: border-box;
-        }
-
-        *, *::before, *::after {
-            box-sizing: inherit;
         }
 
         .app-layout {
@@ -25,7 +22,6 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 10px;
-            min-width: 0;
         }
 
         /* Tüm pencerelerin stilleri tamamen eşitlendi */
@@ -41,13 +37,11 @@
         .main-panel {
             flex: 2;
             min-width: 300px;
-            max-width: 100%;
         }
 
         .side-panel {
             flex: 1;
             min-width: 300px;
-            max-width: 100%;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -71,7 +65,6 @@
             background: #323232;
             border: 1px solid #252525;
             border-radius: 4px;
-            min-width: 0;
         }
         .box-row label { font-weight: bold; min-width: 45px; color: #bababa; font-size: 13px; }
 
@@ -87,10 +80,7 @@
             outline: none;
             border-color: #bababa;
         }
-        .box-input {
-            flex: 1;
-            min-width: 0;
-        }
+        .box-input { flex: 1; }
 
         .group-section {
             margin-top: 12px;
@@ -114,10 +104,6 @@
             gap: 10px;
             margin-bottom: 6px;
             flex-wrap: wrap;
-        }
-
-        .form-inline-group > div {
-            min-width: 0;
         }
 
         .group-form-header,
@@ -233,18 +219,11 @@
             gap: 8px;
             align-items: center;
             margin-bottom: 8px;
-            min-width: 0;
-            flex-wrap: wrap;
         }
 
         .topic-tree-toolbar input {
             flex: 1;
-            min-width: 0;
-            width: 100%;
-        }
-
-        .topic-tree-panel {
-            min-width: 0;
+            min-width: 120px;
         }
 
         .topic-tree-status {
@@ -449,10 +428,10 @@
         .group-item:hover { opacity: 0.9; transform: translateX(2px); }
         .group-item.editing { border-left-color: #f59e0b !important; background: #443e2a !important; }
 
-        .info-table { width: 100%; border-collapse: collapse; margin-top: 6px; background: #323232; table-layout: fixed; }
+        .info-table { width: 100%; border-collapse: collapse; margin-top: 6px; background: #323232; }
         .info-table th, .info-table td { border: 1px solid #252525; padding: 6px; text-align: left; font-size: 12px; }
         .info-table th { background: #252525; color: #ffffff; }
-        .info-table td { color: #bababa; overflow-wrap: anywhere; }
+        .info-table td { color: #bababa; }
 
         /* Dinamik Renk Alacak Değerlendirici Sonuç Kutusu */
         .result-box {
@@ -501,12 +480,6 @@
             color: #ff8b8b;
         }
 
-        @media (max-width: 1200px) {
-            .rubrik-tree-panels {
-                grid-template-columns: 1fr;
-            }
-        }
-
         @media (max-width: 900px) {
             .app-layout {
                 flex-direction: column;
@@ -515,41 +488,8 @@
                 flex: 1 1 100%;
                 width: 100%;
             }
-        }
-
-        @media (max-width: 420px) {
-            body {
-                padding: 6px;
-            }
-
-            .panel-card,
-            .rubrik-page-title,
-            .group-section {
-                padding: 8px;
-            }
-
-            .main-panel,
-            .side-panel {
-                min-width: 0;
-            }
-
-            .box-row {
-                flex-wrap: wrap;
-            }
-
-            .box-row label {
-                min-width: 36px;
-            }
-
-            .box-row .box-input,
-            .box-row.review-mode .box-alias-input,
-            .box-row .box-operator {
-                flex: 1 1 120px;
-                min-width: 0;
-            }
-
-            .topic-tree-toolbar button {
-                flex: 1 1 auto;
+            .rubrik-tree-panels {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1208,6 +1148,9 @@
                     <span class="rubrik-page-meta-label">File</span>
                     <span id="rubrikHeaderFile" class="rubrik-page-meta-value">?</span>
                 </span>
+                <span id="rubrikHeaderOffline" class="rubrik-page-meta-item" style="display:none; margin-left: 6px;">
+                    <span style="background:#ef6c00; color:#ffffff; font-weight:800; font-size:11px; padding:2px 6px; border-radius:3px;">OFFLINE</span>
+                </span>
             </div>
         </div>
     </div>
@@ -1369,12 +1312,21 @@
     </table>
 </div>
 
-<script src="assets/js/evaluator_engine.js"></script>
+<script src="/assets/js/evaluator_engine.js"></script>
+<script>
+    if (typeof EvaluatorEngine === 'undefined') {
+        document.write('<script src="../assets/js/evaluator_engine.js"><\/script>');
+        document.write('<script src="assets/js/evaluator_engine.js"><\/script>');
+    }
+</script>
 <script>
     // Offline mod kontrolü
     function isOfflineMode() {
         const params = new URLSearchParams(window.location.search);
-        return params.get('offline') === 'true' || params.has('offline');
+        if (!params.has('offline')) return false;
+        const val = (params.get('offline') || '').toLowerCase();
+        if (val === 'false' || val === '0' || val === 'no') return false;
+        return true;
     }
 
     // KALDIĞIN YERDEN DEVAM ETMEK İÇİN BU DEĞİŞKENE DATA BAĞLAYABİLİRSİNİZ
@@ -1521,6 +1473,9 @@
     }
 
     function showRubrikLogin(message){
+        if(isOfflineMode()){
+            return;
+        }
         setRubrikLoginError(message || '');
         rubrikLoginOverlay.classList.add('visible');
         setTimeout(() => rubrikUsername.focus(), 0);
@@ -1591,6 +1546,10 @@
     function setRubrikHeader(fileName, sceneName, isError){
         rubrikHeaderFile.textContent = fileName || '?';
         rubrikHeaderFile.classList.toggle('error', Boolean(isError));
+        const offlineBadge = document.getElementById('rubrikHeaderOffline');
+        if(offlineBadge){
+            offlineBadge.style.display = isOfflineMode() ? 'inline-flex' : 'none';
+        }
     }
 
     function getLocalData(){
@@ -1611,7 +1570,9 @@
                     ? rubrikData.slidesRubrik[localSlideIndex]
                     : getEmptyRubrikState();
                 initialRubrikAIState = normalizeRubrikAI(initialAppState.rubrikAI);
-                setRubrikHeader(rubrikData.user.selectedFile, rubrikData.scene.name);
+                const safeFileName = (rubrikData.user && rubrikData.user.selectedFile) || getQueryFileName() || "";
+                const safeSceneName = (rubrikData.scene && rubrikData.scene.name) || "";
+                setRubrikHeader(safeFileName, safeSceneName);
                 localStorage.removeItem("occSceneRubrikData");
             }
         }
@@ -2925,6 +2886,49 @@
     }
 
     async function loadTopicTreeForFile(fileName){
+        if(isOfflineMode()){
+            topicTreeState.isLoading = false;
+            skillTreeState.isLoading = false;
+            let loaded = false;
+            try {
+                const treeData = await fetchJsonFile('files/konu-agaci.json').catch(() => null);
+                const skillTreeData = await fetchJsonFile('files/skill.json').catch(() => null);
+                if(treeData && skillTreeData){
+                    const flatItems = extractArrayPayload(treeData);
+                    const builtTree = buildTopicTree(flatItems);
+                    const flatSkillItems = extractArrayPayload(skillTreeData);
+                    topicTreeState.flatItems = flatItems;
+                    topicTreeState.treeItems = builtTree.treeItems;
+                    topicTreeState.itemMap = builtTree.itemMap;
+                    topicTreeState.parentMap = builtTree.parentMap;
+                    skillTreeState.flatItems = flatSkillItems;
+                    refreshTopicTreeSelectionForActiveSlide();
+                    loaded = true;
+                }
+            } catch (e) {}
+
+            if(!loaded){
+                topicTreeState.flatItems = [];
+                topicTreeState.treeItems = [];
+                topicTreeState.itemMap = {};
+                topicTreeState.parentMap = {};
+                skillTreeState.flatItems = [];
+                skillTreeState.treeItems = [];
+                skillTreeState.itemMap = {};
+                skillTreeState.parentMap = {};
+                skillTreeState.allowedIds = [];
+                skillTreeState.selectedIds = [];
+                skillTreeState.weightMap = {};
+                skillTreeState.lastEditedWeightId = null;
+                setTopicTreeStatus('Offline mod (Konu ağacı pasif)');
+                setSkillTreeStatus('Offline mod (Süreç bileşeni pasif)');
+            }
+            updateFinalSaveButtonState(false);
+            renderTopicTree();
+            renderSkillTree();
+            return;
+        }
+
         const params = getTopicTreeParamsFromFileName(fileName);
 
         if(!params){
@@ -3206,9 +3210,10 @@
         }
 
         const hasRubrik = hasAnyConfiguredRubrikInCurrentContext();
-        const hasMissingTopic = hasSlidesWithoutConfiguredTopic();
-        const hasMissingSkill = hasSlidesWithoutConfiguredSkill();
-        const hasInvalidSkillWeight = hasSlidesWithInvalidSkillWeights();
+        const isOffline = isOfflineMode();
+        const hasMissingTopic = (!isOffline || topicTreeState.flatItems.length > 0) && hasSlidesWithoutConfiguredTopic();
+        const hasMissingSkill = (!isOffline || skillTreeState.flatItems.length > 0) && hasSlidesWithoutConfiguredSkill();
+        const hasInvalidSkillWeight = (!isOffline || skillTreeState.flatItems.length > 0) && hasSlidesWithInvalidSkillWeights();
         const canSave = hasRubrik && !hasMissingTopic && !hasMissingSkill && !hasInvalidSkillWeight;
         btnFinalSave.disabled = !canSave;
         btnFinalSave.title = canSave
@@ -3256,8 +3261,7 @@
         });
         apiRubrik.boxes = mergedBoxes;
 
-        const sourceGroups = localRubrik.groups.length > 0 ? localRubrik.groups : apiRubrik.groups;
-        apiRubrik.groups = sourceGroups
+        apiRubrik.groups = apiRubrik.groups
             .map(group => {
                 const cleanGroup = cloneState(group);
                 cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
@@ -3266,6 +3270,18 @@
                 return cleanGroup;
             })
             .filter(group => group.boxes.length > 0);
+
+        if(apiRubrik.groups.length === 0 && localRubrik.groups.length > 0){
+            apiRubrik.groups = localRubrik.groups
+                .map(group => {
+                    const cleanGroup = cloneState(group);
+                    cleanGroup.boxes = Array.isArray(cleanGroup.boxes)
+                        ? cleanGroup.boxes.filter(box => box && boxKeyMap[box.boxId])
+                        : [];
+                    return cleanGroup;
+                })
+                .filter(group => group.boxes.length > 0);
+        }
 
         if(!apiRubrik.rubrikAI.instructions.instructions && localRubrik.rubrikAI.instructions.instructions){
             apiRubrik.rubrikAI.instructions = localRubrik.rubrikAI.instructions;
@@ -3449,7 +3465,7 @@
         refreshTopicTreeSelectionForActiveSlide();
         refreshSkillTreeSelectionForActiveSlide();
         if(isSlideChange){
-            resetEvaluatorPanel();
+            triggerEvaluation();
         }
         renderSlideTabs();
         renderArchiveList();
@@ -3521,9 +3537,9 @@
 
     function renderArchiveList(){
         const logs = getOccLogs();
-        archivePanel.style.display = activeOccFileName || activeSlideIndex !== null ? 'block' : 'none';
+        archivePanel.style.display = (activeOccFileName || activeSlideIndex !== null) && !isOfflineMode() ? 'block' : 'none';
 
-        if(!activeOccFileName && activeSlideIndex === null){
+        if(isOfflineMode() || (!activeOccFileName && activeSlideIndex === null)){
             return;
         }
 
@@ -3602,7 +3618,7 @@
             showListLoading: false
         }, options || {});
 
-        if(!fileName){
+        if(isOfflineMode() || !fileName){
             occLogState = {count: 0, list: []};
             selectedOccLogId = null;
             isArchiveListLoading = false;
@@ -3654,7 +3670,7 @@ Detail: ${error?.detail || '-'}
     }
 
     async function reloadActiveOccRubrikFile(){
-        if(!activeOccFileName){
+        if(isOfflineMode() || !activeOccFileName){
             return;
         }
 
@@ -3863,18 +3879,6 @@ Detail: ${error?.detail || '-'}
         setReviewAIStatus('');
         setReviewAIResult('');
         setReviewAIFeedback('');
-    }
-
-    function resetEvaluatorPanel(){
-        document.querySelectorAll('.eval-test-input').forEach(input => {
-            input.value = '';
-        });
-        document.querySelectorAll('.review-ai-answer-input').forEach(input => {
-            input.value = '';
-        });
-        evaluationResult.textContent = '-';
-        applyResultBoxTheme(neutralTheme);
-        resetReviewAIEvaluation();
     }
 
     rubrikAIInstructions.value = rubrikAIState.instructions.instructions;
@@ -4229,12 +4233,6 @@ Detail: ${error?.detail || '-'}
             return;
         }
 
-        if(!Array.isArray(appState.groups) || appState.groups.length === 0){
-            evaluationResult.textContent = '-';
-            applyResultBoxTheme(neutralTheme);
-            return;
-        }
-
         const testInputs = {};
         document.querySelectorAll('.eval-test-input').forEach(inp => {
             testInputs[inp.dataset.box] = inp.value === '' ? null : inp.value;
@@ -4338,13 +4336,13 @@ Detail: ${error?.detail || '-'}
 
     reviewAIEvaluateBtn.addEventListener('click', evaluateReviewAI);
 
-    function saveCurrentGroupForm(){
+    saveGroupBtn.addEventListener('click', () => {
         const groupName = groupNameInput.value.trim();
         const groupScore = parseFloat(groupScoreInput.value) || 0;
 
         if (!groupName) {
             alert('Lütfen bir grup adı belirleyin!');
-            return false;
+            return;
         }
 
         const selectedBoxes = [];
@@ -4373,7 +4371,7 @@ Detail: ${error?.detail || '-'}
 
         if (selectedBoxes.length === 0) {
             alert('Lütfen bu gruba dahil etmek için en az bir kutuyu işaretleyin.');
-            return false;
+            return;
         }
 
         const extras = {};
@@ -4411,11 +4409,6 @@ Detail: ${error?.detail || '-'}
         renderSlideTabs();
         updateFinalSaveButtonState(false);
         triggerEvaluation();
-        return true;
-    }
-
-    saveGroupBtn.addEventListener('click', () => {
-        saveCurrentGroupForm();
     });
 
     function setFormMode(groupId) {
@@ -4558,10 +4551,6 @@ Detail: ${error?.detail || '-'}
     }
 
     btnFinalSave.addEventListener('click', async () => {
-        if(editingGroupId !== null && !saveCurrentGroupForm()){
-            return;
-        }
-
         persistActiveSlideRubrik();
         removeLegacyGlobalTopicSelection();
 
@@ -4570,19 +4559,21 @@ Detail: ${error?.detail || '-'}
             return;
         }
 
-        if(hasSlidesWithoutConfiguredTopic()){
-            updateFinalSaveButtonState(false);
-            return;
-        }
+        if(!isOfflineMode() || topicTreeState.flatItems.length > 0){
+            if(hasSlidesWithoutConfiguredTopic()){
+                updateFinalSaveButtonState(false);
+                return;
+            }
 
-        if(hasSlidesWithoutConfiguredSkill()){
-            updateFinalSaveButtonState(false);
-            return;
-        }
+            if(hasSlidesWithoutConfiguredSkill()){
+                updateFinalSaveButtonState(false);
+                return;
+            }
 
-        if(hasSlidesWithInvalidSkillWeights()){
-            updateFinalSaveButtonState(false);
-            return;
+            if(hasSlidesWithInvalidSkillWeights()){
+                updateFinalSaveButtonState(false);
+                return;
+            }
         }
 
         normalizeSlideRubrikStatesBeforeSave();
@@ -4598,7 +4589,7 @@ Detail: ${error?.detail || '-'}
         const defaultSaveText = btnFinalSave.textContent;
         setFinalSaveButtonLoading(true, 'Kaydediliyor...');
         setArchiveStatus('');
-        if(activeOccFileName || getRubrikFileName()){
+        if((activeOccFileName || getRubrikFileName()) && !isOfflineMode()){
             setArchiveListLoading(true);
         }
 
@@ -4607,27 +4598,29 @@ Detail: ${error?.detail || '-'}
                 await saveRubrikFileDirect();
                 await refreshOccLogsAfterSave();
             }
-            if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
+            if (typeof(Storage) !== "undefined"){
                 const slidesRubrikPayload = getSlidesFromRubrikFile().map(slide => (
                     slide && slide.rubrik ? cloneState(slide.rubrik) : getEmptyRubrikState()
                 ));
+                var userPayload = (rubrikData && rubrikData.user) ? rubrikData.user : { selectedFile: getRubrikFileName() || activeOccFileName };
+                var scenePayload = {
+                    id: activeSlideIndex !== null ? activeSlideIndex : (rubrikData && rubrikData.scene && rubrikData.scene.id !== undefined ? rubrikData.scene.id : 0),
+                    name: activeSlideIndex !== null ? getSlideName(getSlidesFromRubrikFile()[activeSlideIndex], activeSlideIndex) : (rubrikData && rubrikData.scene && rubrikData.scene.name ? rubrikData.scene.name : 'Slide 1')
+                };
                 var occSceneRubrikSave = {
-                    user: rubrikData.user,
-                    scene: {
-                        id: activeSlideIndex !== null ? activeSlideIndex : rubrikData.scene.id,
-                        name: activeSlideIndex !== null ? getSlideName(getSlidesFromRubrikFile()[activeSlideIndex], activeSlideIndex) : rubrikData.scene.name
-                    },
+                    user: userPayload,
+                    scene: scenePayload,
                     slidesRubrik: slidesRubrikPayload
                 };
                 localStorage.setItem("occSceneRubrikSave", JSON.stringify(occSceneRubrikSave));
             }
             setFinalSaveButtonLoading(false, 'Kaydedildi');
 
-            if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user){
+            if (typeof(Storage) !== "undefined" && rubrikData && rubrikData.user && window.opener){
                 setTimeout(() => window.close(), 350);
             } else {
                 updateFinalSaveButtonState(false);
-                setFinalSaveButtonLoading(false, defaultSaveText);
+                setTimeout(() => setFinalSaveButtonLoading(false, defaultSaveText), 1500);
             }
         } catch (error) {
             console.warn('Rubrik kaydetme başarısız:', error);
@@ -4637,13 +4630,103 @@ Detail: ${error?.detail || '-'}
             setFinalSaveButtonLoading(false, defaultSaveText);
         }
 
+        console.log("=======================================");
     });
+
+    async function fetchLocalRubrikFile(fileName){
+        const candidates = [];
+        if(fileName){
+            candidates.push(`/files/${fileName}/${fileName}.json`);
+            candidates.push(`files/${fileName}/${fileName}.json`);
+            candidates.push(`../files/${fileName}/${fileName}.json`);
+            candidates.push(`/files/${fileName}.json`);
+            candidates.push(`files/${fileName}.json`);
+            candidates.push(`../files/${fileName}.json`);
+        }
+        candidates.push('/files/rubrik.json');
+        candidates.push('files/rubrik.json');
+        candidates.push('../files/rubrik.json');
+
+        for(const path of candidates){
+            try {
+                const resp = await fetch(path, {cache: 'no-store'});
+                if(resp.ok){
+                    const data = await resp.json();
+                    if(data){
+                        if(!data.list && Array.isArray(data.slides)){
+                            return { list: data };
+                        }
+                        if(data.list && Array.isArray(data.list.slides)){
+                            return data;
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+        return null;
+    }
 
     async function initRubrikPanel(){
         setRubrikPageLoading(true, 'Rubrik yükleniyor...');
 
         try {
             const queryFileName = getQueryFileName();
+            const targetFileName = queryFileName || (rubrikData && rubrikData.user && rubrikData.user.selectedFile) || "";
+            activeOccFileName = targetFileName;
+
+            if(isOfflineMode()){
+                let localData = null;
+                if(targetFileName){
+                    localData = await fetchLocalRubrikFile(targetFileName);
+                }
+
+                if(localData){
+                    rubrikFileData = localData;
+                } else if(hasLocalRubrikData && rubrikData && Array.isArray(rubrikData.slidesRubrik) && rubrikData.slidesRubrik.length > 0){
+                    rubrikFileData = {
+                        list: {
+                            fileName: targetFileName || "local_file",
+                            slides: rubrikData.slidesRubrik.map((slideRubrik, idx) => ({
+                                name: (rubrikData.scene && Number(rubrikData.scene.id) === idx && rubrikData.scene.name)
+                                    ? rubrikData.scene.name
+                                    : ('Slide ' + (idx + 1)),
+                                rubrik: slideRubrik || getEmptyRubrikState()
+                            }))
+                        }
+                    };
+                } else {
+                    rubrikFileData = {
+                        list: {
+                            fileName: targetFileName || "local_file",
+                            slides: [{
+                                name: (rubrikData && rubrikData.scene && rubrikData.scene.name) || 'Slide 1',
+                                rubrik: (initialAppState && Array.isArray(initialAppState.groups) && initialAppState.groups.length > 0)
+                                    ? cloneState(initialAppState)
+                                    : getEmptyRubrikState()
+                            }]
+                        }
+                    };
+                }
+
+                mergeLocalRubrikIntoApiSlides();
+                await loadTopicTreeForFile(getRubrikFileName() || targetFileName);
+
+                const slides = getSlidesFromRubrikFile();
+                if(slides.length > 0){
+                    const initialSlideIndex = rubrikData && rubrikData.scene && Number.isInteger(Number(rubrikData.scene.id))
+                        ? Number(rubrikData.scene.id)
+                        : 0;
+                    selectSlide(slides[initialSlideIndex] ? initialSlideIndex : 0);
+                    return;
+                }
+
+                setRubrikHeader(getRubrikFileName() || targetFileName || 'local_file');
+                renderConfigurator();
+                renderGroupsList();
+                renderEvaluatorTestingPanel();
+                triggerEvaluation();
+                return;
+            }
 
             if(queryFileName){
                 activeOccFileName = queryFileName;
