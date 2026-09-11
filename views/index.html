@@ -2069,7 +2069,7 @@
     function prepare(){
         var urlParams = new URLSearchParams(window.location.search);
         var service = urlParams.get("service");
-        IDE.user.occMode = true;
+        IDE.user.occMode = false;
         if(service){
             IDE.user.occMode = true;
         }

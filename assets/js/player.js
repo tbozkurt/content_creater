@@ -1073,7 +1073,7 @@ function PLAYER(){
 
         addHistoryStep(SD, attempt);
 
-        if(attempt.result  === "T1"){
+        if(attempt.result.includes("T")){
             SD.right = attempt.right = 1;
             SD.totalRight = attempt.totalRight = 1;
             This.playRightAudio();
@@ -2421,19 +2421,22 @@ function PLAYER(){
 
     function popupWindowStatus(popID, status){
         var sp = SP[This.sceneIndex];
+        if(!sp.popEx[popID]){
+            return false;
+        }
 
-         function closePopup(){
-             sp.popEx[popID].window.style.visibility = "hidden";
-             sp.popEx[popID].clicked = false;
+        function closePopup(){
+            sp.popEx[popID].window.style.visibility = "hidden";
+            sp.popEx[popID].clicked = false;
 
-             player.status.main.style.opacity = 1;
+            player.status.main.style.opacity = 1;
 
-             if(PLX.isHDE && PLX.showReadOnly){
-                 player.readOnlyDOM.style.visibility = "visible";
-                 if(sp.popEx[popID].solutionVideo !== undefined){
-                     player.status.main.style.opacity = 1;
-                 }
-             }
+            if(PLX.isHDE && PLX.showReadOnly){
+                player.readOnlyDOM.style.visibility = "visible";
+                if(sp.popEx[popID].solutionVideo !== undefined){
+                    player.status.main.style.opacity = 1;
+                }
+            }
         }
 
         function openPopup(){
@@ -4008,11 +4011,58 @@ function PLAYER(){
             }
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            btnEvents("none");
+
+            for(var boxKey in boxes){
+                var id = parseInt(String(boxKey).replace("box", ""));
+                var status = boxes[boxKey];
+
+                if(!CS.Buton[id]) continue;
+
+                CS.Buton[id].status = status;
+
+                if(status === "right"){
+                    rightBtn(id);
+                }else if(status === "wrong"){
+                    wrongBtn(id);
+                }else if(status === "empty"){
+                    defaultBtn(id);
+                }
+            }
+
+            groupCloseControl();
+
+            evaluation.timer = setTimeout(function(){
+                if(SD.complete){
+                    btnEvents("none");
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
+                btnEvents("auto");
+                for(var id in CS.Buton){
+                    if(CS.Buton[id].status !== "right"){
+                        defaultBtn(id);
+                    }
+                }
+                if(typeof controlBtnViewCheck === "function"){
+                    controlBtnViewCheck();
+                }else if(!PLX.isEKT && SP.controlBtn){
+                    controlBtnView(SP, "enable");
+                }
+            }, 1000);
+        }
+
         var evaluation = {
             control: checkRightAnswer,
             wrong: wrongActionFNC,
             right: rightActionFNC,
             answer: answerActionFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
@@ -6329,10 +6379,90 @@ function PLAYER(){
             SP.sceneDiv.style.cursor = "default";
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            var borderRight = {outline: "green solid 4px"};
+            var borderWrong = {outline: "red solid 4px"};
+            if(svgDOM){
+                borderRight = {strokeWidth: 4, stroke: "green"};
+                borderWrong = {strokeWidth: 4, stroke: "red"};
+            }
+
+            for(var boxKey in boxes){
+                var id = parseInt(String(boxKey).replace("box", ""));
+                var status = boxes[boxKey];
+
+                if(!drop[id]) continue;
+
+                drop[id].currentStatus = status;
+
+                if(status === "right"){
+                    drop[id].box.style.pointerEvents = "none";
+                    gsap.to(drop[id].box, 0, borderRight);
+                }else if(status === "wrong"){
+                    drop[id].box.style.pointerEvents = "none";
+                    gsap.to(drop[id].box, 0, borderWrong);
+                }else if(status === "empty"){
+                    drop[id].box.style.pointerEvents = "auto";
+                    gsap.to(drop[id].box, 0, {
+                        stroke: drop[id].strokeColor,
+                        strokeWidth: drop[id].strokeWidth,
+                        outlineColor: drop[id].strokeColor,
+                        outlineWidth: drop[id].strokeWidth
+                    });
+                }
+            }
+
+            evaluation.timer = setTimeout(function(){
+                if(SD.complete){
+                    for(var id in drop){
+                        drop[id].box.style.pointerEvents = "none";
+                        if(drop[id].currentStatus === "right"){
+                            gsap.to(drop[id].box, 0.4, {opacity: 0.7});
+                        }
+                    }
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
+                for(var boxKey in boxes){
+                    var id = parseInt(String(boxKey).replace("box", ""));
+                    var status = boxes[boxKey];
+                    if(!drop[id]) continue;
+
+                    if(status === "right"){
+                        drop[id].box.style.pointerEvents = "none";
+                        gsap.to(drop[id].box, 0.4, {opacity: 0.7});
+                    }else{
+                        drop[id].currentStatus = "";
+                        drop[id].box.style.pointerEvents = "auto";
+                        gsap.to(drop[id].box, 0, {
+                            backgroundColor: defaultColorHex,
+                            fill: defaultColorHex,
+                            stroke: drop[id].strokeColor,
+                            strokeWidth: drop[id].strokeWidth,
+                            outlineColor: drop[id].strokeColor,
+                            outlineWidth: drop[id].strokeWidth,
+                            opacity: 1
+                        });
+                        inputsChange(SD, id, "value", undefined);
+                    }
+                }
+
+                controlBtnViewCheck();
+                colorLimitCheck();
+            }, 1000);
+
+            colorLimitCheck();
+        }
+
         var evaluation = {
             history: addHistory,
             right: controlAfterFNC,
             wrong: controlAfterFNC,
+            rubrikBoxView: showRubrikBoxView,
             reset: reset,
             close: close
         }
@@ -7283,11 +7413,82 @@ function PLAYER(){
             draw.eraserBox.style.pointerEvents = 'none';
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            for(var boxKey in boxes){
+                var id = parseInt(String(boxKey).replace("box", ""));
+                var status = boxes[boxKey];
+                var dObj = allDraw[id] || (draw.id === id ? draw : null);
+                if(!dObj) continue;
+
+                if(status === "right"){
+                    if(dObj.lineBG){
+                        dObj.lineBG.style.backgroundColor = "green";
+                    }
+                    if(dObj.drawCanvas){
+                        dObj.drawCanvas.style.pointerEvents = "none";
+                    }
+                    if(lineNavContainer){
+                        lineNavContainer.style.display = "none";
+                    }
+                    lineComplete = true;
+                }else if(status === "wrong"){
+                    if(dObj.lineBG){
+                        dObj.lineBG.style.backgroundColor = "red";
+                    }
+                }else if(status === "empty"){
+                    if(dObj.lineBG){
+                        dObj.lineBG.style.backgroundColor = dObj.lineBgColor || "";
+                    }
+                    if(dObj.drawCanvas){
+                        dObj.drawCanvas.style.pointerEvents = "auto";
+                    }
+                    if(lineNavContainer){
+                        lineNavContainer.style.display = "block";
+                    }
+                }
+            }
+
+            interval = setTimeout(function(){
+                if(SD.complete){
+                    controlBtnView(SP, "disable");
+                    stopDraw();
+                    return;
+                }
+
+                for(var boxKey in boxes){
+                    var id = parseInt(String(boxKey).replace("box", ""));
+                    var status = boxes[boxKey];
+                    var dObj = allDraw[id] || (draw.id === id ? draw : null);
+                    if(!dObj) continue;
+
+                    if(status !== "right"){
+                        if(dObj.lineBG){
+                            dObj.lineBG.style.backgroundColor = dObj.lineBgColor || "";
+                        }
+                        if(dObj.drawCanvas){
+                            dObj.drawCanvas.style.pointerEvents = "auto";
+                        }
+                        if(lineNavContainer){
+                            lineNavContainer.style.display = "block";
+                        }
+                    }
+                }
+
+                if(!PLX.isEKT && SP.controlBtn){
+                    controlBtnView(SP, "enable");
+                }
+            }, 1000);
+        }
+
         var evaluation = {
             control: checkAnswer,
             wrong: wrongFNC,
             right: rightFNC,
             answer: answerFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
@@ -7726,11 +7927,61 @@ function PLAYER(){
             SP.sceneDiv.style.cursor = 'default';
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            for(var boxKey in boxes){
+                var id = parseInt(String(boxKey).replace("box", ""));
+                var status = boxes[boxKey];
+
+                if(canvas.cid !== id && !canvasList[id]) continue;
+
+                if(status === "right"){
+                    changeLineColor("#00c853");
+                    if(layer && layer.draw) layer.draw();
+                    defaultCircle();
+                    allButonDisable();
+                    if(drawBtn) drawBtn.style.pointerEvents = 'none';
+                    if(easeBtn) easeBtn.style.pointerEvents = 'none';
+                }else if(status === "wrong"){
+                    changeLineColor("#ff0000");
+                    if(layer && layer.draw) layer.draw();
+                }else if(status === "empty"){
+                    changeLineColor(set.lineColor);
+                    if(layer && layer.draw) layer.draw();
+                }
+            }
+
+            time = setTimeout(function(){
+                if(SD.complete){
+                    controlBtnView(SP, "disable");
+                    allButonDisable();
+                    if(drawBtn) drawBtn.style.pointerEvents = 'none';
+                    if(easeBtn) easeBtn.style.pointerEvents = 'none';
+                    return;
+                }
+
+                for(var boxKey in boxes){
+                    var status = boxes[boxKey];
+                    if(status !== "right"){
+                        changeLineColor(set.lineColor);
+                        if(layer && layer.draw) layer.draw();
+                    }
+                }
+
+                if(!PLX.isEKT && SP.controlBtn){
+                    controlBtnView(SP, "enable");
+                }
+            }, 1000);
+        }
+
         var evaluation = {
             control: checkAnswer,
             wrong: wrongFNC,
             right: rightFNC,
             answer: answerFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
@@ -7745,8 +7996,11 @@ function PLAYER(){
         var SR;
         var input;
         var inputKey;
+        var transcriptViewList = [];
         var set = {recordTime:15, countDown:false};
-
+        var fileName = jsonV2 && jsonV2.fileName ? jsonV2.fileName : "";
+        var lessonCode = fileName.split("_")[0];
+        var recognitionLang = lessonCode.toUpperCase().startsWith("ING") ? "en-US" : "tr-TR";
         var lang = {
             prepare: "Lütfen Bekleyiniz.",
             stopRecordText: "Kaydı Durdur",
@@ -7800,6 +8054,86 @@ function PLAYER(){
                 }
             }
         });
+
+        function isTrueParam(value){
+            if(typeof value === "string"){
+                value = value.replace(/\s+/g, "").toLowerCase();
+            }
+
+            return value === true || value === "true" || value === 1 || value === "1";
+        }
+
+        function getTranscriptViewBoxKey(data){
+            var recordID = data.recordID || data.recordId || data.soundRecordID || data.soundRecordId || data.boxID || data.boxId || data.box;
+            if(recordID !== undefined && recordID !== null && recordID !== ""){
+                recordID = String(recordID);
+                if(recordID.indexOf("box") === 0){
+                    return recordID;
+                }
+
+                recordID = parseInt(recordID, 10);
+                if(!isNaN(recordID)){
+                    return "box"+ recordID;
+                }
+            }
+
+            return inputKey;
+        }
+
+        function initTranscriptViews(){
+            function searchKids(kids){
+                if(!kids){
+                    return;
+                }
+
+                kids.forEach(function(e){
+                    if(e.main && e.data && isTrueParam(e.data.speechToText)){
+                        var boxKey = getTranscriptViewBoxKey(e.data);
+                        transcriptViewList.push({
+                            boxKey: boxKey,
+                            main: e.main
+                        });
+
+                        Object.assign(e.main.style, {
+                            boxSizing: "border-box",
+                            overflow: "auto",
+                            whiteSpace: "pre-wrap",
+                            padding: "5px 10px",
+                        });
+                    }
+
+                    searchKids(e.kids);
+                });
+            }
+
+            searchKids(SP.elementMainScene.kids);
+
+            SP.elementList.forEach(function(e){
+                if(e.main && e.data && isTrueParam(e.data.speechToText)){
+                    var boxKey = getTranscriptViewBoxKey(e.data);
+                    transcriptViewList.push({
+                        boxKey: boxKey,
+                        main: e.main
+                    });
+
+                    Object.assign(e.main.style, {
+                        boxSizing: "border-box",
+                        overflow: "auto",
+                        whiteSpace: "pre-wrap"
+                    });
+                }
+            });
+        }
+
+        function updateTranscriptViews(boxKey, transcript){
+            transcriptViewList.forEach(function(view){
+                if(view.boxKey === boxKey){
+                    view.main.innerText = transcript || "";
+                }
+            });
+        }
+
+        initTranscriptViews();
 
         var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SR){
@@ -7940,6 +8274,7 @@ function PLAYER(){
         SR.updateTranscriptFNC = function(sendChange){
             SR.transcript = getLastTranscript();
             input.transcript = SR.transcript;
+            updateTranscriptViews(inputKey, SR.transcript);
             //console.log("Konuşmanın son metni:", SR.transcript);
 
             if(sendChange){
@@ -7952,6 +8287,7 @@ function PLAYER(){
             SR.recognitionFinalText = "";
             SR.recognitionInterimText = "";
             input.transcript = "";
+            updateTranscriptViews(inputKey, "");
         }
 
         SR.stopSpeechRecognitionFNC = function(){
@@ -7986,7 +8322,7 @@ function PLAYER(){
             }
 
             var recognition = new SpeechRecognition();
-            recognition.lang = "tr-TR";
+            recognition.lang = recognitionLang;
             recognition.continuous = true;
             recognition.interimResults = true;
 
@@ -8526,6 +8862,7 @@ function PLAYER(){
                     SR.transcript = lastMove[box].transcript || "";
                     SR.recognitionFinalText = SR.transcript;
                     input.transcript = SR.transcript;
+                    updateTranscriptViews("box"+ currentID, SR.transcript);
                     SR.oldDataLoad(lastMove[box].value, false, true);
                 }
             }
@@ -12090,6 +12427,17 @@ function PLAYER(){
 
         function close(){
             draw.navMain.style.display = "none";
+            draw.konva.map(function(konva){
+                if(konva){
+                    if(konva.stage){
+                        konva.stage.listening(false);
+                        if(konva.stage.container()){
+                            konva.stage.container().style.pointerEvents = "none";
+                            konva.stage.container().style.cursor = "default";
+                        }
+                    }
+                }
+            });
         }
 
         var evaluation = {
@@ -12404,9 +12752,19 @@ function PLAYER(){
             setSelectedValue(id, null);
         }
 
+        function showEmptyView(id){
+            if(DD.input[id].bg){
+                DD.input[id].bg.style.backgroundColor = DD.input[id].bgColor;
+            }
+        }
+
         function btnEvents(status){
             for(var id in DD.input){
-                DD.input[id].selectedBox.style.pointerEvents = status;
+                if(status === "auto" && DD.input[id].status === "right"){
+                    DD.input[id].selectedBox.style.pointerEvents = "none";
+                }else{
+                    DD.input[id].selectedBox.style.pointerEvents = status;
+                }
                 if(status === "none"){
                     DD.input[id].optionPanel.style.display = "none";
                 }
@@ -12475,6 +12833,59 @@ function PLAYER(){
             }, 1000);
         }
 
+        function showRubrikBoxView(boxesResult){
+            var boxes = (boxesResult && boxesResult.boxes) ? boxesResult.boxes : boxesResult;
+            if(!boxes) return;
+
+            btnEvents("none");
+
+            for(var id in DD.input){
+                var boxKey = "box" + id;
+                var status = boxes[boxKey] || boxes[id];
+
+                if(!status && boxes.hasOwnProperty(boxKey)){
+                    status = boxes[boxKey];
+                }
+
+                if(status){
+                    DD.input[id].status = status;
+                }
+
+                if(status === "right"){
+                    showRightView(id);
+                    if(SD.inputs[boxKey]){
+                        SD.inputs[boxKey].solved = true;
+                    }
+                }else if(status === "wrong"){
+                    showWrongView(id);
+                    if(SD.inputs[boxKey]){
+                        SD.inputs[boxKey].solved = false;
+                    }
+                }else if(status === "empty"){
+                    showEmptyView(id);
+                    if(SD.inputs[boxKey]){
+                        SD.inputs[boxKey].solved = false;
+                    }
+                }
+            }
+
+            evaluation.timer = setTimeout(function(){
+                if(SD.complete){
+                    btnEvents("none");
+                    controlBtnView(SP, "disable");
+                    return;
+                }
+
+                btnEvents("auto");
+                for(var id in DD.input){
+                    if(DD.input[id].status !== "right"){
+                        showDefaultView(id);
+                    }
+                }
+                controlBtnViewCheck();
+            }, 1000);
+        }
+
         function answerActionFNC(){
             clearInterval(evaluation.timer);
             for(var id in DD.input){
@@ -12519,6 +12930,7 @@ function PLAYER(){
             wrong: wrongActionFNC,
             right: rightActionFNC,
             answer: answerActionFNC,
+            rubrikBoxView: showRubrikBoxView,
             history: addHistory,
             reset: reset,
             close: close
