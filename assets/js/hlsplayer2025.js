@@ -494,6 +494,10 @@ function AddPlayer(obj){
 	var timeView;
 	var skinTimer;
 	var pointerLeave = true;
+	var mobileSkinTimer = null;
+	var mouseInsideVideo = false;
+	var skinEventsBound = false;
+	var lastTouchTime = 0;
 	var xMouse=0;
 	var ButonArray = [];
 	var SpeedOptions = [
@@ -523,9 +527,10 @@ function AddPlayer(obj){
 
 	function isMobileFNC(){
 		var isIphone = $ua.indexOf("iphone") > -1;
-		var isIpad = $ua.indexOf("ipad") > -1;
+		var isIpad = $ua.indexOf("ipad") > -1 || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 		var isAndroid = $ua.indexOf("android") > -1;
-		if(isAndroid || isIpad || isIphone){
+		var isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test($ua);
+		if(isAndroid || isIpad || isIphone || isMobile || ('ontouchstart' in window && window.innerWidth <= 1024)){
 			$mobileDevice=true;
 		}
 		if(isIpad || isIphone){
@@ -880,6 +885,13 @@ function AddPlayer(obj){
 		settingsBtn.css("background-color","transparent");
 		speedBtn.css("background-color","transparent");
 		blackScreen.hide();
+		if(methods.firstPlay){
+			if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
+				triggerMobileSkin();
+			}else if(!mouseInsideVideo){
+				hideSkin(true);
+			}
+		}
 	}
 
 	function applyPlaybackRate(){
@@ -981,10 +993,30 @@ function AddPlayer(obj){
 		}else{
 			showMediaListFNC(false);
 			qualityBoxMain.css("bottom", 80);
+			if(methods.firstPlay){
+				if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
+					triggerMobileSkin();
+				}else if(!mouseInsideVideo){
+					hideSkin(true);
+				}
+			}
 		}
 	});
 
 	playerFullScreenControl.on(userEvent.click, function(){
+		var isTouch = $mobileDevice || (Date.now() - lastTouchTime < 1000);
+		if(isTouch){
+			if(!methods.firstPlay){
+				methods.PlayVideo();
+			}else if(!methods.globalPlay){
+				methods.PlayVideo();
+				triggerMobileSkin();
+			}else{
+				triggerMobileSkin();
+			}
+			return;
+		}
+
 		if(methods.globalPlay){
 			methods.StopVideo();
 		}else{
@@ -1060,6 +1092,8 @@ function AddPlayer(obj){
 		if(methods.firstPlay) {
 			gotoCircle(e);
 			sliderCirclePress = true;
+			clearTimeout(mobileSkinTimer);
+			showSkin(false);
 			e.preventDefault();
 		}
 	});
@@ -1122,6 +1156,13 @@ function AddPlayer(obj){
 		}
 	}).on(userEvent.up, function(e){
 		gotoTime(e);
+		if(methods.firstPlay){
+			if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
+				triggerMobileSkin();
+			}else if(!mouseInsideVideo){
+				hideSkin(true);
+			}
+		}
 	});
 
 	if(!$mobileDevice && conf.keyboardEvent){
@@ -1491,12 +1532,29 @@ function AddPlayer(obj){
 
 	video.onplay = function() {
 		PlayingIconVisibleFNC(false);
+		methods.globalPlay = true;
+		if(!methods.firstPlay){
+			methods.firstPlay = true;
+			playerSkin.css("visibility", "unset");
+		}
+		if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
+			triggerMobileSkin();
+		}else if(mouseInsideVideo){
+			showSkin(true);
+		}else{
+			hideSkin(true);
+		}
 	};
 
 	video.onpause = function() {
 		methods.globalPlay = false;
 		PlayingIconVisibleFNC(true);
 		startTimeIntervals(false);
+		if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
+			triggerMobileSkin();
+		}else if(mouseInsideVideo){
+			showSkin(true);
+		}
 	};
 
 	video.onwaiting = function() {
@@ -1512,7 +1570,6 @@ function AddPlayer(obj){
 	video.onplaying = function() {
 		methods.globalPlay = true;
 		if(!methods.firstPlay){
-			playerSkin.css("visibility", "unset");
 			fullScreenPlay.hide();
 			playerFullScreenControl.css("visibility", "unset");
 			if(methods.hlsSupport){
@@ -1529,6 +1586,13 @@ function AddPlayer(obj){
 		PlayingIconVisibleFNC(false);
 		startTimeIntervals(true);
 		addSkinEventFNC();
+		if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
+			triggerMobileSkin();
+		}else if(mouseInsideVideo){
+			showSkin(true);
+		}else{
+			hideSkin(true);
+		}
 		updateSliderAndTimeFNC(false);
 		if(playlist.length > 1){
 			arrowPosRefreshFNC();
@@ -1539,6 +1603,7 @@ function AddPlayer(obj){
 		clearTimeIntervals();
 		updateSliderAndTimeFNC(false);
 		PlayingIconVisibleFNC(true);
+		showSkin(true);
 		if(conf.endFNC !== undefined){
 			conf.endFNC();
 		}
@@ -1604,14 +1669,70 @@ function AddPlayer(obj){
 		}
 	}
 
+	function showSkin(animate){
+		if(!conf.skin) return;
+		if(parseFloat(playerSkin.css("opacity")) >= 1 && playerSkin.css("visibility") !== "hidden" && playerSkin.is(":visible")){
+			return;
+		}
+		playerSkin.stop(true, false);
+		playerSkin.css({visibility: "unset", pointerEvents: "auto", display: "block"});
+		if(animate){
+			playerSkin.animate({opacity: 1}, 200);
+		}else{
+			playerSkin.css("opacity", 1);
+		}
+	}
+
+	function hideSkin(animate){
+		if(!conf.skin) return;
+		if(sliderCirclePress) return;
+		if(qualityBoxMain.css("visibility") !== "hidden" || speedBoxMain.css("visibility") !== "hidden") return;
+		if(mediaNavigationMain.is(":visible") && mediaNavigationMain.css("visibility") !== "hidden") return;
+
+		playerSkin.stop(true, false);
+		if(animate){
+			playerSkin.animate({opacity: 0}, 200, function(){
+				playerSkin.css({visibility: "hidden", pointerEvents: "none"});
+			});
+		}else{
+			playerSkin.css({opacity: 0, visibility: "hidden", pointerEvents: "none"});
+		}
+	}
+
+	function triggerMobileSkin(){
+		if(!conf.skin || !methods.firstPlay) return;
+		clearTimeout(mobileSkinTimer);
+		showSkin(true);
+		mobileSkinTimer = setTimeout(function(){
+			if(!sliderCirclePress && qualityBoxMain.css("visibility") === "hidden" && speedBoxMain.css("visibility") === "hidden" && (!mediaNavigationMain.is(":visible") || mediaNavigationMain.css("visibility") === "hidden")){
+				hideSkin(true);
+			}
+		}, 2000);
+	}
+
 	function addSkinEventFNC(){
-		videoContainer.on(userEvent.enter, function(){
-			clearInterval(skinTimer);
-			pointerLeave = false;
-			playerSkin.animate({opacity:1}, 200);
-			playerFullScreenControl.css("visibility", "unset");
-		}).on(userEvent.leave, function() {
-			pointerLeave = true;
+		if(skinEventsBound) return;
+		skinEventsBound = true;
+
+		videoContainer.on("touchstart", function(){
+			lastTouchTime = Date.now();
+			if(methods.firstPlay){
+				triggerMobileSkin();
+			}
+		});
+
+		videoContainer.on("mouseenter mousemove", function(){
+			if(Date.now() - lastTouchTime < 1000) return;
+			mouseInsideVideo = true;
+			if(methods.firstPlay){
+				showSkin(true);
+			}
+		}).on("mouseleave", function(){
+			if(Date.now() - lastTouchTime < 1000) return;
+			mouseInsideVideo = false;
+			if(methods.firstPlay){
+				hideSkin(true);
+			}
 		});
 	}
 
@@ -1624,7 +1745,12 @@ function AddPlayer(obj){
 	});
 
 	methods.videoSkinHide = function(){
+		hideSkin(false);
 		playerSkin.css("display", "none");
+	}
+
+	methods.videoSkinShow = function(){
+		showSkin(false);
 	}
 
 	function digit(x) {
@@ -1640,6 +1766,8 @@ function AddPlayer(obj){
 			return x;
 		}
 	}
+
+	addSkinEventFNC();
 
 	return methods;
 }
