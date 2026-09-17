@@ -1475,18 +1475,18 @@ function CREATE(){
             y: 15,
             width: 50,
             height: 50,
-            src: "img/draw_icon.png",
+            src: "img/cursor_icon.png",
             cornerRadius: 8,
-            Layer: {type:"objectImg", name:"draw_icon", class:"drawBox"}
+            Layer:{type:"objectImg", name: "cursorBoxLabel", class:"cursorBox"}
         },
         {
             x: 80,
             y: 15,
             width: 50,
             height: 50,
-            src: "img/draw_easer.png",
+            src: "img/draw_icon.png",
             cornerRadius: 8,
-            Layer: {type:"objectImg", name:"draw_easer", class:"eraserBox"}
+            Layer: {type:"objectImg", name:"draw_icon", class:"drawBox"}
         },
         {
             x: 145,

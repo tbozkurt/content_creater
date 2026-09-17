@@ -225,11 +225,45 @@ EvaluatorEngine.evaluate = function(jsonData, testInputs) {
         groupValue = "Y1";
     }
 
+    // "T1" rubriğindeki değeri null olmayan obje sayısı (totalRight)
+    // ve "T1" rubriğindeki değeri null olmayan ve boş bırakılan obje sayısı (empty)
+    let t1NonNullCount = 0;
+    let t1EmptyCount = 0;
+    if (t1Group && Array.isArray(t1Group.boxes)) {
+        t1Group.boxes.forEach(b => {
+            if (b) {
+                const val = b.value;
+                const isConfigNull = val === null || val === undefined || String(val).trim() === "" || String(val).trim().toLowerCase() === "null";
+                if (!isConfigNull) {
+                    t1NonNullCount++;
+                    const uVal = testInputs[b.boxId] !== undefined ? testInputs[b.boxId] : null;
+                    const isUserEmpty = uVal === null || uVal === undefined || String(uVal).trim() === "" || String(uVal).trim().toLowerCase() === "null";
+                    if (isUserEmpty) {
+                        t1EmptyCount++;
+                    }
+                }
+            }
+        });
+    }
+
+    // "result" parametresine bağlı score değerini belirle
+    let score = 0;
+    if (matchedGroupIndex >= 0 && groups[matchedGroupIndex] && groups[matchedGroupIndex].score !== undefined) {
+        score = groups[matchedGroupIndex].score;
+    } else {
+        const foundGroup = groups.find(g => g && g.name === groupValue);
+        if (foundGroup && foundGroup.score !== undefined) {
+            score = foundGroup.score;
+        }
+    }
+
     return {
         boxes: boxResults,
-        totalRight: totalRight,
-        totalWrong: totalWrong,
-        totalEmpty: totalEmpty,
+        right: totalRight,
+        wrong: totalWrong,
+        empty: t1EmptyCount,
+        totalRight: t1NonNullCount,
+        score: score,
         matchedGroupIndex: matchedGroupIndex,
         result: groupValue
     };

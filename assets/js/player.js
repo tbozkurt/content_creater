@@ -552,11 +552,10 @@ function PLAYER(){
 
                 if(contentJsonVersion === dataJsonVersion && type === "v4"){
                     var status = build.accessData.state.status;
-                    console.log("status:", status);
                     if(status === 'finish'){
-                        previewMode();
+                        previewMode(status);
                     }else{
-                        oldPerfLoadFNC(build);
+                        previewMode(status);
                     }
                 }
             }
@@ -781,7 +780,7 @@ function PLAYER(){
         if(PLX.Mode === "normal"){
             var emptyFound = false;
             SD.map(function(sd){
-                if(sd.historyRight[0].result === "empty"){
+                if(sd.historyRight.length === 0 || sd.historyRight[0].result === "empty"){
                     emptyFound = true;
                     player.watcherListAllBox[sd.id].style.display = "block";
                 }else{
@@ -1049,33 +1048,41 @@ function PLAYER(){
     }
 
     function rubrikResult(SP, SD, result, type){
-        var attempt = {
-            right: 0,
-            wrong: 0,
-            empty: 0,
-            result: result,
-            score: 0,
-            totalRight: SD.totalRight,
-            answered: "0"
-        }
-
+        var attempt;
         console.log("Evaluator Result:", result);
 
         if(type === "evaluator"){
-            attempt.result = result.result;
+            attempt = {
+                right: result.right,
+                wrong: result.wrong,
+                empty: result.empty,
+                result: result.result,
+                score: result.score,
+                totalRight: result.totalRight,
+                answered: "0"
+            }
+        }else{
+            attempt = {
+                right: 0,
+                wrong: 0,
+                empty: 0,
+                result: result.rubric_code,
+                score: result.weight,
+                totalRight: 1,
+                answered: "0"
+            }
+
+            if(attempt.result.includes("T")){
+                attempt.right=1;
+            }
         }
 
-        SD.rubrik.groups.map(function(group){
-            if(group.name === attempt.result){
-                attempt.score = group.score;
-            }
-        });
-
         addHistoryStep(SD, attempt);
+        SD.right = parseInt(attempt.right);
+        SD.totalRight = parseInt(attempt.totalRight);
+        console.log(attempt);
 
         if(attempt.result.includes("T")){
-            SD.right = attempt.right = 1;
-            SD.totalRight = attempt.totalRight = 1;
             This.playRightAudio();
             This.sceneComplete();
             This.nextScene();
@@ -1246,7 +1253,7 @@ function PLAYER(){
                 rubrikLoaderAnimation("hide");
                 console.log('AI API Yanıt:', response);
                 if(response.success){
-                    var result = response.data.evaluation.rubric_code;
+                    var result = response.data.evaluation;
                     var feedbackStr = response.data.feedback;
                     SP.feedBack.map(function (feedback) {
                         if (feedback.status === "AI") {
@@ -1583,7 +1590,30 @@ function PLAYER(){
         player.infoBtnDOM.innerHTML = '<img src="assets/img/player/info_btn.png">';
     }
 
-    function previewMode(){
+    function previewMode(status){
+        var previewTitle = "Etkinliği Daha Önce Aldınız";
+        var previewDescription = "Bu etkinliği zaten tamamladınız. Mevcut cevaplarınızı inceleyebilir veya etkinliği tekrar başlatabilirsiniz.";
+        var primaryBtnText = "Cevapları Gör";
+        var icon = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z";
+        var previewMode = false;
+
+        if(build.activeContent.player.hde && build.activeContent.player.hde.Preview === true){
+            previewMode = true;
+        }
+
+        if(status === "update"){
+            icon = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-3H7v-3h4v-3l5 4.5-5 4.5z";
+            previewTitle = "Etkinliğe Devam Et";
+            previewDescription = "Kaldığınız yerden ilerleyerek etkinliği tamamlayabilirsiniz.";
+            primaryBtnText = "Devam Et";
+        }
+
+        if(previewMode){
+            previewTitle = "Etkinliği Kontrol Et";
+            previewDescription = "Öğrencinin mevcut cevaplarını incelemek için aşağıdaki butona tıklayın.";
+            primaryBtnText = "Cevapları Gör";
+        }
+
         player.preview = {
             previewWindow: utils.addDOM({className: "previewWindow"})
         };
@@ -1591,15 +1621,15 @@ function PLAYER(){
         player.preview.previewWindow.innerHTML = `<div class="previewCard">
             <div class="previewIcon">
                 <svg viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    <path d="${icon}"/>
                 </svg>
             </div>
             
-            <h1 class="previewTitle">Etkinliği Daha Önce Aldınız</h1>
-            <p class="previewDescription">Bu etkinliği zaten tamamladınız. Mevcut cevaplarınızı inceleyebilir veya etkinliği tekrar başlatabilirsiniz.</p>
+            <h1 class="previewTitle">${previewTitle}</h1>
+            <p class="previewDescription">${previewDescription}</p>
             
             <div class="previewBtnGroup">
-                <button class="previewBtn previewBtnPrimary">Cevapları Gör</button>
+                <button class="previewBtn previewBtnPrimary">${primaryBtnText}</button>
                 <button class="previewBtn previewBtnSecondary">Tekrar Al</button>
             </div>
         </div>`;
@@ -1620,6 +1650,9 @@ function PLAYER(){
                 sp.fnc.map(function(fnc){
                     fnc.close();
                 });
+
+                answerBtnView(sp, "disable");
+                saveBtnView(sp, "disable");
             });
 
             if(PLX.isHDE){
@@ -1631,7 +1664,15 @@ function PLAYER(){
         player.preview.previewBtnPrimary = player.preview.previewWindow.querySelector(".previewBtnPrimary");
         player.preview.previewBtnSecondary = player.preview.previewWindow.querySelector(".previewBtnSecondary");
 
-        if(build.activeContent.player.hde && build.activeContent.player.hde.Preview === true){
+        if(status === "update"){
+            if(build.activeContent.user){
+                if(build.activeContent.user.type === 4){
+                    player.preview.previewBtnSecondary.style.display = "none";
+                }
+            }
+        }
+
+        if(previewMode){
             player.preview.previewBtnSecondary.style.display="none";
             if(build.accessData && build.accessData.student){
                 var name = build.accessData.student.name;
@@ -1641,18 +1682,28 @@ function PLAYER(){
         }
 
         player.preview.previewBtnPrimary.addEventListener("click",function(){
+            player.preview.previewWindow.style.display = "none";
             PLX.playScreen.style.display = "none";
-            player.preview.previewWindow.style.display="none";
             PLX.soundConfirm = true;
             oldPerfLoadFNC(build);
-            previewModeConvert();
+
+            if(status === "update"){
+                if(previewMode){
+                    previewModeConvert();
+                }
+            }else{
+                previewModeConvert();
+            }
         });
 
         player.preview.previewBtnSecondary.addEventListener("click", function(){
+            player.preview.previewWindow.style.display = "none";
             PLX.playScreen.style.display = "none";
             PLX.soundConfirm = true;
-            This.playAutoSound();
-            player.preview.previewWindow.style.display="none";
+
+            if(status === "finish") {
+                This.playAutoSound();
+            }
         });
     }
 
@@ -2089,6 +2140,8 @@ function PLAYER(){
                 SP.soundPlayer[id] = {sceneID:sceneID, id:id};
                 var soundPlayer = SP.soundPlayer[id];
                 var soundPlayerData = {};
+                soundPlayer.legacySrc = [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".mp3"];
+                soundPlayer.src = getSoundPath(sceneID, id);
                 SP.elementList.map(function(element){
                     if(element.id === obj.id && element.data){
                         soundPlayerData = element.data;
@@ -2141,6 +2194,8 @@ function PLAYER(){
                     if(PLX.mode === 'preview'){
                         HDE_endExam();
                     }else{
+                        clearInterval(player.dataSendTimer);
+                        HDE_ControlFNC("update");
                         watcherHDE();
                     }
                 });
@@ -2261,7 +2316,6 @@ function PLAYER(){
 
                 el.main.addEventListener("click", function(){
                     popupWindowStatus(id, "auto");
-                    //SP.popEx[id].window.style.visibility = "visible";
                 });
 
                 el.main.style.cursor = "pointer";
@@ -2600,37 +2654,73 @@ function PLAYER(){
 
     this.SoundPlayerHowler = function(soundPlayer){
         if(!soundPlayer.Confirm){
+            if(!soundPlayer.legacySrc && !soundPlayer.src){
+                return;
+            }
+
             soundPlayer.Confirm = true;
-            soundPlayer.howl = new Howl({
-                src: [player.root +"img/dialog_"+ soundPlayer.sceneID +"_"+soundPlayer.id +".mp3"],
-                onload: function(){
-                    soundPlayer.load = true;
-                    if(soundPlayer.timeRange){
-                        soundPlayer.howl.seek(getMediaRangeStart(soundPlayer.timeRange));
-                        progressSP(soundPlayer, false);
-                    }
-                },
-                onloaderror: function() {},
-                onplay: function(){
-                    soundPlayer.rangeEnded = false;
-                    playBtnShow(soundPlayer);
-                    addSPsetInterval(soundPlayer);
-                },
-                onpause: function(){
-                    if(soundPlayer.rangeEnded){
+
+            function addHowl(src, fallbackActive){
+                soundPlayer.howl = new Howl({
+                    src: src,
+                    onload: function(){
+                        soundPlayer.load = true;
+                        if(soundPlayer.timeRange){
+                            soundPlayer.howl.seek(getMediaRangeStart(soundPlayer.timeRange));
+                            progressSP(soundPlayer, false);
+                        }
+                    },
+                    onloaderror: function() {
+                        if(!fallbackActive && soundPlayer.src){
+                            soundPlayer.howl.unload();
+                            addHowl(soundPlayer.src, true);
+                        }
+                    },
+                    onplay: function(){
+                        soundPlayer.rangeEnded = false;
+                        playBtnShow(soundPlayer);
+                        addSPsetInterval(soundPlayer);
+                    },
+                    onpause: function(){
+                        if(soundPlayer.rangeEnded){
+                            RestartBtnShow(soundPlayer);
+                        }else{
+                            pauseBtnShow(soundPlayer);
+                        }
+                        delSPInterval();
+                    },
+                    onend: function(){
                         RestartBtnShow(soundPlayer);
-                    }else{
-                        pauseBtnShow(soundPlayer);
+                        progressSP(soundPlayer, true);
+                        delSPInterval();
                     }
-                    delSPInterval();
-                },
-                onend: function(){
-                    RestartBtnShow(soundPlayer);
-                    progressSP(soundPlayer, true);
-                    delSPInterval();
-                }
-            })
+                })
+            }
+
+            addHowl(soundPlayer.legacySrc || soundPlayer.src, false);
         }
+    }
+
+    function getSoundPath(sceneID, layerId){
+        var soundPath = null;
+        var audioList = jsonV2.slides[sceneID].audioPath || [];
+        audioList.some(function(audio){
+            var active = audio.active === true || audio.active === "true";
+            var layerMatch = String(audio.layerId) === String(layerId);
+
+            if(active && layerMatch && audio.path){
+                soundPath = audio.path.replace("www", "cdn");
+                return true;
+            }
+
+            return false;
+        });
+
+        if(!soundPath){
+            return null;
+        }
+
+        return [soundPath];
     }
 
     function addSPsetInterval(soundPlayer){
@@ -6987,10 +7077,15 @@ function PLAYER(){
             var videoProp;
             if(element.id.includes("videoBox")){
                 var videoWidth = element.main.offsetWidth;
+                var videoSrc = getVideoPath(getVideoLayerId(element.id));
+                if(!videoSrc){
+                    return;
+                }
+
                 videoProp = {
                     div: $("#"+element.id),
                     divCSS: {},
-                    src: getVideoPath(),
+                    src: videoSrc,
                     width: videoWidth,
                     videoCapture: true,
                     fullScreen: false,
@@ -7010,8 +7105,8 @@ function PLAYER(){
                 tempVideo.type = "a_video";
                 SP.video.push(tempVideo);
             }else if(element.id.includes("popupWindow")){
-                videoProp = addVideoElement(element);
-                if(videoProp){
+                var allVideo = addVideoElement(element);
+                allVideo.map(function(videoProp){
                     videoProp.endFNC = function(){};
                     videoProp.watchedFNC = function(){};
                     videoProp.metaDataFNC = function(){};
@@ -7020,10 +7115,10 @@ function PLAYER(){
                     applyVideoTimeRange(tempVideo, videoProp.timeRangeParams);
                     tempVideo.type = "popup";
                     SP.video.push(tempVideo);
-                }
+                });
             }else if(element.id.includes("feedback")){
-                videoProp = addVideoElement(element);
-                if(videoProp){
+                var allVideo = addVideoElement(element);
+                allVideo.map(function(videoProp){
                     videoProp.endFNC = function(){};
                     videoProp.watchedFNC = function(){};
                     videoProp.metaDataFNC = function(){};
@@ -7033,13 +7128,13 @@ function PLAYER(){
                     SP.video.push(tempVideo);
                     tempVideo.type = "feedback";
                     tempVideo.feedbackID = parseInt(element.id.split("_")[1]);
-                }
+                });
             }
         });
 
         function searchMainScene(){
-            var videoProp = addVideoElement(SP.elementMainScene);
-            if(videoProp){
+            var allVideo = addVideoElement(SP.elementMainScene);
+            allVideo.map(function(videoProp){
                 videoProp.endFNC = function(){};
                 videoProp.watchedFNC = function(){};
                 videoProp.metaDataFNC = function(){};
@@ -7048,68 +7143,90 @@ function PLAYER(){
                 applyVideoTimeRange(tempVideo, videoProp.timeRangeParams);
                 tempVideo.type = "e_video";
                 SP.video.push(tempVideo);
-            }
+            });
+
+
         }
 
         searchMainScene();
 
         function addVideoElement(element){
-            var videoRect;
-            var videoLink;
-            var timeRangeParams;
+            var allVideo=[];
             for(var kid of element.kids){
                 if(kid.className.includes("videoPlayer")){
-                    videoRect = kid.main;
-                    videoLink = kid.data.videoLink;
-                    timeRangeParams = kid.data;
-                    break;
+                    var videoRect = kid.main;
+                    var videoLink = kid.data.videoLink;
+                    var videoLayerID = getVideoLayerId(kid.id);
+                    var timeRangeParams = kid.data;
+
+                    var videoWidth = videoRect.offsetWidth;
+                    var videoID = "s"+ This.sceneIndex +"_videoBox_"+ videoLayerID;
+                    videoRect.id = videoID;
+                    var pos = getPosition(videoRect);
+
+                    if(!videoLink){
+                        videoLink = getVideoPath(videoLayerID);
+                        if(!videoLink){
+                            return;
+                        }
+                    }
+
+                    var videoProps = {
+                        div: $("#"+videoID),
+                        divCSS: {
+                            left: pos.left+"px",
+                            top: pos.top+"px",
+                            position: "absolute"
+                        },
+                        src: videoLink,
+                        width: videoWidth,
+                        videoCapture: false,
+                        fullScreen: false,
+                        endFNC: null,
+                        watchedFNC: null,
+                        occMode: true,
+                        timeRangeParams: timeRangeParams,
+                        timeRange: getMediaTimeRange(timeRangeParams)
+                    };
+
+                    if(PLX.isBSD){
+                        videoProps.showSpeed = true;
+                    }
+
+                    allVideo.push(videoProps);
                 }
             }
 
-            if(videoRect){
-                var videoWidth = videoRect.offsetWidth;
-                var videoID = "vp_s"+index+"_0";
-                videoRect.id = videoID;
-                var pos = getPosition(videoRect);
-
-                if(!videoLink){
-                    videoLink = getVideoPath();
-                }
-
-                var videoProps = {
-                    div: $("#"+videoID),
-                    divCSS: {
-                        left: pos.left+"px",
-                        top: pos.top+"px",
-                        position: "absolute"
-                    },
-                    src: videoLink,
-                    width: videoWidth,
-                    videoCapture: false,
-                    fullScreen: false,
-                    endFNC: null,
-                    watchedFNC: null,
-                    occMode: true,
-                    timeRangeParams: timeRangeParams,
-                    timeRange: getMediaTimeRange(timeRangeParams)
-                };
-
-                if(PLX.isBSD){
-                    videoProps.showSpeed = true;
-                }
-
-                return videoProps;
-            }
+            return allVideo;
         }
 
-        function getVideoPath(){
-            var videoPath = "undefined.m3u8";
-            jsonV2.slides[index].videoPath.map(function(video){
-                if(video.active){
-                    videoPath = video.path;
-                    videoPath = videoPath.replace("www", "cdn");
+
+
+        function getVideoLayerId(elementId){
+            var match = String(elementId).match(/videoBox_(\d+)/);
+            return match ? match[1] : null;
+        }
+        function getVideoPath(layerId){
+            console.log("layerId:", layerId);
+            var videoPath = null;
+            var videoList = jsonV2.slides[index].videoPath || [];
+            videoList.some(function(video){
+                var active = video.active === true || video.active === "true";
+                var layerMatch = layerId === undefined || layerId === null || String(video.layerId) === String(layerId);
+
+                if(active && layerMatch && video.path){
+                    videoPath = video.path.replace("www", "cdn");
+                    return true;
                 }
+
+                return false;
             });
+
+            if(!videoPath){
+                return null;
+            }
+
+            console.log([videoPath]);
 
             return [videoPath];
         }
@@ -8257,7 +8374,7 @@ function PLAYER(){
 
             requestRubrikAIEvaluation(formatData, {
                 success: function(response){
-                    //console.log("Speech transcript AI evaluate response:", response);
+                    /* console.log("Speech transcript AI evaluate response:", response); */
                 },
                 error: function(xhr, status, error){
                     console.error("Speech transcript AI evaluate error:", status, error);
@@ -8275,7 +8392,7 @@ function PLAYER(){
             SR.transcript = getLastTranscript();
             input.transcript = SR.transcript;
             updateTranscriptViews(inputKey, SR.transcript);
-            //console.log("Konuşmanın son metni:", SR.transcript);
+            /* console.log("Konuşmanın son metni:", SR.transcript); */
 
             if(sendChange){
                 inputsChange(SD);
@@ -8350,7 +8467,7 @@ function PLAYER(){
                     finalTranscript = normalizeTranscript(finalTranscript);
                     SR.recognitionFinalText = normalizeTranscript(SR.recognitionFinalText + (SR.recognitionFinalText ? " " : "") + finalTranscript);
                     SR.recognitionInterimText = "";
-                    //console.log("Kesinleşen konuşma:", SR.recognitionFinalText);
+                    /* console.log("Kesinleşen konuşma:", SR.recognitionFinalText); */
                     SR.updateTranscriptFNC(true);
                 }else{
                     SR.updateTranscriptFNC(false);
@@ -8425,7 +8542,7 @@ function PLAYER(){
             audioRecorder.start()
                 .then(() => {
                     SR.recordStartTime = new Date();
-                    //console.log("SR.recordStartTime",SR.recordStartTime);
+                    /* console.log("SR.recordStartTime",SR.recordStartTime); */
                     SR.startViewFNC();
                 })
                 .catch(error => {
@@ -11034,13 +11151,12 @@ function PLAYER(){
 
         var isPaint = false;
         var lastLine;
-        var mod = "source-over";
+        var mod = "cursor";
         var lastPointerPos = {x: 0, y: 0};
         var activeStageID;
         var defaultTextValue = "Lorem ipsum";
         var closeActiveTextEditor = null;
-        var shapeReleaseBound = false;
-        var activeShapeDrag = null;
+        var freeDrawObjectSeed = 0;
 
         var draw = {konva:[], textNodes:[], selectedText: null, selectedShape: null};
 
@@ -11055,7 +11171,6 @@ function PLAYER(){
             minDistance: 3,
 
             brushSize: 4,
-            eraserSize: 32,
             activeSize:0,
             brushColor: "#ffffff",
             textFontSize: 24
@@ -11080,11 +11195,11 @@ function PLAYER(){
                 }
 
                 addCanvas(draw.konva[id]);
-                SD.inputs["box"+ id] = {value: null, type: "freeDraw"};
+                SD.inputs["box"+ id] = {value: null, objects: [], type: "freeDraw"};
             }else if(element.id.includes("freeDrawNav")){
                 draw.navMain = element.main;
+                draw.cursorBox = element.main.querySelector(".cursorBox");
                 draw.drawBox = element.main.querySelector(".drawBox");
-                draw.eraserBox = element.main.querySelector(".eraserBox");
                 draw.textBox = element.main.querySelector(".textBox");
                 draw.rectBox = element.main.querySelector(".rectBox");
                 draw.circleBox = element.main.querySelector(".circleBox");
@@ -11099,17 +11214,24 @@ function PLAYER(){
                     settings.textFontSize = normalizeTextFontSize(element.data.textFontSize);
                 }
 
+                if(draw.cursorBox){
+                    draw.cursorBox.addEventListener("click",function(){
+                        mod = "cursor";
+                        setTextDragMode(false);
+                        setTextEditMode(true);
+                        setShapeEditMode(true);
+                        mouseCursorStatus();
+                    });
+
+                    draw.cursorBox.style.cursor = "pointer";
+                }
+
                 draw.drawBox.addEventListener("click",function(){
                     mod = "source-over";
                     clearShapeSelection();
                     setTextDragMode(false);
-                    mouseCursorStatus();
-                });
-
-                draw.eraserBox.addEventListener("click",function(){
-                    mod = "destination-out";
-                    clearShapeSelection();
-                    setTextDragMode(false);
+                    setTextEditMode(false);
+                    setShapeEditMode(false);
                     mouseCursorStatus();
                 });
 
@@ -11117,8 +11239,10 @@ function PLAYER(){
                     draw.textBox.addEventListener("click",function(){
                         mod = "textDrag";
                         clearShapeSelection();
+                        setTextEditMode(true);
                         addText(getActiveDrawCanvas());
                         setTextDragMode(true);
+                        setShapeEditMode(false);
                         mouseCursorStatus();
                     });
 
@@ -11169,7 +11293,7 @@ function PLAYER(){
                     });
 
                     draw.colorPalette.remove();
-                    draw.eraserBox.after(colorInput);
+                    draw.drawBox.after(colorInput);
                     draw.colorPalette = colorInput;
                     settings.brushColor = draw.colorPalette.value;
 
@@ -11181,14 +11305,204 @@ function PLAYER(){
                         changeDrawColor(this.value);
                     });
 
-                    draw.colorPalette.addEventListener("click", function(){
-                        mod = "source-over";
-                        setTextDragMode(false);
-                        mouseCursorStatus();
+                    draw.colorPalette.addEventListener("click", function(e){
+                        e.stopPropagation();
                     });
                 }
             }
         });
+
+        function getFreeDrawObjectId(prefix){
+            freeDrawObjectSeed++;
+            return (prefix || "freeDrawObject") + "_" + Date.now() + "_" + freeDrawObjectSeed;
+        }
+
+        function getObjectType(node){
+            return node && node.attrs ? node.attrs.freeDrawObjectType : null;
+        }
+
+        function getObjectCanvas(node){
+            var stage = node.getStage();
+            for(var i=0; i<draw.konva.length; i++){
+                if(draw.konva[i] && draw.konva[i].stage === stage){
+                    return draw.konva[i];
+                }
+            }
+        }
+
+        function getNodeCommonData(node){
+            return {
+                id: node.attrs.freeDrawObjectId,
+                type: node.attrs.freeDrawObjectType,
+                x: node.x(),
+                y: node.y(),
+                scaleX: node.scaleX(),
+                scaleY: node.scaleY(),
+                rotation: node.rotation()
+            };
+        }
+
+        function serializeFreeDrawObject(node){
+            var data = getNodeCommonData(node);
+            if(data.type === "line"){
+                data.points = node.points();
+                data.stroke = node.stroke();
+                data.strokeWidth = node.strokeWidth();
+            }else if(data.type === "rect"){
+                data.width = node.width();
+                data.height = node.height();
+                data.fill = node.fill();
+                data.stroke = node.stroke();
+                data.strokeWidth = node.strokeWidth();
+            }else if(data.type === "circle" || data.type === "triangle"){
+                data.radius = node.radius();
+                data.fill = node.fill();
+                data.stroke = node.stroke();
+                data.strokeWidth = node.strokeWidth();
+                if(data.type === "triangle"){
+                    data.sides = node.sides();
+                }
+            }else if(data.type === "text"){
+                data.text = node.text();
+                data.fontSize = node.fontSize();
+                data.fontFamily = node.fontFamily();
+                data.fontStyle = node.fontStyle();
+                data.fill = node.fill();
+                data.lineHeight = node.lineHeight();
+            }
+
+            return data;
+        }
+
+        function getFreeDrawObjects(DX){
+            var objects = [];
+            DX.layer.getChildren(function(node){
+                return node.attrs && node.attrs.freeDrawObjectType;
+            }).forEach(function(node){
+                objects.push(serializeFreeDrawObject(node));
+            });
+
+            return objects;
+        }
+
+        function attachEditableObjectEvents(DX, node){
+            function persistObjectChange(){
+                if(getObjectType(node) === "rect"){
+                    normalizeRectShape(node);
+                }
+                selectShape(DX, node);
+                getSceneBase64();
+            }
+
+            node.on("mousedown touchstart pointerdown", function(e){
+                if(mod !== "cursor"){
+                    return;
+                }
+
+                isPaint = false;
+                selectShape(DX, node);
+            });
+
+            node.on("click tap", function(){
+                if(mod === "cursor"){
+                    selectShape(DX, node);
+                }
+            });
+
+            node.on("dragstart", function(){
+                if(mod !== "cursor"){
+                    return;
+                }
+
+                isPaint = false;
+                selectShape(DX, node);
+            });
+
+            node.on("dragend transformend", function(){
+                persistObjectChange();
+            });
+        }
+
+        function createLineNode(DX, data){
+            var objectId = data.id || getFreeDrawObjectId("freeDrawLine");
+            var line = new Konva.Line({
+                id: objectId,
+                x: data.x || 0,
+                y: data.y || 0,
+                scaleX: data.scaleX || 1,
+                scaleY: data.scaleY || 1,
+                rotation: data.rotation || 0,
+                stroke: data.stroke || settings.brushColor,
+                strokeWidth: data.strokeWidth || settings.brushSize,
+                globalCompositeOperation: "source-over",
+                lineCap: "round",
+                lineJoin: "round",
+                tension: settings.kv_tolerans,
+                points: data.points || [],
+                perfectDrawEnabled: false,
+                listening: mod === "cursor",
+                draggable: mod === "cursor",
+                hitStrokeWidth: Math.max((data.strokeWidth || settings.brushSize) + 12, 16),
+                freeDrawObjectType: "line",
+                freeDrawObjectId: objectId
+            });
+
+            attachEditableObjectEvents(DX, line);
+            return line;
+        }
+
+        function createShapeNode(DX, data){
+            var shape;
+            var objectId = data.id || getFreeDrawObjectId("freeDrawShape");
+            var baseAttrs = {
+                id: objectId,
+                x: data.x || 0,
+                y: data.y || 0,
+                scaleX: data.scaleX || 1,
+                scaleY: data.scaleY || 1,
+                rotation: data.rotation || 0,
+                fill: data.fill || settings.brushColor,
+                stroke: data.stroke || data.fill || settings.brushColor,
+                strokeWidth: data.strokeWidth || 0,
+                draggable: mod === "cursor",
+                listening: mod === "cursor",
+                freeDrawShape: true,
+                freeDrawObjectType: data.type,
+                freeDrawObjectId: objectId
+            };
+
+            if(data.type === "circle"){
+                shape = new Konva.Circle(Object.assign({radius: data.radius || 36}, baseAttrs));
+            }else if(data.type === "triangle"){
+                shape = new Konva.RegularPolygon(Object.assign({sides: 3, radius: data.radius || 42}, baseAttrs));
+            }else{
+                shape = new Konva.Rect(Object.assign({width: data.width || 70, height: data.height || 70}, baseAttrs));
+            }
+
+            attachEditableObjectEvents(DX, shape);
+            return shape;
+        }
+
+        function addFreeDrawObjectFromData(DX, data){
+            if(!data || !data.type){
+                return;
+            }
+
+            var node;
+            if(data.type === "line"){
+                node = createLineNode(DX, data);
+            }else if(data.type === "rect" || data.type === "circle" || data.type === "triangle"){
+                node = createShapeNode(DX, data);
+            }else if(data.type === "text"){
+                addText(DX, {x: data.x || 0, y: data.y || 0}, data, true);
+                return;
+            }
+
+            if(node){
+                DX.layer.add(node);
+            }
+        }
+
         function changeDrawColor(color){
             settings.brushColor = color;
             if(draw.selectedText && draw.selectedText.getStage()){
@@ -11213,11 +11527,13 @@ function PLAYER(){
             }
 
             button.addEventListener("click", function(){
-                mod = "shape";
+                mod = "cursor";
                 clearTextSelection();
+                setTextEditMode(true);
                 addShape(getActiveDrawCanvas(), shapeType);
                 setTextDragMode(false);
-                mouseCursorStatus(shapeType);
+                setShapeEditMode(true);
+                mouseCursorStatus();
             });
 
             button.style.cursor = "pointer";
@@ -11237,10 +11553,50 @@ function PLAYER(){
         function getShapeTransformer(DX){
             if(!DX.shapeTransformer){
                 DX.shapeTransformer = new Konva.Transformer({
-                    rotateEnabled: false,
+                    rotateEnabled: true,
                     flipEnabled: false,
                     keepRatio: false,
-                    enabledAnchors: ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']
+                    rotateAnchorOffset: 35,
+                    enabledAnchors: ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'],
+                    anchorStyleFunc: function(anchor){
+                        if(!anchor.hasName("rotater")){
+                            return;
+                        }
+
+                        anchor.width(22);
+                        anchor.height(22);
+                        anchor.offsetX(11);
+                        anchor.offsetY(11);
+                        anchor.cornerRadius(11);
+                        anchor.fill("#ffffff");
+                        anchor.stroke("#00a1ff");
+                        anchor.strokeWidth(1);
+                        anchor.sceneFunc(function(context, shape){
+                            var width = shape.width();
+                            var height = shape.height();
+
+                            context.beginPath();
+                            context.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, Math.PI * 2, false);
+                            context.closePath();
+                            context.fillStrokeShape(shape);
+
+                            context.save();
+                            context.setAttr("fillStyle", "#000000");
+                            context.setAttr("font", "22px Arial, sans-serif");
+                            context.setAttr("textAlign", "center");
+                            context.setAttr("textBaseline", "middle");
+                            context.fillText("↻", width / 2, height / 2 );
+                            context.restore();
+                        });
+                    }
+                });
+                DX.shapeTransformer.on("transformend", function(){
+                    if(draw.selectedShape && draw.selectedShape.getStage()){
+                        if(getObjectType(draw.selectedShape) === "rect"){
+                            normalizeRectShape(draw.selectedShape);
+                        }
+                        getSceneBase64();
+                    }
                 });
                 DX.layer.add(DX.shapeTransformer);
             }
@@ -11249,6 +11605,10 @@ function PLAYER(){
         }
 
         function selectShape(DX, shape){
+            if(mod !== "cursor"){
+                return;
+            }
+
             draw.selectedShape = shape;
             activeStageID = DX.id;
             clearTextSelection();
@@ -11268,6 +11628,101 @@ function PLAYER(){
             });
         }
 
+        function deleteSelectedShape(e){
+            if(e.key !== "Delete" && e.key !== "Backspace"){
+                return;
+            }
+
+            var activeElement = document.activeElement;
+
+            if(
+                activeElement &&
+                (
+                    activeElement.tagName === "INPUT" ||
+                    activeElement.tagName === "TEXTAREA" ||
+                    activeElement.isContentEditable
+                )
+            ){
+                return;
+            }
+
+            var selectedObject =
+                draw.selectedShape ||
+                draw.selectedText;
+
+            if(!selectedObject || !selectedObject.getStage()){
+                return;
+            }
+
+            var objectType = getObjectType(selectedObject);
+            var deletableTypes = [
+                "line",
+                "rect",
+                "circle",
+                "triangle",
+                "text"
+            ];
+
+            if(deletableTypes.indexOf(objectType) === -1){
+                return;
+            }
+
+            var DX = getObjectCanvas(selectedObject);
+
+            if(!DX){
+                return;
+            }
+
+            e.preventDefault();
+
+            selectedObject.destroy();
+
+            if(objectType === "text"){
+                draw.textNodes = draw.textNodes.filter(function(textNode){
+                    return textNode !== selectedObject && textNode.getStage();
+                });
+
+                clearTextSelection();
+            }else{
+                clearShapeSelection();
+            }
+
+            activeStageID = DX.id;
+
+            DX.layer.batchDraw();
+            getSceneBase64();
+        }
+
+        document.addEventListener("keydown", deleteSelectedShape);
+
+        function setShapeEditMode(enabled){
+            draw.konva.map(function(konva){
+                if(!konva || !konva.layer){
+                    return;
+                }
+
+                konva.layer.getChildren(function(node){
+                    return node.attrs && (node.attrs.freeDrawShape || node.attrs.freeDrawObjectType === "line");
+                }).forEach(function(shape){
+                    shape.draggable(enabled);
+                    shape.listening(enabled);
+                    if(enabled && getObjectType(shape) === "line" && shape.clearCache){
+                        shape.clearCache();
+                    }
+                });
+
+                if(!enabled && konva.shapeTransformer){
+                    konva.shapeTransformer.nodes([]);
+                }
+
+                konva.layer.batchDraw();
+            });
+
+            if(!enabled){
+                draw.selectedShape = null;
+            }
+        }
+
         function normalizeRectShape(shape){
             shape.setAttrs({
                 width: Math.max(shape.width() * shape.scaleX(), 8),
@@ -11277,152 +11732,23 @@ function PLAYER(){
             });
         }
 
-        function bindShapeRelease(shape, DX){
-            activeShapeDrag = {shape: shape, DX: DX};
-            if(shapeReleaseBound){
-                return;
-            }
-
-            shapeReleaseBound = true;
-            window.addEventListener("mouseup", finishShapeRelease, true);
-            window.addEventListener("touchend", finishShapeRelease, true);
-            window.addEventListener("pointerup", finishShapeRelease, true);
-            window.addEventListener("touchcancel", finishShapeRelease, true);
-            window.addEventListener("pointercancel", finishShapeRelease, true);
-            window.addEventListener("contextmenu", finishShapeRelease, true);
-            window.addEventListener("blur", finishShapeRelease, true);
-            document.addEventListener("mouseup", finishShapeRelease, true);
-            document.addEventListener("touchend", finishShapeRelease, true);
-            document.addEventListener("pointerup", finishShapeRelease, true);
-            document.addEventListener("touchcancel", finishShapeRelease, true);
-            document.addEventListener("pointercancel", finishShapeRelease, true);
-            document.addEventListener("contextmenu", finishShapeRelease, true);
-        }
-
-        function unbindShapeRelease(){
-            if(!shapeReleaseBound){
-                return;
-            }
-
-            shapeReleaseBound = false;
-            window.removeEventListener("mouseup", finishShapeRelease, true);
-            window.removeEventListener("touchend", finishShapeRelease, true);
-            window.removeEventListener("pointerup", finishShapeRelease, true);
-            window.removeEventListener("touchcancel", finishShapeRelease, true);
-            window.removeEventListener("pointercancel", finishShapeRelease, true);
-            window.removeEventListener("contextmenu", finishShapeRelease, true);
-            window.removeEventListener("blur", finishShapeRelease, true);
-            document.removeEventListener("mouseup", finishShapeRelease, true);
-            document.removeEventListener("touchend", finishShapeRelease, true);
-            document.removeEventListener("pointerup", finishShapeRelease, true);
-            document.removeEventListener("touchcancel", finishShapeRelease, true);
-            document.removeEventListener("pointercancel", finishShapeRelease, true);
-            document.removeEventListener("contextmenu", finishShapeRelease, true);
-        }
-
-        function finishShapeRelease(){
-            var shape = activeShapeDrag && activeShapeDrag.shape ? activeShapeDrag.shape : draw.selectedShape;
-            if(!shape || !shape.getStage()){
-                activeShapeDrag = null;
-                unbindShapeRelease();
-                return;
-            }
-
-            var DX = activeShapeDrag && activeShapeDrag.DX ? activeShapeDrag.DX : getTextCanvas(shape);
-            if(shape.stopDrag){
-                shape.stopDrag();
-            }
-
-            if(shape.getClassName && shape.getClassName() === "Rect"){
-                normalizeRectShape(shape);
-            }
-
-            if(DX){
-                selectShape(DX, shape);
-                getSceneBase64();
-            }
-
-            activeShapeDrag = null;
-            unbindShapeRelease();
-
-            setTimeout(function(){
-                if(shape.getStage && shape.getStage() && shape.isDragging && shape.isDragging()){
-                    shape.stopDrag();
-                    if(DX){
-                        selectShape(DX, shape);
-                        getSceneBase64();
-                    }
-                }
-            }, 0);
-        }
-
         function addShape(DX, shapeType){
             if(!DX){
                 return false;
             }
 
             activeStageID = DX.id;
-            var shape;
             var pos = getNextShapePosition(DX, 80, 80);
-            var baseAttrs = {
+            var shape = createShapeNode(DX, {
+                type: shapeType,
+                x: shapeType === "rect" ? pos.x + 5 : pos.x + 40,
+                y: shapeType === "triangle" ? pos.y + 43 : (shapeType === "rect" ? pos.y + 5 : pos.y + 40),
+                width: 70,
+                height: 70,
+                radius: shapeType === "triangle" ? 42 : 36,
                 fill: settings.brushColor,
                 stroke: settings.brushColor,
-                strokeWidth: 0,
-                draggable: true,
-                listening: true,
-                freeDrawShape: true
-            };
-
-            if(shapeType === "circle"){
-                shape = new Konva.Circle(Object.assign({
-                    x: pos.x + 40,
-                    y: pos.y + 40,
-                    radius: 36
-                }, baseAttrs));
-            }else if(shapeType === "triangle"){
-                shape = new Konva.RegularPolygon(Object.assign({
-                    x: pos.x + 40,
-                    y: pos.y + 43,
-                    sides: 3,
-                    radius: 42,
-                    rotation: 0
-                }, baseAttrs));
-            }else{
-                shape = new Konva.Rect(Object.assign({
-                    x: pos.x + 5,
-                    y: pos.y + 5,
-                    width: 70,
-                    height: 70
-                }, baseAttrs));
-            }
-
-            shape.on("mousedown touchstart", function(e){
-                isPaint = false;
-                selectShape(DX, shape);
-                bindShapeRelease(shape, DX);
-                if(e.evt){
-                    e.evt.preventDefault();
-                    e.evt.stopPropagation();
-                }
-            });
-
-            shape.on("dragstart", function(){
-                isPaint = false;
-                selectShape(DX, shape);
-                bindShapeRelease(shape, DX);
-            });
-
-            shape.on("mouseup touchend pointerup touchcancel pointercancel", function(){
-                finishShapeRelease();
-            });
-
-            shape.on("dragend transformend", function(){
-                if(shapeType === "rect"){
-                    normalizeRectShape(shape);
-                }
-                selectShape(DX, shape);
-                getSceneBase64();
-                unbindShapeRelease();
+                strokeWidth: 0
             });
 
             DX.layer.add(shape);
@@ -11505,7 +11831,7 @@ function PLAYER(){
             });
 
             DX.emptyDataLength = DX.stage.toDataURL().length;
-            DX.stage.on('mousedown touchstart', function(e) {
+            DX.stage.on('mousedown touchstart pointerdown', function(e) {
                 activeStageID = DX.id;
                 if(e.target !== DX.stage){
                     isPaint = false;
@@ -11517,7 +11843,7 @@ function PLAYER(){
 
                 var pos = DX.stage.getPointerPosition();
 
-                if(mod === "text" || mod === "shape"){
+                if(mod !== "source-over"){
                     if(closeActiveTextEditor){
                         closeActiveTextEditor(true);
                     }
@@ -11530,23 +11856,18 @@ function PLAYER(){
                 }
 
                 isPaint = true;
-                lastLine = new Konva.Line({
-                    stroke: settings.brushColor,
-                    strokeWidth: settings.activeSize,
-                    globalCompositeOperation: mod,
-                    lineCap: "round",
-                    lineJoin: "round",
-                    tension: settings.kv_tolerans,
+                lastPointerPos = pos;
+                lastLine = createLineNode(DX, {
                     points: [pos.x, pos.y],
-                    perfectDrawEnabled: false,
-                    listening: false,
-                    hitGraphEnabled: false,
-                    shadowForStrokeEnabled: false
+                    stroke: settings.brushColor,
+                    strokeWidth: settings.activeSize
                 });
+                lastLine.listening(false);
+                lastLine.draggable(false);
                 DX.layer.add(lastLine);
             });
 
-            DX.stage.on("mousemove touchmove", function (e) {
+            DX.stage.on("mousemove touchmove pointermove", function (e) {
                 if (!isPaint) return;
 
                 e.evt.preventDefault();
@@ -11567,10 +11888,13 @@ function PLAYER(){
             });
 
 
-            DX.stage.on("mouseup touchend", function(e) {
+            DX.stage.on("mouseup touchend pointerup pointercancel touchcancel", function(e) {
+                var wasPainting = isPaint;
                 drawEnd(DX);
-                e.evt.preventDefault();
-                e.evt.stopPropagation();
+                if(wasPainting && e.evt){
+                    e.evt.preventDefault();
+                    e.evt.stopPropagation();
+                }
             });
 
         }
@@ -11591,6 +11915,23 @@ function PLAYER(){
         function setTextDragMode(enabled){
             draw.textNodes.map(function(text){
                 text.draggable(false);
+            });
+        }
+
+        function setTextEditMode(enabled){
+            draw.textNodes.map(function(text){
+                text.listening(enabled);
+                text.draggable(false);
+            });
+
+            if(!enabled){
+                clearTextSelection();
+            }
+
+            draw.konva.map(function(konva){
+                if(konva && konva.layer){
+                    konva.layer.batchDraw();
+                }
             });
         }
 
@@ -11838,7 +12179,7 @@ function PLAYER(){
             };
         }
 
-        function addText(DX, pos){
+        function addText(DX, pos, textData, silent){
             if(!DX){
                 return false;
             }
@@ -11848,17 +12189,24 @@ function PLAYER(){
                 pos = getNextTextPosition(DX);
             }
 
+            var textId = textData && textData.id ? textData.id : getFreeDrawObjectId("freeDrawText");
             var text = new Konva.Text({
-                text: defaultTextValue,
+                id: textId,
+                text: textData && textData.text ? textData.text : defaultTextValue,
                 x: pos.x,
                 y: pos.y,
-                fontSize: settings.textFontSize,
-                fontFamily: "Nunito",
-                fontStyle: "bold",
-                fill: settings.brushColor,
-                lineHeight: 1.2,
+                scaleX: textData && textData.scaleX ? textData.scaleX : 1,
+                scaleY: textData && textData.scaleY ? textData.scaleY : 1,
+                rotation: textData && textData.rotation ? textData.rotation : 0,
+                fontSize: textData && textData.fontSize ? textData.fontSize : settings.textFontSize,
+                fontFamily: textData && textData.fontFamily ? textData.fontFamily : "Nunito",
+                fontStyle: textData && textData.fontStyle ? textData.fontStyle : "bold",
+                fill: textData && textData.fill ? textData.fill : settings.brushColor,
+                lineHeight: textData && textData.lineHeight ? textData.lineHeight : 1.2,
                 draggable: false,
-                listening: true
+                listening: mod !== "source-over",
+                freeDrawObjectType: "text",
+                freeDrawObjectId: textId
             });
 
             var textEditing = false;
@@ -12003,6 +12351,10 @@ function PLAYER(){
             }
 
             text.on("mousedown touchstart", function(e){
+                if(mod === "source-over"){
+                    return;
+                }
+
                 if(textEditing){
                     return;
                 }
@@ -12024,6 +12376,10 @@ function PLAYER(){
             });
 
             text.on("dblclick dbltap", function(e){
+                if(mod === "source-over"){
+                    return;
+                }
+
                 activeStageID = DX.id;
                 isPaint = false;
                 textEditing = true;
@@ -12078,9 +12434,13 @@ function PLAYER(){
             draw.textNodes.push(text);
             text.draggable(false);
             DX.layer.add(text);
-            selectTextNode(DX, text);
+            if(!silent){
+                selectTextNode(DX, text);
+            }
             DX.layer.batchDraw();
-            getSceneBase64();
+            if(!silent){
+                getSceneBase64();
+            }
         }
 
         function openCanvasTextEditor(DX, text, closeCallback){
@@ -12225,18 +12585,25 @@ function PLAYER(){
                 });
             }
 
+            lastLine.listening(false);
+            lastLine.draggable(false);
+
+            clearShapeSelection();
+            mouseCursorStatus();
+
             DX.layer.batchDraw();
             getSceneBase64();
         }
 
 
-        SP.sceneDiv.addEventListener('mouseup', function(){
+        function sceneDrawEndHandler(){
             drawEnd( draw.konva[activeStageID] );
-        });
+        }
 
-        SP.sceneDiv.addEventListener('touchend', function(){
-            drawEnd( draw.konva[activeStageID] );
-        });
+        SP.sceneDiv.addEventListener('mouseup', sceneDrawEndHandler);
+        SP.sceneDiv.addEventListener('touchend', sceneDrawEndHandler);
+        SP.sceneDiv.addEventListener('pointerup', sceneDrawEndHandler);
+        SP.sceneDiv.addEventListener('pointercancel', sceneDrawEndHandler);
 
         /* canvas base64 get */
         function getSceneBase64() {
@@ -12250,6 +12617,7 @@ function PLAYER(){
             });
 
             inputsChange(SD, activeStageID, "value", dataURL);
+            inputsChange(SD, activeStageID, "objects", getFreeDrawObjects(draw.konva[activeStageID]));
             return dataURL;
         }
 
@@ -12271,6 +12639,8 @@ function PLAYER(){
             /* Önceki bellek kayıtlarını temizle */
             draw.konva[id].layer.clearCache();
             draw.konva[id].layer.draw();
+            inputsChange(SD, id, "value", null);
+            inputsChange(SD, id, "objects", []);
         }
 
         function activeBtnFNC(btn){
@@ -12282,10 +12652,10 @@ function PLAYER(){
         }
 
         function getFreeDrawCursor(){
-            if(mod === "source-over"){
+            if(mod === "cursor"){
+                return "default";
+            }else if(mod === "source-over"){
                 return "url(assets/img/player/pencilcursor.png) -22 22, auto";
-            }else if(mod === "destination-out"){
-                return "url(assets/img/player/easercursor.png) 10 15, auto";
             }else if(mod === "text"){
                 return "text";
             }else if(mod === "textDrag"){
@@ -12317,10 +12687,16 @@ function PLAYER(){
         }
 
         function mouseCursorStatus(activeShapeType){
-            if(mod === "source-over"){
-                settings.activeSize = settings.brushSize;
-                activeBtnFNC(draw.drawBox);
-                passiveBtnFNC(draw.eraserBox);
+            if(draw.cursorBox){
+                passiveBtnFNC(draw.cursorBox);
+            }
+
+            if(mod === "cursor"){
+                settings.activeSize = 0;
+                if(draw.cursorBox){
+                    activeBtnFNC(draw.cursorBox);
+                }
+                passiveBtnFNC(draw.drawBox);
                 passiveShapeButtons();
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
@@ -12328,10 +12704,10 @@ function PLAYER(){
                 if(draw.dragBox){
                     passiveBtnFNC(draw.dragBox);
                 }
-            }else if(mod === "destination-out"){
-                settings.activeSize = settings.eraserSize;
-                activeBtnFNC(draw.eraserBox);
-                passiveBtnFNC(draw.drawBox);
+                setShapeEditMode(true);
+            }else if(mod === "source-over"){
+                settings.activeSize = settings.brushSize;
+                activeBtnFNC(draw.drawBox);
                 passiveShapeButtons();
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
@@ -12343,7 +12719,6 @@ function PLAYER(){
                 settings.activeSize = 0;
                 activeBtnFNC(draw.textBox);
                 passiveBtnFNC(draw.drawBox);
-                passiveBtnFNC(draw.eraserBox);
                 passiveShapeButtons();
                 if(draw.dragBox){
                     passiveBtnFNC(draw.dragBox);
@@ -12351,7 +12726,6 @@ function PLAYER(){
             }else if(mod === "textDrag"){
                 settings.activeSize = 0;
                 passiveBtnFNC(draw.drawBox);
-                passiveBtnFNC(draw.eraserBox);
                 passiveShapeButtons();
                 if(draw.textBox){
                     activeBtnFNC(draw.textBox);
@@ -12359,7 +12733,6 @@ function PLAYER(){
             }else if(mod === "shape"){
                 settings.activeSize = 0;
                 passiveBtnFNC(draw.drawBox);
-                passiveBtnFNC(draw.eraserBox);
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
                 }
@@ -12382,7 +12755,13 @@ function PLAYER(){
             var lastMove = historyExtract(SP, 'freeDraw');
 
             for(var box in lastMove){
-                if(lastMove[box].value){
+                if(Array.isArray(lastMove[box].objects) && lastMove[box].objects.length){
+                    var objectId = lastMove[box].id;
+                    lastMove[box].objects.forEach(function(objectData){
+                        addFreeDrawObjectFromData(draw.konva[objectId], objectData);
+                    });
+                    draw.konva[objectId].layer.batchDraw();
+                }else if(lastMove[box].value){
                     var base64 = lastMove[box].value;
                     var id = lastMove[box].id;
 
@@ -12426,6 +12805,11 @@ function PLAYER(){
         }
 
         function close(){
+            document.removeEventListener("keydown", deleteSelectedShape);
+            SP.sceneDiv.removeEventListener('mouseup', sceneDrawEndHandler);
+            SP.sceneDiv.removeEventListener('touchend', sceneDrawEndHandler);
+            SP.sceneDiv.removeEventListener('pointerup', sceneDrawEndHandler);
+            SP.sceneDiv.removeEventListener('pointercancel', sceneDrawEndHandler);
             draw.navMain.style.display = "none";
             draw.konva.map(function(konva){
                 if(konva){

@@ -35,16 +35,46 @@ var templateImages = [
     "arrow.png",
     "square.png",
     "circle.png",
-    "triangle.png"
+    "triangle.png",
+    "cursor_icon.png"
 ];
 
 async function copyTemplateImages(imgFolder) {
-    await Promise.all(templateImages.map(function(fileName) {
-        return copyFile(
-            path.join(__dirname, "assets/img/template", fileName),
-            path.join(imgFolder, fileName)
-        );
+    await addFolder(imgFolder);
+
+    var results = await Promise.all(templateImages.map(function(fileName) {
+        var source = path.join(__dirname, "assets/img/template", fileName);
+        var target = path.join(imgFolder, fileName);
+
+        return copyFile(source, target).then(function(success) {
+            var result = {
+                fileName: fileName,
+                source: source,
+                target: target,
+                success: success
+            };
+
+            if (!success) {
+                console.error("Template image kopyalanamadı:", result);
+            }
+
+            return result;
+        });
     }));
+
+    return {
+        success: results.every(function(result) {
+            return result.success;
+        }),
+        imgFolder: imgFolder,
+        total: results.length,
+        copied: results.filter(function(result) {
+            return result.success;
+        }),
+        failed: results.filter(function(result) {
+            return !result.success;
+        })
+    };
 }
 
 // Klasörlerin erşim izinleri verildi..
@@ -154,7 +184,7 @@ function addFolder(target){
     return new Promise(function(resolve, reject){
         try{
             if (!fs.existsSync(target)) {
-                fs.mkdirSync(target);
+                fs.mkdirSync(target, { recursive: true });
             }
 
             resolve(target);
@@ -261,9 +291,10 @@ async function createNewFileFNC(req, res){
     var addList = listAddFile(FD, data);
     FD.files.mainJson = await createJson( path.join(FD.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
     FD.fileList = await createJson( FD.fileList.path, addList, {encoding:"utf8", flag:"w"});
+    var cc = await copyTemplateImages(FD.files.imgFolder);
+    FD.copyTemplateImages = cc;
     res.send(FD);
-    await copyTemplateImages(FD.files.imgFolder);
-    console.log("-- CREATE NEW FINISH--");
+    console.log("-- CREATE NEW FINISH--",cc);
 }
 
 //SaveDataFNC
@@ -314,8 +345,9 @@ async function selectFileFNC(req, res){
     if(FD.fileList.data[selectedFile]){
         FD.files = FD.fileList.data[selectedFile].files;
         FD.files.data = await readFileList(FD.files.mainJson.path);
-        await copyTemplateImages(FD.files.imgFolder);
-        res.send({success: true, FILE: FD});
+        var cc = await copyTemplateImages(FD.files.imgFolder);
+        FD.copyTemplateImages = cc;
+        res.send({success: true, FILE: FD, copyTemplateImages: cc});
     }else{
         res.send({success: false});
     }
@@ -564,6 +596,11 @@ function copyFile(source, target){
     return new Promise(function(resolve, reject){
         fs.copyFile(source, target, (err) => {
             if (err){
+                console.error("Dosya kopyalama hatası:", {
+                    source: source,
+                    target: target,
+                    error: err.message
+                });
                 resolve(false);
             }else{
                 resolve(true);
@@ -691,8 +728,15 @@ app.post("/occSelectFile", function(req, res){
         headers: getOccAuthHeaders(jwt)
     }
 
-    axios.get(`https://${service}.okulistik.com/api/occ/${selectedFile}`, config).then(response => {
-        res.send({success: true, response: response.data});
+    axios.get(`https://${service}.okulistik.com/api/occ/${selectedFile}`, config).then(async response => {
+        var cc = null;
+
+        if(FD && FD.files && FD.files.imgFolder){
+            cc = await copyTemplateImages(FD.files.imgFolder);
+            FD.copyTemplateImages = cc;
+        }
+
+        res.send({success: true, response: response.data, copyTemplateImages: cc,FD});
     }).catch(err => {
         console.log("error in request", err);
         res.status(502).send({
@@ -1185,5 +1229,3 @@ app.post("/deleteFileList", async function(req, res) {
         });
     }
 });
-
-

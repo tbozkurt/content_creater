@@ -492,8 +492,6 @@ function AddPlayer(obj){
 	var controllerHeight = 50;
 	var time;
 	var timeView;
-	var skinTimer;
-	var pointerLeave = true;
 	var mobileSkinTimer = null;
 	var mouseInsideVideo = false;
 	var skinEventsBound = false;
@@ -1004,16 +1002,8 @@ function AddPlayer(obj){
 	});
 
 	playerFullScreenControl.on(userEvent.click, function(){
-		var isTouch = $mobileDevice || (Date.now() - lastTouchTime < 1000);
-		if(isTouch){
-			if(!methods.firstPlay){
-				methods.PlayVideo();
-			}else if(!methods.globalPlay){
-				methods.PlayVideo();
-				triggerMobileSkin();
-			}else{
-				triggerMobileSkin();
-			}
+		if($mobileDevice && methods.firstPlay && methods.globalPlay){
+			triggerMobileSkin();
 			return;
 		}
 
@@ -1156,12 +1146,10 @@ function AddPlayer(obj){
 		}
 	}).on(userEvent.up, function(e){
 		gotoTime(e);
-		if(methods.firstPlay){
-			if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
-				triggerMobileSkin();
-			}else if(!mouseInsideVideo){
-				hideSkin(true);
-			}
+		if($mobileDevice && methods.firstPlay){
+			triggerMobileSkin();
+		}else if(methods.firstPlay && !mouseInsideVideo){
+			hideSkin(true);
 		}
 	});
 
@@ -1533,28 +1521,13 @@ function AddPlayer(obj){
 	video.onplay = function() {
 		PlayingIconVisibleFNC(false);
 		methods.globalPlay = true;
-		if(!methods.firstPlay){
-			methods.firstPlay = true;
-			playerSkin.css("visibility", "unset");
-		}
-		if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
-			triggerMobileSkin();
-		}else if(mouseInsideVideo){
-			showSkin(true);
-		}else{
-			hideSkin(true);
-		}
 	};
 
 	video.onpause = function() {
 		methods.globalPlay = false;
 		PlayingIconVisibleFNC(true);
 		startTimeIntervals(false);
-		if($mobileDevice || (Date.now() - lastTouchTime < 1000)){
-			triggerMobileSkin();
-		}else if(mouseInsideVideo){
-			showSkin(true);
-		}
+		showSkin(true);
 	};
 
 	video.onwaiting = function() {
@@ -1570,6 +1543,7 @@ function AddPlayer(obj){
 	video.onplaying = function() {
 		methods.globalPlay = true;
 		if(!methods.firstPlay){
+			playerSkin.css("visibility", "unset");
 			fullScreenPlay.hide();
 			playerFullScreenControl.css("visibility", "unset");
 			if(methods.hlsSupport){
@@ -1727,7 +1701,7 @@ function AddPlayer(obj){
 			if(methods.firstPlay){
 				showSkin(true);
 			}
-		}).on("mouseleave", function(){
+		}).on(userEvent.leave, function() {
 			if(Date.now() - lastTouchTime < 1000) return;
 			mouseInsideVideo = false;
 			if(methods.firstPlay){

@@ -157,6 +157,9 @@ function EXPORT(){
             name: "soundRecord",
             type: "soundRecord"
         },{
+            name: "soundPlayer",
+            type: "audio"
+        },{
             name: "wordBox",
             type: "word"
         },{
@@ -205,6 +208,11 @@ function EXPORT(){
         if(types.includes("video")){
             if(!jsonV2.slides[sceneIndex].videoPath){
                 jsonV2.slides[sceneIndex].videoPath = [];
+            }
+        }
+        if(types.includes("audio")){
+            if(!jsonV2.slides[sceneIndex].audioPath){
+                jsonV2.slides[sceneIndex].audioPath = [];
             }
         }
 
