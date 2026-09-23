@@ -2016,7 +2016,7 @@ IDE.workSpace.createVideo.addEventListener("click", function(){
         }
     });
 
-    CREATE.checkKontrol();
+    CREATE.objIdControlFNC("videoBox");
     addHistory();
     selectItem({shiftKey: false, layer: obj});
 });
@@ -2047,7 +2047,7 @@ IDE.workSpace.createRectVideo.addEventListener("click", function(){
         addLayer: true
     });
 
-    CREATE.checkKontrol();
+    CREATE.objIdControlFNC("videoBox");
     addHistory();
     selectItem({shiftKey: false, layer: obj});
 });
@@ -2485,6 +2485,16 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
     var rubrikPanelUrl = "/rubrik?file_name="+ encodeURIComponent(IDE.user.selectedFile) +offlineRubrik;
     IDE.popupWindow = window.open(rubrikPanelUrl, "_blank", "width=1200,height=600,left=100,top=100");
     /* IDE.popupWindow = window.open("/rubrik", "_blank", "width=800,height=600,left=540,top=220"); */
+});
+
+document.querySelector(".goMediaUpload").addEventListener("click", function(){
+    if(IDE.popupWindow){
+        IDE.popupWindow.close();
+    }
+
+    var fileName = encodeURIComponent(IDE.user.selectedFile);
+    var mediaUploaderUrl = "https://www.okulistik.com/okx_admin/spa/upload/media-uploader/" + fileName;
+    IDE.popupWindow = window.open(mediaUploaderUrl, "_blank", "width=1200,height=600,left=100,top=100");
 });
 
 document.querySelector(".goRegex").addEventListener("click", function(){

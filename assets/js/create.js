@@ -246,6 +246,33 @@ function CREATE(){
         return globalCount;
     }
 
+    this.objIdControlFNC = function(name){
+        var currentCount = -1;
+
+        function saveID(Layer){
+            currentCount++
+            var id = name +"_"+ currentCount;
+            Layer.name = id;
+            Layer.elementID = id;
+            Layer.layerNameNormal.innerText = id;
+            return "videoBox" +"_"+ currentCount;
+        }
+
+        IDE.sahne.children.map(function(A_children){
+            A_children.children.map(function(B_children){
+                if(B_children.Layer && B_children.Layer.name.includes(name)){
+                    saveID(B_children.Layer);
+                }else if(B_children.children){
+                    B_children.children.map(function(C_children){
+                        if(C_children.Layer && C_children.Layer.name.includes(name)){
+                            saveID(C_children.Layer);
+                        }
+                    });
+                }
+            });
+        });
+    }
+
     this.getSceneName = function(){
         var list = [];
         jsonV2.slides.map(function(e){

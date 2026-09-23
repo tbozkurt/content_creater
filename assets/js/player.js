@@ -9,7 +9,8 @@ function PLAYER(){
         HDE_access:0,
         maxWrongMove:5,
         isEKT: false,
-        isBSD: false
+        isBSD: false,
+        allOpenEnd: false
     };
     var This = this;
     var KT={};
@@ -271,7 +272,8 @@ function PLAYER(){
                 soundRecord:{},
                 history:[],
                 pageChangeDuration:4,
-                consDuration: null
+                consDuration: null,
+                sceneNav:{}
             }
 
             if(slide.rubrik){
@@ -313,6 +315,7 @@ function PLAYER(){
             console.log("");
         });
 
+        AllOpenEndSearch();
         addStartScreen(BUILD.mode);
         this.addEvents();
         addWarning();
@@ -333,6 +336,21 @@ function PLAYER(){
         PLX.Mode = BUILD.mode;
         prevDataStatusFNC(BUILD);
         sendDuration();
+    }
+
+    function AllOpenEndSearch(){
+        if(!PLX.isHDE){
+            var allOpenEnd = true;
+            SD.map(function(sd, id){
+                if(sd.type === "e"){
+                    if(!SP[id].completeBtn){
+                        allOpenEnd = false;
+                    }
+                }
+            });
+
+            PLX.allOpenEnd = allOpenEnd;
+        }
     }
 
     this.scoreCalc = function(saveData){
@@ -396,6 +414,10 @@ function PLAYER(){
             score.access = (accessTotalScene / SD.length) * 100;
         }else{
             score.access = accessTotalScene;
+        }
+
+        if(PLX.allOpenEnd){
+            score.success = score.access;
         }
 
         var state = setState();
@@ -942,7 +964,7 @@ function PLAYER(){
 
             controlBtnView(SP, "disable");
             answerBtnView(SP, "disable");
-            checkViewFNC(SD);
+            checkViewFNC(SP, SD);
             showFeedBack("right", "auto", 0);
             specialFNC(SP, SD, true);
         }else{
@@ -1006,7 +1028,7 @@ function PLAYER(){
             }
 
             if(SD.inputs[boxName].type === "sr"){
-                finalBox[boxName] = String(SD.inputs[boxName].transcript || "");
+                finalBox[boxName] = String(SD.inputs[boxName].value || "");
             }else{
                 finalBox[boxName] = String(SD.inputs[boxName].value);
             }
@@ -1079,15 +1101,16 @@ function PLAYER(){
 
         addHistoryStep(SD, attempt);
         SD.right = parseInt(attempt.right);
+        SD.wrong = parseInt(attempt.wrong);
+        SD.empty = parseInt(attempt.empty);
         SD.totalRight = parseInt(attempt.totalRight);
-        console.log(attempt);
 
         if(attempt.result.includes("T")){
             This.playRightAudio();
             This.sceneComplete();
             This.nextScene();
             closeActivity(SP);
-            checkViewFNC(SD);
+            checkViewFNC(SP, SD);
             showFeedBack("right", "auto", 0);
             specialFNC(SP, SD, true);
         }else{
@@ -1312,7 +1335,7 @@ function PLAYER(){
 
                         This.scoreCalc(false);
                         controlBtnView(sp, "disabled");
-                        checkViewFNC(sd);
+                        checkViewFNC(sp, sd);
                     }
                 });
 
@@ -1357,7 +1380,7 @@ function PLAYER(){
                     sp.popEx[0].btn.style.pointerEvents = "auto";
                 }
 
-                checkViewFNC(sd);
+                checkViewFNC(sp, sd);
             }else if(PLX.isEKT){
                 sp.popEx[0].btn.style.opacity = 1;
                 sp.popEx[0].btn.style.pointerEvents = "auto";
@@ -1738,40 +1761,44 @@ function PLAYER(){
         player.watcher_returnBtn = player.watcher_main.querySelector(".watcher_returnBtn");
         player.watcher_endBtn = player.watcher_main.querySelector(".watcher_endBtn");
 
-
-        SD.map(function(e, i){
-            var navBox = utils.addDOM({className: "Normal_NavList_Box", textContent:(i+1)});
+        SD.map(function(sd, i){
+            var navBox = utils.addDOM({className: ("Normal_NavList_Box"), textContent:(i+1)});
             player.Normal_NavList.appendChild(navBox);
 
             navBox.addEventListener("mouseenter", function(){
-                this.style.backgroundColor = "#4db6ac";
+                this.style.border = "2px dashed #000000";
             });
 
             navBox.addEventListener("mouseleave", function() {
                 if(This.sceneIndex !== i){
-                    this.style.backgroundColor = "silver";
+                    this.style.border = "2px dashed rgba(255, 255, 255, 0)";
                 }
             });
 
-            navBox.addEventListener("click", function(e){
+            navBox.addEventListener("click", function(){
                 This.changeScene(i);
             });
 
-            var watcherBox = utils.addDOM({className: "watcher_box", textContent:(i+1)});
+            var watcherBox = utils.addDOM({className: ("watcher_box"), textContent:(i+1)});
             watcherList.appendChild(watcherBox);
 
             watcherBox.addEventListener("mouseenter", function(){
-                this.style.backgroundColor = "#4db6ac";
+                this.style.border = "2px dashed #000000";
             });
 
             watcherBox.addEventListener("mouseleave", function() {
-                this.style.backgroundColor = "silver";
+                this.style.border = "2px dashed rgba(255, 255, 255, 0)";
             });
 
             watcherBox.addEventListener("click", function(){
                 player.watcher_main.style.visibility = "hidden";
                 This.changeScene(i);
             });
+
+            SP[i].sceneNav = {
+                navigationBtn: navBox,
+                watchBtn: watcherBox,
+            }
         });
 
         player.Normal_NavListMain.addEventListener("click", function(){
@@ -1827,7 +1854,7 @@ function PLAYER(){
 
     function navListReset(){
         player.navListAllBox.forEach(function(box) {
-            box.style.backgroundColor = "silver";
+            box.style.border = "2px dashed rgba(255, 255, 255, 0)";
             box.style.pointerEvents = "auto";
         });
     }
@@ -1835,7 +1862,7 @@ function PLAYER(){
     function navListSelect(pageID){
         if(player.navListAllBox){
             navListReset();
-            player.navListAllBox[pageID].style.backgroundColor = "orange";
+            player.navListAllBox[pageID].style.border = "2px solid #3a3a3a";
             player.navListAllBox[pageID].style.pointerEvents = "none";
         }
     }
@@ -1919,7 +1946,7 @@ function PLAYER(){
                 var sd = SD[index];
                 var lastMove = sp.history[sp.history.length-1];
                 if(lastMove){
-                    if(lastMove.result === "T1" || lastMove.result === "right"){
+                    if(lastMove.result.includes("T") || lastMove.result === "right"){
                         sd.complete = true;
                         closeActivity(sp);
                     }else if(lastMove.answered === "1"){
@@ -1947,14 +1974,15 @@ function PLAYER(){
 
                     showToolTip(sp, sd);
                 }
+
+                checkViewFNC(SP[index], SD[index]);
             });
 
             This.scoreCalc(false);
-            checkViewFNC(SD[This.sceneIndex]);
         }
     }
 
-    function checkViewFNC(SD){
+    function checkViewFNC(SP, SD){
         if(SD.complete){
             player.status.main.style.visibility = "visible";
             var currentWarning = SD.historyRight.length;
@@ -1987,6 +2015,9 @@ function PLAYER(){
                 player.status.notice.style.backgroundColor = bgColor;
                 player.status.notice.innerHTML = noticeTxt;
                 player.status.notice.style.visibility = "visible";
+                if(SP.sceneNav.navigationBtn){
+                    SP.sceneNav.navigationBtn.style.backgroundColor = bgColor;
+                }
             }else{
                 player.status.notice.style.visibility = "hidden";
             }
@@ -2055,7 +2086,6 @@ function PLAYER(){
                 SP.controlBtn.style.pointerEvents = "none";
                 SP.controlBtn.addEventListener("click", function(){
                     var rubrik = SD.rubrik;
-                    
                     if(rubrik && rubrik.groups && rubrik.groups.length){
                         if(SD.rubrik.groups.length){
                             This.rubrikEvalutorControlHQ(SP, SD);
@@ -2073,6 +2103,7 @@ function PLAYER(){
                 SP.answerBtn.addEventListener("click", function(){
                     This.answerHQ(SP, SD);
                     showFeedBack("answer", "btn", 0);
+                    checkViewFNC(SP, SD);
                 });
             }else if(obj.id.includes("saveBtn")){
                 SP.completeBtn = obj;
@@ -2094,7 +2125,7 @@ function PLAYER(){
                     });
 
                     This.scoreCalc(true);
-                    checkViewFNC(SD);
+                    checkViewFNC(SP, SD);
                     This.nextScene();
                 });
 
@@ -2280,21 +2311,25 @@ function PLAYER(){
                 }
 
                 var url = "";
-                if(AC.player){
-                    url = AC.player.RUrl;
+                if(AC.player && AC.player.RUrl){
+                    if(AC.player.RUrl.length){
+                        url = AC.player.RUrl;
+                    }
                 }
 
-                if(PLX.isBSD && el.data.goUrl && el.data.goUrl === "insidePDF"){
-                    var cid="0000";
-                    if(AC.ID){
-                        cid = AC.ID.split("-")[1];
+                if(url.length===0){
+                    if(el.data.goUrl && el.data.goUrl === "insidePDF"){
+                        var cid="0000";
+                        if(AC.ID){
+                            cid = AC.ID.split("-")[1];
+                        }
+
+                        url = "/viewer/pdf-viewer?cmd=yem&content_id="+ cid +"&type=bsd";
                     }
 
-                    url = "/viewer/pdf-viewer?cmd=yem&content_id="+ cid +"&type=bsd";
-                }
-
-                if(el.data.goUrl && el.data.goUrl === "insideHTML"){
-                    url = player.root +"/img/"+ pop.fileName;
+                    if(el.data.goUrl && el.data.goUrl === "insideHTML"){
+                        url = player.root +"/img/"+ pop.fileName;
+                    }
                 }
 
                 el.main.addEventListener("click", function(){
@@ -2330,6 +2365,10 @@ function PLAYER(){
                 el.main.querySelector(".popupWindowClose").addEventListener("click", function(){
                     popupWindowStatus(id, "close");
                 });
+
+                if(el.className.includes("solutionVideo")){
+                    SP.popEx[id].selectedSolutionVideo = id;
+                }
 
                 if(el.main.querySelector(".videoPlayer")){
                     SP.popEx[id].solutionVideo = id;
@@ -2368,6 +2407,26 @@ function PLAYER(){
             });
 
         });
+
+        if(PLX.isHDE){
+            /* Selected Solution Find */
+            var selectedSolutionVideo;
+            SP.popEx.map(function(pop){
+                if(pop.selectedSolutionVideo !== undefined){
+                    selectedSolutionVideo = pop.selectedSolutionVideo;
+                }
+            });
+
+            if(selectedSolutionVideo !== undefined){
+                SP.popEx.map(function(pop){
+                    if(pop.selectedSolutionVideo !== undefined){
+                        delete pop.selectedSolutionVideo;
+                    }else{
+                        delete pop.solutionVideo;
+                    }
+                });
+            }
+        }
     }
 
     function aiPopAdd(el, SD){
@@ -2992,7 +3051,7 @@ function PLAYER(){
             }
 
             initVideoFNC(This.sceneIndex);
-            checkViewFNC(SD[index]);
+            checkViewFNC(SP[index], SD[index]);
             navListSelect(index);
             hideOpenEndedDOM();
             HDE_StatusFNC();
@@ -3060,8 +3119,12 @@ function PLAYER(){
         if(next === null){
             setTimeout(endScreenBoxStatus, 2000);
         }else{
-            player.autoNext = next;
-            PLX.autoSceneChange.ShowFNC();
+            if(This.sceneIndex === (SD.length-1)){
+                setTimeout(endScreenBoxStatus, 2000);
+            }else{
+                player.autoNext = next;
+                PLX.autoSceneChange.ShowFNC();
+            }
         }
     }
 
@@ -4602,7 +4665,11 @@ function PLAYER(){
                 id = parseInt(element.id.split("_")[1]);
                 getCSS(id, element, "drop");
                 SD.inputs["box"+ id] = {value: [], type: "match"};
-                rubrik[id] = answer[id].split(",");
+                if(answer[id]){
+                    rubrik[id] = answer[id].split(",");
+                }else{
+                    rubrik[id] = [];
+                }
             }else if(element.id.includes("matchDrag")){
                 id = "d"+parseInt(element.id.split("_")[1]);
                 getCSS(id, element, "drag");
@@ -4835,9 +4902,9 @@ function PLAYER(){
                 var user = SD.inputs["box"+ i].value;
                 var right = true;
 
-                if(user.length === 0){
+                if(rubrik[i].length && user.length === 0){
                     score.totalEmpty++;
-                }else{
+                }else if(rubrik[i].length && user.length){
                     rubrik[i].map(function(id){
                         if(!user.includes(id)){
                             right = false;
@@ -4851,6 +4918,9 @@ function PLAYER(){
                         score.totalWrong++;
                         statusArr[i] = "wrong";
                     }
+                }else if(!rubrik[i].length && user.length){
+                    score.totalWrong++;
+                    statusArr[i] = "wrong";
                 }
             }
 
@@ -7065,7 +7135,7 @@ function PLAYER(){
                 answered: "0",
             });
             This.scoreCalc(true);
-            checkViewFNC(SD);
+            checkViewFNC(SP, SD);
         }
 
         var metaDataFNC = function(duration){
@@ -7144,8 +7214,6 @@ function PLAYER(){
                 tempVideo.type = "e_video";
                 SP.video.push(tempVideo);
             });
-
-
         }
 
         searchMainScene();
@@ -7167,7 +7235,7 @@ function PLAYER(){
                     if(!videoLink){
                         videoLink = getVideoPath(videoLayerID);
                         if(!videoLink){
-                            return;
+                            videoLink = "undefined.m3u8";
                         }
                     }
 
@@ -7206,8 +7274,8 @@ function PLAYER(){
             var match = String(elementId).match(/videoBox_(\d+)/);
             return match ? match[1] : null;
         }
+
         function getVideoPath(layerId){
-            console.log("layerId:", layerId);
             var videoPath = null;
             var videoList = jsonV2.slides[index].videoPath || [];
             videoList.some(function(video){
@@ -7225,8 +7293,6 @@ function PLAYER(){
             if(!videoPath){
                 return null;
             }
-
-            console.log([videoPath]);
 
             return [videoPath];
         }
@@ -8354,19 +8420,19 @@ function PLAYER(){
                 return;
             }
 
-            var transcript = "";
+            var answerValue = "";
             if(inputKey && SD.inputs[inputKey]){
-                transcript = normalizeTranscript(SD.inputs[inputKey].transcript || "");
+                answerValue = String(SD.inputs[inputKey].value || "");
             }
 
-            if(!transcript){
+            if(!answerValue){
                 return;
             }
 
             if(SR.aiRequestPending){
                 return;
             }
-            var formatData = buildRubrikAIEvaluationPayload(SD, transcript);
+            var formatData = buildRubrikAIEvaluationPayload(SD, answerValue);
 
             SR.aiRequestPending = true;
             rubrikLoaderAnimation("show");
@@ -11158,7 +11224,7 @@ function PLAYER(){
         var closeActiveTextEditor = null;
         var freeDrawObjectSeed = 0;
 
-        var draw = {konva:[], textNodes:[], selectedText: null, selectedShape: null};
+        var draw = {konva:[], textNodes:[], selectedText: null, selectedShape: null, objectPanel: null};
 
         var settings = {
             /* Douglas Peucker Tolerans 0-10 */
@@ -11171,6 +11237,7 @@ function PLAYER(){
             minDistance: 3,
 
             brushSize: 4,
+            eraserSize: 22,
             activeSize:0,
             brushColor: "#ffffff",
             textFontSize: 24
@@ -11209,6 +11276,7 @@ function PLAYER(){
                 draw.fontSizeBox = element.main.querySelector(".fontSizeBox");
                 draw.colorPalette = element.main.querySelector(".color");
                 draw.cleanCanvas = element.main.querySelector(".clean");
+                draw.eraserBox = element.main.querySelector(".eraserBox");
 
                 if(element.data && element.data.textFontSize){
                     settings.textFontSize = normalizeTextFontSize(element.data.textFontSize);
@@ -11234,6 +11302,8 @@ function PLAYER(){
                     setShapeEditMode(false);
                     mouseCursorStatus();
                 });
+
+                bindFreeDrawEraserButton(draw.eraserBox);
 
                 if(draw.textBox){
                     draw.textBox.addEventListener("click",function(){
@@ -11267,6 +11337,10 @@ function PLAYER(){
                 }
 
                 draw.cleanCanvas.addEventListener("click",function(){
+                    if(!confirm("Tüm çizimi silmek istiyor musunuz?")){
+                        return;
+                    }
+
                     checkRightAnswer();
                     clearStage(activeStageID);
                 });
@@ -11348,6 +11422,7 @@ function PLAYER(){
                 data.points = node.points();
                 data.stroke = node.stroke();
                 data.strokeWidth = node.strokeWidth();
+                data.globalCompositeOperation = node.globalCompositeOperation();
             }else if(data.type === "rect"){
                 data.width = node.width();
                 data.height = node.height();
@@ -11394,6 +11469,15 @@ function PLAYER(){
                 getSceneBase64();
             }
 
+            function refreshObjectPanel(){
+                if(
+                    (draw.selectedShape === node || draw.selectedText === node) &&
+                    node.getStage()
+                ){
+                    updateObjectPanelPosition(node);
+                }
+            }
+
             node.on("mousedown touchstart pointerdown", function(e){
                 if(mod !== "cursor"){
                     return;
@@ -11421,6 +11505,8 @@ function PLAYER(){
             node.on("dragend transformend", function(){
                 persistObjectChange();
             });
+
+            node.on("dragmove transform", refreshObjectPanel);
         }
 
         function createLineNode(DX, data){
@@ -11434,7 +11520,7 @@ function PLAYER(){
                 rotation: data.rotation || 0,
                 stroke: data.stroke || settings.brushColor,
                 strokeWidth: data.strokeWidth || settings.brushSize,
-                globalCompositeOperation: "source-over",
+                globalCompositeOperation: data.globalCompositeOperation || "source-over",
                 lineCap: "round",
                 lineJoin: "round",
                 tension: settings.kv_tolerans,
@@ -11519,6 +11605,27 @@ function PLAYER(){
                 }
                 getSceneBase64();
             }
+        }
+
+        function isFreeDrawPaintMode(){
+            return mod === "source-over" || mod === "destination-out";
+        }
+
+        function bindFreeDrawEraserButton(eraserBox){
+            if(!eraserBox){
+                return;
+            }
+
+            eraserBox.addEventListener("click", function(){
+                mod = "destination-out";
+                clearShapeSelection();
+                setTextDragMode(false);
+                setTextEditMode(false);
+                setShapeEditMode(false);
+                mouseCursorStatus();
+            });
+
+            eraserBox.style.cursor = "pointer";
         }
 
         function bindShapeButton(button, shapeType){
@@ -11616,16 +11723,342 @@ function PLAYER(){
             shape.moveToTop();
             DX.shapeTransformer.moveToTop();
             DX.layer.batchDraw();
+            // silgi iconu
+            //showObjectPanel(shape);
+            hideObjectPanel();
         }
 
         function clearShapeSelection(){
             draw.selectedShape = null;
+            hideObjectPanel();
             draw.konva.map(function(konva){
                 if(konva && konva.shapeTransformer){
                     konva.shapeTransformer.nodes([]);
                     konva.layer.batchDraw();
                 }
             });
+        }
+        /* TODO: obje üstünde silgi iconu */
+        function createObjectPanel(){
+            if (draw.objectPanel) {
+                draw.objectPanel.main.style.display = "none";
+                return draw.objectPanel;
+            }
+
+            var panel = document.createElement("div");
+            var deleteBtn = document.createElement("button");
+            var deleteIcon = document.createElement("img");
+
+            panel.className = "freeDrawObjectPanel";
+            Object.assign(panel.style, {
+                position: "absolute",
+                display: "none",
+                zIndex: 10001,
+                background: "#ffffff",
+                borderRadius: "8px",
+                padding: "4px",
+                boxSizing: "border-box"
+            });
+            panel.style.setProperty("display", "none", "important");
+            deleteBtn.type = "button";
+            deleteBtn.title = "Sil";
+            Object.assign(deleteBtn.style, {
+                width: "32px",
+                height: "32px",
+                border: "none",
+                borderRadius: "6px",
+                padding: "5px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+            });
+
+            deleteIcon.src = "assets/img/delete.png";
+            deleteIcon.alt = "Sil";
+            Object.assign(deleteIcon.style, {
+                width: "20px",
+                height: "20px",
+                display: "block",
+                pointerEvents: "none"
+            });
+
+            deleteBtn.appendChild(deleteIcon);
+            panel.appendChild(deleteBtn);
+            document.body.appendChild(panel);
+            /*
+            deleteBtn.addEventListener("mousedown", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            deleteBtn.addEventListener("touchstart", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            deleteBtn.addEventListener("click", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                deleteSelectedObject(draw.objectPanel.selectedObject);
+            });
+
+            window.addEventListener("resize", function(){
+                updateObjectPanelPosition(draw.objectPanel && draw.objectPanel.selectedObject);
+            });
+
+            window.addEventListener("scroll", function(){
+                updateObjectPanelPosition(draw.objectPanel && draw.objectPanel.selectedObject);
+            }, true);
+            */
+            draw.objectPanel = {
+                main: panel,
+                deleteBtn: deleteBtn,
+                selectedObject: null
+            };
+
+            return draw.objectPanel;
+        }
+
+        function showObjectPanel(node){
+            if(!node || !node.getStage()){
+                hideObjectPanel();
+                return;
+            }
+
+            var panel = createObjectPanel();
+            panel.selectedObject = node;
+            panel.main.style.display = "block";
+            updateObjectPanelPosition(node);
+        }
+
+        function hideObjectPanel(){
+            if(!draw.objectPanel){
+                return;
+            }
+
+            draw.objectPanel.selectedObject = null;
+            draw.objectPanel.main.style.display = "none";
+        }
+
+        function updateObjectPanelPosition(node){
+            if(!draw.objectPanel || !node || !node.getStage()){
+                hideObjectPanel();
+                return;
+            }
+
+            var DX = getObjectCanvas(node);
+            if(!DX){
+                hideObjectPanel();
+                return;
+            }
+
+            var stageBox = DX.stage.container().getBoundingClientRect();
+            var scaleX = stageBox.width / DX.stage.width();
+            var scaleY = stageBox.height / DX.stage.height();
+            var objectBox = node.getClientRect({relativeTo: DX.stage});
+            var panelWidth = draw.objectPanel.main.offsetWidth || 42;
+            var panelHeight = draw.objectPanel.main.offsetHeight || 42;
+            var minLeft = stageBox.left + window.scrollX;
+            var maxLeft = minLeft + stageBox.width - panelWidth;
+            var minTop = stageBox.top + window.scrollY;
+            var maxTop = stageBox.top + window.scrollY + stageBox.height - panelHeight;
+            var objectLeft = stageBox.left + window.scrollX + (objectBox.x * scaleX);
+            var objectTop = stageBox.top + window.scrollY + (objectBox.y * scaleY);
+            var objectRight = objectLeft + (objectBox.width * scaleX);
+            var objectBottom = objectTop + (objectBox.height * scaleY);
+            var objectCenterX = objectLeft + ((objectBox.width * scaleX) / 2);
+            var objectCenterY = objectTop + ((objectBox.height * scaleY) / 2);
+            var gap = 8;
+            var rotateAvoidBox = null;
+
+            function clampPosition(position){
+                return {
+                    left: Math.min(Math.max(position.left, minLeft), maxLeft),
+                    top: Math.min(Math.max(position.top, minTop), maxTop)
+                };
+            }
+
+            function getRect(position){
+                return {
+                    left: position.left,
+                    top: position.top,
+                    right: position.left + panelWidth,
+                    bottom: position.top + panelHeight
+                };
+            }
+
+            function getPaddedRect(rect, padding){
+                return {
+                    left: rect.left - padding,
+                    top: rect.top - padding,
+                    right: rect.right + padding,
+                    bottom: rect.bottom + padding
+                };
+            }
+
+            function isOverlap(first, second){
+                return !(
+                    first.right <= second.left ||
+                    first.left >= second.right ||
+                    first.bottom <= second.top ||
+                    first.top >= second.bottom
+                );
+            }
+
+            function getOverlapArea(first, second){
+                var width = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
+                var height = Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top));
+                return width * height;
+            }
+
+            function getRotateAvoidBox(){
+                var fallbackRotateAvoidSize = 62;
+                var rotateAnchorOffset = 35 * scaleY;
+                var fallbackBox = {
+                    left: objectCenterX - (fallbackRotateAvoidSize / 2),
+                    top: objectTop - rotateAnchorOffset - (fallbackRotateAvoidSize / 2),
+                    right: objectCenterX + (fallbackRotateAvoidSize / 2),
+                    bottom: objectTop - rotateAnchorOffset + (fallbackRotateAvoidSize / 2)
+                };
+
+                if(!DX.shapeTransformer || draw.selectedShape !== node){
+                    return null;
+                }
+
+                if(DX.shapeTransformer.forceUpdate){
+                    DX.shapeTransformer.forceUpdate();
+                }
+
+                var rotateAnchor = DX.shapeTransformer.findOne(".rotater");
+                if(!rotateAnchor || !rotateAnchor.visible()){
+                    return fallbackBox;
+                }
+
+                var rotateBox = rotateAnchor.getClientRect({relativeTo: DX.stage});
+                return {
+                    left: stageBox.left + window.scrollX + (rotateBox.x * scaleX),
+                    top: stageBox.top + window.scrollY + (rotateBox.y * scaleY),
+                    right: stageBox.left + window.scrollX + ((rotateBox.x + rotateBox.width) * scaleX),
+                    bottom: stageBox.top + window.scrollY + ((rotateBox.y + rotateBox.height) * scaleY)
+                };
+            }
+
+            if(draw.selectedShape === node){
+                var rotateAvoidSize = 62;
+                var rotateAnchorOffset = 35 * scaleY;
+                rotateAvoidBox = {
+                    left: objectCenterX - (rotateAvoidSize / 2),
+                    top: objectTop - rotateAnchorOffset - (rotateAvoidSize / 2),
+                    right: objectCenterX + (rotateAvoidSize / 2),
+                    bottom: objectTop - rotateAnchorOffset + (rotateAvoidSize / 2)
+                };
+                rotateAvoidBox = getPaddedRect(getRotateAvoidBox() || rotateAvoidBox, 8);
+            }
+
+            var candidates = [
+                {
+                    left: objectRight - panelWidth,
+                    top: objectBottom + gap
+                },
+                {
+                    left: objectCenterX - (panelWidth / 2),
+                    top: objectBottom + gap
+                },
+                {
+                    left: objectRight + gap,
+                    top: objectCenterY - (panelHeight / 2)
+                },
+                {
+                    left: objectLeft - panelWidth - gap,
+                    top: objectCenterY - (panelHeight / 2)
+                },
+                {
+                    left: objectLeft,
+                    top: objectBottom + gap
+                },
+                {
+                    left: objectRight - panelWidth,
+                    top: objectTop - panelHeight - gap
+                },
+                {
+                    left: objectLeft,
+                    top: objectTop - panelHeight - gap
+                },
+                {
+                    left: objectCenterX - (panelWidth / 2),
+                    top: objectTop - panelHeight - gap
+                },
+                {
+                    left: objectRight - panelWidth,
+                    top: objectCenterY - (panelHeight / 2)
+                }
+            ];
+            var position = clampPosition(candidates[0]);
+            var minOverlapArea = Infinity;
+
+            for(var i=0; i<candidates.length; i++){
+                var candidatePosition = clampPosition(candidates[i]);
+                var candidateRect = getRect(candidatePosition);
+
+                if(!rotateAvoidBox || !isOverlap(candidateRect, rotateAvoidBox)){
+                    position = candidatePosition;
+                    break;
+                }
+
+                var overlapArea = getOverlapArea(candidateRect, rotateAvoidBox);
+                if(overlapArea < minOverlapArea){
+                    minOverlapArea = overlapArea;
+                    position = candidatePosition;
+                }
+            }
+
+            draw.objectPanel.main.style.left = position.left + "px";
+            draw.objectPanel.main.style.top = position.top + "px";
+        }
+
+        function deleteSelectedObject(selectedObject){
+            if(!selectedObject || !selectedObject.getStage()){
+                hideObjectPanel();
+                return false;
+            }
+
+            var objectType = getObjectType(selectedObject);
+            var deletableTypes = [
+                "line",
+                "rect",
+                "circle",
+                "triangle",
+                "text"
+            ];
+
+            if(deletableTypes.indexOf(objectType) === -1){
+                return false;
+            }
+
+            var DX = getObjectCanvas(selectedObject);
+
+            if(!DX){
+                return false;
+            }
+
+            selectedObject.destroy();
+
+            if(objectType === "text"){
+                draw.textNodes = draw.textNodes.filter(function(textNode){
+                    return textNode !== selectedObject && textNode.getStage();
+                });
+
+                clearTextSelection();
+            }else{
+                clearShapeSelection();
+            }
+
+            activeStageID = DX.id;
+
+            DX.layer.batchDraw();
+            getSceneBase64();
+            return true;
         }
 
         function deleteSelectedShape(e){
@@ -11654,43 +12087,8 @@ function PLAYER(){
                 return;
             }
 
-            var objectType = getObjectType(selectedObject);
-            var deletableTypes = [
-                "line",
-                "rect",
-                "circle",
-                "triangle",
-                "text"
-            ];
-
-            if(deletableTypes.indexOf(objectType) === -1){
-                return;
-            }
-
-            var DX = getObjectCanvas(selectedObject);
-
-            if(!DX){
-                return;
-            }
-
             e.preventDefault();
-
-            selectedObject.destroy();
-
-            if(objectType === "text"){
-                draw.textNodes = draw.textNodes.filter(function(textNode){
-                    return textNode !== selectedObject && textNode.getStage();
-                });
-
-                clearTextSelection();
-            }else{
-                clearShapeSelection();
-            }
-
-            activeStageID = DX.id;
-
-            DX.layer.batchDraw();
-            getSceneBase64();
+            deleteSelectedObject(selectedObject);
         }
 
         document.addEventListener("keydown", deleteSelectedShape);
@@ -11843,7 +12241,7 @@ function PLAYER(){
 
                 var pos = DX.stage.getPointerPosition();
 
-                if(mod !== "source-over"){
+                if(!isFreeDrawPaintMode()){
                     if(closeActiveTextEditor){
                         closeActiveTextEditor(true);
                     }
@@ -11859,8 +12257,9 @@ function PLAYER(){
                 lastPointerPos = pos;
                 lastLine = createLineNode(DX, {
                     points: [pos.x, pos.y],
-                    stroke: settings.brushColor,
-                    strokeWidth: settings.activeSize
+                    stroke: mod === "destination-out" ? "#000000" : settings.brushColor,
+                    strokeWidth: settings.activeSize,
+                    globalCompositeOperation: mod
                 });
                 lastLine.listening(false);
                 lastLine.draggable(false);
@@ -11962,6 +12361,7 @@ function PLAYER(){
         function clearTextSelection(){
             draw.selectedText = null;
             setFontSizeInputStatus(false);
+            hideObjectPanel();
             draw.konva.map(function(konva){
                 if(konva && konva.selectionBox){
                     konva.selectionBox.hide();
@@ -11993,6 +12393,7 @@ function PLAYER(){
             selectionBox.show();
             selectionBox.moveToTop();
             DX.layer.batchDraw();
+            updateObjectPanelPosition(text);
         }
 
         function setFontSizeInputStatus(enabled){
@@ -12006,6 +12407,7 @@ function PLAYER(){
         }
 
         function selectTextNode(DX, text){
+            clearShapeSelection();
             draw.selectedText = text;
             activeStageID = DX.id;
             if(draw.fontSizeInput){
@@ -12013,6 +12415,9 @@ function PLAYER(){
                 setFontSizeInputStatus(true);
             }
             updateTextSelection();
+            // silgi iconu
+            //showObjectPanel(text);
+            hideObjectPanel();
         }
 
         function withSelectionHidden(callback){
@@ -12095,18 +12500,18 @@ function PLAYER(){
                 var style = document.createElement("style");
                 style.id = "fontSizeInputStyle";
                 style.textContent = `
-                .fontSizeInput::-webkit-outer-spin-button,
-                .fontSizeInput::-webkit-inner-spin-button{
-                    -webkit-appearance: none;
-                    margin: 0;
-                }
-    
-                .fontSizeInput{
-                    appearance: textfield;
-                    -webkit-appearance: textfield;
-                    -moz-appearance: textfield;
-                }
-            `;
+            .fontSizeInput::-webkit-outer-spin-button,
+            .fontSizeInput::-webkit-inner-spin-button{
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .fontSizeInput{
+                appearance: textfield;
+                -webkit-appearance: textfield;
+                -moz-appearance: textfield;
+            }
+        `;
                 document.head.appendChild(style);
             }
             function updateFontSize(){
@@ -12351,7 +12756,7 @@ function PLAYER(){
             }
 
             text.on("mousedown touchstart", function(e){
-                if(mod === "source-over"){
+                if(isFreeDrawPaintMode()){
                     return;
                 }
 
@@ -12376,7 +12781,7 @@ function PLAYER(){
             });
 
             text.on("dblclick dbltap", function(e){
-                if(mod === "source-over"){
+                if(isFreeDrawPaintMode()){
                     return;
                 }
 
@@ -12622,6 +13027,7 @@ function PLAYER(){
         }
 
         function clearStage(id){
+            hideObjectPanel();
             draw.konva[id].layer.destroyChildren();
             draw.konva[id].textAddCount = 0;
             draw.konva[id].shapeAddCount = 0;
@@ -12656,6 +13062,8 @@ function PLAYER(){
                 return "default";
             }else if(mod === "source-over"){
                 return "url(assets/img/player/pencilcursor.png) -22 22, auto";
+            }else if(mod === "destination-out"){
+                return "url(assets/img/player/easercursor.png) -22 22, auto";
             }else if(mod === "text"){
                 return "text";
             }else if(mod === "textDrag"){
@@ -12701,6 +13109,9 @@ function PLAYER(){
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
                 }
+                if(draw.eraserBox){
+                    passiveBtnFNC(draw.eraserBox);
+                }
                 if(draw.dragBox){
                     passiveBtnFNC(draw.dragBox);
                 }
@@ -12712,6 +13123,22 @@ function PLAYER(){
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
                 }
+                if(draw.eraserBox){
+                    passiveBtnFNC(draw.eraserBox);
+                }
+                if(draw.dragBox){
+                    passiveBtnFNC(draw.dragBox);
+                }
+            }else if(mod === "destination-out"){
+                settings.activeSize = settings.eraserSize;
+                passiveBtnFNC(draw.drawBox);
+                if(draw.eraserBox){
+                    activeBtnFNC(draw.eraserBox);
+                }
+                passiveShapeButtons();
+                if(draw.textBox){
+                    passiveBtnFNC(draw.textBox);
+                }
                 if(draw.dragBox){
                     passiveBtnFNC(draw.dragBox);
                 }
@@ -12719,6 +13146,9 @@ function PLAYER(){
                 settings.activeSize = 0;
                 activeBtnFNC(draw.textBox);
                 passiveBtnFNC(draw.drawBox);
+                if(draw.eraserBox){
+                    passiveBtnFNC(draw.eraserBox);
+                }
                 passiveShapeButtons();
                 if(draw.dragBox){
                     passiveBtnFNC(draw.dragBox);
@@ -12726,6 +13156,9 @@ function PLAYER(){
             }else if(mod === "textDrag"){
                 settings.activeSize = 0;
                 passiveBtnFNC(draw.drawBox);
+                if(draw.eraserBox){
+                    passiveBtnFNC(draw.eraserBox);
+                }
                 passiveShapeButtons();
                 if(draw.textBox){
                     activeBtnFNC(draw.textBox);
@@ -12733,6 +13166,9 @@ function PLAYER(){
             }else if(mod === "shape"){
                 settings.activeSize = 0;
                 passiveBtnFNC(draw.drawBox);
+                if(draw.eraserBox){
+                    passiveBtnFNC(draw.eraserBox);
+                }
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
                 }
