@@ -10,7 +10,8 @@ function PLAYER(){
         maxWrongMove:5,
         isEKT: false,
         isBSD: false,
-        allOpenEnd: false
+        allOpenEnd: false,
+        lastScene: false
     };
     var This = this;
     var KT={};
@@ -1370,8 +1371,8 @@ function PLAYER(){
                     }
                 });
 
-                if(allComplete){
-                    This.nextScene();
+                if(allComplete || PLX.lastScene){
+                    setTimeout(endScreenBoxStatus, 2000);
                 }
 
                 if(sp.popEx.length){
@@ -2166,7 +2167,7 @@ function PLAYER(){
                 });
 
             }else if(obj.id.includes("soundPlayer")){
-                var sceneID = parseInt(SP.name.slice(1, SP.name.length));
+                var sceneID = index;
                 var id = parseInt( obj.id.split("_")[1] );
                 SP.soundPlayer[id] = {sceneID:sceneID, id:id};
                 var soundPlayer = SP.soundPlayer[id];
@@ -2377,7 +2378,11 @@ function PLAYER(){
                 var nextPageBtn = el.main.querySelector(".nextPageBtn");
                 if(nextPageBtn){
                     el.main.querySelector(".nextPageBtn").addEventListener("click", function(){
-                        This.changeScene(This.sceneIndex+1);
+                        if(PLX.lastScene){
+                            endScreenBoxStatus();
+                        }else{
+                            This.changeScene(This.sceneIndex+1);
+                        }
                     });
 
                     nextPageBtn.style.cursor = "pointer";
@@ -3049,6 +3054,7 @@ function PLAYER(){
                 player.nextBtn.style.cursor = "pointer";
                 player.nextBtn.style.pointerEvents = "auto";
             }
+            PLX.lastScene = (index === (SD.length-1));
 
             initVideoFNC(This.sceneIndex);
             checkViewFNC(SP[index], SD[index]);
@@ -3116,15 +3122,11 @@ function PLAYER(){
             }
         }
 
-        if(next === null){
+        if(next === null || PLX.lastScene){
             setTimeout(endScreenBoxStatus, 2000);
         }else{
-            if(This.sceneIndex === (SD.length-1)){
-                setTimeout(endScreenBoxStatus, 2000);
-            }else{
-                player.autoNext = next;
-                PLX.autoSceneChange.ShowFNC();
-            }
+            player.autoNext = next;
+            PLX.autoSceneChange.ShowFNC();
         }
     }
 
@@ -6090,12 +6092,8 @@ function PLAYER(){
                         }
                     }else if(userColor === drop[id].correctAnswer){
                         userCount[userColor].push(id);
-                    }else if(!drop[id].correctAnswer){
-                        userCount.ignore.push(id);
-                    }else{
-                        userCount[userColor].push(id);
                     }
-                }else if(!drop[id].correctAnswer){
+                }else{
                     userCount.ignore.push(id);
                 }
             }
@@ -6103,6 +6101,8 @@ function PLAYER(){
             for(var group in countGroup) {
                 if(userCount[group].length === 0){
                     score.totalEmpty++;
+                }else if(userCount[group].length !== countGroup[group] && group === "ignore"){
+                    score.totalWrong++;
                 }else if(userCount[group].length === countGroup[group]){
                     score.totalRight++;
                     if(group !== "ignore"){
