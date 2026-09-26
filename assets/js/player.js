@@ -1,4 +1,8 @@
 function PLAYER(){
+    if(window.location.hostname.includes("www.okulistik.com")){
+        console.log = function () {};
+    }
+
     this.allScene = [];
     this.sceneIndex = 0;
     var unique = {};
@@ -20,13 +24,17 @@ function PLAYER(){
     var build={};
     var AC;
     var player = {
-        sound: new Howl({
-            src: ['https://cdn.okulistik.com/mobileplayer/edge_includes/yesno.mp3'],
-            sprite: {
-                right: [1000, 1000],
-                wrong: [2000, 1000]
-            }
-        }),
+        sound:{
+            right: new Howl({
+                src: ['https://cdn.okulistik.com/mobileplayer/contentcreator/assets/media/right.mp3']
+            }),
+            wrong: new Howl({
+                src: ['https://cdn.okulistik.com/mobileplayer/contentcreator/assets/media/wrong.mp3']
+            }),
+            partial: new Howl({
+                src: ['https://cdn.okulistik.com/mobileplayer/contentcreator/assets/media/partial.mp3']
+            })
+        },
         autoNext:null,
         dataSendTimer: null,
         screenDuration: null,
@@ -956,7 +964,7 @@ function PLAYER(){
         });
 
         if(finalStatus === "right"){
-            This.playRightAudio();
+            player.sound.right.play();
             This.sceneComplete();
             This.nextScene();
             SP.fnc.map(function(fnc){
@@ -969,7 +977,7 @@ function PLAYER(){
             showFeedBack("right", "auto", 0);
             specialFNC(SP, SD, true);
         }else{
-            This.playWrongAudio();
+            player.sound.wrong.play();
             showWarning(SP, SD);
 
             SP.fnc.map(function(fnc){
@@ -1107,7 +1115,7 @@ function PLAYER(){
         SD.totalRight = parseInt(attempt.totalRight);
 
         if(attempt.result.includes("T")){
-            This.playRightAudio();
+            player.sound.right.play();
             This.sceneComplete();
             This.nextScene();
             closeActivity(SP);
@@ -1115,7 +1123,12 @@ function PLAYER(){
             showFeedBack("right", "auto", 0);
             specialFNC(SP, SD, true);
         }else{
-            This.playWrongAudio();
+            if(attempt.result.includes("K")){
+                player.sound.partial.play();
+            }else{
+                player.sound.wrong.play();
+            }
+
             showWarning(SP, SD);
             if(type === "ai"){
                 if(SD.historyRight.length < 3){
@@ -1279,22 +1292,50 @@ function PLAYER(){
                 if(response.success){
                     var result = response.data.evaluation;
                     var feedbackStr = response.data.feedback;
+                    var userAnswer = response.data.answer;
                     SP.feedBack.map(function (feedback) {
-                        if (feedback.status === "AI") {
-                            var txt = feedback.main.querySelector(".aiText");
+                        if (feedback.status === "AI"){
+                            var aiText = feedback.main.querySelector(".aiText");
                             var bg = feedback.main.querySelector(".aiBG");
-                            var btn = feedback.main.querySelector(".feedbackWindowClose");
-                            txt.style.height = "unset";
-                            txt.style.maxHeight = "220px";
-                            txt.innerHTML = feedbackStr;
-                            if(txt.offsetHeight > 220){
-                                txt.style.overflowY="scroll";
-                            }else{
-                                txt.style.overflowY="unset";
+                            var windowClose = feedback.main.querySelector(".feedbackWindowClose");
+                            var userTxt = feedback.main.querySelector(".aiUser");
+                            var aiSpace = feedback.main.querySelector(".aiSpace");
+                            var maxHeight = 220;
+
+                            function addFeedback(txt, str){
+                                txt.style.height = "unset";
+                                txt.innerHTML = str;
+                                if(txt.offsetHeight > maxHeight){
+                                    txt.style.overflowY="scroll";
+                                    txt.style.height = maxHeight+"px";
+                                }else{
+                                    txt.style.overflowY="unset";
+                                }
                             }
 
-                            bg.style.height = (txt.offsetHeight+130)+"px";
-                            btn.style.top = (txt.offsetHeight+65)+"px";
+                            if(userTxt){
+                                maxHeight = 180;
+                                addFeedback(userTxt, userAnswer);
+                                if(aiSpace){
+                                    aiSpace.style.top = (parseInt(userTxt.style.top) + userTxt.offsetHeight)+"px";
+                                }
+                            }
+                            if(aiText){
+                                addFeedback(aiText, feedbackStr);
+                                if(aiSpace){
+                                    aiText.style.top = (parseInt(aiSpace.style.top) + aiSpace.offsetHeight)+"px";
+                                }else if(userTxt){
+                                    aiText.style.top = (parseInt(userTxt.style.top) + userTxt.offsetHeight + 10)+"px";
+                                }
+                            }
+
+                            if(windowClose){
+                                if(aiText){
+                                    windowClose.style.top = (parseInt(aiText.style.top) + aiText.offsetHeight + 10)+"px";
+                                }
+
+                                bg.style.height = (parseInt(windowClose.style.top) + windowClose.offsetHeight)+"px";
+                            }
                         }
                     });
 
@@ -2632,9 +2673,9 @@ function PLAYER(){
                 }
 
                 if(feedback.statusSound === "right"){
-                    This.playRightAudio();
+                    player.sound.right.play();
                 }else if(feedback.statusSound === "wrong"){
-                    This.playWrongAudio();
+                    player.sound.wrong.play();
                 }
             }
         });
@@ -2724,7 +2765,7 @@ function PLAYER(){
 
             soundPlayer.Confirm = true;
 
-            function addHowl(src, fallbackActive){
+            function addHowl(src, fallbackSrc){
                 soundPlayer.howl = new Howl({
                     src: src,
                     onload: function(){
@@ -2735,9 +2776,9 @@ function PLAYER(){
                         }
                     },
                     onloaderror: function() {
-                        if(!fallbackActive && soundPlayer.src){
+                        if(fallbackSrc){
                             soundPlayer.howl.unload();
-                            addHowl(soundPlayer.src, true);
+                            addHowl(fallbackSrc, null);
                         }
                     },
                     onplay: function(){
@@ -2761,7 +2802,7 @@ function PLAYER(){
                 })
             }
 
-            addHowl(soundPlayer.legacySrc || soundPlayer.src, false);
+            addHowl(soundPlayer.src || soundPlayer.legacySrc, soundPlayer.src ? soundPlayer.legacySrc : null);
         }
     }
 
@@ -3238,14 +3279,6 @@ function PLAYER(){
 
         This.changeScene(startScene);
         HDE_addEvent();
-    }
-
-    this.playWrongAudio = function(){
-        player.sound.play("wrong");
-    }
-
-    this.playRightAudio = function(){
-        player.sound.play("right");
     }
 
     /* Build Konu Testi */
@@ -3902,7 +3935,7 @@ function PLAYER(){
             }
 
             if(right){
-                This.playRightAudio();
+                player.sound.right.play();
                 SD.right++;
                 rightBtn(id);
                 var finish = groupCloseControl();
@@ -3912,7 +3945,7 @@ function PLAYER(){
                     This.nextScene();
                 }
             }else{
-                This.playWrongAudio();
+                player.sound.wrong.play();
                 SD.wrong++;
                 btnEvents("none");
                 CS.Buton[id].csWrong.style.visibility = "visible";
@@ -7377,9 +7410,8 @@ function PLAYER(){
 
         function getBackgroundBG(img){
             var drawImgLink = img.style.backgroundImage;
-            var start = drawImgLink.indexOf("(")+2;
-            var end = drawImgLink.indexOf(")")-1;
-            return drawImgLink.substring(start, end);
+            var match = drawImgLink.match(/^url\(["']?(.*?)["']?\)$/);
+            return match ? match[1] : "";
         }
 
         draw.drawPngLink = getBackgroundBG(draw.drawPNG);
@@ -7416,9 +7448,17 @@ function PLAYER(){
 
         function loadImageToCanvas(imgLink, ctx) {
             var img = new Image();
+
+            // The reference image is read back with getImageData during scoring.
+            // Set this before src so a CDN response with Access-Control-Allow-Origin
+            // remains readable and does not taint the canvas.
+            img.crossOrigin = "anonymous";
             img.onload = function(){
                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                 ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            };
+            img.onerror = function(){
+                console.error("LINECORRECT image could not be loaded with CORS enabled:", imgLink);
             };
             img.src = imgLink;
         }
@@ -7505,8 +7545,23 @@ function PLAYER(){
 
         function checkAnswer() {
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"line"};
-            var data1 = draw.drawCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
-            var data2 = draw.rightCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+            var data1;
+            var data2;
+
+            try {
+                data1 = draw.drawCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+                data2 = draw.rightCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+            } catch(error) {
+                // Never let a missing CORS header break PLAYER.controlHQ. The image
+                // server must allow the player origin for line-correct scoring.
+                console.error("LINECORRECT canvas pixels cannot be read. Configure Access-Control-Allow-Origin for:", draw.rightPngLink, error);
+                if(SD.inputs["box"+ draw.id].base64 === null){
+                    score.totalEmpty++;
+                }else{
+                    score.totalWrong++;
+                }
+                return score;
+            }
 
             var totalPixels=0;
             var overlappingPixels=0;
@@ -8181,9 +8236,6 @@ function PLAYER(){
         var inputKey;
         var transcriptViewList = [];
         var set = {recordTime:15, countDown:false};
-        var fileName = jsonV2 && jsonV2.fileName ? jsonV2.fileName : "";
-        var lessonCode = fileName.split("_")[0];
-        var recognitionLang = lessonCode.toUpperCase().startsWith("ING") ? "en-US" : "tr-TR";
         var lang = {
             prepare: "Lütfen Bekleyiniz.",
             stopRecordText: "Kaydı Durdur",
@@ -8214,12 +8266,6 @@ function PLAYER(){
                     pausedSeconds: 0,
                     isPaused: false,
                     transcript: "",
-                    recognition: null,
-                    recognitionSupported: false,
-                    recognitionStarted: false,
-                    recognitionManuallyStopped: false,
-                    recognitionFinalText: "",
-                    recognitionInterimText: "",
                     aiRequestPending: false
                 };
 
@@ -8238,15 +8284,7 @@ function PLAYER(){
             }
         });
 
-        function isTrueParam(value){
-            if(typeof value === "string"){
-                value = value.replace(/\s+/g, "").toLowerCase();
-            }
-
-            return value === true || value === "true" || value === 1 || value === "1";
-        }
-
-        function getTranscriptViewBoxKey(data){
+        function getTranscriptViewBoxKey(data, element){
             var recordID = data.recordID || data.recordId || data.soundRecordID || data.soundRecordId || data.boxID || data.boxId || data.box;
             if(recordID !== undefined && recordID !== null && recordID !== ""){
                 recordID = String(recordID);
@@ -8260,7 +8298,23 @@ function PLAYER(){
                 }
             }
 
+            if(element){
+                var cid = element.getAttribute("ccid");
+                if(SD.inputs["box"+ cid]){
+                    return "box"+ cid;
+                }
+            }
+
             return inputKey;
+        }
+
+        function getTranscriptInputByElement(element){
+            if(!element || (element.id && element.id.includes("soundRecord"))){
+                return null;
+            }
+
+            var cid = element.getAttribute("ccid");
+            return SD.inputs["box"+ cid];
         }
 
         function initTranscriptViews(){
@@ -8270,8 +8324,9 @@ function PLAYER(){
                 }
 
                 kids.forEach(function(e){
-                    if(e.main && e.data && isTrueParam(e.data.speechToText)){
-                        var boxKey = getTranscriptViewBoxKey(e.data);
+                    var transcriptInput = getTranscriptInputByElement(e.main);
+                    if(e.main && e.data && transcriptInput && transcriptInput.transcript !== undefined){
+                        var boxKey = getTranscriptViewBoxKey(e.data, e.main);
                         transcriptViewList.push({
                             boxKey: boxKey,
                             main: e.main
@@ -8292,8 +8347,9 @@ function PLAYER(){
             searchKids(SP.elementMainScene.kids);
 
             SP.elementList.forEach(function(e){
-                if(e.main && e.data && isTrueParam(e.data.speechToText)){
-                    var boxKey = getTranscriptViewBoxKey(e.data);
+                var transcriptInput = getTranscriptInputByElement(e.main);
+                if(e.main && e.data && transcriptInput && transcriptInput.transcript !== undefined){
+                    var boxKey = getTranscriptViewBoxKey(e.data, e.main);
                     transcriptViewList.push({
                         boxKey: boxKey,
                         main: e.main
@@ -8318,14 +8374,6 @@ function PLAYER(){
 
         initTranscriptViews();
 
-        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(SR){
-            SR.recognitionSupported = !!SpeechRecognition;
-            if(!SR.recognitionSupported){
-                console.warn("Tarayıcı Web Speech API'yi desteklemiyor. Ses kaydı normal şekilde devam edecek.");
-            }
-        }
-
         var Scene = SP.sceneDiv;
 
         var audioRecorder = {
@@ -8348,7 +8396,6 @@ function PLAYER(){
 
                             audioRecorder.mediaRecorder.addEventListener("start", function(e) {
                                 SR.recording = true;
-                                SR.startSpeechRecognitionFNC(false);
                             });
 
                             audioRecorder.mediaRecorder.start();
@@ -8402,19 +8449,6 @@ function PLAYER(){
         }
 
 
-        function normalizeTranscript(text){
-            return text.replace(/\s+/g, " ").trim();
-        }
-
-        function getLastTranscript(){
-            var transcript = SR.recognitionFinalText || "";
-            if(SR.recognitionInterimText){
-                transcript += (transcript ? " " : "") + SR.recognitionInterimText;
-            }
-
-            return normalizeTranscript(transcript);
-        }
-
         function sendTranscriptForEvaluation(){
             if(PLX.isHDE){
                 return;
@@ -8440,11 +8474,16 @@ function PLAYER(){
 
             requestRubrikAIEvaluation(formatData, {
                 success: function(response){
-                    /* console.log("Speech transcript AI evaluate response:", response); */
+                    /* console.log("Record AI evaluate response:", response); */
+                    if(response && response.success && response.data && response.data.answer !== undefined && response.data.answer !== null){
+                        SR.updateTranscriptFNC(String(response.data.answer), true);
+                        syncTranscriptHistory();
+                        This.scoreCalc(true);
+                    }
                 },
                 error: function(xhr, status, error){
-                    console.error("Speech transcript AI evaluate error:", status, error);
-                    console.log("Speech transcript AI evaluate error detail:", xhr.responseText);
+                    console.error("Record AI evaluate error:", status, error);
+                    console.log("Record AI evaluate error detail:", xhr.responseText);
                 },
                 complete: function(){
                     SR.aiRequestPending = false;
@@ -8454,146 +8493,29 @@ function PLAYER(){
             });
         }
 
-        SR.updateTranscriptFNC = function(sendChange){
-            SR.transcript = getLastTranscript();
+        function syncTranscriptHistory(){
+            if(!inputKey || !SD.historyRight.length){
+                return;
+            }
+
+            var lastMove = SD.historyRight[SD.historyRight.length - 1];
+            if(lastMove.inputs && lastMove.inputs[inputKey]){
+                lastMove.inputs[inputKey].transcript = input.transcript;
+            }
+        }
+
+        SR.updateTranscriptFNC = function(transcript, sendChange){
+            SR.transcript = transcript || "";
             input.transcript = SR.transcript;
             updateTranscriptViews(inputKey, SR.transcript);
-            /* console.log("Konuşmanın son metni:", SR.transcript); */
 
             if(sendChange){
                 inputsChange(SD);
             }
         }
 
-        SR.resetSpeechRecognitionTextFNC = function(){
-            SR.transcript = "";
-            SR.recognitionFinalText = "";
-            SR.recognitionInterimText = "";
-            input.transcript = "";
-            updateTranscriptViews(inputKey, "");
-        }
-
-        SR.stopSpeechRecognitionFNC = function(){
-            SR.recognitionManuallyStopped = true;
-            if(SR.recognition && SR.recognitionStarted){
-                try {
-                    SR.recognition.stop();
-                } catch (error) {
-                    if(error.name === "InvalidStateError"){
-                        console.log("SpeechRecognition InvalidStateError: Tanıma zaten durmuş olabilir.");
-                    }else{
-                        console.log("SpeechRecognition durdurma hatası:", error.name);
-                    }
-                }
-            }
-        }
-
-        SR.startSpeechRecognitionFNC = function(keepFinalText){
-            if(!SR.recognitionSupported){
-                return;
-            }
-
-            if(SR.recognitionStarted){
-                return;
-            }
-
-            if(!keepFinalText){
-                SR.resetSpeechRecognitionTextFNC();
-            }else{
-                SR.recognitionInterimText = "";
-                SR.updateTranscriptFNC(false);
-            }
-
-            var recognition = new SpeechRecognition();
-            recognition.lang = recognitionLang;
-            recognition.continuous = true;
-            recognition.interimResults = true;
-
-            recognition.onresult = function(event){
-                var interimTranscript = "";
-                var finalTranscript = "";
-
-                for(var i = event.resultIndex; i < event.results.length; i++){
-                    var text = event.results[i][0].transcript;
-                    if(event.results[i].isFinal){
-                        finalTranscript += text;
-                    }else{
-                        interimTranscript += text;
-                    }
-                }
-
-                SR.recognitionInterimText = normalizeTranscript(interimTranscript);
-                /*
-                if(SR.recognitionInterimText){
-                    console.log("Anlık konuşma:", SR.recognitionInterimText);
-                }
-                */
-
-                if(finalTranscript){
-                    finalTranscript = normalizeTranscript(finalTranscript);
-                    SR.recognitionFinalText = normalizeTranscript(SR.recognitionFinalText + (SR.recognitionFinalText ? " " : "") + finalTranscript);
-                    SR.recognitionInterimText = "";
-                    /* console.log("Kesinleşen konuşma:", SR.recognitionFinalText); */
-                    SR.updateTranscriptFNC(true);
-                }else{
-                    SR.updateTranscriptFNC(false);
-                }
-            }
-
-            recognition.onerror = function(event){
-                switch (event.error) {
-                    case "not-allowed":
-                        console.log("SpeechRecognition not-allowed: Mikrofon veya konuşma tanıma izni verilmedi.");
-                        SR.recognitionManuallyStopped = true;
-                        break;
-                    case "audio-capture":
-                        console.log("SpeechRecognition audio-capture: Mikrofon yakalanamadı.");
-                        SR.recognitionManuallyStopped = true;
-                        break;
-                    case "no-speech":
-                        console.log("SpeechRecognition no-speech: Konuşma algılanmadı.");
-                        break;
-                    case "network":
-                        console.log("SpeechRecognition network: Konuşma tanıma ağ hatası.");
-                        break;
-                    case "aborted":
-                        console.log("SpeechRecognition aborted: Konuşma tanıma durduruldu.");
-                        break;
-                    default:
-                        console.log("SpeechRecognition hatası:", event.error);
-                }
-            }
-
-            recognition.onend = function(){
-                SR.recognitionStarted = false;
-                SR.recognition = null;
-                SR.recognitionInterimText = "";
-                SR.updateTranscriptFNC(true);
-
-                if(SR.recording && !SR.recognitionManuallyStopped && !SR.isPaused){
-                    setTimeout(function(){
-                        if(SR.recording && !SR.recognitionStarted && !SR.recognitionManuallyStopped && !SR.isPaused){
-                            SR.startSpeechRecognitionFNC(true);
-                        }
-                    }, 250);
-                }
-            }
-
-            SR.recognition = recognition;
-            SR.recognitionManuallyStopped = false;
-
-            try {
-                recognition.start();
-                SR.recognitionStarted = true;
-            } catch (error) {
-                if(error.name === "InvalidStateError"){
-                    console.log("SpeechRecognition InvalidStateError: Tanıma zaten başlamış olabilir.");
-                }else{
-                    console.log("SpeechRecognition başlatma hatası:", error.name);
-                }
-                SR.recognitionStarted = false;
-                SR.recognition = null;
-            }
+        SR.resetTranscriptFNC = function(){
+            SR.updateTranscriptFNC("", true);
         }
 
 
@@ -8602,7 +8524,7 @@ function PLAYER(){
                 SR.Howl.stop();
             }
 
-            SR.resetSpeechRecognitionTextFNC();
+            SR.resetTranscriptFNC();
             controlBtnView(SP, "disable");
 
             audioRecorder.start()
@@ -8653,7 +8575,6 @@ function PLAYER(){
             if (SR.recording && !SR.isPaused) {
                 audioRecorder.pause();
                 SR.isPaused = true;
-                SR.stopSpeechRecognitionFNC();
 
                 clearInterval(SR.recordInterval);
                 var timeData = SR.recordTimeCalcFNC(SR.recordStartTime);
@@ -8669,7 +8590,6 @@ function PLAYER(){
             if (SR.recording && SR.isPaused) {
                 audioRecorder.resume();
                 SR.isPaused = false;
-                SR.startSpeechRecognitionFNC(true);
 
                 SR.recordStartTime = new Date();
                 SR.recordInterval = setInterval(SR.recordElapsedTimeFNC, 1000);
@@ -8683,7 +8603,6 @@ function PLAYER(){
         SR.stopAudioRecordingFNC = function() {
             console.log("Stopping Audio Recording...");
             if(SR.recording){
-                SR.stopSpeechRecognitionFNC();
                 audioRecorder.stop()
                     .then(audioAsblob => {
                         SR.playAudioFNC(audioAsblob);
@@ -8705,8 +8624,7 @@ function PLAYER(){
 
         SR.cancelAudioRecordingFNC = function() {
             console.log("Canceling audio...");
-            SR.stopSpeechRecognitionFNC();
-            SR.resetSpeechRecognitionTextFNC();
+            SR.resetTranscriptFNC();
             audioRecorder.cancel();
             SR.stopViewFNC();
             SR.base64 = null;
@@ -9043,7 +8961,6 @@ function PLAYER(){
                 var currentID = lastMove[box].id;
                 if(SP.soundRecord[currentID]){
                     SR.transcript = lastMove[box].transcript || "";
-                    SR.recognitionFinalText = SR.transcript;
                     input.transcript = SR.transcript;
                     updateTranscriptViews("box"+ currentID, SR.transcript);
                     SR.oldDataLoad(lastMove[box].value, false, true);
