@@ -1015,7 +1015,9 @@ function PLAYER(){
             function formatAnswer(key) {
                 var aliasValue = typeof alias[key] === "string" ? alias[key].trim() : "";
                 var answerValue = String(boxes[key]);
-                return aliasValue ? aliasValue + "=" + answerValue : answerValue;
+                var isSoundRecord = SD.inputs[key] && SD.inputs[key].type === "sr";
+                var boxPrefix = isSoundRecord ? "" : "(id=" + key + ") ";
+                return boxPrefix + (aliasValue ? aliasValue + "=" + answerValue : answerValue);
             }
 
             if (keys.length === 1) {
@@ -1284,13 +1286,58 @@ function PLAYER(){
         });
     }
 
+    function getAIIncorrectBoxes(responseData, evaluation){
+        if(evaluation && Array.isArray(evaluation.incorrect_boxes)){
+            return evaluation.incorrect_boxes;
+        }
+
+        if(responseData && Array.isArray(responseData.incorrect_boxes)){
+            return responseData.incorrect_boxes;
+        }
+
+        return null;
+    }
+
+    function normalizeAIRubrikResult(responseData, SD){
+        var result = responseData.evaluation || {};
+        var incorrectBoxes = getAIIncorrectBoxes(responseData, result);
+
+        if(!incorrectBoxes){
+            return result;
+        }
+
+        var incorrectBoxMap = {};
+        incorrectBoxes.map(function(boxKey){
+            incorrectBoxMap[String(boxKey)] = true;
+        });
+
+        result.boxes = {};
+        for(var boxKey in SD.inputs){
+            if(Object.prototype.hasOwnProperty.call(SD.inputs, boxKey)){
+                result.boxes[boxKey] = incorrectBoxMap[boxKey] ? "wrong" : "right";
+            }
+        }
+
+        result.incorrect_boxes = incorrectBoxes;
+
+        if(result.rubric_code === undefined || result.rubric_code === null){
+            result.rubric_code = incorrectBoxes.length ? "F" : "T";
+        }
+
+        if(result.weight === undefined || result.weight === null){
+            result.weight = incorrectBoxes.length ? 0 : 1;
+        }
+
+        return result;
+    }
+
     function sendDataAI(SP, SD, formatData) {
         requestRubrikAIEvaluation(formatData, {
             success: function (response) {
                 rubrikLoaderAnimation("hide");
                 console.log('AI API Yanıt:', response);
                 if(response.success){
-                    var result = response.data.evaluation;
+                    var result = normalizeAIRubrikResult(response.data, SD);
                     var feedbackStr = response.data.feedback;
                     var userAnswer = response.data.answer;
                     SP.feedBack.map(function (feedback) {
@@ -1336,6 +1383,12 @@ function PLAYER(){
 
                                 bg.style.height = (parseInt(windowClose.style.top) + windowClose.offsetHeight)+"px";
                             }
+                        }
+                    });
+
+                    SP.fnc.map(function(fnc){
+                        if(fnc.rubrikBoxView && result.boxes){
+                            fnc.rubrikBoxView(result.boxes);
                         }
                     });
 

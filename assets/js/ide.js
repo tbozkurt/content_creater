@@ -1188,6 +1188,15 @@ document.addEventListener("keydown", function(e){
                 IDE.selectedLayers.map(function(obj){
                     IDE.copy.push( EXPORT.convertElement(obj) );
                 });
+
+                var copyPrepare = {
+                    all: IDE.copy,
+                    fileName: IDE.user.selectedFile
+                }
+
+                if (typeof(Storage) !== "undefined"){
+                    localStorage.setItem("occSelectCopy", JSON.stringify(copyPrepare));
+                }
             }
         }else if(IDE.scope === "Scene"){
             var json = EXPORT.convertJson();
@@ -1218,33 +1227,16 @@ document.addEventListener("keydown", function(e){
                 copiedSceneData(occSceneCopy);
             }
         }else if(IDE.scope === "Stage"){
-            if(IDE.copy.length){
-                console.log("Document catch Ctrl+V");
-                var uniqueList = [];
-                IDE.copy.map(function(obj, i){
-                    var tempCopy = JSON.parse(JSON.stringify(obj));
-                    uniqueList[i] = utils.getRandomName();
-                    tempCopy.Layer.unique = uniqueList[i];
-                    if(tempCopy.Kids){
-                        tempCopy.Kids.map(function(e){
-                            e.Layer.unique = utils.getRandomName();
-                        });
-                    }
+            var occSelectCopy;
+            if (typeof(Storage) !== "undefined") {
+                occSelectCopy = localStorage.getItem("occSelectCopy");
+            }
 
-                    addObjects([tempCopy], IDE.activeLayer, true);
-                    CREATE.checkKontrol();
-                });
-
-                var localEX = utils.getLayers();
-                uniqueList.map(function(unique){
-                    localEX.map(function(obj){
-                        if(unique === obj.Layer.unique){
-                            selectItem({shiftKey: true, layer: obj});
-                        }
-                    });
-                });
-
-                CREATE.checkKontrol();
+            occSelectCopy = JSON.parse(occSelectCopy);
+            if(IDE.user.selectedFile !== occSelectCopy.fileName){
+                occCopySelectAJAX(occSelectCopy);
+            }else{
+                copiedObjectData(occSceneCopy);
             }
         }
     }else if(ctrlDown && (e.key === "z")){

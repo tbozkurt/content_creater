@@ -144,6 +144,45 @@ function registerRubrikServer(app, deps){
         });
     });
 
+    app.post("/api/occ/publish/:fileName", function(req, res){
+        var jwt = getOccJwt(req);
+        var service = getService();
+        var fileName = req.params.fileName;
+
+        if(!jwt){
+            return res.status(401).send({
+                success: false,
+                message: "OCC publish isteği için JWT gelmedi.",
+                fileName: fileName
+            });
+        }
+
+        if(!fileName){
+            return res.status(400).send({
+                success: false,
+                message: "OCC publish isteği için fileName zorunludur."
+            });
+        }
+
+        axios({
+            method: "post",
+            url: `https://${service}.okulistik.com/api/occ/publish/${encodeURIComponent(fileName)}`,
+            headers: getOccAuthHeaders(jwt)
+        }).then(response => {
+            console.log("rubrik publish response", response.data);
+            res.send({success: true, response: response.data});
+        }).catch(err => {
+            var status = err.response ? err.response.status : 502;
+            console.log("error in rubrik publish request", err.message, status, err.response ? err.response.data : "");
+            res.status(status).send({
+                success: false,
+                message: "OCC publish isteği başarısız oldu.",
+                fileName: fileName,
+                error: err.response ? err.response.data : err.message
+            });
+        });
+    });
+
     app.get("/api/occ/:fileName", function(req, res){
         var fileName = req.params.fileName;
         var jwt = getOccJwt(req);

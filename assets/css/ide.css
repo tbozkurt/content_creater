@@ -242,12 +242,12 @@ body {
     border-top: solid 2px black;
 }
 
-.image-upload > input {
+.image-upload input[type="file"] {
     display: none;
     cursor: pointer;
 }
 
-.image-upload > label {
+.image-upload label {
     cursor: pointer;
 }
 
@@ -315,6 +315,8 @@ select{
 #welcome_main{
     top: 0;
     left: 0;
+    width: 100vw;
+    height: 100vh;
     font-family: sans-serif;
     position: absolute;
     background-color: rgba(0, 0, 0, 0.5);
@@ -325,10 +327,17 @@ select{
 
     .welcome_window{
         margin-top: 80px;
-        width: 900px;
+        width: min(900px, calc(100vw - 32px));
+        height: min(820px, calc(100vh - 120px));
+        max-height: calc(100vh - 120px);
         position: absolute;
         border-radius: 10px;
         background-color: #262626;
+        border: 1px solid #424242;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .welcome_window hr{
@@ -340,32 +349,55 @@ select{
 
         .welcome_header{
             display: flex;
-            margin: 10px 0 10px 0;
+            align-items: center;
+            gap: 12px;
+            margin: 14px 18px 12px 18px;
         }
 
         .welcome_windowTitle{
             width: 100%;
             line-height: 44px;
             font-size: 28px;
-            text-align: center;
-            color: #999999;
+            text-align: left;
+            color: #d0d0d0;
+            white-space: nowrap;
+        }
+
+        #welcome_search{
+            flex: 0 0 230px;
+        }
+
+        #welcome_search input{
+            width: 100%;
+            height: 34px;
+            border: 1px solid #4f4f4f;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: #1f1f1f;
+            color: #d7d7d7;
+            padding: 0 12px;
+            outline: none;
         }
 
         .welcome_file{
-            left: 2%;
-            max-height: 650px;
-            width: 96%;
+            margin: 0 auto;
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+            width: calc(100% - 36px);
             border: 1px solid #3f3f3f;
             font-size: 24px;
             color: #999999;
             position: relative;
             overflow-y: auto;
+            overflow-x: hidden;
             border-radius: 10px;
+            background-color: #202020;
         }
 
             #welcome_savedFileList{
-                width: 97%;
-                margin-left: 2%;
+                width: calc(100% - 20px);
+                margin: 10px;
                 position: relative;
                 font-size: 24px;
                 color: #999999;
@@ -387,28 +419,57 @@ select{
             }
 
         .welcome_fileBtn{
-            padding: 2px 0 2px 0;
-            height: 36px;
+            padding: 6px 8px;
+            min-height: 40px;
             font-size: 18px;
-            color: #999999;
-            border-radius: 10px;
-            background-color: #373737;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            line-height: 40px;
+            color: #c2c2c2;
+            border-radius: 8px;
+            background-color: #333333;
+            border: 1px solid #424242;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            line-height: 36px;
             display: flex;
             justify-content: space-between;
+            gap: 10px;
             cursor: pointer;
             user-select: none;
+            box-sizing: border-box;
+            transition: background-color 140ms ease, border-color 140ms ease;
         }
 
         .welcome_fileIcon{
-            margin-left: 5px;
-            height: 100%;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 auto;
+        }
+
+        .welcome_fileName{
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .welcome_fileInfo{
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 20px;
         }
 
         .welcome_fileBtn_Part{
             display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .welcome_fileBtn_MainPart{
+            flex: 1 1 auto;
+        }
+
+        .welcome_fileBtn_ActionPart{
+            flex: 0 0 auto;
         }
 
         .welcome_fileBtn_smallBtn{
@@ -420,6 +481,8 @@ select{
             background-color: #252525;
             text-align: center;
             margin-right: 5px;
+            flex: 0 0 auto;
+            position: relative;
         }
 
             .welcome_dateBox{
@@ -429,6 +492,7 @@ select{
                 margin-right: 4px;
                 padding-right: 6px;
                 padding-left: 6px;
+                white-space: nowrap;
             }
 
             .welcome_userBox{
@@ -465,15 +529,74 @@ select{
         }
 
         .welcome_fileBtn:hover{
-            background: #555;
+            background: #454545;
+            border-color: #5c5c5c;
         }
 
+        #welcome_pagination{
+            flex: 0 0 auto;
+            width: calc(100% - 36px);
+            margin: 10px auto 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: #cfcfcf;
+            font-size: 14px;
+        }
+
+        .welcome_pageSize,
+        .welcome_pageActions{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #welcome_pageSizeSelect{
+            height: 30px;
+            border: 1px solid #4f4f4f;
+            border-radius: 6px;
+            background-color: #1f1f1f;
+            color: #d7d7d7;
+            padding: 0 8px;
+            outline: none;
+        }
+
+        .welcome_pageInfo{
+            min-width: 110px;
+            text-align: center;
+            color: #9f9f9f;
+        }
+
+        .welcome_pageBtn{
+            height: 30px;
+            border: 1px solid #4f4f4f;
+            border-radius: 6px;
+            background-color: #2b2b2b;
+            color: #d7d7d7;
+            padding: 0 10px;
+            cursor: pointer;
+        }
+
+        .welcome_pageBtn:hover:not(:disabled){
+            background-color: #00796b;
+            border-color: #00796b;
+        }
+
+        .welcome_pageBtn:disabled{
+            opacity: 0.45;
+            cursor: default;
+        }
+
+        #welcome_closeInput{
+            flex: 0 0 auto;
+        }
 
         .welcome_newFileContainer{
-            margin-left: 25%;
+            margin-left: auto;
+            margin-right: auto;
             margin-bottom: 2%;
-            left: 10%;
-            width: 48%;
+            width: min(48%, 430px);
             padding: 5px;
             height: 54px;
             font-size: 20px;
@@ -488,10 +611,11 @@ select{
         }
 
         .welcome_newFileContainer input{
-            width: 322px;
+            width: 100%;
             height: 40px;
             border-radius: 4px;
             border: 1px solid white;
+            box-sizing: border-box;
         }
 
         .welcome_newFileContainer:hover{
@@ -524,6 +648,66 @@ select{
             font-size: 18px;
             opacity: 0.8;
         }
+
+@media (max-width: 760px){
+    .welcome_window{
+        margin-top: 24px;
+        height: calc(100vh - 48px);
+        max-height: calc(100vh - 48px);
+    }
+
+    .welcome_header{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .welcome_windowTitle{
+        font-size: 22px;
+        line-height: 30px;
+        text-align: center;
+        white-space: normal;
+    }
+
+    #welcome_search{
+        flex: 0 0 auto;
+    }
+
+    .welcome_fileBtn{
+        align-items: flex-start;
+        flex-direction: column;
+        line-height: 30px;
+    }
+
+    .welcome_fileBtn_Part{
+        width: 100%;
+        flex-wrap: wrap;
+        row-gap: 6px;
+    }
+
+    .welcome_fileName{
+        max-width: calc(100% - 38px);
+    }
+
+    .welcome_newFileContainer{
+        width: calc(100% - 36px);
+    }
+
+    #welcome_pagination{
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .welcome_pageSize,
+    .welcome_pageActions{
+        justify-content: center;
+    }
+
+    .welcome_pageActions{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
 
         #searchFile{
             width: 250px;
@@ -1108,7 +1292,6 @@ tr{
 
 .iconMain{
     display: flex;
-    width: 780px;
     background-color: #323232;
 }
 
@@ -1269,59 +1452,61 @@ tr{
     }
 
 
-    /* rubrik arayüz ayarlamalari */
+/* rubrik arayüz ayarlamalari */
 
-    .rubrikGroup{
-        width: 171px;
-        margin-left: 5px;
-    }
+.rubrikGroup{
+    width: 171px;
+    margin: 0 0 2px 5px;
+}
 
-    .rubrikLabel{
-        background-color: #01579b;
-        padding: 3px;
-        border-radius: 4px;
-        display: inline-block;
-        border: 1px solid #9d9d9d;
-        margin: 2px;
-    }
+.rubrikLabel{
+    background-color: #01579b;
+    padding: 3px;
+    border-radius: 4px;
+    display: inline-block;
+    border: 1px solid #9d9d9d;
+    margin: 2px;
+}
 
-    .goRubrik{
-        background-color: #01579b;
-        border-radius: 4px;
-        margin: 5px;
-        padding: 10px;
-        text-align: center;
-        cursor: pointer
-    }
+.goRubrik{
+    background-color: #01579b;
+    margin-left: 5px;
+}
 
-    .goRubrik:hover{
-        background-color: #0460a8;
-    }
+.goRubrik:hover{
+    background-color: #0460a8;
+}
 
-    /* Regex */
-    .goRegex{
-        background-color: #5a6268;
-        border-radius: 4px;
-        margin: 5px;
-        padding: 10px;
-        text-align: center;
-        cursor: pointer;
-    }
+/* Regex */
+.goRegex{
+    background-color: #5a6268;
+    margin-left: 5px;
+}
 
-    .goRegex:hover{
-        background-color: #495057;
-    }
+.goRegex:hover{
+    background-color: #495057;
+}
 
-    /* Media */
-    .goMediaUpload{
-        background-color: #2e7d32;
-        border-radius: 4px;
-        margin: 5px;
-        padding: 10px;
-        text-align: center;
-        cursor: pointer;
-    }
+/* Media */
+.goMediaUpload{
+    background-color: #2e7d32;
+}
 
-    .goMediaUpload:hover{
-        background-color: #256628;
-    }
+.goMediaUpload:hover{
+    background-color: #256628;
+}
+
+.panelMain{
+    display:flex;
+}
+
+.panelBtn{
+    width: 90px;
+    height: 24px;
+    line-height: 24px;
+    margin-top: 6px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+    cursor: pointer;
+}

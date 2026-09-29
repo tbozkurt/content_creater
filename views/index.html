@@ -31,12 +31,13 @@
         <div class="TopIconBox" id="preview_icon"><img src="assets/img/create_change.png"></div>
     </div>
 
-    <div id="main">
-        <div id="child_1"></div>
-        <div id="child_2"></div>
-    </div>
-
     <div class="iconMain">
+        <div class="panelMain">
+            <div class="goMediaUpload panelBtn">Media Upload</div>
+            <div class="goRubrik panelBtn">Rubrik Creator</div>
+            <div class="goRegex panelBtn">Regex Create</div>
+        </div>
+        <div class="createSpace" style="margin-left: 10px"></div>
         <div class="TopIconBox" id="createRect"><img src="assets/img/create_rect.png"></div>
         <div class="TopIconBox image-upload">
             <form id="uploadImageForm" enctype="multipart/form-data">
@@ -353,24 +354,6 @@
         </div>
     </div>
 
-    <div class="WorkSpaces_Group addSpace WorkSpace_Rubrik">
-        <div class="WorkSpaces_Header">Rubrik</div>
-        <div class="rubrikGroup"></div>
-        <div class="goRubrik">Rubrik Create/Edit</div>
-    </div>
-
-    <div class="WorkSpaces_Group addSpace WorkSpace_Media">
-        <div class="WorkSpaces_Header">Media</div>
-        <div class="mediaUploadGroup">
-            <div class="goMediaUpload">Media Upload</div>
-        </div>
-    </div>
-
-    <div class="WorkSpaces_Group addSpace WorkSpace_Regex" style="display: none">
-        <div class="WorkSpaces_Header">Regex</div>
-        <div class="goRegex">Regex Create</div>
-    </div>
-
     <div class="WorkSpaces_Group addSpace WorkSpace_SceneParam">
         <div class="WorkSpaces_Header">Add Scene </div>
         <div class="tableScroll">
@@ -383,6 +366,7 @@
 
     <div class="WorkSpaces_Group addSpace WorkSpace_AnswerParam">
         <div class="WorkSpaces_Header">Add Answer</div>
+        <div class="rubrikGroup"></div>
         <div class="tableScroll">
             <table id="answer_table"></table>
         </div>
@@ -428,6 +412,24 @@
 
         <div class="welcome_file" id="welcome_step1">
             <div id="welcome_savedFileList"></div>
+        </div>
+
+        <div id="welcome_pagination">
+            <div class="welcome_pageSize">
+                <span>Sayfa başına</span>
+                <select id="welcome_pageSizeSelect">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">Tümü</option>
+                </select>
+            </div>
+            <div class="welcome_pageInfo" id="welcome_pageInfo"></div>
+            <div class="welcome_pageActions">
+                <button type="button" class="welcome_pageBtn" id="welcome_prevPage">Önceki</button>
+                <button type="button" class="welcome_pageBtn" id="welcome_nextPage">Sonraki</button>
+            </div>
         </div>
 
         <div class="welcome_file" id="welcome_step2">
@@ -687,7 +689,7 @@
             WorkSpace_Opacity: document.querySelector(".WorkSpace_Opacity"),
             WorkSpace_Identity: document.querySelector(".WorkSpace_Identity"),
             WorkSpace_Font: document.querySelector(".WorkSpace_Font"),
-            WorkSpace_Regex: document.querySelector(".WorkSpace_Regex"),
+            WorkSpace_Regex: document.querySelector(".goRegex"),
             WorkSpace_SceneParam: document.querySelector(".WorkSpace_SceneParam"),
             WorkSpace_AnswerParam: document.querySelector(".WorkSpace_AnswerParam"),
             WorkSpace_PositionAndSize: document.querySelector(".WorkSpace_PositionAndSize"),
@@ -713,6 +715,10 @@
             closeInput: document.querySelector("#welcome_closeInput"),
             savedFileList: document.querySelector("#welcome_savedFileList"),
             sceneTypeList: document.querySelector("#welcome_sceneTypeList"),
+            pageSizeSelect: document.querySelector("#welcome_pageSizeSelect"),
+            pageInfo: document.querySelector("#welcome_pageInfo"),
+            prevPage: document.querySelector("#welcome_prevPage"),
+            nextPage: document.querySelector("#welcome_nextPage"),
             newFileBtn: document.querySelector("#welcome_newFileBtn"),
             addFileInput: document.querySelector("#addFileInput"),
 
@@ -722,6 +728,11 @@
 
             loaderMain: document.querySelector("#loaderMain"),
             loaderMain_icon: document.querySelector("#loaderMain_icon"),
+            fileMap: {},
+            allFiles: [],
+            filteredFiles: [],
+            currentPage: 1,
+            pageSize: 25
         },
         iconGroup:[
             document.querySelector("#iconGroup0"),
@@ -1608,46 +1619,87 @@
     //15517168
 
     /* File System */
-    function addSavedFileBtn(filename, date, fileUser){
-        let html = `<div class="welcome_fileBtn_Part">
-                        <img class="welcome_fileIcon" src="/assets/img/editFile.png" alt="file">
-                        <div>${filename}</div>
-                    </div>
-                    <div class="welcome_fileBtn_Part">
-                        <div class="welcome_userBox" style="background-color: ${boxColor[fileUser]}">${fileUser}</div>
-                        <div class="welcome_dateBox">${date}</div>
-                        <div id="z_${filename}" class="welcome_fileBtn_smallBtn">
-                            <img class="welcome_fileBtn_icon" src="/assets/img/zip.png" alt="file">
-                        </div>
-                        <div id="d_${filename}" class="welcome_fileBtn_smallBtn welcomeDelete">
-                            <img class="welcome_fileBtn_icon" src="/assets/img/delete.png" alt="file">
-                        </div>
-                        <div id="p_${filename}" class="welcome_fileBtn_smallBtn">
-                            <img class="welcome_fileBtn_icon" src="/assets/img/preview.png" alt="file">
-                        </div>
-                        <div id="o_${filename}" class="welcome_fileBtn_smallBtn">
-                            <img class="welcome_fileBtn_icon" src="/assets/img/optic.png" alt="file">
-                        </div>
-                        <div id="c_${filename}" class="welcome_fileBtn_smallBtn">
-                            <img class="welcome_fileBtn_icon" src="/assets/img/create_copy.png" alt="file">
-                        </div>
-                        <div id="r_${filename}" class="welcome_fileBtn_smallBtn">
-                            <img class="welcome_fileBtn_icon" src="/assets/img/refresh.png" alt="file">
-                        </div>
-                    </div>`;
-        let div = utils.addDOM({className:"welcome_fileBtn", id:"f_"+ filename, innerHTML:html});
+    function createWelcomeIconButton(className, title, iconSrc, iconAlt){
+        var btn = document.createElement("div");
+        btn.className = "welcome_fileBtn_smallBtn" + (className ? " " + className : "");
+        btn.title = title || "";
+
+        if(iconSrc){
+            var img = document.createElement("img");
+            img.className = "welcome_fileBtn_icon";
+            img.src = iconSrc;
+            img.alt = iconAlt || "";
+            btn.appendChild(img);
+        }
+
+        return btn;
+    }
+
+    function addSavedFileBtn(fileData){
+        var filename = fileData.fileName;
+        var date = fileData.createTime;
+        var fileUser = fileData.username;
+
+        var div = document.createElement("div");
+        div.className = "welcome_fileBtn";
+        div.dataset.fileName = filename;
+
+        var leftPart = document.createElement("div");
+        leftPart.className = "welcome_fileBtn_Part welcome_fileBtn_MainPart";
+
+        var fileIcon = document.createElement("img");
+        fileIcon.className = "welcome_fileIcon";
+        fileIcon.src = "/assets/img/editFile.png";
+        fileIcon.alt = "file";
+
+        var nameGroup = document.createElement("div");
+        nameGroup.className = "welcome_fileInfo";
+
+        var nameBox = document.createElement("div");
+        nameBox.className = "welcome_fileName";
+        nameBox.textContent = filename;
+
+        nameGroup.appendChild(nameBox);
+        leftPart.appendChild(fileIcon);
+        leftPart.appendChild(nameGroup);
+
+        var rightPart = document.createElement("div");
+        rightPart.className = "welcome_fileBtn_Part welcome_fileBtn_ActionPart";
+
+        var userBox = document.createElement("div");
+        userBox.className = "welcome_userBox";
+        userBox.style.backgroundColor = boxColor[fileUser];
+        userBox.textContent = fileUser;
+
+        var dateBox = document.createElement("div");
+        dateBox.className = "welcome_dateBox";
+        dateBox.textContent = date;
+
+        var zipBtn = createWelcomeIconButton("", "Zip indir", "/assets/img/zip.png", "zip");
+        var delBtn = createWelcomeIconButton("welcomeDelete", "Sil", "/assets/img/delete.png", "delete");
+        var htmlBtn = createWelcomeIconButton("", "Önizle", "/assets/img/preview.png", "preview");
+        /* optic.png iconu bilinçli olarak yorumda tutuluyor.
+        var opticBtn = createWelcomeIconButton("", "Optic", "/assets/img/optic.png", "optic");
+        */
+        var copyBtn = createWelcomeIconButton("", "Kopyala", "/assets/img/create_copy.png", "copy");
+        var refreshBtn = createWelcomeIconButton("", "Yenile", "/assets/img/refresh.png", "refresh");
+
+        rightPart.appendChild(userBox);
+        rightPart.appendChild(dateBox);
+        rightPart.appendChild(zipBtn);
+        if(IDE.user.appUser !== "guest"){
+            rightPart.appendChild(delBtn);
+        }
+        rightPart.appendChild(htmlBtn);
+        rightPart.appendChild(copyBtn);
+        rightPart.appendChild(refreshBtn);
+
+        div.appendChild(leftPart);
+        div.appendChild(rightPart);
         IDE.welcome.savedFileList.appendChild(div);
         IDE.searchList.push([filename, div]);
 
-        var fileBtn = document.querySelector("#f_"+ filename);
-        var zipBtn = document.querySelector("#z_"+ filename);
-        var delBtn = document.querySelector("#d_"+ filename);
-        var htmlBtn = document.querySelector("#p_"+ filename);
-        var opticBtn = document.querySelector("#o_"+ filename);
-        var copyBtn = document.querySelector("#c_"+ filename);
-        var refreshBtn = document.querySelector("#r_"+ filename);
-
-        fileBtn.addEventListener("click", function(e){
+        div.addEventListener("click", function(e){
             if(IDE.user.occMode){
                 occSelectFile(filename);
             }else{
@@ -1665,30 +1717,33 @@
             e.stopPropagation();
         });
 
-        delBtn.addEventListener("click", function(e){
-            if (confirm(filename+" dosyasını silmek istediğinizden emin misiniz!")) {
-                console.log("!Silindi");
-                IDE.searchList=[];
-                deleteFolderAjax(filename);
+        if(IDE.user.appUser !== "guest"){
+            delBtn.addEventListener("click", function(e){
+                if (confirm(filename+" dosyasını silmek istediğinizden emin misiniz!")) {
+                    console.log("!Silindi");
+                    IDE.searchList=[];
+                    deleteFolderAjax(filename);
 
-                if(IDE.user.occMode){
-                    occDeleteFile(filename);
+                    if(IDE.user.occMode){
+                        occDeleteFile(filename);
+                    }
                 }
-            }
 
-            e.stopPropagation();
-        });
+                e.stopPropagation();
+            });
+        }
 
         htmlBtn.addEventListener("click", function(e){
             window.open("/player/?file="+ filename +"&mode=normal");
             e.stopPropagation();
         });
 
+        /*
         opticBtn.addEventListener("click", function(e){
             window.open("/player/?file="+ filename +"&mode=optic");
             e.stopPropagation();
         });
-
+        */
         copyBtn.addEventListener("click", function(e){
             duplicateFile(filename);
             e.stopPropagation();
@@ -1704,7 +1759,7 @@
             zipBtn.classList.add("disableBtn");
             delBtn.classList.add("disableBtn");
             htmlBtn.classList.add("disableBtn");
-            opticBtn.classList.add("disableBtn");
+            //opticBtn.classList.add("disableBtn");
             refreshBtn.classList.add("disableBtn");
         }
 
@@ -1712,9 +1767,49 @@
             zipBtn.classList.remove("disableBtn");
             delBtn.classList.remove("disableBtn");
             htmlBtn.classList.remove("disableBtn");
-            opticBtn.classList.remove("disableBtn");
+            //opticBtn.classList.remove("disableBtn");
             refreshBtn.classList.remove("disableBtn");
         }
+    }
+
+    function getWelcomePageSize(){
+        return IDE.welcome.pageSize === "all" ? IDE.welcome.filteredFiles.length || 1 : IDE.welcome.pageSize;
+    }
+
+    function getWelcomeTotalPages(){
+        return Math.max(1, Math.ceil(IDE.welcome.filteredFiles.length / getWelcomePageSize()));
+    }
+
+    function applyWelcomeFileFilter(){
+        var searchValue = document.querySelector("#searchFile").value.toLowerCase();
+
+        IDE.welcome.filteredFiles = IDE.welcome.allFiles.filter(function(fileData){
+            return fileData.fileName.toLowerCase().includes(searchValue);
+        });
+
+        IDE.welcome.currentPage = 1;
+        renderWelcomeFilePage();
+    }
+
+    function renderWelcomeFilePage(){
+        var pageSize = getWelcomePageSize();
+        var totalPages = getWelcomeTotalPages();
+        var start = (IDE.welcome.currentPage - 1) * pageSize;
+        var end = start + pageSize;
+        var pageItems = IDE.welcome.pageSize === "all" ? IDE.welcome.filteredFiles : IDE.welcome.filteredFiles.slice(start, end);
+        var visibleStart = IDE.welcome.filteredFiles.length ? start + 1 : 0;
+        var visibleEnd = IDE.welcome.pageSize === "all" ? IDE.welcome.filteredFiles.length : Math.min(end, IDE.welcome.filteredFiles.length);
+
+        IDE.welcome.savedFileList.innerHTML = "";
+        IDE.searchList = [];
+
+        pageItems.map(function(data){
+            addSavedFileBtn(data);
+        });
+
+        IDE.welcome.pageInfo.textContent = visibleStart + "-" + visibleEnd + " / " + IDE.welcome.filteredFiles.length;
+        IDE.welcome.prevPage.disabled = IDE.welcome.currentPage <= 1;
+        IDE.welcome.nextPage.disabled = IDE.welcome.currentPage >= totalPages;
     }
 
     function newSceneRequest(){
@@ -1733,7 +1828,7 @@
         });
 
         addStageBG();
-        document.querySelector("#Slide_fileName").innerHTML = jsonV2.fileName;
+        document.querySelector("#Slide_fileName").textContent = jsonV2.fileName;
         document.querySelector("#welcome_search").style.display = "none";
     }
 
@@ -1919,24 +2014,36 @@
 
     /* Search */
     document.querySelector("#searchFile").addEventListener("input", function(){
-        var userID = this.value;
-        IDE.searchList.map(function(e){
-            var currentID = e[0].toLowerCase();
-            userID = userID.toLowerCase();
+        applyWelcomeFileFilter();
+    });
 
-            if(currentID.includes(userID)){
-                e[1].style.display = "flex";
-            }else{
-                e[1].style.display = "none";
-            }
-        });
+    IDE.welcome.pageSizeSelect.addEventListener("change", function(){
+        IDE.welcome.pageSize = this.value === "all" ? "all" : parseInt(this.value, 10);
+        IDE.welcome.currentPage = 1;
+        renderWelcomeFilePage();
+    });
+
+    IDE.welcome.prevPage.addEventListener("click", function(){
+        if(IDE.welcome.currentPage > 1){
+            IDE.welcome.currentPage--;
+            renderWelcomeFilePage();
+        }
+    });
+
+    IDE.welcome.nextPage.addEventListener("click", function(){
+        var totalPages = getWelcomeTotalPages();
+        if(IDE.welcome.currentPage < totalPages){
+            IDE.welcome.currentPage++;
+            renderWelcomeFilePage();
+        }
     });
 
     function searchFile(file){
-        for(var i=0; i<IDE.searchList.length; i++){
-            var currentID = IDE.searchList[i][0];
+        var searchValue = String(file).toLowerCase();
+        for(var i=0; i<IDE.welcome.allFiles.length; i++){
+            var currentID = IDE.welcome.allFiles[i].fileName.toLowerCase();
 
-            if(currentID.includes(file)){
+            if(currentID.includes(searchValue)){
                 return true;
             }
         }
@@ -2036,7 +2143,7 @@
                 saveList.push({fileName: p, createTime: data.fileList.data[p].create, username: data.fileList.data[p].user});
             }
 
-            importFileList(saveList, data.pw);
+            importFileList(saveList);
         }else{
             IDE.welcome.userMain.style.display = "flex";
             IDE.welcome.username.value = "Hatalı!";
@@ -2126,7 +2233,7 @@
                 data.response.list.map(function(e){
                     // creator UID'sini önce occUser map'inden çevir, yoksa olduğu gibi göster
                     var user = (occUser && occUser["user_" + e.creator]) || e.username || e.creator || "-";
-                    saveList.push({fileName: e.fileName, createTime: e.createTime, username: user});
+                    saveList.push({fileName: e.fileName, createTime: e.createTime, username: user, raw: e});
                 });
             }
 
@@ -2165,22 +2272,50 @@
     }
 
     /* 3.OCC Save File */
-    function occSaveFile(json){
-        showLoader();
+    function occSaveFile(json, options){
+        options = options || {};
+        if(!options.keepLoader){
+            showLoader();
+        }
         console.log("occSaveFile", json);
         IDE.user.stringJSON = JSON.stringify(json);
-        $.ajax({url: "/occSaveFile", data: IDE.user, success: occSaveFile_Parse, type: "POST", error: ajaxError});
+        return new Promise(function(resolve){
+            $.ajax({
+                url: "/occSaveFile",
+                data: IDE.user,
+                success: function(data){
+                    occSaveFile_Parse(data, options);
+                    resolve(!!(data && data.response && data.response.success));
+                },
+                type: "POST",
+                error: function(e){
+                    if(!options.keepLoader){
+                        ajaxError(e);
+                    }
+                    resolve(false);
+                }
+            });
+        });
     }
 
-    function occSaveFile_Parse(data){
+    function occSaveFile_Parse(data, options){
+        options = options || {};
         console.log("api/occ: save response.", data);
-        if(data.response.success){
-            hideLoader();
+        if(data.response && data.response.success){
+            if(!options.keepLoader){
+                hideLoader();
+            }
             duplicateWindowStatus("none");
-            IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+            if(!options.silent){
+                IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+            }
         }else{
-            hideLoader();
-            IDE.showTip({txt:"Kaydedilmedi!", color: "#cc303f", time:2000, x: 1474, y: (IDE.stage.height-10)});
+            if(!options.keepLoader){
+                hideLoader();
+            }
+            if(!options.silent){
+                IDE.showTip({txt:"Kaydedilmedi!", color: "#cc303f", time:2000, x: 1474, y: (IDE.stage.height-10)});
+            }
         }
     }
 
@@ -2203,9 +2338,20 @@
     /* 5.OCC Copy Scene */
     function occCopySceneAJAX(occSceneCopy){
         var imgList=[];
+
+        function getImg(item){
+            imgList.push(`${occSceneCopy.fileName}/${item.src}`);
+        }
+
         occSceneCopy.all.map(function(item){
-            if(item.src){
-                imgList.push(`${occSceneCopy.fileName}/${item.src}`);
+            if(item.Kids){
+                item.Kids.map(function(itemKid){
+                    if(itemKid.src){
+                        getImg(itemKid);
+                    }
+                });
+            }else if(item.src){
+                getImg(item);
             }
         });
 
@@ -2213,8 +2359,10 @@
             return `${IDE.user.root}/${img}`;
         });
 
+
         IDE.user.copyFilesNewFolder = `${IDE.user.root}/${IDE.user.selectedFile}/img`;
         IDE.user.occSceneCopy = JSON.stringify(occSceneCopy);
+        console.log(IDE.user);
         $.ajax({url: "/occCopyScene", data: IDE.user, success: occCopySceneAJAX_Parse, type: "POST", error: ajaxError});
     }
 
@@ -2230,17 +2378,84 @@
         sceneAddNewScene(template);
     }
 
+    function occCopySelectAJAX(occSelectCopy){
+        var imgList=[];
+
+        function getImg(item){
+            imgList.push(`${occSelectCopy.fileName}/${item.src}`);
+        }
+
+        occSelectCopy.all.map(function(item){
+            if(item.Kids){
+                item.Kids.map(function(itemKid){
+                    if(itemKid.src){
+                        getImg(itemKid);
+                    }
+                });
+            }else if(item.src){
+                getImg(item);
+            }
+        });
+
+        IDE.user.selectCopyFiles = imgList.map(function(img){
+            return `${IDE.user.root}/${img}`;
+        });
+
+        IDE.user.copyFilesNewFolder = `${IDE.user.root}/${IDE.user.selectedFile}/img`;
+        IDE.user.occCopyObject = JSON.stringify(occSelectCopy);
+        $.ajax({url: "/occCopyObject", data: IDE.user, success: occCopyObjectAJAX_Parse, type: "POST", error: ajaxError});
+    }
+
+    function occCopyObjectAJAX_Parse(data){
+        var occCopyObject = JSON.parse(data.occCopyObject);
+        IDE.copy = occCopyObject.all;
+        copiedObjectData();
+    }
+
+    function copiedObjectData(){
+        if(IDE.copy.length){
+            console.log("Document catch Ctrl+V");
+            var uniqueList = [];
+            IDE.copy.map(function(obj, i){
+                var tempCopy = JSON.parse(JSON.stringify(obj));
+                uniqueList[i] = utils.getRandomName();
+                tempCopy.Layer.unique = uniqueList[i];
+                if(tempCopy.Kids){
+                    tempCopy.Kids.map(function(e){
+                        e.Layer.unique = utils.getRandomName();
+                    });
+                }
+
+                addObjects([tempCopy], IDE.activeLayer, true);
+                CREATE.checkKontrol();
+            });
+
+            var localEX = utils.getLayers();
+            uniqueList.map(function(unique){
+                localEX.map(function(obj){
+                    if(unique === obj.Layer.unique){
+                        selectItem({shiftKey: true, layer: obj});
+                    }
+                });
+            });
+
+            CREATE.checkKontrol();
+        }
+    }
+
     //Render FileList
     function importFileList(saveList){
         saveList.sort(function(a, b){
             return new Date(b.createTime) - new Date(a.createTime);
         });
 
-        IDE.welcome.savedFileList.innerHTML="";
-
-        saveList.map(function(data){
-            addSavedFileBtn(data.fileName, data.createTime, data.username);
+        IDE.welcome.fileMap = {};
+        IDE.welcome.allFiles = saveList.map(function(data){
+            IDE.welcome.fileMap[data.fileName] = data.raw || data;
+            return Object.assign({}, data);
         });
+        IDE.welcome.currentPage = 1;
+        applyWelcomeFileFilter();
 
         if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "kamil"){
             document.querySelector("#preview_icon").style.display = "block";
@@ -2251,7 +2466,6 @@
 
         if(IDE.user.appUser === "guest"){
             document.querySelector(".welcome_newFileContainer").style.display = "none";
-            document.querySelectorAll(".welcomeDelete").forEach(e => e.remove());
         }else{
             LocalSaveUser();
         }

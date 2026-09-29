@@ -923,6 +923,17 @@ app.post("/occCopyScene", function(req, res){
     });
 });
 
+//Read File List
+app.post("/occCopyObject", function(req, res){
+    var copyFiles = req.body.selectCopyFiles;
+    var copyFilesNewFolder = req.body.copyFilesNewFolder;
+    var occCopyObject = req.body.occCopyObject;
+
+    copyFileListToFolder(copyFiles, copyFilesNewFolder).then(function(result) {
+        res.send({success: true, occCopyObject});
+    });
+});
+
 //Sahneler arası dosya kopyalama
 function copyFileListToFolder(fileList, targetFolder) {
     return new Promise(function(resolve) {
