@@ -23,6 +23,7 @@ function PLAYER(){
     var SD = [];
     var build={};
     var AC;
+    var RUBRIK_PARTIAL_COLOR = "#ff9800";
     var player = {
         sound:{
             right: new Howl({
@@ -554,7 +555,7 @@ function PLAYER(){
             if(PLX.isHDE){
                 clearInterval(player.dataSendTimer);
                 player.dataSendTimer = setTimeout(function(){
-                        HDE_ControlFNC("update");
+                        HDE_saveData("update");
                 }, 1000);
             }
         }
@@ -760,7 +761,7 @@ function PLAYER(){
         }
         player.readOnlyDOM.style.visibility = "visible";
         clearInterval(player.dataSendTimer);
-        HDE_ControlFNC("finish");
+        HDE_saveData("finish");
         HDE_StatusFNC();
 
         SP.map(function(sp){
@@ -775,9 +776,29 @@ function PLAYER(){
     }
 
     // HDE answer control
-    function HDE_ControlFNC(status){
+    function HDE_saveData(status){
         console.log("HDEControl FNC");
 
+        if(status === "finish"){
+            HDE_userAnswerEvaluation();
+        }else{
+            var sd = SD[This.sceneIndex];
+            addHistoryStep(sd, {
+                step: 0,
+                right: 0,
+                wrong: 0,
+                empty: 0,
+                result: "",
+                score: 0,
+                totalRight: sd.totalRight,
+                answered: "0",
+            });
+        }
+
+        HDE_ScoreCalc(status, true);
+    }
+
+    function HDE_userAnswerEvaluation(){
         SP.map(function(sp, index){
             var totalScore = {totalRight:0, totalWrong:0, totalEmpty:0};
 
@@ -801,14 +822,13 @@ function PLAYER(){
                 answered: "0",
             });
         });
-
-        HDE_ScoreCalc(status, true);
     }
 
     function watcherHDE(){
         console.log("watcherHDE FNC");
 
         if(PLX.Mode === "normal"){
+            HDE_userAnswerEvaluation();
             var emptyFound = false;
             SD.map(function(sd){
                 if(sd.historyRight.length === 0 || sd.historyRight[0].result === "empty"){
@@ -1311,10 +1331,11 @@ function PLAYER(){
             incorrectBoxMap[String(boxKey)] = true;
         });
 
+        var isPartialResult = result.rubric_code && String(result.rubric_code).includes("K");
         result.boxes = {};
         for(var boxKey in SD.inputs){
             if(Object.prototype.hasOwnProperty.call(SD.inputs, boxKey)){
-                result.boxes[boxKey] = incorrectBoxMap[boxKey] ? "wrong" : "right";
+                result.boxes[boxKey] = incorrectBoxMap[boxKey] ? (isPartialResult ? "partial" : "wrong") : "right";
             }
         }
 
@@ -2321,7 +2342,7 @@ function PLAYER(){
                         HDE_endExam();
                     }else{
                         clearInterval(player.dataSendTimer);
-                        HDE_ControlFNC("update");
+                        HDE_saveData("update");
                         watcherHDE();
                     }
                 });
@@ -4069,9 +4090,7 @@ function PLAYER(){
             var score = {totalRight:0, totalWrong:0, totalEmpty:0, Type:"cs"};
 
             for(var btnID in CS.Buton){
-                if(CS.Buton[btnID].status !== "right"){
-                    CS.Buton[btnID].status = "empty";
-                }
+                CS.Buton[btnID].tempStatus = "empty";
             }
 
             if(CS.evaluationMode === "count"){
@@ -4090,13 +4109,13 @@ function PLAYER(){
 
                         CS.group[p].currentList.map(function(id){
                             rightBtn(id);
-                            CS.Buton[id].status = "right";
+                            CS.Buton[id].tempStatus = "right";
                         });
                     }else{
                         score.totalWrong++;
                         CS.group[p].currentList.map(function(id){
-                            if(CS.Buton[id].status !== "right"){
-                                CS.Buton[id].status = "wrong";
+                            if(CS.Buton[id].tempStatus !== "right"){
+                                CS.Buton[id].tempStatus = "wrong";
                             }
                         });
                     }
@@ -4106,17 +4125,17 @@ function PLAYER(){
                     if(rubrik[id]){
                         if(SD.inputs["box"+id].value){
                             score.totalRight++;
-                            CS.Buton[id].status = "right";
+                            CS.Buton[id].tempStatus = "right";
                         }else{
                             score.totalEmpty++;
-                            CS.Buton[id].status = "empty";
+                            CS.Buton[id].tempStatus = "empty";
                         }
                     }else{
                         if(SD.inputs["box"+id].value){
                             score.totalWrong++;
-                            CS.Buton[id].status = "wrong";
+                            CS.Buton[id].tempStatus = "wrong";
                         }else{
-                            CS.Buton[id].status = "empty";
+                            CS.Buton[id].tempStatus = "empty";
                         }
                     }
                 }
@@ -4128,7 +4147,7 @@ function PLAYER(){
                     if(currentListCount ===  memberListCount && rightTotalCount < memberListCount){
                         CS.group[gid].memberList.map(function(id){
                             if(!CS.group[gid].currentRightList.includes(id)){
-                                CS.Buton[id].status = "wrong";
+                                CS.Buton[id].tempStatus = "wrong";
                             }
                         });
                     }
@@ -4139,6 +4158,12 @@ function PLAYER(){
             return score;
         }
 
+        function statusAdd(){
+            for(var id in CS.Buton){
+                CS.Buton[id].status = CS.Buton[id].tempStatus;
+                delete CS.Buton[id].tempStatus;
+            }
+        }
 
         function btnEvents(status){
             for(var id in CS.Buton){
@@ -4155,6 +4180,7 @@ function PLAYER(){
         }
 
         function rightActionFNC(){
+            statusAdd();
             groupCloseControl();
             partialRight();
         }
@@ -4171,6 +4197,7 @@ function PLAYER(){
         }
 
         function wrongActionFNC(){
+            statusAdd();
             btnEvents("none");
             showAllWrong();
 
@@ -4511,10 +4538,16 @@ function PLAYER(){
             BD.input[id].bg.style.backgroundColor = "red";
         }
 
-        function showDefaultView(id){
+        function showPartialView(id){
+            BD.input[id].bg.style.backgroundColor = RUBRIK_PARTIAL_COLOR;
+        }
+
+        function showDefaultView(id, preserveInput){
             BD.input[id].bg.style.backgroundColor = BD.input[id].bgColor;
-            BD.input[id].txt.value = "";
-            inputsChange(SD, id, "value", "");
+            if(!preserveInput){
+                BD.input[id].txt.value = "";
+                inputsChange(SD, id, "value", "");
+            }
         }
 
         function showRubrikBoxView(boxesResult){
@@ -4539,6 +4572,8 @@ function PLAYER(){
                     showRightView(id);
                 }else if(status === "wrong"){
                     showWrongView(id);
+                }else if(status === "partial"){
+                    showPartialView(id);
                 }
             }
 
@@ -4552,17 +4587,17 @@ function PLAYER(){
                 btnEvents("auto");
                 for(var id in BD.input){
                     if(BD.input[id].status !== "right"){
-                        showDefaultView(id);
+                        showDefaultView(id, true);
                     }
                 }
                 controlBtnViewCheck();
             }, 1000);
         }
 
-        function showAllDefaultView(){
+        function showAllDefaultView(preserveInput){
             for(var i in BD.input){
                 if(BD.input[i].events){
-                    showDefaultView(i);
+                    showDefaultView(i, preserveInput);
                 }
             }
         }
@@ -4651,7 +4686,7 @@ function PLAYER(){
 
             evaluation.timer = setTimeout(function(){
                 btnEvents("auto");
-                showAllDefaultView();
+                showAllDefaultView(true);
                 controlBtnViewCheck();
             }, 1000);
         }
@@ -5064,7 +5099,6 @@ function PLAYER(){
                                 if(deleteID > -1){
                                     drop.splice(deleteID, 1);
                                 }
-
                                 line.canvas.stroke("#b71c1c").opacity(0.7);
                                 inputsChange(SD);
                             }
@@ -7367,20 +7401,17 @@ function PLAYER(){
             videoList.some(function(video){
                 var active = video.active === true || video.active === "true";
                 var layerMatch = layerId === undefined || layerId === null || String(video.layerId) === String(layerId);
+                var path = video.path || video.videoPath;
 
-                if(active && layerMatch && video.path){
-                    videoPath = video.path.replace("www", "cdn");
+                if (active && layerMatch && path) {
+                    videoPath = path.replace("www", "cdn");
                     return true;
                 }
 
                 return false;
             });
 
-            if(!videoPath){
-                return null;
-            }
-
-            return [videoPath];
+            return videoPath ? [videoPath] : null;
         }
     }
 
@@ -8288,7 +8319,7 @@ function PLAYER(){
         var input;
         var inputKey;
         var transcriptViewList = [];
-        var set = {recordTime:15, countDown:false};
+        var set = {recordTime:20, countDown:false};
         var lang = {
             prepare: "Lütfen Bekleyiniz.",
             stopRecordText: "Kaydı Durdur",
@@ -8747,6 +8778,7 @@ function PLAYER(){
         SR.startRecordBtn = Scene.querySelector(".record_off");
         SR.stopRecordBtn = Scene.querySelector(".record_on");
         SR.recordPrepare = Scene.querySelector(".prepareText");
+        SR.recordStartText = Scene.querySelector(".kayıtBaslatText");
 
         SR.recordStatusMain = Scene.querySelector(".recordStatusMain");
         SR.recordTime = utils.addDOM({className: "recordTime", innerText: "00:00"});
@@ -8850,6 +8882,11 @@ function PLAYER(){
             SR.recordPrepare.style.display = "none";
         }
 
+        if(SR.recordStartText){
+            SR.recordStartText.style.display = "none";
+            SR.recordStartText.style.cursor = "pointer";
+        }
+
         if(SR.warning){
             SR.warning.style.fontSize = "16px";
             Object.assign(SR.warning.style, {
@@ -8871,9 +8908,20 @@ function PLAYER(){
         SR.recordStop.style.display = "none";
         extraSoundIconStatus("hidden", "hidden");
 
-        SR.startRecordBtn.addEventListener("click", function(){
-            SR.recordPrepare.style.display="block";
+        function startRecord(){
+            if(SR.recordPrepare){
+                SR.recordPrepare.style.display = "block";
+            }
+
+            if(SR.recordStartText){
+                SR.recordStartText.style.display = "none";
+            }
+
             SR.startAudioRecordingFNC();
+        }
+
+        SR.startRecordBtn.addEventListener("click", function(){
+            startRecord();
         });
 
 
@@ -8894,9 +8942,14 @@ function PLAYER(){
         });
 
         SR.recordRestart.addEventListener("click", function(){
-            SR.recordPrepare.style.visibility="block";
-            SR.startAudioRecordingFNC();
+            startRecord();
         });
+
+        if(SR.recordStartText){
+            SR.recordStartText.addEventListener("click", function(){
+                startRecord();
+            });
+        }
 
         SR.startViewFNC = function(){
             SR.pausedSeconds = 0;
@@ -8911,7 +8964,12 @@ function PLAYER(){
             SR.recordPlayMain.style.display = "none";
             SR.recordStop.style.display = "flex";
             SR.recordRestart.style.display = "none";
-            SR.recordPrepare.style.display = "none";
+            if(SR.recordPrepare){
+                SR.recordPrepare.style.display = "none";
+            }
+            if(SR.recordStartText){
+                SR.recordStartText.style.display = "none";
+            }
             SR.recordRedCircle.classList.remove('recordCircleAnimateStop');
             extraSoundIconStatus("hidden", "hidden");
             extraRecordIconStatus("visible", "hidden");
@@ -8927,6 +8985,12 @@ function PLAYER(){
             SR.recordPlayMain.style.display = "flex";
             SR.recordStop.style.display = "none";
             SR.recordRestart.style.display = "flex";
+            if(SR.recordPrepare){
+                SR.recordPrepare.style.display = "none";
+            }
+            if(SR.recordStartText){
+                SR.recordStartText.style.display = "block";
+            }
             extraRecordIconStatus("hidden", "hidden");
 
             SR.playProgress.style.width = 0;
@@ -9038,6 +9102,9 @@ function PLAYER(){
                 SR.stopRecordBtn.style.display = "none";
                 SR.recordStop.style.display = "none";
                 SR.recordRestart.style.display = "none";
+                if(SR.recordStartText){
+                    SR.recordStartText.style.display = "none";
+                }
                 SR.startRecordBtn.style.pointerEvents = "none";
             }else{
                 SR.startRecordBtn.style.pointerEvents = "none";
