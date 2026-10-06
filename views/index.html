@@ -1712,7 +1712,9 @@
 
             IDE.welcome.main.style.display = "none";
             IDE.user.fileUser = fileUser;
+            IDE.user.savePermission = (IDE.user.fileUser === IDE.user.appUser);
             saveBtnViewStatus("block");
+            mediaUploadBtnViewStatus();
             console.log(IDE.user);
         });
 
@@ -2090,19 +2092,24 @@
 
 
     /* 3. STD Save File */
-    function saveDataAjax(json){
+    function saveDataAjax(json, options){
         showLoader();
-        console.log("STD: saveDataAjax", IDE.user.token);
+        options = options || {};
+        console.log("STD: saveDataAjax", IDE.user.token, options);
         IDE.user.stringJSON = JSON.stringify(json);
-        $.ajax({url: "/saveData", data: IDE.user, success: saveDataParse, type: "POST", error: ajaxError});
+        $.ajax({url: "/saveData", data: IDE.user, success:function(data){ saveDataParse(data, options) }, type: "POST", error: ajaxError});
     }
 
-    function saveDataParse(data){
-        console.log("local: save response", data);
+    function saveDataParse(data, options){
+        options = options || {};
+        console.log("local: save response", data, options);
         if(data.success){
-            if(!IDE.user.occMode){
-                IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
+            if(!IDE.user.occMode || options.preview){
+                IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 260, y: (IDE.stage.height-10)});
                 hideLoader();
+                if(options.preview){
+                    exportFNC();
+                }
             }
         }
     }
@@ -2187,7 +2194,7 @@
     function prepare(){
         var urlParams = new URLSearchParams(window.location.search);
         var service = urlParams.get("service");
-        IDE.user.occMode = false;
+        IDE.user.occMode = true;
         if(service){
             IDE.user.occMode = true;
         }
@@ -2313,6 +2320,12 @@
             if(!options.silent){
                 IDE.showTip({txt:"saved!", color: "#1b5e20", time:1000, x: 1474, y: (IDE.stage.height-10)});
             }
+
+            if(options.window === "mediaUpload"){
+                var fileName = encodeURIComponent(IDE.user.selectedFile);
+                var mediaUploaderUrl = "https://www.okulistik.com/okx_admin/spa/upload/media-uploader/" + fileName;
+                IDE.popupWindow = window.open(mediaUploaderUrl, "_blank", "width=1200,height=600,left=100,top=100");
+            }
         }else{
             if(!options.keepLoader){
                 hideLoader();
@@ -2366,7 +2379,6 @@
 
         IDE.user.copyFilesNewFolder = `${IDE.user.root}/${IDE.user.selectedFile}/img`;
         IDE.user.occSceneCopy = JSON.stringify(occSceneCopy);
-        console.log(IDE.user);
         $.ajax({url: "/occCopyScene", data: IDE.user, success: occCopySceneAJAX_Parse, type: "POST", error: ajaxError});
     }
 
@@ -2461,7 +2473,7 @@
         IDE.welcome.currentPage = 1;
         applyWelcomeFileFilter();
 
-        if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "kamil"){
+        if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "kamil" || IDE.user.appUser === "demet"){
             document.querySelector("#preview_icon").style.display = "block";
         }
 
@@ -3187,6 +3199,51 @@
         IDE.welcome.closeInput.style.display = "none";
     }
     */
+
+    function previewAJAX(){
+        if(IDE.user.savePermission && IDE.user.occMode){
+            showLoader();
+            $.ajax({url: "/occSelectFile", data: IDE.user, success: previewAJAX_Parse, type: "POST", error: ajaxError});
+        }else{
+            exportFNC();
+        }
+    }
+
+    function previewAJAX_Parse(data){
+        if(data.success){
+            var liveData = data.response.list.slides;
+            var localData = jsonV2.slides;
+            localData.map(function(slideLocal){
+                liveData.map(function(slideLive){
+                    if(slideLocal.unique === slideLive.unique){
+                        if(slideLive.videoPath){
+                            slideLocal.videoPath = slideLive.videoPath;
+                        }
+
+                        if(slideLive.audioPath){
+                            slideLocal.audioPath = slideLive.audioPath;
+                        }
+
+                        if(slideLive.rubrik){
+                            slideLocal.rubrik = slideLive.rubrik;
+                        }
+
+                        if(slideLive.topic){
+                            slideLocal.topic = slideLive.topic;
+                        }
+
+                        if(slideLive.tree){
+                            slideLocal.tree = slideLive.tree;
+                        }
+                    }
+                });
+            });
+            IDE.showTip({txt:"prepare..", color: "#ef6c00", time:1000, x: 260, y: (IDE.stage.height-10)});
+            var json = EXPORT.convertJson();
+            saveDataAjax(json, {preview:true});
+        }
+    }
+
 
 </script>
 <!--<div id="textEditBox" contenteditable="true">gg</div>-->

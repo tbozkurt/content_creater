@@ -638,10 +638,18 @@ function hideWorkSpaces(){
 }
 
 function saveBtnViewStatus(status){
-    if(IDE.user.fileUser === IDE.user.appUser){
+    if(IDE.user.savePermission){
         document.querySelector("#topMenuSaveBtn").style.display = status;
     }else{
         document.querySelector("#topMenuSaveBtn").style.display = "none";
+    }
+}
+
+function mediaUploadBtnViewStatus(){
+    if(IDE.user.savePermission){
+        document.querySelector(".goMediaUpload").style.display = "block";
+    }else{
+        document.querySelector(".goMediaUpload").style.display = "none";
     }
 }
 
@@ -811,13 +819,11 @@ IDE.workSpace.scope_RightWorkSpace.addEventListener("mousedown", function(){
 
 
 document.querySelector("#export").addEventListener("click", function(){
-    exportFNC();
+    previewAJAX();
 });
 
 document.querySelector("#preview_icon").addEventListener("click", function(){
-    //exportFNC();
     document.querySelector("#change_window").style.display = "block";
-
 });
 
 document.querySelector("#change_action").addEventListener("click", function(){
@@ -874,23 +880,20 @@ function exportFNC(){
     hideWorkSpaces();
 }
 
-
 document.querySelector("#topMenuSaveBtn").addEventListener("click", function(){
+    saveJsonFNC();
+});
+
+function saveJsonFNC(options){
     var json = EXPORT.convertJson();
-    //StorageSave(json);
     saveDataAjax(json);
     if(IDE.user.occMode){
-        occSaveFile(json);
+        occSaveFile(json, options);
     }
 
     IDE.showTip({txt:"prepare..", color: "#ef6c00", time:1000, x: 1458, y: (IDE.stage.height-10)});
-    /*
-    console.log("lütfen bekleyin");
-    IDE.showTip({txt:"orange", color: "#1b5e20", time:1000, x: 1480, y: (IDE.stage.height-10)});
-    */
-
     folderGetList(json);
-});
+}
 
 IDE.workSpace.previewClose.addEventListener("click", function(){
     Player.stopAllMedia();
@@ -2484,9 +2487,9 @@ document.querySelector(".goMediaUpload").addEventListener("click", function(){
         IDE.popupWindow.close();
     }
 
-    var fileName = encodeURIComponent(IDE.user.selectedFile);
-    var mediaUploaderUrl = "https://www.okulistik.com/okx_admin/spa/upload/media-uploader/" + fileName;
-    IDE.popupWindow = window.open(mediaUploaderUrl, "_blank", "width=1200,height=600,left=100,top=100");
+    if(IDE.user.occMode){
+        saveJsonFNC({window:"mediaUpload"});
+    }
 });
 
 document.querySelector(".goRegex").addEventListener("click", function(){

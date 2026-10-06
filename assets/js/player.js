@@ -1061,7 +1061,12 @@ function PLAYER(){
             if(SD.inputs[boxName].type === "sr"){
                 finalBox[boxName] = String(SD.inputs[boxName].value || "");
             }else{
-                finalBox[boxName] = String(SD.inputs[boxName].value);
+                var val = SD.inputs[boxName].value;
+                if (Array.isArray(val) && val.length === 0){
+                    finalBox[boxName] = "null";
+                }else{
+                    finalBox[boxName] = String(SD.inputs[boxName].value);
+                }
             }
         }
 
@@ -2336,6 +2341,10 @@ function PLAYER(){
                 soundPlayer.restartBtn.addEventListener("click", function(){
                     SoundPlayerAction(soundPlayer, "play");
                 });
+
+                soundPlayer.playBtn.style.cursor = "pointer";
+                soundPlayer.pauseBtn.style.cursor = "pointer";
+                soundPlayer.restartBtn.style.cursor = "pointer";
             }else if(obj.id.includes("finish")){
                 obj.addEventListener("click", function(){
                     if(PLX.mode === 'preview'){
