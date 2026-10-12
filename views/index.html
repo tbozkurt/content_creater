@@ -1601,27 +1601,6 @@
         user_15939315: "oyku"
     }
 
-    var occUserName = {
-        melike: "9244372",
-        irem: "15432145",
-        kamil: "7729542",
-        demet: "2521680",
-        goknur: "12621116",
-        cansu: "15480368",
-        tuncay: "7729545",
-        basak: "15514575",
-        gulcin: "20",
-        bahar: "15515696",
-        duygu: "15517168",
-        taner: "12896817",
-        omer: "16024112",
-        yusuf: "15930951",
-        deniz: "15944889",
-        oyku: "15939315"
-    }
-
-    //15517168
-
     /* File System */
     function createWelcomeIconButton(className, title, iconSrc, iconAlt){
         var btn = document.createElement("div");
@@ -1681,12 +1660,7 @@
 
         var zipBtn = createWelcomeIconButton("", "Zip indir", "/assets/img/zip.png", "zip");
         var delBtn = createWelcomeIconButton("welcomeDelete", "Sil", "/assets/img/delete.png", "delete");
-        var htmlBtn = createWelcomeIconButton("", "Önizle", "/assets/img/preview.png", "preview");
-        /* optic.png iconu bilinçli olarak yorumda tutuluyor.
-        var opticBtn = createWelcomeIconButton("", "Optic", "/assets/img/optic.png", "optic");
-        */
         var copyBtn = createWelcomeIconButton("", "Kopyala", "/assets/img/create_copy.png", "copy");
-        var refreshBtn = createWelcomeIconButton("", "Yenile", "/assets/img/refresh.png", "refresh");
 
         rightPart.appendChild(userBox);
         rightPart.appendChild(dateBox);
@@ -1694,16 +1668,22 @@
         if(IDE.user.appUser !== "guest"){
             rightPart.appendChild(delBtn);
         }
-        rightPart.appendChild(htmlBtn);
+
         rightPart.appendChild(copyBtn);
+        /*
+        var opticBtn = createWelcomeIconButton("", "Optic", "/assets/img/optic.png", "optic");
+        var htmlBtn = createWelcomeIconButton("", "Önizle", "/assets/img/preview.png", "preview");
+        var refreshBtn = createWelcomeIconButton("", "Yenile", "/assets/img/refresh.png", "refresh");
+        rightPart.appendChild(htmlBtn);
         rightPart.appendChild(refreshBtn);
+        */
 
         div.appendChild(leftPart);
         div.appendChild(rightPart);
         IDE.welcome.savedFileList.appendChild(div);
         IDE.searchList.push([filename, div]);
 
-        div.addEventListener("click", function(e){
+        div.addEventListener("click", function(){
             if(IDE.user.occMode){
                 occSelectFile(filename);
             }else{
@@ -1739,19 +1719,14 @@
             });
         }
 
+        /*
         htmlBtn.addEventListener("click", function(e){
             window.open("/player/?file="+ filename +"&mode=normal");
             e.stopPropagation();
         });
 
-        /*
         opticBtn.addEventListener("click", function(e){
             window.open("/player/?file="+ filename +"&mode=optic");
-            e.stopPropagation();
-        });
-        */
-        copyBtn.addEventListener("click", function(e){
-            duplicateFile(filename);
             e.stopPropagation();
         });
 
@@ -1760,21 +1735,30 @@
             returnData(filename, fileUser);
             e.stopPropagation();
         });
+        */
+        copyBtn.addEventListener("click", function(e){
+            duplicateFile(filename);
+            e.stopPropagation();
+        });
 
         if(fileUser !== IDE.user.appUser){
             zipBtn.classList.add("disableBtn");
             delBtn.classList.add("disableBtn");
+            /*
             htmlBtn.classList.add("disableBtn");
-            //opticBtn.classList.add("disableBtn");
+            opticBtn.classList.add("disableBtn");
             refreshBtn.classList.add("disableBtn");
+            */
         }
 
-        if(IDE.user.appUser === "tuncay"){
+        if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "yusuf"){
             zipBtn.classList.remove("disableBtn");
             delBtn.classList.remove("disableBtn");
+            /*
             htmlBtn.classList.remove("disableBtn");
-            //opticBtn.classList.remove("disableBtn");
+            opticBtn.classList.remove("disableBtn");
             refreshBtn.classList.remove("disableBtn");
+            */
         }
     }
 
@@ -1884,7 +1868,7 @@
     function zipContentParse(data){
         console.log("zipContentParse", data);
         if(data.success){
-            var path = "/files/"+ data.content.files.activeFile +".zip";
+            var path = "/files/"+ data.content +".zip";
             fetch(path)
                 .then(function (resp) {
                     if(resp.ok){
@@ -1898,7 +1882,7 @@
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = data.content.files.activeFile+".zip";
+                    a.download = data.content+".zip";
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
@@ -2070,13 +2054,6 @@
         }
     });
 
-
-    document.querySelector("#userMain_guestBtn").addEventListener("click", function(){
-        //autoGetFileList();
-        //getFileList("guest", "guest", IDE.user.token);
-    });
-
-
     /* 4. STD Save File */
     function deleteFolderAjax(deleteFile){
         IDE.user.deleteFile = deleteFile;
@@ -2193,13 +2170,13 @@
 
     function prepare(){
         var urlParams = new URLSearchParams(window.location.search);
-        var service = urlParams.get("service");
+        var local = urlParams.get("local");
         IDE.user.occMode = true;
-        if(service){
-            IDE.user.occMode = true;
+        if(local){
+            IDE.user.occMode = false;
         }
 
-        $.ajax({url: "/prepare", data: {service}, success: prepareParse, type: "POST", error: ajaxError});
+        $.ajax({url: "/prepare", data: IDE.user, success: prepareParse, type: "POST", error: ajaxError});
     }
 
     function prepareParse(data){
@@ -2473,7 +2450,7 @@
         IDE.welcome.currentPage = 1;
         applyWelcomeFileFilter();
 
-        if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "kamil" || IDE.user.appUser === "demet"){
+        if(IDE.user.appUser === "tuncay" || IDE.user.appUser === "kamil" || IDE.user.appUser === "demet" || IDE.user.appUser === "yusuf"){
             document.querySelector("#preview_icon").style.display = "block";
         }
 
@@ -2617,95 +2594,6 @@
 
     resize();
 
-
-    var saveFileList = [];
-
-    function autoGetFileList(){
-        $.ajax({url: "/occAutoGetFile", success: autoGetFileList_Parse, type: "POST", error: ajaxError});
-    }
-
-    function autoGetFileList_Parse(data){
-        for(var name in data.response){
-            saveFileList.push({
-                url:`http://contentcreator.okulistik.com:3630/files/${data.response[name].files.activeFile}/${data.response[name].files.activeFile}.json`,
-                uid: occUserName[ data.response[name].user ]
-            });
-        }
-
-        autoGetJson();
-    }
-
-
-    function autoGetJson(){
-        $.ajax({url: "/autoGetJson", data: saveFileList[IDE.auto], success: autoGetJson_Parse, type: "POST", error: ajaxError});
-    }
-
-    function autoGetJson_Parse(data){
-        data.response.slides.map(function(slide){
-            if(slide.type === "KT_MC_Single"){
-                slide.type=["multipleChoice"];
-            }
-        });
-
-        if(data.success){
-            var stringJSON = data.response;
-            stringJSON.version = "1.0";
-            stringJSON.uid = saveFileList[IDE.auto].uid;
-            stringJSON = JSON.stringify(stringJSON);
-            autoSaveData(stringJSON);
-        }
-    }
-
-    function autoSaveData(stringJSON){
-        IDE.user.jwt = "eyJqdGkiOiIzYTUxMTc2ZjJlMGQ0Y2I0MDljYWZhZTQxZDcwMzk1OSIsImFsZyI6IlJTMjU2IiwidHlwIjoiSldUIn0.eyJleHAiOjE3NDQ5MTczODAsImZ1bGxOYW1lIjoiVHVuY2F5IEJvemt1cnQiLCJuYmYiOjE3NDQ4MzA5ODAsIm5hbWUiOiJUdW5jYXkiLCJkYXRhIjpmYWxzZSwibGFzdG5hbWUiOiJCb3prdXJ0Iiwic2NvcGVzIjpbImF1dGguYmFzaWMiLCJtYXJrZXQuYmFzaWMiLCJhdXRoLmJhc2ljIiwiYXV0aC5vY2MiXSwidGFyZ2V0IjoiL3FiL2luZGV4Iiwic3ViIjoiNzcyOTU0NSIsImlhdCI6MTc0NDgzMDk4MCwidVR5cGUiOiJBRE1JTiIsImp0aSI6IjNhNTExNzZmMmUwZDRjYjQwOWNhZmFlNDFkNzAzOTU5IiwiYXVkIjoiYW5hc2F5ZmFfY29kZSIsIm1haWwiOiIifQ.guDmoVcKZNgTay8hJBOkSu8s7Y7N1MyvDuLv7HEZtGAInc4nStVkok5jCDsYVdgGL0D0-WdRAKjOqjdgFAc3UEp2IGoEkwoM0qrj8c0vl_1QLg4OKa2VDIgKM_ObH6I-QBx0hCuhZ0UsczjOmRz17kqIGG7hooAsss7VJtPQtdn-VFf7iPiMnESR3VgDss_EXN43DiWT8H97umGYcZ5_oKywZTT4FJmsVRHXWT19nIUHz3S0sJeRgbCdXECrDT6TFgN4HZA8PhdpzBI7FPdllMRXExqRo39QkPGiMNfP7cea8v8B3VAILWkdC0EijsKiLZWU2M5MCjPNyOUAyLK5sA";
-        $.ajax({url: "/autoSaveData", data: {jwt:IDE.user.jwt, stringJSON}, success: autoSaveData_Parse, type: "POST", error: ajaxError});
-    }
-
-
-    function autoSaveData_Parse(data){
-        //console.log( data );
-        if(data.success){
-            console.log(IDE.auto, "tamamlandı sonraki");
-            IDE.auto++;
-            if(saveFileList[IDE.auto]){
-                console.log("Sonraki Mevcut:", IDE.auto);
-                autoGetJson();
-            }
-        }
-    }
-
-
-    function returnData(rescueFile, rescueUser){
-        if(rescueFile && rescueUser){
-            IDE.user.rescueFile = rescueFile;
-            IDE.user.rescueData = {
-                user: rescueUser,
-                create: utils.addTimeStamp("server"),
-                files:{
-                    activeFile: IDE.user.rescueFile,
-                    mainFolder: `${IDE.user.root}/${IDE.user.rescueFile}`,
-                    imgFolder: `${IDE.user.root}/${IDE.user.rescueFile}/img`,
-                    mainJson: {
-                        path: `${IDE.user.root}/${IDE.user.rescueFile}/${IDE.user.rescueFile}.json`
-
-                    }
-                }
-            }
-
-            $.ajax({url: "/return", data: IDE.user, success: returnData_Parse, type: "POST", error: ajaxError});
-        }else{
-            console.log("Refresh Parametre Yok");
-        }
-    }
-
-    function returnData_Parse(data){
-        if(data.success){
-            console.log(data);
-            console.log("FileList Dosya Eklendi");
-            window.location.href = '/ide';
-        }
-    }
-
     function duplicateFile(file){
         duplicateWindowStatus("block");
         var duplicate_fileName = document.querySelector("#duplicate_fileName");
@@ -2739,32 +2627,13 @@
             saveDataAjax(json);
             occSaveFile(json);
             deleteFileAjax(data.clone.duplicate_oldJson, "1");
-            addFL(IDE.user.appUser, IDE.user.duplicate_newName);
             console.log( utils.addTimeStamp("server") );
             console.log(json);
             console.log("IDE.user:", IDE.user);
             console.log("IDE.appUser:", IDE.user.appUser);
             console.log("IDE.newName:", IDE.user.duplicate_newName);
+            window.location.href = '/ide';
         }
-    }
-
-    function addFL(user, file){
-        IDE.user.rescueFile = file;
-        IDE.user.rescueData = {
-            user: user,
-            create: utils.addTimeStamp("server"),
-            files:{
-                activeFile: IDE.user.rescueFile,
-                mainFolder: `${IDE.user.root}/${IDE.user.rescueFile}`,
-                imgFolder: `${IDE.user.root}/${IDE.user.rescueFile}/img`,
-                mainJson: {
-                    path: `${IDE.user.root}/${IDE.user.rescueFile}/${IDE.user.rescueFile}.json`
-
-                }
-            }
-        }
-
-        $.ajax({url: "/return", data: IDE.user, success: returnData_Parse, type: "POST", error: ajaxError});
     }
 
 

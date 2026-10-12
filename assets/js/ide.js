@@ -1014,6 +1014,7 @@ IDE.welcome.newFileBtn.addEventListener("click", function(e){
         IDE.welcome.addFileInput.focus();
     }else{
         IDE.user.fileUser = IDE.user.appUser;
+        IDE.user.savePermission = true;
         saveBtnViewStatus("block");
         newSceneRequest();
         jsonV2.createTime = utils.addTimeStamp("server");
@@ -2417,11 +2418,6 @@ document.querySelector("#home_icon").addEventListener("click", function(){
     window.location.href = '/ide';
 });
 
-
-document.querySelector(".welcome_windowTitle").addEventListener("click", function(){
-    returnData();
-});
-
 document.querySelector("#duplicate_action").addEventListener("click", function(){
     var file = document.querySelector(".duplicate_input").value;
     if(file.length){
@@ -2458,9 +2454,20 @@ document.querySelector(".goRubrik").addEventListener("click", function(){
         slidesRubrik: jsonV2.slides.map(function(slide){
             return slide && slide.rubrik ? JSON.parse(JSON.stringify(slide.rubrik)) : {boxes:{}, groups:[]};
         }),
+        slidesIncludeInEvaluation: jsonV2.slides.map(function(slide){
+            return !slide || slide.includeInEvaluation !== false;
+        }),
+        slidesSceneGroups: jsonV2.slides.map(function(slide){
+            return slide && slide.sceneGroup ? JSON.parse(JSON.stringify(slide.sceneGroup)) : null;
+        }),
+        sceneGroups: Array.isArray(jsonV2.sceneGroups) ? JSON.parse(JSON.stringify(jsonV2.sceneGroups)) : [],
         scene: {
             id: sceneIndex,
-            name: jsonV2.slides[sceneIndex].name
+            name: jsonV2.slides[sceneIndex].name,
+            includeInEvaluation: !jsonV2.slides[sceneIndex] || jsonV2.slides[sceneIndex].includeInEvaluation !== false,
+            sceneGroup: jsonV2.slides[sceneIndex] && jsonV2.slides[sceneIndex].sceneGroup
+                ? JSON.parse(JSON.stringify(jsonV2.slides[sceneIndex].sceneGroup))
+                : null
         }
     }
 
@@ -2517,6 +2524,29 @@ window.addEventListener("focus", function(){
                                 jsonV2.slides[index].rubrik = slideRubrik;
                             }
                         });
+                    }
+                    if(Array.isArray(rubrik.slidesIncludeInEvaluation)){
+                        rubrik.slidesIncludeInEvaluation.forEach(function(includeInEvaluation, index){
+                            if(jsonV2.slides[index] && typeof includeInEvaluation === "boolean"){
+                                jsonV2.slides[index].includeInEvaluation = includeInEvaluation;
+                            }
+                        });
+                    } else if(rubrik.scene && jsonV2.slides[Number(rubrik.scene.id)] && typeof rubrik.scene.includeInEvaluation === "boolean"){
+                        jsonV2.slides[Number(rubrik.scene.id)].includeInEvaluation = rubrik.scene.includeInEvaluation;
+                    }
+                    if(Array.isArray(rubrik.slidesSceneGroups)){
+                        rubrik.slidesSceneGroups.forEach(function(sceneGroup, index){
+                            if(jsonV2.slides[index]){
+                                jsonV2.slides[index].sceneGroup = sceneGroup ? JSON.parse(JSON.stringify(sceneGroup)) : null;
+                            }
+                        });
+                    } else if(rubrik.scene && jsonV2.slides[Number(rubrik.scene.id)]){
+                        jsonV2.slides[Number(rubrik.scene.id)].sceneGroup = rubrik.scene.sceneGroup
+                            ? JSON.parse(JSON.stringify(rubrik.scene.sceneGroup))
+                            : null;
+                    }
+                    if(Array.isArray(rubrik.sceneGroups)){
+                        jsonV2.sceneGroups = JSON.parse(JSON.stringify(rubrik.sceneGroups));
                     }
                     rubrikParse();
                     localStorage.removeItem("occSceneRubrikSave");

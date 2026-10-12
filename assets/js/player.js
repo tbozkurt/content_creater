@@ -5281,31 +5281,32 @@ function PLAYER(){
         var rightAnswer = {};
         function rightAnswerParse(){
             for(var p in answer){
-                rightAnswer[p] = [];
-                var dropAnswers = stringSpaceDelete(answer[p]).split(",");
-                dropAnswers.map(function(answer){
-                    if(answer.includes("-")){
-                        var answerOption = [];
-                        var id = parseInt( answer.split("-")[0] );
-                        var count = parseInt( answer.split("-")[1] );
-                        for(var c=0; c<count; c++){
-                            answerOption.push(id);
+                if(dropList[p]){
+                    rightAnswer[p] = [];
+                    var dropAnswers = stringSpaceDelete(answer[p]).split(",");
+                    dropAnswers.map(function(answer){
+                        if(answer.includes("-")){
+                            var answerOption = [];
+                            var id = parseInt( answer.split("-")[0] );
+                            var count = parseInt( answer.split("-")[1] );
+                            for(var c=0; c<count; c++){
+                                answerOption.push(id);
+                            }
+
+                            rightAnswer[p].push(answerOption);
+                        }else{
+                            if(!rightAnswer[p][0]){
+                                rightAnswer[p].push([]);
+                            }
+
+                            rightAnswer[p][0].push(parseInt(answer));
                         }
 
-                        rightAnswer[p].push(answerOption);
-                    }else{
-                        if(!rightAnswer[p][0]){
-                            rightAnswer[p].push([]);
-                        }
-
-                        rightAnswer[p][0].push(parseInt(answer));
-                    }
-
-                });
+                    });
+                }
             }
         }
 
-        rightAnswerParse();
 
         var dragCount=0;
         var dragList = {};
@@ -5372,6 +5373,11 @@ function PLAYER(){
 
             SP.screenCloseDOM.style.zIndex = 2000;
         });
+
+        rightAnswerParse();
+        console.log(rightAnswer);
+
+        console.log( dropList );
 
         function dragControlFNC(drag, dragID, cloneID){
             var hitDrop = -1;
@@ -5765,7 +5771,10 @@ function PLAYER(){
             var tempAnswerList = convertRightAnswer(rightAnswer, "");
             var usedID=[];
 
-            for(var hitDrop in dropList){
+            console.log(rightAnswer);
+            console.log(tempAnswerList);
+            for(var hitDrop in tempAnswerList){
+                console.log(hitDrop);
                 var allRightAnswer;
                 if(createDrag){
                     allRightAnswer = rightAnswer[hitDrop][0];
@@ -13390,6 +13399,7 @@ function PLAYER(){
                 var select = document.createElement("select");
                 var selectedBox = document.createElement("div");
                 var optionPanel = document.createElement("div");
+                var defaultText = "Seçiniz";
                 var boxStyle = {
                     width: element.main.style.width,
                     height: element.main.style.height,
@@ -13449,10 +13459,11 @@ function PLAYER(){
                 });
 
                 if(text){
-                    selectedBox.innerText = text.innerText || text.textContent || "Seçiniz";
+                    selectedBox.innerText = text.innerText || text.textContent || defaultText;
+                    defaultText = selectedBox.innerText;
                     text.remove();
                 }else{
-                    selectedBox.innerText = "Seçiniz";
+                    selectedBox.innerText = defaultText;
                 }
 
                 if(arrow){
@@ -13517,7 +13528,8 @@ function PLAYER(){
                     options: options,
                     zIndex: element.main.style.zIndex,
                     rightAnswer: getExpectedOptionIndex(id),
-                    bgColor: bg ? bg.style.backgroundColor : ""
+                    bgColor: bg ? bg.style.backgroundColor : "",
+                    defaultText: defaultText
                 };
 
                 SD.inputs["box"+ id] = {value: null, type: "dropdown", solved: false};
@@ -13538,12 +13550,12 @@ function PLAYER(){
                 }
             }
 
-            return "Seçiniz";
+            return DD.input[id].defaultText;
         }
 
         function setSelectedValue(id, value){
             DD.input[id].select.value = value || "";
-            DD.input[id].selectedBox.innerText = value ? getOptionText(id, value) : "Seçiniz";
+            DD.input[id].selectedBox.innerText = value ? getOptionText(id, value) : DD.input[id].defaultText;
             inputsChange(SD, id, "value", value || null);
         }
 

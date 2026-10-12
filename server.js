@@ -223,7 +223,6 @@ function deleteFolder(target){
 }
 
 function createJson(json, data, flag){
-    console.log("createJson");
     return  new Promise(function(resolve, reject){
         fs.writeFile(json, JSON.stringify(data), flag, function(err){
             if (err) {
@@ -262,19 +261,6 @@ function readFileList(json){
     })
 }
 
-//Modified Main File List
-app.post("/modifiedFilelist", modifiedFilelistFNC);
-async function modifiedFilelistFNC(req, res){
-    console.log("Modified File List");
-    var FD = Users[req.body.token];
-    console.log( req.body);
-    var data = JSON.parse(req.body.newList);
-    FD.fileList = await createJson( FD.fileList.path, data, {encoding:"utf8", flag:"w"});
-    res.send(FD);
-    console.log("-----Modified File List------");
-}
-
-
 //Create New File
 app.post("/createNewFile", createNewFileFNC);
 async function createNewFileFNC(req, res){
@@ -288,9 +274,8 @@ async function createNewFileFNC(req, res){
     console.log("///////////");
     console.log(FD);
     console.log("///////////");
-    var addList = listAddFile(FD, data);
     FD.files.mainJson = await createJson( path.join(FD.files.mainFolder, data.fileName+".json"), data, {encoding:"utf8", flag:"w"});
-    FD.fileList = await createJson( FD.fileList.path, addList, {encoding:"utf8", flag:"w"});
+    getLiveFolderList(FD);
     var cc = await copyTemplateImages(FD.files.imgFolder);
     FD.copyTemplateImages = cc;
     res.send(FD);
@@ -342,8 +327,8 @@ async function selectFileFNC(req, res){
     console.log("-------------");
     console.log("selectedFile:", selectedFile);
 
-    if(FD.fileList.data[selectedFile]){
-        FD.files = FD.fileList.data[selectedFile].files;
+    if(selectedFile){
+        FD.files = selectFileReturn(selectedFile);
         FD.files.data = await readFileList(FD.files.mainJson.path);
         var cc = await copyTemplateImages(FD.files.imgFolder);
         FD.copyTemplateImages = cc;
@@ -359,12 +344,11 @@ async function deleteFolderFNC(req, res){
     console.log("-- DELETE START--");
     var FD = Users[req.body.token];
     var deleteFile = req.body.deleteFile;
-    var foundDeleteFile = FD.fileList.data[deleteFile];
 
-    if(foundDeleteFile){
-        var sonuc = await deleteFolder(FD.fileList.data[deleteFile].files.mainFolder);
-        delete FD.fileList.data[deleteFile];
-        FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
+    if(deleteFile){
+        var folder = (__dirname+"/files/"+deleteFile);
+        var sonuc = await deleteFolder(folder);
+        getLiveFolderList(FD);
         FD.success = true;
         res.send(FD);
         console.log("-- DELETE FINISH --");
@@ -426,12 +410,8 @@ async function downloadFNC(req, res){
         lesson = "TRK";
     }
 
-    var info = ["deneme"];
-
     try{
-        info[6] = ["girdi"];
         var entrance = await addFolder( path.join(FD.root, "zip") );
-        info[1] = [entrance];
         var step0 = await addFolder( path.join(entrance, "ONLINE") );
         var step1 = await addFolder( path.join(step0, "2026-2027") );
         var step2 = await addFolder( path.join(step1, product) );
@@ -444,19 +424,17 @@ async function downloadFNC(req, res){
         var step9 = await addFolder( path.join(step7, "src") );
         var step10 = await addFolder( path.join(step9, "content") );
         var step11 = await addFolder( path.join(step9, "coverimg") );
-        info[7] = ["bitti"];
 
-        var mainFolder = FD.fileList.data[file].files.mainFolder;
-        info[2] = mainFolder;
+        var mainFolder = (__dirname+"/files/"+file);
 
-        var successCopy = await copyFolder(mainFolder, step10);
-        var PublisherCopy = await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step6+"/Publisher.py");
-        FD.fileList.data[req.body.file].files.zipFile = await getZip( req.body.file, entrance, req.body.token);
+        await copyFolder(mainFolder, step10);
+        await copyFile(path.join(__dirname, "assets/publisher/Publisher.py"), step6+"/Publisher.py");
+        await getZip( req.body.file, entrance, req.body.token);
         await deleteFolder(entrance);
 
-        res.send({success: true, content: FD.fileList.data[req.body.file], info, FD, file});
+        res.send({success: true, content: file, FD, file});
     }catch (e){
-        res.send({success: false, content: FD.fileList.data[req.body.file], info, FD, file});
+        res.send({success: false, content: file, FD, file});
     }
 }
 
@@ -476,12 +454,12 @@ app.post('/uploadImage', function (req, res) {
 
 var userList = {
     melike:{password:"1q2w3e"},
-    irem:{password:"1a2s3d"},
-    tuncay:{password:"1b9d8s4d"},
-    kamil:{password:"1z2x3c"},
-    demet:{password:"3e2w1q"},
-    goknur:{password:"3d2s1a"},
-    cansu:{password:"3c2x1z"},
+    irem:{password:"1q2w3e"},
+    tuncay:{password:"1q2w3e"},
+    kamil:{password:"1q2w3e"},
+    demet:{password:"1q2w3e"},
+    goknur:{password:"1q2w3e"},
+    cansu:{password:"1q2w3e"},
     gulcin:{password:"1q2w3e"},
     bahar:{password:"1q2w3e"},
     duygu:{password:"1q2w3e"},
@@ -554,35 +532,21 @@ app.use("/ide", function(req, res) {
 });
 
 async function initApp(req, res){
-    if(req.body.service){
-        service = req.body.service;
-    }
-
-    console.log(service);
-
     token = "User_"+getRandomInt(9000)+"_"+word[getRandomInt(10)]+"_"+getRandomInt(9000);
     console.log('\033[2J');
     console.log("///////START APP/////////");
 
     Users[token] = {};
     var FD = Users[token];
+    FD.occMode = true;
+
+    if(req.body.occMode === "false"){
+        FD.occMode = false;
+    }
 
     //1."files" Klasörü yoksa oluşturulur..
     FD.root = await addFolder( path.join(__dirname, "files") );
-
-    //2."files" dosyası varsa okunur. Yoksa oluşturulur...
-    FD.fileList = {path: path.join(FD.root, "fileList.json")};
-
-    try {
-        FD.fileList.data = await readFileList(FD.fileList.path);
-    } catch (err) {
-        console.error("fileList.json okunamadı, yeni liste oluşturulacak:", err.message);
-        FD.fileList.data = false;
-    }
-
-    if(!FD.fileList.data){
-        FD.fileList = await createJson(FD.fileList.path, {}, {encoding:"utf8", flag:"w"});
-    }
+    getLiveFolderList(FD);
 
     FD.token = token;
     FD.systemReady = true;
@@ -614,13 +578,6 @@ function copyFile(source, target){
 app.listen(3630, function() {
     console.log("listening on port 3630");
 });
-
-
-function listAddFile(FD, data){
-    FD.fileList.data[data.fileName] = {user: FD.user, create: data.createTime, files: FD.files};
-    return FD.fileList.data;
-}
-
 
 //Login
 app.post("/occLogin", function(req, res){
@@ -721,9 +678,7 @@ app.post("/occSelectFile", function(req, res){
     console.log(selectedFile, token);
 
     var FD = Users[token];
-    if(FD && FD.fileList && FD.fileList.data[selectedFile]){
-        FD.files = FD.fileList.data[selectedFile].files;
-    }
+    FD.files = selectFileReturn(selectedFile);
 
     var config = {
         headers: getOccAuthHeaders(jwt)
@@ -857,25 +812,6 @@ app.post("/occAutoGetFile", function(req, res){
     });
 
 });
-
-//Return File
-app.post("/return", returnFileFNC);
-async function returnFileFNC(req, res){
-
-    console.log(req.body);
-    var FD = Users[req.body.token];
-    var rescueFile = req.body.rescueFile;
-    var rescueData = req.body.rescueData;
-
-    console.log(rescueFile);
-    console.log(rescueData);
-    console.log(FD.fileList);
-    console.log(FD.fileList.data[rescueFile]);
-
-    FD.fileList.data[rescueFile] = rescueData;
-    FD.fileList = await createJson( FD.fileList.path, FD.fileList.data, {encoding:"utf8", flag:"w"});
-    res.send({success: true, response: FD});
-}
 
 //Duplicate File
 app.post("/duplicate", duplicateFileFNC);
@@ -1241,3 +1177,72 @@ app.post("/deleteFileList", async function(req, res) {
         });
     }
 });
+
+function getDirectories(folderPath) {
+    return fs.readdirSync(folderPath).filter(function (file) {
+        var fullPath = path.join(folderPath, file);
+        return fs.statSync(fullPath).isDirectory();
+    }).map(function (file) {
+        var fullPath = path.join(folderPath, file);
+        var stat = fs.statSync(fullPath);
+
+        return {
+            name: file,
+            path: fullPath,
+            createdDate: stat.birthtime
+                .toISOString()
+                .replace("T", " ")
+                .substring(0, 19)
+        };
+    });
+}
+
+function getLiveFolderList(FD){
+    if(!FD.fileList){
+        FD.fileList = {};
+    }
+
+    FD.fileList.data = {};
+    if(!FD.occMode){
+        var directories = getDirectories(path.join(__dirname, "files"));
+        directories.forEach(function (directory) {
+            FD.fileList.data[directory.name] = {
+                user: "tuncay",
+                create: directory.createdDate,
+                files: {
+                    activeFile: directory.name,
+                    mainFolder: __dirname+"/files/"+directory.name,
+                    imgFolder: __dirname+"/files/"+directory.name+"/img",
+                    mainJson: {
+                        data: {
+                            fileName: directory.name,
+                            createTime: directory.createdDate,
+                            version: "1.0",
+                            slides: []
+                        },
+                        path: __dirname+"/files/"+directory.name+"/"+directory.name+".json"
+                    }
+                }
+            };
+        });
+
+        return directories;
+    }
+}
+
+function selectFileReturn(selectedFile){
+    return {
+        activeFile: selectedFile,
+        mainFolder: __dirname+"/files/"+selectedFile,
+        imgFolder: __dirname+"/files/"+selectedFile+"/img",
+        mainJson: {
+            data: {
+                fileName: selectedFile,
+                createTime: "2026-10-10 00:00:00",
+                version: "1.0",
+                slides: []
+            },
+            path: __dirname+"/files/"+selectedFile+"/"+selectedFile+".json"
+        }
+    }
+}
