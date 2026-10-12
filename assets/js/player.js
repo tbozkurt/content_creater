@@ -2287,7 +2287,8 @@ function PLAYER(){
                 });
 
             }else if(obj.id.includes("soundPlayer")){
-                var sceneID = index;
+                var sceneAudioPath = jsonV2.slides[index].audioPath;
+                var sceneID = (sceneAudioPath && sceneAudioPath.length) ? index : parseInt(SP.name.slice(1, SP.name.length));
                 var id = parseInt( obj.id.split("_")[1] );
                 SP.soundPlayer[id] = {sceneID:sceneID, id:id};
                 var soundPlayer = SP.soundPlayer[id];
@@ -5375,9 +5376,6 @@ function PLAYER(){
         });
 
         rightAnswerParse();
-        console.log(rightAnswer);
-
-        console.log( dropList );
 
         function dragControlFNC(drag, dragID, cloneID){
             var hitDrop = -1;
@@ -5771,10 +5769,7 @@ function PLAYER(){
             var tempAnswerList = convertRightAnswer(rightAnswer, "");
             var usedID=[];
 
-            console.log(rightAnswer);
-            console.log(tempAnswerList);
             for(var hitDrop in tempAnswerList){
-                console.log(hitDrop);
                 var allRightAnswer;
                 if(createDrag){
                     allRightAnswer = rightAnswer[hitDrop][0];
@@ -11272,14 +11267,18 @@ function PLAYER(){
 
         var isPaint = false;
         var lastLine;
+        var activeDrawGesture = null;
+        var ignoreMouseEventsUntil = 0;
         var mod = "cursor";
         var lastPointerPos = {x: 0, y: 0};
         var activeStageID;
         var defaultTextValue = "Lorem ipsum";
         var closeActiveTextEditor = null;
         var freeDrawObjectSeed = 0;
+        var copiedFreeDrawObjects = null;
+        var copiedFreeDrawPasteCount = 0;
 
-        var draw = {konva:[], textNodes:[], selectedText: null, selectedShape: null, objectPanel: null};
+        var draw = {konva:[], textNodes:[], selectedText: null, selectedShape: null, multiSelection: null, objectPanel: null};
 
         var settings = {
             /* Douglas Peucker Tolerans 0-10 */
@@ -11326,12 +11325,16 @@ function PLAYER(){
                 draw.rectBox = element.main.querySelector(".rectBox");
                 draw.circleBox = element.main.querySelector(".circleBox");
                 draw.triangleBox = element.main.querySelector(".triangleBox");
+                draw.arrowBox = element.main.querySelector(".arrowBox");
                 draw.dragBox = element.main.querySelector(".dragBox");
                 draw.dragBoxLabel = element.main.querySelector(".dragBoxLabel");
                 draw.fontSizeBox = element.main.querySelector(".fontSizeBox");
                 draw.colorPalette = element.main.querySelector(".color");
+                draw.layerBox = element.main.querySelector(".layerBox");
                 draw.cleanCanvas = element.main.querySelector(".clean");
                 draw.eraserBox = element.main.querySelector(".eraserBox");
+
+                createFreeDrawNavToggle();
 
                 if(element.data && element.data.textFontSize){
                     settings.textFontSize = normalizeTextFontSize(element.data.textFontSize);
@@ -11340,6 +11343,7 @@ function PLAYER(){
                 if(draw.cursorBox){
                     draw.cursorBox.addEventListener("click",function(){
                         mod = "cursor";
+                        clearMultiSelection();
                         setTextDragMode(false);
                         setTextEditMode(true);
                         setShapeEditMode(true);
@@ -11351,6 +11355,7 @@ function PLAYER(){
 
                 draw.drawBox.addEventListener("click",function(){
                     mod = "source-over";
+                    clearMultiSelection();
                     clearShapeSelection();
                     setTextDragMode(false);
                     setTextEditMode(false);
@@ -11363,6 +11368,7 @@ function PLAYER(){
                 if(draw.textBox){
                     draw.textBox.addEventListener("click",function(){
                         mod = "textDrag";
+                        clearMultiSelection();
                         clearShapeSelection();
                         setTextEditMode(true);
                         addText(getActiveDrawCanvas());
@@ -11377,6 +11383,7 @@ function PLAYER(){
                 bindShapeButton(draw.rectBox, "rect");
                 bindShapeButton(draw.circleBox, "circle");
                 bindShapeButton(draw.triangleBox, "triangle");
+                bindShapeButton(draw.arrowBox, "arrow");
 
                 if(draw.dragBox){
                     draw.dragBox.style.display = "none";
@@ -11437,9 +11444,102 @@ function PLAYER(){
                     draw.colorPalette.addEventListener("click", function(e){
                         e.stopPropagation();
                     });
+
+                    createFreeDrawLayerPanel();
                 }
             }
         });
+
+        function createFreeDrawNavToggle(){
+            if(!draw.navMain || draw.navToggle){
+                return;
+            }
+
+            var button = document.createElement("button");
+            var navStyle = draw.navMain.style;
+            var originalSize = {
+                width: navStyle.width,
+                height: navStyle.height,
+                overflow: navStyle.overflow
+            };
+
+            button.type = "button";
+            button.className = "freeDrawNavToggle";
+            button.title = "Paneli kapat";
+            button.innerText = "-";
+
+            Object.assign(button.style, {
+                position: "absolute",
+                left: "-8px",
+                top: "-8px",
+                width: "24px",
+                height: "24px",
+                border: "1px solid #183153",
+                borderRadius: "12px",
+                background: "#ffffff",
+                color: "#183153",
+                cursor: "pointer",
+                fontFamily: "Nunito, Arial, sans-serif",
+                fontSize: "18px",
+                fontWeight: "700",
+                lineHeight: "20px",
+                padding: 0,
+                textAlign: "center",
+                boxSizing: "border-box",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
+                zIndex: 10003
+            });
+
+            function setPanelOpen(isOpen){
+                var children = Array.prototype.slice.call(draw.navMain.children);
+
+                children.forEach(function(child){
+                    if(child === button){
+                        return;
+                    }
+
+                    if(child.dataset.freeDrawNavDisplay === undefined){
+                        child.dataset.freeDrawNavDisplay = child.style.display || "";
+                    }
+
+                    child.style.display = isOpen ? child.dataset.freeDrawNavDisplay : "none";
+                });
+
+                if(draw.layerPanel && draw.layerPanel.main){
+                    draw.layerPanel.main.style.display = "none";
+                }
+
+                hideObjectPanel();
+
+                navStyle.width = isOpen ? originalSize.width : "24px";
+                navStyle.height = isOpen ? originalSize.height : "24px";
+                navStyle.overflow = isOpen ? originalSize.overflow : "visible";
+                button.innerText = isOpen ? "-" : "+";
+                button.title = isOpen ? "Paneli kapat" : "Paneli aç";
+                draw.navCollapsed = !isOpen;
+            }
+
+            button.addEventListener("mousedown", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            button.addEventListener("touchstart", function(e){
+                e.stopPropagation();
+            });
+
+            button.addEventListener("click", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                setPanelOpen(draw.navCollapsed);
+            });
+
+            draw.navMain.appendChild(button);
+            draw.navToggle = {
+                button: button,
+                setOpen: setPanelOpen
+            };
+        }
 
         function getFreeDrawObjectId(prefix){
             freeDrawObjectSeed++;
@@ -11457,6 +11557,733 @@ function PLAYER(){
                     return draw.konva[i];
                 }
             }
+        }
+
+        function getSelectableObjects(DX){
+            if(!DX || !DX.layer){
+                return [];
+            }
+
+            return DX.layer.getChildren(function(node){
+                return node.attrs && node.attrs.freeDrawObjectType;
+            });
+        }
+
+        function getObjectLabel(node, listIndex){
+            var type = getObjectType(node);
+            var labels = {
+                line: "Çizgi",
+                rect: "Dikdörtgen",
+                circle: "Daire",
+                triangle: "Üçgen",
+                arrow: "Ok",
+                text: "Metin"
+            };
+            var label = labels[type] || "Obje";
+
+            if(type === "text" && node.text){
+                var text = node.text().trim();
+                if(text){
+                    label += ": " + text.slice(0, 18);
+                }
+            }
+
+            return listIndex + " - " + label;
+        }
+
+        function getSelectedLayerObjectId(){
+            var selected = getSelectedFreeDrawNodes();
+            if(selected.length === 1 && selected[0].attrs){
+                return selected[0].attrs.freeDrawObjectId;
+            }
+
+            return null;
+        }
+
+        function moveLayerControlsToTop(DX){
+            if(!DX){
+                return;
+            }
+
+            if(DX.selectionBox){
+                DX.selectionBox.moveToTop();
+            }
+            if(DX.textTransformer){
+                DX.textTransformer.moveToTop();
+            }
+            if(DX.shapeTransformer){
+                DX.shapeTransformer.moveToTop();
+            }
+            if(DX.multiSelectionTransformer){
+                DX.multiSelectionTransformer.moveToTop();
+            }
+            if(DX.dragSelectionRect){
+                DX.dragSelectionRect.moveToTop();
+            }
+        }
+
+        function selectFreeDrawLayerObject(DX, node){
+            if(!DX || !node || !node.getStage()){
+                return;
+            }
+
+            mod = "cursor";
+            setTextEditMode(true);
+            setShapeEditMode(true);
+            clearMultiSelection();
+            if(getObjectType(node) === "text"){
+                selectTextNode(DX, node);
+            }else{
+                selectShape(DX, node);
+            }
+            mouseCursorStatus();
+            updateFreeDrawLayerList();
+        }
+
+        function moveFreeDrawLayerObject(DX, node, direction){
+            if(!DX || !node || !node.getStage()){
+                return;
+            }
+
+            if(direction === "up"){
+                node.moveUp();
+            }else{
+                node.moveDown();
+            }
+
+            moveLayerControlsToTop(DX);
+            activeStageID = DX.id;
+            DX.layer.batchDraw();
+            getSceneBase64();
+            updateFreeDrawLayerList();
+        }
+
+        function createFreeDrawLayerPanel(){
+            if(!draw.navMain || !draw.layerBox || draw.layerPanel){
+                return;
+            }
+
+            var button = draw.layerBox;
+            var panel = document.createElement("div");
+            var header = document.createElement("div");
+            var headerTitle = document.createElement("div");
+            var closeBtn = document.createElement("button");
+            var list = document.createElement("div");
+            var panelLeft = parseInt(button.style.left, 10) || 0;
+
+            button.title = "Katmanlar";
+            button.style.cursor = "pointer";
+
+            panel.className = "freeDrawLayerPanel";
+            Object.assign(panel.style, {
+                position: "absolute",
+                left: panelLeft + "px",
+                bottom: "72px",
+                width: "210px",
+                maxHeight: "260px",
+                display: "none",
+                background: "#ffffff",
+                border: "1px solid #d7d7d7",
+                borderRadius: "8px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
+                zIndex: 10002,
+                overflow: "hidden",
+                fontFamily: "Nunito, Arial, sans-serif",
+                boxSizing: "border-box"
+            });
+
+            Object.assign(header.style, {
+                height: "34px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0 10px",
+                borderBottom: "1px solid #e5e5e5",
+                boxSizing: "border-box"
+            });
+
+            headerTitle.innerText = "Katmanlar";
+            Object.assign(headerTitle.style, {
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#183153"
+            });
+
+            closeBtn.type = "button";
+            closeBtn.title = "Kapat";
+            closeBtn.innerHTML = "&times;";
+            Object.assign(closeBtn.style, {
+                width: "24px",
+                height: "24px",
+                border: "none",
+                borderRadius: "4px",
+                background: "transparent",
+                color: "#183153",
+                cursor: "pointer",
+                fontSize: "20px",
+                lineHeight: "22px",
+                padding: 0
+            });
+
+            list.className = "freeDrawLayerList";
+            Object.assign(list.style, {
+                maxHeight: "226px",
+                overflowY: "auto",
+                padding: "6px",
+                boxSizing: "border-box"
+            });
+
+            header.appendChild(headerTitle);
+            header.appendChild(closeBtn);
+            panel.appendChild(header);
+            panel.appendChild(list);
+            draw.navMain.appendChild(panel);
+
+            button.addEventListener("click", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                panel.style.display = panel.style.display === "none" ? "block" : "none";
+                updateFreeDrawLayerList();
+            });
+
+            closeBtn.addEventListener("click", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                panel.style.display = "none";
+            });
+
+            panel.addEventListener("mousedown", function(e){
+                e.stopPropagation();
+            });
+            panel.addEventListener("touchstart", function(e){
+                e.stopPropagation();
+            });
+            panel.addEventListener("click", function(e){
+                e.stopPropagation();
+            });
+
+            draw.layerPanel = {
+                button: button,
+                main: panel,
+                list: list
+            };
+        }
+
+        function updateFreeDrawLayerList(){
+            if(!draw.layerPanel || !draw.layerPanel.list){
+                return;
+            }
+
+            var DX = getActiveDrawCanvas();
+            var list = draw.layerPanel.list;
+            var selectedId = getSelectedLayerObjectId();
+            var objects = DX ? getSelectableObjects(DX) : [];
+            var topDownObjects = objects.slice().reverse();
+
+            list.innerHTML = "";
+
+            if(!topDownObjects.length){
+                var empty = document.createElement("div");
+                empty.innerText = "Obje yok";
+                Object.assign(empty.style, {
+                    padding: "10px",
+                    color: "#777777",
+                    fontSize: "13px",
+                    textAlign: "center"
+                });
+                list.appendChild(empty);
+                return;
+            }
+
+            topDownObjects.forEach(function(node, index){
+                var row = document.createElement("div");
+                var name = document.createElement("button");
+                var upBtn = document.createElement("button");
+                var downBtn = document.createElement("button");
+                var isSelected = node.attrs.freeDrawObjectId === selectedId;
+
+                row.className = "freeDrawLayerRow";
+                Object.assign(row.style, {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    minHeight: "32px",
+                    marginBottom: "4px",
+                    padding: "3px",
+                    borderRadius: "6px",
+                    background: isSelected ? "#e9f5ff" : "#f7f7f7",
+                    border: isSelected ? "1px solid #00a1ff" : "1px solid transparent",
+                    boxSizing: "border-box"
+                });
+
+                name.type = "button";
+                name.title = getObjectLabel(node, objects.length - index);
+                name.innerText = getObjectLabel(node, objects.length - index);
+                Object.assign(name.style, {
+                    flex: "1",
+                    minWidth: 0,
+                    height: "26px",
+                    border: "none",
+                    background: "transparent",
+                    color: "#183153",
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    textAlign: "left",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                    padding: "0 4px"
+                });
+
+                [upBtn, downBtn].forEach(function(btn){
+                    btn.type = "button";
+                    Object.assign(btn.style, {
+                        width: "26px",
+                        height: "26px",
+                        border: "none",
+                        borderRadius: "5px",
+                        background: "#ffffff",
+                        cursor: "pointer",
+                        padding: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                    });
+                });
+
+                upBtn.title = "Yukarı al";
+                upBtn.innerHTML = '<img src="assets/img/arrowUP.png" alt="Yukarı">';
+                downBtn.title = "Aşağı al";
+                downBtn.innerHTML = '<img src="assets/img/arrowDW.png" alt="Aşağı">';
+                Array.prototype.forEach.call([upBtn.querySelector("img"), downBtn.querySelector("img")], function(img){
+                    Object.assign(img.style, {
+                        width: "14px",
+                        height: "14px",
+                        pointerEvents: "none",
+                        display: "block"
+                    });
+                });
+
+                name.addEventListener("click", function(){
+                    selectFreeDrawLayerObject(DX, node);
+                });
+                upBtn.addEventListener("click", function(e){
+                    e.stopPropagation();
+                    moveFreeDrawLayerObject(DX, node, "up");
+                });
+                downBtn.addEventListener("click", function(e){
+                    e.stopPropagation();
+                    moveFreeDrawLayerObject(DX, node, "down");
+                });
+
+                row.appendChild(name);
+                row.appendChild(upBtn);
+                row.appendChild(downBtn);
+                list.appendChild(row);
+            });
+        }
+
+        function normalizeClientRect(rect){
+            return {
+                x: Math.min(rect.x, rect.x + rect.width),
+                y: Math.min(rect.y, rect.y + rect.height),
+                width: Math.abs(rect.width),
+                height: Math.abs(rect.height)
+            };
+        }
+
+        function rectIntersectsRect(first, second){
+            return !(
+                first.x + first.width < second.x ||
+                first.x > second.x + second.width ||
+                first.y + first.height < second.y ||
+                first.y > second.y + second.height
+            );
+        }
+
+        function isMultiSelected(node){
+            return !!(
+                draw.multiSelection &&
+                draw.multiSelection.nodes &&
+                draw.multiSelection.nodes.indexOf(node) !== -1
+            );
+        }
+
+        function clearCompletedMultiObjectDrag(){
+            if(draw.multiSelection){
+                draw.multiSelection.completedDrag = null;
+            }
+        }
+
+        function restoreMultiSelectionFrame(DX){
+            if(!draw.multiSelection || draw.multiSelection.canvas !== DX || !draw.multiSelection.nodes.length){
+                return false;
+            }
+
+            clearTextSelection();
+            clearShapeSelection();
+            var transformer = getMultiSelectionTransformer(DX);
+            var rotation = transformer.rotation();
+
+            transformer.nodes(draw.multiSelection.nodes);
+            transformer.rotation(rotation);
+            transformer.forceUpdate();
+            transformer.moveToTop();
+            DX.layer.batchDraw();
+            return true;
+        }
+
+        function setMultiSelectionTransformerNodes(DX, nodes){
+            if(!DX.multiSelectionTransformer){
+                return;
+            }
+
+            DX.multiSelectionTransformer.nodes(nodes || []);
+            if(nodes && nodes.length){
+                DX.multiSelectionTransformer.moveToTop();
+            }
+        }
+
+        function isCompletedMultiObjectDrag(DX, node){
+            if(
+                !draw.multiSelection ||
+                !draw.multiSelection.completedDrag ||
+                draw.multiSelection.completedDrag.canvas !== DX ||
+                draw.multiSelection.completedDrag.nodes.indexOf(node) === -1
+            ){
+                return false;
+            }
+
+            restoreMultiSelectionFrame(DX);
+            return true;
+        }
+
+        function drawRotateAnchorIcon(anchor){
+            if(!anchor.hasName("rotater")){
+                return;
+            }
+
+            anchor.width(22);
+            anchor.height(22);
+            anchor.offsetX(11);
+            anchor.offsetY(11);
+            anchor.cornerRadius(11);
+            anchor.fill("#ffffff");
+            anchor.stroke("#00a1ff");
+            anchor.strokeWidth(1);
+            anchor.sceneFunc(function(context, shape){
+                var width = shape.width();
+                var height = shape.height();
+
+                context.beginPath();
+                context.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, Math.PI * 2, false);
+                context.closePath();
+                context.fillStrokeShape(shape);
+
+                context.save();
+                context.setAttr("fillStyle", "#000000");
+                context.setAttr("font", "22px Arial, sans-serif");
+                context.setAttr("textAlign", "center");
+                context.setAttr("textBaseline", "middle");
+                context.fillText("↻", width / 2, height / 2);
+                context.restore();
+            });
+        }
+
+        function getMultiSelectionTransformer(DX){
+            if(!DX.multiSelectionTransformer){
+                DX.multiSelectionTransformer = new Konva.Transformer({
+                    rotateEnabled: true,
+                    resizeEnabled: false,
+                    draggable: false,
+                    enabledAnchors: [],
+                    rotateAnchorOffset: 35,
+                    borderStroke: "#00a1ff",
+                    borderStrokeWidth: 1,
+                    borderDash: [6, 4],
+                    padding: 4,
+                    ignoreStroke: true,
+                    anchorStyleFunc: drawRotateAnchorIcon
+                });
+                DX.multiSelectionTransformer.on("transformend", function(){
+                    if(
+                        draw.multiSelection &&
+                        draw.multiSelection.canvas === DX &&
+                        draw.multiSelection.nodes &&
+                        draw.multiSelection.nodes.length
+                    ){
+                        activeStageID = DX.id;
+                        var transformer = DX.multiSelectionTransformer;
+                        var rotation = transformer.rotation();
+
+                        transformer.nodes(draw.multiSelection.nodes);
+                        transformer.rotation(rotation);
+                        transformer.forceUpdate();
+                        transformer.moveToTop();
+                        DX.layer.batchDraw();
+                        getSceneBase64();
+                    }
+                });
+                DX.layer.add(DX.multiSelectionTransformer);
+            }
+
+            return DX.multiSelectionTransformer;
+        }
+
+        function clearMultiSelection(){
+            draw.multiSelection = null;
+            draw.konva.map(function(konva){
+                if(!konva || !konva.layer){
+                    return;
+                }
+
+                if(konva.multiSelectionTransformer){
+                    konva.multiSelectionTransformer.nodes([]);
+                }
+
+                if(konva.dragSelectionRect){
+                    konva.dragSelectionRect.hide();
+                }
+
+                konva.selectionDrag = null;
+                konva.layer.batchDraw();
+            });
+        }
+
+        function selectMultipleObjects(DX, nodes){
+            clearTextSelection();
+            clearShapeSelection();
+            clearMultiSelection();
+
+            nodes = (nodes || []).filter(function(node){
+                return node && node.getStage() === DX.stage;
+            });
+
+            if(nodes.length < 2){
+                if(nodes.length === 1){
+                    if(getObjectType(nodes[0]) === "text"){
+                        selectTextNode(DX, nodes[0]);
+                    }else{
+                        selectShape(DX, nodes[0]);
+                    }
+                }
+                return;
+            }
+
+            draw.multiSelection = {
+                canvas: DX,
+                nodes: nodes,
+                drag: null,
+                completedDrag: null
+            };
+            activeStageID = DX.id;
+            getMultiSelectionTransformer(DX).nodes(nodes).moveToTop();
+            DX.multiSelectionTransformer.moveToTop();
+            hideObjectPanel();
+            setFontSizeInputStatus(false);
+            DX.layer.batchDraw();
+        }
+
+        function beginMultiObjectDrag(DX, node){
+            if(!isMultiSelected(node)){
+                return false;
+            }
+
+            var selection = draw.multiSelection;
+            if(selection.drag){
+                return true;
+            }
+
+            selection.canvas = DX;
+            selection.completedDrag = null;
+            selection.drag = {
+                node: node,
+                finishing: false,
+                finished: false,
+                startX: node.x(),
+                startY: node.y(),
+                positions: selection.nodes.map(function(selectionNode){
+                    return {
+                        node: selectionNode,
+                        x: selectionNode.x(),
+                        y: selectionNode.y()
+                    };
+                })
+            };
+
+            clearTextSelection();
+            clearShapeSelection();
+            getMultiSelectionTransformer(DX);
+            setMultiSelectionTransformerNodes(DX, []);
+            DX.layer.batchDraw();
+            return true;
+        }
+
+        function applyMultiObjectDrag(DX, drag){
+            var dragNode = drag.node;
+            var dx = dragNode.x() - drag.startX;
+            var dy = dragNode.y() - drag.startY;
+
+            drag.positions.forEach(function(item){
+                if(item.node === dragNode || !item.node.getStage()){
+                    return;
+                }
+
+                item.node.position({
+                    x: item.x + dx,
+                    y: item.y + dy
+                });
+            });
+
+            if(DX.multiSelectionTransformer && DX.multiSelectionTransformer.forceUpdate){
+                DX.multiSelectionTransformer.forceUpdate();
+            }
+            DX.layer.batchDraw();
+        }
+
+        function updateMultiObjectDrag(DX, node){
+            if(!draw.multiSelection || !draw.multiSelection.drag){
+                return false;
+            }
+
+            var drag = draw.multiSelection.drag;
+            if(drag.node !== node){
+                applyMultiObjectDrag(DX, drag);
+                return isMultiSelected(node);
+            }
+
+            applyMultiObjectDrag(DX, drag);
+            return true;
+        }
+
+        function finishMultiObjectDrag(DX, node){
+            if(!draw.multiSelection || !draw.multiSelection.drag){
+                return false;
+            }
+
+            var selection = draw.multiSelection;
+            var drag = selection.drag;
+            if(drag.node !== node){
+                applyMultiObjectDrag(DX, drag);
+                return isMultiSelected(node);
+            }
+
+            if(drag.finishing || drag.finished){
+                return true;
+            }
+
+            drag.finishing = true;
+            updateMultiObjectDrag(DX, node);
+            drag.finished = true;
+            selection.completedDrag = {
+                canvas: DX,
+                nodes: selection.nodes.slice(),
+                node: node
+            };
+            selection.drag = null;
+            activeStageID = DX.id;
+            restoreMultiSelectionFrame(DX);
+            getSceneBase64();
+            return true;
+        }
+
+        function getDragSelectionRect(DX){
+            if(!DX.dragSelectionRect){
+                DX.dragSelectionRect = new Konva.Rect({
+                    fill: "rgba(0, 161, 255, 0.18)",
+                    stroke: "#00a1ff",
+                    strokeWidth: 1,
+                    dash: [5, 4],
+                    visible: false,
+                    listening: false,
+                    perfectDrawEnabled: false
+                });
+                DX.layer.add(DX.dragSelectionRect);
+            }
+
+            return DX.dragSelectionRect;
+        }
+
+        function startDragSelection(DX, pos){
+            DX.selectionDrag = {
+                startX: pos.x,
+                startY: pos.y,
+                moved: false
+            };
+            getDragSelectionRect(DX).setAttrs({
+                x: pos.x,
+                y: pos.y,
+                width: 0,
+                height: 0,
+                visible: true
+            });
+            DX.dragSelectionRect.moveToTop();
+            DX.layer.batchDraw();
+        }
+
+        function updateDragSelection(DX){
+            if(!DX.selectionDrag){
+                return false;
+            }
+
+            var pos = DX.stage.getPointerPosition();
+            if(!pos){
+                return false;
+            }
+
+            var drag = DX.selectionDrag;
+            var rect = normalizeClientRect({
+                x: drag.startX,
+                y: drag.startY,
+                width: pos.x - drag.startX,
+                height: pos.y - drag.startY
+            });
+
+            if(rect.width > 2 || rect.height > 2){
+                drag.moved = true;
+            }
+
+            getDragSelectionRect(DX).setAttrs(rect);
+            DX.dragSelectionRect.show();
+            DX.dragSelectionRect.moveToTop();
+            DX.layer.batchDraw();
+            return true;
+        }
+
+        function finishDragSelection(DX){
+            if(!DX.selectionDrag){
+                return false;
+            }
+
+            updateDragSelection(DX);
+
+            var drag = DX.selectionDrag;
+            var selectionRect = normalizeClientRect(getDragSelectionRect(DX).getClientRect({relativeTo: DX.stage}));
+            var selectedNodes = [];
+
+            DX.selectionDrag = null;
+            if(DX.dragSelectionRect){
+                DX.dragSelectionRect.hide();
+            }
+
+            if(drag.moved && selectionRect.width > 2 && selectionRect.height > 2){
+                selectedNodes = getSelectableObjects(DX).filter(function(node){
+                    var nodeRect = normalizeClientRect(node.getClientRect({relativeTo: DX.stage}));
+                    return rectIntersectsRect(selectionRect, nodeRect);
+                });
+            }
+
+            if(selectedNodes.length){
+                selectMultipleObjects(DX, selectedNodes);
+            }else{
+                clearTextSelection();
+                clearShapeSelection();
+                clearMultiSelection();
+                DX.layer.batchDraw();
+            }
+
+            return true;
         }
 
         function getNodeCommonData(node){
@@ -11492,6 +12319,13 @@ function PLAYER(){
                 if(data.type === "triangle"){
                     data.sides = node.sides();
                 }
+            }else if(data.type === "arrow"){
+                data.points = node.points();
+                data.pointerLength = node.pointerLength();
+                data.pointerWidth = node.pointerWidth();
+                data.fill = node.fill();
+                data.stroke = node.stroke();
+                data.strokeWidth = node.strokeWidth();
             }else if(data.type === "text"){
                 data.text = node.text();
                 data.fontSize = node.fontSize();
@@ -11513,6 +12347,116 @@ function PLAYER(){
             });
 
             return objects;
+        }
+
+        function cloneFreeDrawObjectData(data){
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        function moveFreeDrawNodesBy(nodes, dx, dy){
+            (nodes || []).forEach(function(node){
+                if(!node || !node.getStage()){
+                    return;
+                }
+
+                node.position({
+                    x: node.x() + dx,
+                    y: node.y() + dy
+                });
+            });
+        }
+
+        function getSelectedFreeDrawNodes(){
+            if(draw.multiSelection && draw.multiSelection.nodes){
+                return draw.multiSelection.nodes.filter(function(node){
+                    return node && node.getStage();
+                });
+            }
+
+            var selectedObject = draw.selectedShape || draw.selectedText;
+            if(selectedObject && selectedObject.getStage()){
+                return [selectedObject];
+            }
+
+            return [];
+        }
+
+        function copySelectedFreeDrawObjects(){
+            var selectedNodes = getSelectedFreeDrawNodes();
+            if(!selectedNodes.length){
+                return false;
+            }
+
+            var DX = getObjectCanvas(selectedNodes[0]);
+            if(!DX){
+                return false;
+            }
+
+            copiedFreeDrawObjects = {
+                canvasID: DX.id,
+                objects: selectedNodes.map(function(node){
+                    return cloneFreeDrawObjectData(serializeFreeDrawObject(node));
+                })
+            };
+            copiedFreeDrawPasteCount = 0;
+            return true;
+        }
+
+        function getFreeDrawPasteCanvas(){
+            if(
+                copiedFreeDrawObjects &&
+                copiedFreeDrawObjects.canvasID !== undefined &&
+                draw.konva[copiedFreeDrawObjects.canvasID]
+            ){
+                return draw.konva[copiedFreeDrawObjects.canvasID];
+            }
+
+            return getActiveDrawCanvas();
+        }
+
+        function pasteCopiedFreeDrawObjects(){
+            if(!copiedFreeDrawObjects || !copiedFreeDrawObjects.objects || !copiedFreeDrawObjects.objects.length){
+                return false;
+            }
+
+            var DX = getFreeDrawPasteCanvas();
+            if(!DX){
+                return false;
+            }
+
+            copiedFreeDrawPasteCount++;
+            var offset = 18 * copiedFreeDrawPasteCount;
+            var newNodes = [];
+
+            copiedFreeDrawObjects.objects.forEach(function(objectData){
+                var copiedData = cloneFreeDrawObjectData(objectData);
+                copiedData.id = getFreeDrawObjectId("freeDrawCopy");
+
+                var node = addFreeDrawObjectFromData(DX, copiedData);
+                if(node){
+                    newNodes.push(node);
+                }
+            });
+
+            if(!newNodes.length){
+                return false;
+            }
+
+            moveFreeDrawNodesBy(newNodes, offset, offset);
+            DX.layer.batchDraw();
+            if(newNodes.length > 1){
+                selectMultipleObjects(DX, newNodes);
+            }else if(getObjectType(newNodes[0]) === "text"){
+                clearMultiSelection();
+                selectTextNode(DX, newNodes[0]);
+            }else{
+                clearMultiSelection();
+                selectShape(DX, newNodes[0]);
+            }
+
+            activeStageID = DX.id;
+            getSceneBase64();
+            return true;
         }
 
         function attachEditableObjectEvents(DX, node){
@@ -11538,12 +12482,25 @@ function PLAYER(){
                     return;
                 }
 
+                clearCompletedMultiObjectDrag();
                 isPaint = false;
-                selectShape(DX, node);
+                if(!isMultiSelected(node)){
+                    clearMultiSelection();
+                    selectShape(DX, node);
+                }
             });
 
-            node.on("click tap", function(){
+            node.on("click tap", function(e){
                 if(mod === "cursor"){
+                    if(isCompletedMultiObjectDrag(DX, node)){
+                        if(e && e.evt){
+                            e.evt.preventDefault();
+                            e.evt.stopPropagation();
+                        }
+                        return;
+                    }
+
+                    clearMultiSelection();
                     selectShape(DX, node);
                 }
             });
@@ -11554,14 +12511,37 @@ function PLAYER(){
                 }
 
                 isPaint = false;
-                selectShape(DX, node);
+                if(!beginMultiObjectDrag(DX, node)){
+                    clearMultiSelection();
+                    selectShape(DX, node);
+                }
             });
 
-            node.on("dragend transformend", function(){
+            node.on("dragmove", function(){
+                if(updateMultiObjectDrag(DX, node)){
+                    return;
+                }
+
+                refreshObjectPanel();
+            });
+
+            node.on("dragend transformend", function(e){
+                if(e && e.type === "transformend" && isMultiSelected(node)){
+                    return;
+                }
+
+                if(finishMultiObjectDrag(DX, node)){
+                    return;
+                }
+
+                if(isCompletedMultiObjectDrag(DX, node)){
+                    return;
+                }
+
                 persistObjectChange();
             });
 
-            node.on("dragmove transform", refreshObjectPanel);
+            node.on("transform", refreshObjectPanel);
         }
 
         function createLineNode(DX, data){
@@ -11616,6 +12596,19 @@ function PLAYER(){
                 shape = new Konva.Circle(Object.assign({radius: data.radius || 36}, baseAttrs));
             }else if(data.type === "triangle"){
                 shape = new Konva.RegularPolygon(Object.assign({sides: 3, radius: data.radius || 42}, baseAttrs));
+            }else if(data.type === "arrow"){
+                shape = new Konva.Arrow(Object.assign({
+                    points: data.points || [0, 35, 86, 35],
+                    pointerLength: data.pointerLength || 18,
+                    pointerWidth: data.pointerWidth || 18,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    hitStrokeWidth: Math.max((data.strokeWidth || 6) + 12, 18)
+                }, baseAttrs, {
+                    fill: data.fill || settings.brushColor,
+                    stroke: data.stroke || data.fill || settings.brushColor,
+                    strokeWidth: data.strokeWidth || 6
+                }));
             }else{
                 shape = new Konva.Rect(Object.assign({width: data.width || 70, height: data.height || 70}, baseAttrs));
             }
@@ -11626,22 +12619,23 @@ function PLAYER(){
 
         function addFreeDrawObjectFromData(DX, data){
             if(!data || !data.type){
-                return;
+                return null;
             }
 
             var node;
             if(data.type === "line"){
                 node = createLineNode(DX, data);
-            }else if(data.type === "rect" || data.type === "circle" || data.type === "triangle"){
+            }else if(data.type === "rect" || data.type === "circle" || data.type === "triangle" || data.type === "arrow"){
                 node = createShapeNode(DX, data);
             }else if(data.type === "text"){
-                addText(DX, {x: data.x || 0, y: data.y || 0}, data, true);
-                return;
+                return addText(DX, {x: data.x || 0, y: data.y || 0}, data, true);
             }
 
             if(node){
                 DX.layer.add(node);
             }
+
+            return node || null;
         }
 
         function changeDrawColor(color){
@@ -11673,6 +12667,7 @@ function PLAYER(){
 
             eraserBox.addEventListener("click", function(){
                 mod = "destination-out";
+                clearMultiSelection();
                 clearShapeSelection();
                 setTextDragMode(false);
                 setTextEditMode(false);
@@ -11690,6 +12685,7 @@ function PLAYER(){
 
             button.addEventListener("click", function(){
                 mod = "cursor";
+                clearMultiSelection();
                 clearTextSelection();
                 setTextEditMode(true);
                 addShape(getActiveDrawCanvas(), shapeType);
@@ -11720,37 +12716,7 @@ function PLAYER(){
                     keepRatio: false,
                     rotateAnchorOffset: 35,
                     enabledAnchors: ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'],
-                    anchorStyleFunc: function(anchor){
-                        if(!anchor.hasName("rotater")){
-                            return;
-                        }
-
-                        anchor.width(22);
-                        anchor.height(22);
-                        anchor.offsetX(11);
-                        anchor.offsetY(11);
-                        anchor.cornerRadius(11);
-                        anchor.fill("#ffffff");
-                        anchor.stroke("#00a1ff");
-                        anchor.strokeWidth(1);
-                        anchor.sceneFunc(function(context, shape){
-                            var width = shape.width();
-                            var height = shape.height();
-
-                            context.beginPath();
-                            context.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, Math.PI * 2, false);
-                            context.closePath();
-                            context.fillStrokeShape(shape);
-
-                            context.save();
-                            context.setAttr("fillStyle", "#000000");
-                            context.setAttr("font", "22px Arial, sans-serif");
-                            context.setAttr("textAlign", "center");
-                            context.setAttr("textBaseline", "middle");
-                            context.fillText("↻", width / 2, height / 2 );
-                            context.restore();
-                        });
-                    }
+                    anchorStyleFunc: drawRotateAnchorIcon
                 });
                 DX.shapeTransformer.on("transformend", function(){
                     if(draw.selectedShape && draw.selectedShape.getStage()){
@@ -11775,9 +12741,9 @@ function PLAYER(){
             activeStageID = DX.id;
             clearTextSelection();
             getShapeTransformer(DX).nodes([shape]).moveToTop();
-            shape.moveToTop();
             DX.shapeTransformer.moveToTop();
             DX.layer.batchDraw();
+            updateFreeDrawLayerList();
             // silgi iconu
             //showObjectPanel(shape);
             hideObjectPanel();
@@ -12084,6 +13050,7 @@ function PLAYER(){
                 "rect",
                 "circle",
                 "triangle",
+                "arrow",
                 "text"
             ];
 
@@ -12116,11 +13083,113 @@ function PLAYER(){
             return true;
         }
 
-        function deleteSelectedShape(e){
-            if(e.key !== "Delete" && e.key !== "Backspace"){
-                return;
+        function deleteSelectedObjects(selectedObjects){
+            var deletableTypes = [
+                "line",
+                "rect",
+                "circle",
+                "triangle",
+                "arrow",
+                "text"
+            ];
+            var nodes = (selectedObjects || []).filter(function(node){
+                return (
+                    node &&
+                    node.getStage() &&
+                    deletableTypes.indexOf(getObjectType(node)) !== -1
+                );
+            });
+
+            if(!nodes.length){
+                hideObjectPanel();
+                return false;
             }
 
+            var DX = getObjectCanvas(nodes[0]);
+
+            if(!DX){
+                return false;
+            }
+
+            nodes.forEach(function(node){
+                node.destroy();
+            });
+
+            draw.textNodes = draw.textNodes.filter(function(textNode){
+                return textNode.getStage();
+            });
+
+            clearTextSelection();
+            clearShapeSelection();
+            clearMultiSelection();
+            activeStageID = DX.id;
+
+            DX.layer.batchDraw();
+            getSceneBase64();
+            return true;
+        }
+
+        function getArrowMoveDelta(e){
+            var step = e.shiftKey ? 10 : 1;
+
+            if(e.key === "ArrowLeft"){
+                return {x: -step, y: 0};
+            }else if(e.key === "ArrowRight"){
+                return {x: step, y: 0};
+            }else if(e.key === "ArrowUp"){
+                return {x: 0, y: -step};
+            }else if(e.key === "ArrowDown"){
+                return {x: 0, y: step};
+            }
+
+            return null;
+        }
+
+        function moveSelectedObjectsWithKeyboard(e){
+            var delta = getArrowMoveDelta(e);
+
+            if(!delta){
+                return false;
+            }
+
+            var selectedObjects = getSelectedFreeDrawNodes();
+
+            if(!selectedObjects.length){
+                return false;
+            }
+
+            var DX = getObjectCanvas(selectedObjects[0]);
+
+            if(!DX){
+                return false;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            moveFreeDrawNodesBy(selectedObjects, delta.x, delta.y);
+            activeStageID = DX.id;
+
+            if(draw.multiSelection && draw.multiSelection.nodes && draw.multiSelection.nodes.length){
+                restoreMultiSelectionFrame(DX);
+            }else if(draw.selectedText && draw.selectedText.getStage()){
+                updateTextSelection();
+            }else if(draw.selectedShape && draw.selectedShape.getStage()){
+                if(DX.shapeTransformer && DX.shapeTransformer.forceUpdate){
+                    DX.shapeTransformer.forceUpdate();
+                    DX.shapeTransformer.moveToTop();
+                }
+                updateObjectPanelPosition(draw.selectedShape);
+                DX.layer.batchDraw();
+            }else{
+                DX.layer.batchDraw();
+            }
+
+            getSceneBase64();
+            return true;
+        }
+
+        function deleteSelectedShape(e){
             var activeElement = document.activeElement;
 
             if(
@@ -12134,16 +13203,51 @@ function PLAYER(){
                 return;
             }
 
-            var selectedObject =
-                draw.selectedShape ||
-                draw.selectedText;
+            var isMetaShortcut = e.ctrlKey || e.metaKey;
+            var key = e.key ? e.key.toLowerCase() : "";
 
-            if(!selectedObject || !selectedObject.getStage()){
+            if(moveSelectedObjectsWithKeyboard(e)){
+                return;
+            }
+
+            if(isMetaShortcut && key === "c"){
+                if(copySelectedFreeDrawObjects()){
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return;
+            }
+
+            if(isMetaShortcut && key === "v"){
+                if(pasteCopiedFreeDrawObjects()){
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return;
+            }
+
+            if(e.key === "Escape"){
+                if(draw.multiSelection || draw.selectedShape || draw.selectedText){
+                    e.preventDefault();
+                    clearTextSelection();
+                    clearShapeSelection();
+                    clearMultiSelection();
+                }
+                return;
+            }
+
+            if(e.key !== "Delete" && e.key !== "Backspace"){
+                return;
+            }
+
+            var selectedObjects = getSelectedFreeDrawNodes();
+
+            if(!selectedObjects.length){
                 return;
             }
 
             e.preventDefault();
-            deleteSelectedObject(selectedObject);
+            deleteSelectedObjects(selectedObjects);
         }
 
         document.addEventListener("keydown", deleteSelectedShape);
@@ -12192,16 +13296,25 @@ function PLAYER(){
 
             activeStageID = DX.id;
             var pos = getNextShapePosition(DX, 80, 80);
+            var shapeX = shapeType === "rect" ? pos.x + 5 : pos.x + 40;
+            var shapeY = shapeType === "triangle" ? pos.y + 43 : (shapeType === "rect" ? pos.y + 5 : pos.y + 40);
+            if(shapeType === "arrow"){
+                shapeX = pos.x;
+                shapeY = pos.y + 5;
+            }
             var shape = createShapeNode(DX, {
                 type: shapeType,
-                x: shapeType === "rect" ? pos.x + 5 : pos.x + 40,
-                y: shapeType === "triangle" ? pos.y + 43 : (shapeType === "rect" ? pos.y + 5 : pos.y + 40),
+                x: shapeX,
+                y: shapeY,
+                points: [0, 35, 86, 35],
+                pointerLength: 18,
+                pointerWidth: 18,
                 width: 70,
                 height: 70,
                 radius: shapeType === "triangle" ? 42 : 36,
                 fill: settings.brushColor,
                 stroke: settings.brushColor,
-                strokeWidth: 0
+                strokeWidth: shapeType === "arrow" ? 6 : 0
             });
 
             DX.layer.add(shape);
@@ -12225,7 +13338,6 @@ function PLAYER(){
             dy = p.y - y;
             return dx * dx + dy * dy;
         }
-
 
         function simplifyStep(points, first, last, sqTolerance, simplified) {
             var maxSqDist = sqTolerance, index;
@@ -12259,12 +13371,70 @@ function PLAYER(){
             return simplified;
         }
 
-        /* ---------------------------- */
-
         function getDist(p1, p2) {
             return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
         }
 
+        function getFreeDrawNativeEvent(e){
+            return e && e.evt ? e.evt : e;
+        }
+
+        function isFreeDrawMouseCompatibilityEvent(e){
+            var nativeEvent = getFreeDrawNativeEvent(e);
+            return !!(nativeEvent && nativeEvent.type && nativeEvent.type.indexOf("mouse") === 0);
+        }
+
+        function suppressFreeDrawMouseCompatibilityEvents(e){
+            var nativeEvent = getFreeDrawNativeEvent(e);
+            if(!nativeEvent || !nativeEvent.type){
+                return;
+            }
+
+            if(
+                nativeEvent.type.indexOf("touch") === 0 ||
+                nativeEvent.type.indexOf("pointer") === 0
+            ){
+                ignoreMouseEventsUntil = Date.now() + 700;
+            }
+        }
+
+        function shouldIgnoreFreeDrawStartEvent(e){
+            if(activeDrawGesture){
+                return true;
+            }
+
+            return isFreeDrawMouseCompatibilityEvent(e) && Date.now() < ignoreMouseEventsUntil;
+        }
+
+        function isActiveFreeDrawEvent(DX, e){
+            var nativeEvent = getFreeDrawNativeEvent(e);
+
+            if(!activeDrawGesture || activeDrawGesture.canvas !== DX){
+                return false;
+            }
+
+            if(
+                nativeEvent &&
+                nativeEvent.type &&
+                nativeEvent.type.indexOf("pointer") === 0 &&
+                activeDrawGesture.pointerId !== undefined &&
+                nativeEvent.pointerId !== activeDrawGesture.pointerId
+            ){
+                return false;
+            }
+
+            return true;
+        }
+
+        function stopFreeDrawEvent(e){
+            if(e && e.evt){
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+            }else if(e){
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
 
         function addCanvas(DX){
             DX.stage =  new Konva.Stage({container: DX.canvasDOM, width: DX.canvasWidth, height: DX.canvasHeight});
@@ -12286,13 +13456,40 @@ function PLAYER(){
             DX.emptyDataLength = DX.stage.toDataURL().length;
             DX.stage.on('mousedown touchstart pointerdown', function(e) {
                 activeStageID = DX.id;
+                clearCompletedMultiObjectDrag();
+                if(shouldIgnoreFreeDrawStartEvent(e)){
+                    stopFreeDrawEvent(e);
+                    return;
+                }
+
+                suppressFreeDrawMouseCompatibilityEvents(e);
+
                 if(e.target !== DX.stage){
                     isPaint = false;
                     return;
                 }
 
+                if(mod === "cursor"){
+                    isPaint = false;
+                    if(closeActiveTextEditor){
+                        closeActiveTextEditor(true);
+                    }
+
+                    var cursorPos = DX.stage.getPointerPosition();
+                    if(cursorPos){
+                        startDragSelection(DX, cursorPos);
+                    }
+
+                    if(e.evt){
+                        e.evt.preventDefault();
+                        e.evt.stopPropagation();
+                    }
+                    return;
+                }
+
                 clearTextSelection();
                 clearShapeSelection();
+                clearMultiSelection();
 
                 var pos = DX.stage.getPointerPosition();
 
@@ -12308,6 +13505,11 @@ function PLAYER(){
                     return;
                 }
 
+                if(!pos){
+                    stopFreeDrawEvent(e);
+                    return;
+                }
+
                 isPaint = true;
                 lastPointerPos = pos;
                 lastLine = createLineNode(DX, {
@@ -12316,26 +13518,46 @@ function PLAYER(){
                     strokeWidth: settings.activeSize,
                     globalCompositeOperation: mod
                 });
+                activeDrawGesture = {
+                    canvas: DX,
+                    line: lastLine,
+                    lastPointerPos: pos,
+                    pointerId: e.evt ? e.evt.pointerId : undefined
+                };
                 lastLine.listening(false);
                 lastLine.draggable(false);
                 DX.layer.add(lastLine);
+                stopFreeDrawEvent(e);
             });
 
             DX.stage.on("mousemove touchmove pointermove", function (e) {
-                if (!isPaint) return;
+                if(mod === "cursor" && DX.selectionDrag){
+                    updateDragSelection(DX);
+                    if(e.evt){
+                        e.evt.preventDefault();
+                        e.evt.stopPropagation();
+                    }
+                    return;
+                }
 
-                e.evt.preventDefault();
+                if (!isPaint || !isActiveFreeDrawEvent(DX, e)) return;
+
+                stopFreeDrawEvent(e);
                 var pos = DX.stage.getPointerPosition();
+                if(!pos){
+                    return;
+                }
 
                 /* Performans Kilidi: Eğer çok az hareket ettiyse işlem yapma */
-                if (getDist(lastPointerPos, pos) < settings.minDistance) {
+                if (getDist(activeDrawGesture.lastPointerPos, pos) < settings.minDistance) {
                     return;
                 }
 
                 lastPointerPos = pos;
+                activeDrawGesture.lastPointerPos = pos;
 
-                var newPoints = lastLine.points().concat([pos.x, pos.y]);
-                lastLine.points(newPoints);
+                var newPoints = activeDrawGesture.line.points().concat([pos.x, pos.y]);
+                activeDrawGesture.line.points(newPoints);
 
                 /* Konva'nın en performanslı çizim metodu */
                 DX.layer.batchDraw();
@@ -12343,11 +13565,19 @@ function PLAYER(){
 
 
             DX.stage.on("mouseup touchend pointerup pointercancel touchcancel", function(e) {
-                var wasPainting = isPaint;
-                drawEnd(DX);
-                if(wasPainting && e.evt){
-                    e.evt.preventDefault();
-                    e.evt.stopPropagation();
+                if(mod === "cursor" && DX.selectionDrag){
+                    finishDragSelection(DX);
+                    if(e.evt){
+                        e.evt.preventDefault();
+                        e.evt.stopPropagation();
+                    }
+                    return;
+                }
+
+                suppressFreeDrawMouseCompatibilityEvents(e);
+                var wasPainting = drawEnd(DX, e);
+                if(wasPainting){
+                    stopFreeDrawEvent(e);
                 }
             });
 
@@ -12413,6 +13643,37 @@ function PLAYER(){
             return DX.selectionBox;
         }
 
+        function getTextTransformer(DX){
+            if(!DX.textTransformer){
+                DX.textTransformer = new Konva.Transformer({
+                    rotateEnabled: true,
+                    resizeEnabled: false,
+                    draggable: false,
+                    enabledAnchors: [],
+                    rotateAnchorOffset: 35,
+                    borderStroke: "blue",
+                    borderStrokeWidth: 1,
+                    padding: 0,
+                    ignoreStroke: true,
+                    anchorStyleFunc: drawRotateAnchorIcon
+                });
+                DX.textTransformer.on("transform", function(){
+                    updateObjectPanelPosition(draw.selectedText);
+                });
+                DX.textTransformer.on("transformend", function(){
+                    if(draw.selectedText && draw.selectedText.getStage()){
+                        activeStageID = DX.id;
+                        DX.textTransformer.forceUpdate();
+                        DX.layer.batchDraw();
+                        getSceneBase64();
+                    }
+                });
+                DX.layer.add(DX.textTransformer);
+            }
+
+            return DX.textTransformer;
+        }
+
         function clearTextSelection(){
             draw.selectedText = null;
             setFontSizeInputStatus(false);
@@ -12420,6 +13681,10 @@ function PLAYER(){
             draw.konva.map(function(konva){
                 if(konva && konva.selectionBox){
                     konva.selectionBox.hide();
+                    konva.layer.batchDraw();
+                }
+                if(konva && konva.textTransformer){
+                    konva.textTransformer.nodes([]);
                     konva.layer.batchDraw();
                 }
             });
@@ -12437,16 +13702,11 @@ function PLAYER(){
                 return;
             }
 
-            var scale = text.getAbsoluteScale();
             var selectionBox = getSelectionBox(DX);
-            selectionBox.setAttrs({
-                x: text.x(),
-                y: text.y(),
-                width: text.width() * scale.x,
-                height: text.height() * scale.y
-            });
-            selectionBox.show();
-            selectionBox.moveToTop();
+            selectionBox.hide();
+            getTextTransformer(DX).nodes([text]).moveToTop();
+            DX.textTransformer.forceUpdate();
+            DX.textTransformer.moveToTop();
             DX.layer.batchDraw();
             updateObjectPanelPosition(text);
         }
@@ -12470,6 +13730,7 @@ function PLAYER(){
                 setFontSizeInputStatus(true);
             }
             updateTextSelection();
+            updateFreeDrawLayerList();
             // silgi iconu
             //showObjectPanel(text);
             hideObjectPanel();
@@ -12477,16 +13738,34 @@ function PLAYER(){
 
         function withSelectionHidden(callback){
             var visibleTextBoxes = [];
+            var visibleTextTransformers = [];
             var visibleShapeTransformers = [];
+            var visibleMultiTransformers = [];
+            var visibleDragSelectionRects = [];
             draw.konva.map(function(konva){
                 if(konva && konva.selectionBox && konva.selectionBox.visible()){
                     visibleTextBoxes.push(konva);
                     konva.selectionBox.hide();
                     konva.layer.batchDraw();
                 }
+                if(konva && konva.textTransformer && konva.textTransformer.nodes().length){
+                    visibleTextTransformers.push(konva);
+                    konva.textTransformer.hide();
+                    konva.layer.batchDraw();
+                }
                 if(konva && konva.shapeTransformer && konva.shapeTransformer.nodes().length){
                     visibleShapeTransformers.push(konva);
                     konva.shapeTransformer.hide();
+                    konva.layer.batchDraw();
+                }
+                if(konva && konva.multiSelectionTransformer && konva.multiSelectionTransformer.nodes().length){
+                    visibleMultiTransformers.push(konva);
+                    konva.multiSelectionTransformer.hide();
+                    konva.layer.batchDraw();
+                }
+                if(konva && konva.dragSelectionRect && konva.dragSelectionRect.visible()){
+                    visibleDragSelectionRects.push(konva);
+                    konva.dragSelectionRect.hide();
                     konva.layer.batchDraw();
                 }
             });
@@ -12499,9 +13778,27 @@ function PLAYER(){
                 konva.layer.batchDraw();
             });
 
+            visibleTextTransformers.map(function(konva){
+                konva.textTransformer.show();
+                konva.textTransformer.moveToTop();
+                konva.layer.batchDraw();
+            });
+
             visibleShapeTransformers.map(function(konva){
                 konva.shapeTransformer.show();
                 konva.shapeTransformer.moveToTop();
+                konva.layer.batchDraw();
+            });
+
+            visibleMultiTransformers.map(function(konva){
+                konva.multiSelectionTransformer.show();
+                konva.multiSelectionTransformer.moveToTop();
+                konva.layer.batchDraw();
+            });
+
+            visibleDragSelectionRects.map(function(konva){
+                konva.dragSelectionRect.show();
+                konva.dragSelectionRect.moveToTop();
                 konva.layer.batchDraw();
             });
 
@@ -12671,6 +13968,7 @@ function PLAYER(){
 
             var textEditing = false;
             var textIsDragging = false;
+            var textDragFinishInProgress = false;
             var textDragReleaseBound = false;
             var textPressBound = false;
             var textPressStart = null;
@@ -12766,30 +14064,67 @@ function PLAYER(){
             }
 
             function finishTextDrag(){
+                if(textDragFinishInProgress){
+                    return;
+                }
+
+                textDragFinishInProgress = true;
                 if(!textIsDragging){
                     textPressStart = null;
                     unbindTextPress();
                     unbindTextDragRelease();
                     text.draggable(false);
-                    selectTextNode(DX, text);
+                    if(isCompletedMultiObjectDrag(DX, text)){
+                        resetTextDragCursor();
+                        textDragFinishInProgress = false;
+                        return;
+                    }else if(text.getStage()){
+                        clearMultiSelection();
+                        selectTextNode(DX, text);
+                    }
                     resetTextDragCursor();
+                    textDragFinishInProgress = false;
                     return;
                 }
 
-                textIsDragging = false;
                 activeStageID = DX.id;
                 textPressStart = null;
                 unbindTextPress();
                 unbindTextDragRelease();
+                if(finishMultiObjectDrag(DX, text)){
+                    textIsDragging = false;
+                    text.stopDrag();
+                    text.draggable(false);
+                    resetTextDragCursor();
+                    textDragFinishInProgress = false;
+                    return;
+                }
+
+                if(isCompletedMultiObjectDrag(DX, text)){
+                    textIsDragging = false;
+                    text.stopDrag();
+                    text.draggable(false);
+                    resetTextDragCursor();
+                    textDragFinishInProgress = false;
+                    return;
+                }
+
+                textIsDragging = false;
                 text.stopDrag();
                 text.draggable(false);
+                clearMultiSelection();
                 selectTextNode(DX, text);
                 updateTextSelection();
                 resetTextDragCursor();
                 getSceneBase64();
+                textDragFinishInProgress = false;
             }
 
             function cancelTextDrag(){
+                if(textDragFinishInProgress){
+                    return;
+                }
+
                 if(!textIsDragging){
                     textPressStart = null;
                     unbindTextPress();
@@ -12803,10 +14138,16 @@ function PLAYER(){
                 textPressStart = null;
                 unbindTextPress();
                 unbindTextDragRelease();
+                textDragFinishInProgress = true;
                 text.stopDrag();
                 text.draggable(false);
-                selectTextNode(DX, text);
-                updateTextSelection();
+                textDragFinishInProgress = false;
+                if(isMultiSelected(text)){
+                    restoreMultiSelectionFrame(DX);
+                }else{
+                    selectTextNode(DX, text);
+                    updateTextSelection();
+                }
                 resetTextDragCursor();
             }
 
@@ -12821,7 +14162,11 @@ function PLAYER(){
 
                 activeStageID = DX.id;
                 isPaint = false;
-                selectTextNode(DX, text);
+                clearCompletedMultiObjectDrag();
+                if(!isMultiSelected(text)){
+                    clearMultiSelection();
+                    selectTextNode(DX, text);
+                }
                 text.draggable(false);
                 if(e.evt){
                     textPressStart = getPointerClientPosition(e.evt);
@@ -12845,6 +14190,7 @@ function PLAYER(){
                 textEditing = true;
                 textPressStart = null;
                 unbindTextPress();
+                clearMultiSelection();
                 clearTextSelection();
                 text.stopDrag();
                 text.draggable(false);
@@ -12868,11 +14214,18 @@ function PLAYER(){
                 activeStageID = DX.id;
                 isPaint = false;
                 textIsDragging = true;
-                selectTextNode(DX, text);
+                if(!beginMultiObjectDrag(DX, text)){
+                    clearMultiSelection();
+                    selectTextNode(DX, text);
+                }
                 DX.stage.container().style.cursor = "grabbing";
             });
 
             text.on("dragmove", function(){
+                if(updateMultiObjectDrag(DX, text)){
+                    return;
+                }
+
                 updateTextSelection();
             });
 
@@ -12901,39 +14254,121 @@ function PLAYER(){
             if(!silent){
                 getSceneBase64();
             }
+
+            return text;
+        }
+
+        function getTextareaTextOffset(text, fontWeight, fontStyle, lineHeightPx, padding){
+            var probe = document.createElement("div");
+            var marker = document.createElement("span");
+            var canvas = document.createElement("canvas");
+            var context = canvas.getContext("2d");
+            var font = fontStyle + " " + fontWeight + " " + text.fontSize() + "px " + text.fontFamily();
+            var metrics;
+            var fontAscent = text.fontSize() * 0.8;
+            var fontDescent = text.fontSize() * 0.2;
+            var konvaAlphabeticBaseline;
+
+            if(context){
+                context.font = font;
+                context.textBaseline = "alphabetic";
+                metrics = context.measureText(" ");
+                fontAscent = metrics.fontBoundingBoxAscent || metrics.emHeightAscent || fontAscent;
+                fontDescent = metrics.fontBoundingBoxDescent || metrics.emHeightDescent || fontDescent;
+            }
+
+            konvaAlphabeticBaseline = (lineHeightPx / 2) + ((fontAscent - fontDescent) / 2);
+            marker.style.display = "inline-block";
+            marker.style.width = 0;
+            marker.style.height = 0;
+            marker.style.verticalAlign = "baseline";
+            Object.assign(probe.style, {
+                position: "absolute",
+                left: "-10000px",
+                top: "-10000px",
+                width: Math.max(text.width() - (padding * 2), 1) + "px",
+                minHeight: lineHeightPx + "px",
+                fontSize: text.fontSize() + "px",
+                fontFamily: text.fontFamily(),
+                fontWeight: fontWeight,
+                fontStyle: fontStyle,
+                lineHeight: lineHeightPx + "px",
+                whiteSpace: "pre",
+                display: "block",
+                boxSizing: "content-box",
+                border: 0,
+                margin: 0,
+                padding: padding + "px"
+            });
+            probe.appendChild(marker);
+            document.body.appendChild(probe);
+
+            var probeBox = probe.getBoundingClientRect();
+            var markerBox = marker.getBoundingClientRect();
+            var offset = {
+                x: padding - (text.padding ? text.padding() : 0),
+                y: (markerBox.top - probeBox.top) - ((text.padding ? text.padding() : 0) + konvaAlphabeticBaseline)
+            };
+
+            probe.remove();
+            return offset;
         }
 
         function openCanvasTextEditor(DX, text, closeCallback){
-            var stageBox = DX.stage.container().getBoundingClientRect();
-            var scaleX = stageBox.width / DX.stage.width();
-            var scaleY = stageBox.height / DX.stage.height();
-            var textPosition = text.absolutePosition();
+            var stageContent = DX.stage.content || (DX.stage.getContent ? DX.stage.getContent() : DX.stage.container());
+            var stageBox = stageContent.getBoundingClientRect();
+            var stageScaleX = stageBox.width / DX.stage.width();
+            var stageScaleY = stageBox.height / DX.stage.height();
+            var textMatrix = text.getAbsoluteTransform().getMatrix();
             var originalText = text.text();
             var textarea = document.createElement("textarea");
             var closed = false;
-            var minEditorWidth = Math.max(text.width() * scaleX, 160);
-            var editorLineHeight = text.fontSize() * text.lineHeight() * scaleY;
+            var textPadding = text.padding ? text.padding() : 0;
+            var minEditorWidth = Math.max(text.width() - (textPadding * 2), 1);
+            var editorLineHeight = text.fontSize() * text.lineHeight();
+            var fontStyle = text.fontStyle() || "";
+            var fontWeight = fontStyle.indexOf("bold") !== -1 ? "bold" : "normal";
+            var cssFontStyle = fontStyle.indexOf("italic") !== -1 ? "italic" : "normal";
+            var textareaTextOffset = getTextareaTextOffset(text, fontWeight, cssFontStyle, editorLineHeight, textPadding);
+            var cssMatrix = [
+                textMatrix[0] * stageScaleX,
+                textMatrix[1] * stageScaleY,
+                textMatrix[2] * stageScaleX,
+                textMatrix[3] * stageScaleY,
+                (textMatrix[4] * stageScaleX) - ((textMatrix[0] * stageScaleX) * textareaTextOffset.x) - ((textMatrix[2] * stageScaleX) * textareaTextOffset.y),
+                (textMatrix[5] * stageScaleY) - ((textMatrix[1] * stageScaleY) * textareaTextOffset.x) - ((textMatrix[3] * stageScaleY) * textareaTextOffset.y)
+            ];
 
             textarea.value = originalText;
             textarea.wrap = "off";
             Object.assign(textarea.style, {
                 position: "absolute",
-                left: (stageBox.left + window.scrollX + (textPosition.x * scaleX)) + "px",
-                top: (stageBox.top + window.scrollY + (textPosition.y * scaleY)) + "px",
+                left: (stageBox.left + window.scrollX) + "px",
+                top: (stageBox.top + window.scrollY) + "px",
                 width: minEditorWidth + "px",
                 minHeight: editorLineHeight + "px",
-                fontSize: (text.fontSize() * scaleY) + "px",
+                fontSize: text.fontSize() + "px",
                 fontFamily: text.fontFamily(),
-                fontWeight: text.fontStyle(),
-                lineHeight: text.lineHeight(),
+                fontWeight: fontWeight,
+                fontStyle: cssFontStyle,
+                lineHeight: editorLineHeight + "px",
+                textAlign: text.align ? text.align() : "left",
                 color: text.fill(),
                 background: "transparent",
-                border: "1px solid blue",
+                border: 0,
+                borderRadius: 0,
                 outline: "none",
+                boxShadow: "0 0 0 1px blue",
+                boxSizing: "content-box",
+                appearance: "none",
                 resize: "none",
                 overflow: "hidden",
                 whiteSpace: "pre",
-                padding: 0,
+                display: "block",
+                margin: 0,
+                padding: textPadding + "px",
+                transform: "matrix(" + cssMatrix.join(",") + ")",
+                transformOrigin: "0 0",
                 zIndex: 10000
             });
 
@@ -13006,14 +14441,31 @@ function PLAYER(){
             resizeEditor();
         }
 
-        function drawEnd(DX){
-            if (!isPaint) {
+        function drawEnd(DX, e){
+            if (!isPaint || !activeDrawGesture) {
                 return false;
             }
+
+            if(DX && activeDrawGesture.canvas !== DX){
+                return false;
+            }
+
+            if(!DX){
+                DX = activeDrawGesture.canvas;
+            }
+
+            if(!isActiveFreeDrawEvent(DX, e)){
+                return false;
+            }
+
+            suppressFreeDrawMouseCompatibilityEvents(e);
             isPaint = false;
+            var finishedLine = activeDrawGesture.line;
+            activeDrawGesture = null;
+            lastLine = finishedLine;
 
             /* Çizim bittiğinde Douglas-Peucker'ı çalıştır */
-            var rawPoints = lastLine.points();
+            var rawPoints = finishedLine.points();
             var formattedPoints = [];
             for (var i=0; i<rawPoints.length; i+=2) {
                 formattedPoints.push({x: rawPoints[i], y: rawPoints[i + 1]});
@@ -13027,15 +14479,15 @@ function PLAYER(){
                 newRawPoints.push(p.x, p.y);
             });
 
-            lastLine.points(newRawPoints);
+            finishedLine.points(newRawPoints);
 
             /* 2. Cache işlemi (Performans için kritik)
             Çizginin etrafındaki alanı hesaplamak için getClientRect kullanılır */
-            var clientRect = lastLine.getClientRect();
+            var clientRect = finishedLine.getClientRect();
 
             /* Eğer çizgi çok küçükse veya boşsa hata vermemesi için kontrol */
             if (clientRect.width > 0 && clientRect.height > 0) {
-                lastLine.cache({
+                finishedLine.cache({
                     /* Kenarlarda kırpılma olmaması için pay bırakıyoruz */
                     x: clientRect.x - 5,
                     y: clientRect.y - 5,
@@ -13045,19 +14497,27 @@ function PLAYER(){
                 });
             }
 
-            lastLine.listening(false);
-            lastLine.draggable(false);
+            finishedLine.listening(false);
+            finishedLine.draggable(false);
 
             clearShapeSelection();
             mouseCursorStatus();
 
+            activeStageID = DX.id;
             DX.layer.batchDraw();
             getSceneBase64();
+            return true;
         }
 
+        function sceneDrawEndHandler(e){
+            if(activeStageID !== undefined && draw.konva[activeStageID] && draw.konva[activeStageID].selectionDrag){
+                finishDragSelection(draw.konva[activeStageID]);
+                return;
+            }
 
-        function sceneDrawEndHandler(){
-            drawEnd( draw.konva[activeStageID] );
+            if(drawEnd( draw.konva[activeStageID], e )){
+                stopFreeDrawEvent(e);
+            }
         }
 
         SP.sceneDiv.addEventListener('mouseup', sceneDrawEndHandler);
@@ -13078,11 +14538,13 @@ function PLAYER(){
 
             inputsChange(SD, activeStageID, "value", dataURL);
             inputsChange(SD, activeStageID, "objects", getFreeDrawObjects(draw.konva[activeStageID]));
+            updateFreeDrawLayerList();
             return dataURL;
         }
 
         function clearStage(id){
             hideObjectPanel();
+            clearMultiSelection();
             draw.konva[id].layer.destroyChildren();
             draw.konva[id].textAddCount = 0;
             draw.konva[id].shapeAddCount = 0;
@@ -13091,6 +14553,10 @@ function PLAYER(){
             });
             draw.konva[id].selectionBox = null;
             draw.konva[id].shapeTransformer = null;
+            draw.konva[id].textTransformer = null;
+            draw.konva[id].multiSelectionTransformer = null;
+            draw.konva[id].dragSelectionRect = null;
+            draw.konva[id].selectionDrag = null;
             if(draw.selectedText && !draw.selectedText.getStage()){
                 draw.selectedText = null;
             }
@@ -13102,6 +14568,7 @@ function PLAYER(){
             draw.konva[id].layer.draw();
             inputsChange(SD, id, "value", null);
             inputsChange(SD, id, "objects", []);
+            updateFreeDrawLayerList();
         }
 
         function activeBtnFNC(btn){
@@ -13146,6 +14613,9 @@ function PLAYER(){
             }
             if(draw.triangleBox){
                 passiveBtnFNC(draw.triangleBox);
+            }
+            if(draw.arrowBox){
+                passiveBtnFNC(draw.arrowBox);
             }
         }
 
@@ -13232,6 +14702,8 @@ function PLAYER(){
                     activeBtnFNC(draw.circleBox);
                 }else if(activeShapeType === "triangle" && draw.triangleBox){
                     activeBtnFNC(draw.triangleBox);
+                }else if(activeShapeType === "arrow" && draw.arrowBox){
+                    activeBtnFNC(draw.arrowBox);
                 }else if(draw.rectBox){
                     activeBtnFNC(draw.rectBox);
                 }
