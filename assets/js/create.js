@@ -1490,7 +1490,7 @@ function CREATE(){
         var kids = [{
             x: 0,
             y: 0,
-            width: 600,
+            width: 730,
             height: 80,
             fill: "silver",
             borderPosition: "center",
@@ -1556,6 +1556,15 @@ function CREATE(){
             y: 15,
             width: 50,
             height: 50,
+            src: "img/arrow_icon.png",
+            cornerRadius: 8,
+            Layer:{type:"objectImg", name: "arrowBox", class:"arrowBox"}
+        },
+        {
+            x: 470,
+            y: 15,
+            width: 50,
+            height: 50,
             fill: "#ffffff",
             stroke: "#183153",
             strokeWidth: 0,
@@ -1565,7 +1574,7 @@ function CREATE(){
         },
         {
             text: "T",
-            x: 405,
+            x: 470,
             y: 15,
             width: 50,
             height: 50,
@@ -1580,7 +1589,7 @@ function CREATE(){
             Layer:{type:"objectText", name: "textBoxLabel", class:"disableEvents"}
         },
         {
-            x: 470,
+            x: 535,
             y: 15,
             width: 50,
             height: 50,
@@ -1593,7 +1602,7 @@ function CREATE(){
         },
         {
             text: "24",
-            x: 470,
+            x: 535,
             y: 15,
             width: 50,
             height: 50,
@@ -1608,7 +1617,7 @@ function CREATE(){
             Layer:{type:"objectText", name: "fontSizeBoxLabel", class:"fontSizeBoxLabel disableEvents"}
         },
         {
-            x: 537,
+            x: 602,
             y: 17,
             width: 46,
             height: 46,
@@ -1619,7 +1628,81 @@ function CREATE(){
             Layer:{type:"objectRect", name: "color", class:"color"}
         },
         {
-            x: 535,
+            x: 600,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/color.png",
+            Layer: {type:"objectImg", name:"color.png", class:"disableEvents"}
+        },
+        {
+            x: 665,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/layers_icon.png",
+            cornerRadius: 8,
+            Layer:{type:"objectImg", name: "layerBox", class:"layerBox"}
+        }];
+
+        addObjects(kids, container, false);
+        Arayuz_addLayer(container);
+
+        return container;
+    }
+
+    this.freeDrawSimpleNav = function(O){
+        var container = this.movieClipFNC(O);
+        var kids = [{
+            x: 0,
+            y: 0,
+            width: 275,
+            height: 80,
+            fill: "silver",
+            borderPosition: "center",
+            cornerRadius: 10,
+            Layer:{type:"objectRect", name: "bg"}
+        },
+        {
+            x: 15,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/draw_icon.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"draw_icon", class:"drawBox"}
+        },
+        {
+            x: 80,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/draw_easer.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"draw_easer", class:"eraserBox"}
+        },
+        {
+            x: 145,
+            y: 15,
+            width: 50,
+            height: 50,
+            src: "img/clean.png",
+            cornerRadius: 8,
+            Layer: {type:"objectImg", name:"clean", class:"clean"}
+        },
+        {
+            x: 212,
+            y: 17,
+            width: 46,
+            height: 46,
+            fill: "#ff0000",
+            borderPosition: "center",
+            cornerRadius: 40,
+            strokeWidth: 0,
+            Layer:{type:"objectRect", name: "color", class:"color"}
+        },
+        {
+            x: 210,
             y: 15,
             width: 50,
             height: 50,

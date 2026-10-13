@@ -781,6 +781,7 @@ function PLAYER(){
 
         if(status === "finish"){
             HDE_userAnswerEvaluation();
+            HDE_NavColor();
         }else{
             var sd = SD[This.sceneIndex];
             addHistoryStep(sd, {
@@ -821,6 +822,18 @@ function PLAYER(){
                 totalRight: sd.totalRight,
                 answered: "0",
             });
+        });
+    }
+
+    function HDE_NavColor(){
+        SD.map(function(sd, index){
+            var result = sd.historyRight[0].result;
+            var navBtn = SP[index].sceneNav;
+            if(result === "right"){
+                navBtn.navigationBtn.style.backgroundColor = "#548b2e";
+            }else if(result === "wrong"){
+                navBtn.navigationBtn.style.backgroundColor = "#d74318";
+            }
         });
     }
 
@@ -1802,6 +1815,7 @@ function PLAYER(){
             if(PLX.isHDE){
                 HDE_StatusFNC();
                 HDE_ScoreCalc("finish", false);
+                HDE_NavColor();
             }
         }
 
@@ -11317,7 +11331,7 @@ function PLAYER(){
 
                 addCanvas(draw.konva[id]);
                 SD.inputs["box"+ id] = {value: null, objects: [], type: "freeDraw"};
-            }else if(element.id.includes("freeDrawNav")){
+            }else if(element.id.includes("freeDrawNav") || element.id.includes("freeDrawSimpleNav")){
                 draw.navMain = element.main;
                 draw.cursorBox = element.main.querySelector(".cursorBox");
                 draw.drawBox = element.main.querySelector(".drawBox");
@@ -11353,15 +11367,19 @@ function PLAYER(){
                     draw.cursorBox.style.cursor = "pointer";
                 }
 
-                draw.drawBox.addEventListener("click",function(){
-                    mod = "source-over";
-                    clearMultiSelection();
-                    clearShapeSelection();
-                    setTextDragMode(false);
-                    setTextEditMode(false);
-                    setShapeEditMode(false);
-                    mouseCursorStatus();
-                });
+                if(draw.drawBox){
+                    draw.drawBox.addEventListener("click",function(){
+                        mod = "source-over";
+                        clearMultiSelection();
+                        clearShapeSelection();
+                        setTextDragMode(false);
+                        setTextEditMode(false);
+                        setShapeEditMode(false);
+                        mouseCursorStatus();
+                    });
+
+                    draw.drawBox.style.cursor = "pointer";
+                }
 
                 bindFreeDrawEraserButton(draw.eraserBox);
 
@@ -11429,7 +11447,11 @@ function PLAYER(){
                     });
 
                     draw.colorPalette.remove();
-                    draw.drawBox.after(colorInput);
+                    if(draw.drawBox){
+                        draw.drawBox.after(colorInput);
+                    }else{
+                        draw.navMain.appendChild(colorInput);
+                    }
                     draw.colorPalette = colorInput;
                     settings.brushColor = draw.colorPalette.value;
 
@@ -14629,7 +14651,9 @@ function PLAYER(){
                 if(draw.cursorBox){
                     activeBtnFNC(draw.cursorBox);
                 }
-                passiveBtnFNC(draw.drawBox);
+                if(draw.drawBox){
+                    passiveBtnFNC(draw.drawBox);
+                }
                 passiveShapeButtons();
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
@@ -14643,7 +14667,9 @@ function PLAYER(){
                 setShapeEditMode(true);
             }else if(mod === "source-over"){
                 settings.activeSize = settings.brushSize;
-                activeBtnFNC(draw.drawBox);
+                if(draw.drawBox){
+                    activeBtnFNC(draw.drawBox);
+                }
                 passiveShapeButtons();
                 if(draw.textBox){
                     passiveBtnFNC(draw.textBox);
@@ -14656,7 +14682,9 @@ function PLAYER(){
                 }
             }else if(mod === "destination-out"){
                 settings.activeSize = settings.eraserSize;
-                passiveBtnFNC(draw.drawBox);
+                if(draw.drawBox){
+                    passiveBtnFNC(draw.drawBox);
+                }
                 if(draw.eraserBox){
                     activeBtnFNC(draw.eraserBox);
                 }
@@ -14670,7 +14698,9 @@ function PLAYER(){
             }else if(mod === "text"){
                 settings.activeSize = 0;
                 activeBtnFNC(draw.textBox);
-                passiveBtnFNC(draw.drawBox);
+                if(draw.drawBox){
+                    passiveBtnFNC(draw.drawBox);
+                }
                 if(draw.eraserBox){
                     passiveBtnFNC(draw.eraserBox);
                 }
@@ -14680,7 +14710,9 @@ function PLAYER(){
                 }
             }else if(mod === "textDrag"){
                 settings.activeSize = 0;
-                passiveBtnFNC(draw.drawBox);
+                if(draw.drawBox){
+                    passiveBtnFNC(draw.drawBox);
+                }
                 if(draw.eraserBox){
                     passiveBtnFNC(draw.eraserBox);
                 }
@@ -14690,7 +14722,9 @@ function PLAYER(){
                 }
             }else if(mod === "shape"){
                 settings.activeSize = 0;
-                passiveBtnFNC(draw.drawBox);
+                if(draw.drawBox){
+                    passiveBtnFNC(draw.drawBox);
+                }
                 if(draw.eraserBox){
                     passiveBtnFNC(draw.eraserBox);
                 }
@@ -14773,7 +14807,9 @@ function PLAYER(){
             SP.sceneDiv.removeEventListener('touchend', sceneDrawEndHandler);
             SP.sceneDiv.removeEventListener('pointerup', sceneDrawEndHandler);
             SP.sceneDiv.removeEventListener('pointercancel', sceneDrawEndHandler);
-            draw.navMain.style.display = "none";
+            if(draw.navMain){
+                draw.navMain.style.display = "none";
+            }
             draw.konva.map(function(konva){
                 if(konva){
                     if(konva.stage){

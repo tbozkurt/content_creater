@@ -2356,6 +2356,29 @@ IDE.workSpace.createFreeDrawNav.addEventListener("click", function(){
     selectItem({shiftKey: false, layer: obj});
 });
 
+/* create simple freeDraw navigation */
+IDE.workSpace.createFreeDrawSimpleNav.addEventListener("click", function(){
+    var obj = CREATE.freeDrawSimpleNav({
+        properties:{
+            x: 525,
+            y: 550,
+            width: 275,
+            height: 80,
+            draggable: true
+        },
+        container: IDE.activeLayer,
+        layer: {
+            name: "freeDrawSimpleNav",
+            elementID: "freeDrawSimpleNav",
+            type: "objectMovieClip",
+            params:{}
+        }
+    });
+
+    addHistory();
+    selectItem({shiftKey: false, layer: obj});
+});
+
 IDE.workSpace.createDropdown.addEventListener("click", function(){
     var position = utils.getRandomPosition(640, 360, 180);
     var obj = CREATE.dropdownBlank({
